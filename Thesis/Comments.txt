@@ -1,0 +1,6 @@
+To record the data, we need 3 workplace. 1. Assembly task workplace (near the participants' hands) 2. target object place (near robot arm but far from particpants' hands, where they cannot reach) 3. handover place (random place, The position where the user extends their arm)
+
+We should combine 3 intent together.In my opinion, the pipeline for one sequence should be. you first select one target object. And the user said "start" then the glasses start the recording automaticlly. So the user first doing the assembly task (or just some other task), then the participant say "second" after that he move his eye and gaze towards the target object, when he think he has already focused the target , said "done" for stop. Then said "third" to start the handover intent, after said "third" the participants should look at the handover position and move his hand towards the position, "done " to finish this intent.
+
+
+So intent 1 timestamp after "start" and slightly before "first". Intent 2 slightly after "second" and slightly before first "done". Intent 3 slightly after "third" and slightly after second "done" 

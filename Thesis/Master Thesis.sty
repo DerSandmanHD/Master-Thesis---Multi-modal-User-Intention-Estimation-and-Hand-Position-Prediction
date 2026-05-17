@@ -1,0 +1,16 @@
+Master Thesis
+Multi-modal User Intention Estimation and Hand Position Prediction
+Motivation: User intention prediction for assistive home robots is an important problem in human-robot interaction and elderly care. In home environments, older adults may need help retrieving and receiving objects that are placed far away. However, predicting such intention is challenging, since human behavior is often gradual and ambiguous: a user may continue the current activity, look toward a distant object, or prepare to receive an object from the robot.
+Therefore, intention prediction should consider not only past gaze and hand motion, but also the candidate objects and scene context. In this project, we aim to model the interaction between multimodal observations and scene objects to predict the user's assistive intention (e.g. continue the current job, fetch an object, or handover an object).
+A key idea of this project is to introduce intention prediction with handover-specific future hand position prediction. Instead of directly predicting a single intention label, the model will first determine whether robotic assistance is needed, and then distinguish between object fetching and object handover. When the predicted intention is handover, the model will further predict the future receiving-hand position to support robot planning
+Tasks of the student: The student will develop a complete pipeline for this project. First, the student will build a data collection system to record synchronized multimodal observations, including gaze, hand motion, and object information, in a controlled home-assistive setup. After data collection, the student will develop a multi-modal transformer (e.g. Gated Transformer Networks) for assistive intention prediction, with future receiving-hand prediction as an auxiliary task for handover planning. The student will train and validate the model, evaluate its performance, and conduct ablation studies to analyze the contribution of different modalities and model components.
+Objectives:
+
+Build a data acquisition pipeline: Build a data collection pipeline for multimodal observations and object information.
+Implement a hierarchical transformer framework: Develop the proposed transformer-based model for intention prediction. Incorporate future receiving-hand prediction to support handover planning. Train and validate the model.
+
+Validation: Evaluate performance quantitatively and qualitatively. Perform ablation studies on key model components
+Necessary prerequisites: Lectures in Foundations of Robotics. Programming experience in Python, ROS, and Pytorch. Basic knowledge of Computer Vision.
+Supervising Professor: Prof. Dr. Andreas Zell, Sand 1, Room A310,
+andreas.zell@uni-tuebingen.de
+Co-Supervising Scientist: Yuzhi Lai, Sand 1, Room A317 yuzhi.lai@uni-tuebingen.de

@@ -1,0 +1,320 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\title{\textbf{Project Plan: Data Collection for Master Thesis}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section*{1. Goal of the Data Collection}
+
+The goal of this data collection is to record multimodal human behavior in a controlled home-assistive scenario. The collected data will be used to train and evaluate a model for assistive intention prediction.
+
+The model should distinguish between three main intention classes:
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{No assistance / continue current task}
+    \item \textbf{Object fetching intention}
+    \item \textbf{Handover intention}
+\end{enumerate}
+
+For handover situations, the model should additionally predict the future receiving-hand position. This auxiliary prediction task is intended to support later robot planning for object handover.
+
+\section*{2. Setup and Environment}
+
+The data collection will be conducted in a lab space arranged like a simple home environment.
+
+\begin{itemize}
+    \item \textbf{Workspace:} Participants will sit or stand at a table and perform simple assembly, sorting, or daily-life tasks.
+    
+    \item \textbf{Objects:} Daily objects such as mugs, bottles, small tools, boxes, or household items will be used. Some objects will be placed within the participant's reachable workspace, while others will be placed outside the reachable area.
+    
+    \item \textbf{Robot position:} A robot or robot placeholder will be placed in the environment. The robot should be visible to the participant and can be used as a possible target for gaze during assistance requests.
+    
+    \item \textbf{Object positions:} Object positions will be varied across trials to generate different gaze, head-motion, and hand-motion patterns.
+    
+    \item \textbf{Calibration:} AprilTags will be placed on the table, relevant objects, and/or the robot base. This will help align the coordinate system of the Meta Aria glasses with the robot/world coordinate system.
+\end{itemize}
+
+\section*{3. Sensors and Recorded Modalities}
+
+The main sensor will be the Meta Aria glasses. The following modalities are planned:
+
+\begin{itemize}
+    \item \textbf{Egocentric RGB video:} Used to observe the scene from the participant's perspective and extract visual scene features, for example using a pretrained encoder such as CLIP.
+    
+    \item \textbf{Gaze data:} Eye gaze information will be extracted using Meta's Machine Perception Services (MPS), including 2D and/or 3D gaze estimates.
+    
+    \item \textbf{Head motion and orientation:} SLAM and IMU data from the glasses will be used to estimate the participant's head pose and viewing direction over time.
+    (No need to use because of the calibariton tools!!)
+    
+    \item \textbf{Hand/wrist position:} Hand or wrist motion will be estimated from the egocentric video using MediaPipe, MPS hand tracking, or another suitable hand-tracking method.
+    - Already included in the aria glasses!
+    
+    \item \textbf{Object information:} Object identity, approximate object position, reachability, and distance to the participant will be included. Object positions may be obtained using AprilTags, manual annotation, or a predefined scene layout.
+\end{itemize}
+
+\section*{4. Participants and Number of Trials}
+
+The planned number of participants is approximately \textbf{15--20}.
+
+Note: MoE is not needed for this
+
+Each participant will perform multiple trials for each intention class. The exact number of trials will be discussed, but a possible target is:
+
+\begin{itemize}
+    \item \textbf{10--15 trials per intention class and participant}
+    \item \textbf{3 intention classes}
+    \item approximately \textbf{450--900 trials in total}, depending on the final number of participants and repetitions
+\end{itemize}
+
+- think about trials later, lets test it first.
+
+The order of scenarios and object positions should be randomized or counterbalanced to avoid learning effects and sequence bias.
+
+\section*{5. Scenario Design}
+
+combine intents together
+- voice command - for data collection / labeling 
+User sais intent 1 start - i want this object and looks at this object
+
+User commands what intent he wants to do and which object he wants to look at
+
+The scenarios are designed to create realistic but still controlled assistive situations. The important point is that gaze alone should not define the intention. Instead, intention should be determined by the task context, object reachability, gaze behavior, hand motion, and interaction with the robot.
+
+\subsection*{5.1 Intent 1: No Assistance / Continue Current Task}
+
+In this scenario, the participant continues working on the current task and does not need help from the robot.
+
+Examples:
+\begin{itemize}
+    \item The participant performs a sorting or assembly task at the table.
+    \item The participant may briefly look at nearby objects.
+    \item The participant may also look at the robot without requesting assistance.
+    \item The participant continues the task independently.
+\end{itemize}
+
+This class is important to prevent the model from learning simple shortcuts, such as interpreting every gaze shift toward an object or the robot as an assistance request.
+
+\subsection*{5.2 Intent 2: Object Fetching}
+
+In this scenario, the participant needs an object that is outside the reachable workspace. The robot should fetch this object.
+
+Possible behavioral cues:
+\begin{itemize}
+    \item The participant looks at the target object.
+        - need this 
+    \item hand gesture - pointing to the  object 
+    \item The participant may show slight body or head orientation toward the target object.
+    - need this
+    \item (The participant may look from the object to the robot.)
+    \item (The participant may not yet move the hand toward the object, because the object is out of reach.)
+
+\end{itemize}
+
+Different variants should be included:
+\begin{itemize}
+    \item Fetching with gaze toward the robot.
+    \item Fetching without explicit gaze toward the robot.
+    \item Looking at an object without requesting help.
+    \item Looking at the robot without requesting help.
+\end{itemize}
+
+This makes the prediction task more realistic and avoids a model that only learns ``robot gaze equals assistance request''.
+
+\subsection*{5.3 Intent 3: Handover}
+
+In this scenario, the participant prepares to receive an object from the robot.
+
+Examples:
+\begin{itemize}
+    \item The robot or experimenter presents an object to the participant.
+    \item The participant looks at the robot, the object, or the receiving area.
+    \item The participant moves the hand into a receiving pose.
+    \item The model should classify the situation as handover and predict the future receiving-hand position.
+\end{itemize}
+
+For the initial version of the dataset, the handover scenario should focus mainly on \textbf{receiving an object from the robot}. Giving an object to the robot may be considered later, but mixing both directions could make the task more complex.
+
+\section*{6. Observation Window and Prediction Target}
+
+For each trial, the model will receive a fixed observation window of past multimodal data. The exact duration should be discussed with the supervisors.
+
+Possible initial settings:
+\begin{itemize}
+    \item \textbf{Observation history:} at least last 1 seconds of data should be enough - depends on frame rate per second (4 seconds is to much - 1-3 sec depends on the memory)
+    \item \textbf{Prediction horizon:} 1--2 seconds into the future
+\end{itemize}
+
+For intention prediction, the model should estimate the current or near-future user intention based on the observation window.
+
+For handover trials, the auxiliary target will be the future receiving-hand position. This target can be defined in one of two ways:
+
+\begin{itemize}
+    \item hand position after a fixed prediction horizon, e.g. after 1 second
+    \item final receiving-hand position at the moment of object transfer
+\end{itemize}
+
+The final definition should be decided before the main data collection starts.
+
+\section*{7. Data Recording Pipeline}
+MPS not needed - aria gen 2.0 - look at the documentation 
+\begin{itemize}
+    \item \textbf{Recording:} The Meta Aria glasses will be used to record \texttt{.vrs} files for each participant and trial -> change it to mp4!!!
+    
+    \item \textbf{Processing:} The recorded files will be processed using \texttt{projectaria\_tools} and Meta's MPS outputs.
+    
+    \item \textbf{Coordinate alignment:} AprilTags will be used to align the Aria coordinate system with the table, object, and robot/world coordinate system.
+    - aruco marker for calibration
+    
+    \item \textbf{Feature extraction:} Visual scene features, gaze features, hand/wrist positions, head motion, and object-related features will be extracted for model training.
+\end{itemize}
+
+\section*{8. Labeling Strategy}
+
+The labels will be based on the experimental script and refined manually using video inspection.
+
+For each trial, the following information should be labeled:
+
+\begin{itemize}
+    \item intention class:
+    \begin{itemize}
+        \item no assistance / continue task
+        \item object fetching
+        \item handover
+    \end{itemize}
+    
+    \item start time of the relevant intention cue
+    
+    \item target object for fetching trials
+    
+    \item whether the participant looked at the robot
+    
+    \item whether the participant looked at the target object
+    
+    \item handover target position for handover trials
+    
+    \item final receiving-hand position or future hand position, depending on the selected prediction target
+\end{itemize}
+
+The exact definition of ``intention start'' is critical and should be discussed. A possible approach is to define the start time as the first clear behavioral cue related to the trial goal, such as gaze toward the target object, gaze toward the robot, or the beginning of a hand movement.
+
+\section*{9. Evaluation Plan}
+
+Ablation study with other models
+Comapre Gate transformer with basic transformer and other parts
+
+The dataset should be evaluated both quantitatively and qualitatively.
+
+\subsection*{9.1 Quantitative Evaluation}
+
+For intention prediction:
+\begin{itemize}
+    \item classification accuracy
+    \item precision, recall, and F1-score per class
+    \item confusion matrix
+\end{itemize}
+
+For future hand-position parediction:
+\begin{itemize}
+    \item mean position error
+    \item final displacement error
+    \item qualitative comparison of predicted and ground-truth hand trajectories
+\end{itemize}
+
+\subsection*{9.2 Train/Test Split}
+
+A participant-independent evaluation should be considered. For example:
+
+\begin{itemize}
+    \item training on a subset of participants
+    \item validation on separate participants
+    \item testing on unseen participants
+\end{itemize}
+
+This is important to check whether the model generalizes to new users and does not only memorize individual behavior patterns.
+
+\subsection*{9.3 Comparission of baseline}
+
+Possible ablation studies include:
+
+\begin{itemize}
+    \item without gaze features
+    \item without hand/wrist features
+    \item without object information
+    \item without RGB scene features
+    \item without the hand-position auxiliary task
+    \item flat classification versus hierarchical intention prediction
+\end{itemize}
+
+\section*{10. Potential Challenges}
+
+\begin{itemize}
+    \item \textbf{Hand visibility:} The hand may leave the field of view of the Aria glasses, especially during reaching or handover. - aria gen 2.0 is already garunteeing it
+    
+    \item \textbf{Gaze reliability:} Gaze estimation may be noisy or inaccurate, especially if calibration is imperfect. - aria gen 2.0 is already garunteeing it
+    
+    \item \textbf{Label ambiguity:} The exact start of an intention is difficult to define and may require careful annotation.
+    
+    \item \textbf{Dataset size:} Transformer-based models may overfit if the dataset is too small. Baseline models should therefore also be implemented.
+    
+    \item \textbf{Coordinate systems:} Aligning Aria, object, table, and robot coordinates may require careful calibration.
+    
+\end{itemize}
+
+\section*{11. Rough Timeline}
+
+\begin{itemize}
+    \item \textbf{Week 1:} Set up the environment, AprilTags, Aria SDK, MPS pipeline, and first test recordings.
+    
+    \item \textbf{Week 2:} Pilot study with 2 participants to check data quality, gaze tracking, hand tracking, and labeling procedure.
+    
+    \item \textbf{Week 3--4:} Main data collection with all participants.
+    
+    \item \textbf{Week 5:} Data processing, synchronization, cleaning, and preparation of the dataset for model training.
+    
+    \item \textbf{Buffer:} Additional time may be needed for failed recordings, calibration issues, or improvements to the labeling pipeline.
+\end{itemize}
+
+This timeline is an optimistic plan for the data collection phase and assumes that the recording and processing pipeline works reliably after the pilot study.
+
+\section*{12. Questions for the Meeting}
+
+\begin{itemize}
+    \item What should we do if the hand leaves the camera view of the Aria glasses?
+    - keep hands in cameras 
+    
+    \item How many seconds of history should the Transformer use, e.g. 1 second, 2 seconds, or more?
+    - already discussed above
+    
+    \item What prediction horizon should be used for future hand-position prediction?
+    - final hand position
+    
+    \item Should the handover target be the final receiving-hand position or the hand position after a fixed time interval?
+    - first recieving object
+    
+    \item Should the handover task focus only on receiving an object, or should giving an object to the robot also be included?
+    - not included
+    
+    \item Should gaze toward the robot be an explicit cue in some trials, or should it occur naturally?
+    - not explicit cue - otherwise the result is bad, from start we dont explicit cue 
+     
+    \item Do we have a specific robot arm in mind for a later live test?
+    - if the model is working then yes but its time depending
+
+\end{itemize}
+
+
+1. What to do, first trial to use the glasses...\\
+2. export hand gesture and gaze point\\
+3. Print aruco marker for calibration\\
+4. Tell one day before meeting if one is needed!\\
+
+\end{document}

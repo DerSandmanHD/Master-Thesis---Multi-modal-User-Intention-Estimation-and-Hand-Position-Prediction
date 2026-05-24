@@ -124,4 +124,4 @@ def run_apriltag_detection(vrs_file_path):
 
 if __name__ == "__main__":
     # Funktion mit dem Pfad zur lokalen Aufnahme ausfuehren
-    run_apriltag_detection("../Recordings/test_recording.vrs")
+    run_apriltag_detection("../Recordings/Test2.vrs")

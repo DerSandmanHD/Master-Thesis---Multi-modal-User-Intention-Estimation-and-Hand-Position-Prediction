@@ -1,0 +1,23 @@
+Documentation Links:
+https://facebookresearch.github.io/projectaria_tools/gen2/
+
+VM commands:
+conda activate aria_conda   
+conda deactivate
+python -m pip install "package"
+
+Meta Aria Glasses commands:
+aria_gen2 auth check -> Verify the device is authenticated.
+aria_gen2 recording list -> get the recording list
+aria_gen2 recording download -u "uuid" -> dowload the recording
+aria_doctor -> check if python version and network interface is ok
+
+aria_rerun_viewer --vrs test_recording.vrs -> Visualize a downloaded VRS recording.
+
+aria_diagnostics -> Collect diagnostic information and error logs for troubleshooting.
+
+
+Streaming:
+aria_gen2 streaming start --profile profile8 -> start streaming with profile 8
+aria_streaming_viewer --real-time --interpolate --rerun-memory-limit 4GB -> open streaming viewer "rerun"
+aria_gen2 streaming stop -> stop the streaming

@@ -16,6 +16,9 @@ aria_rerun_viewer --vrs test_recording.vrs -> Visualize a downloaded VRS recordi
 
 aria_diagnostics -> Collect diagnostic information and error logs for troubleshooting.
 
+vrs_to_mp4 --vrs input.vrs --output_video output.mp4 -> convert vrs to mp4 
+python -m projectaria_tools.tools.vrs_to_mp4.vrs_to_mp4 --vrs Test_4.vrs --output_video Test_4.mp4
+
 
 Streaming:
 aria_gen2 streaming start --profile profile8 -> start streaming with profile 8

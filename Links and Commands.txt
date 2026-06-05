@@ -21,6 +21,10 @@ python -m projectaria_tools.tools.vrs_to_mp4.vrs_to_mp4 --vrs Test_4.vrs --outpu
 
 
 Streaming:
-aria_gen2 streaming start --profile profile8 -> start streaming with profile 8
+aria_gen2 streaming start --profile profile10 -> start streaming with profile 8
 aria_streaming_viewer --real-time --interpolate --rerun-memory-limit 4GB -> open streaming viewer "rerun"
 aria_gen2 streaming stop -> stop the streaming
+
+
+ssh:
+ssh uni-pc

@@ -2,11 +2,11 @@
 
 ## 1. System-Architektur & Infrastruktur
 
-Um eine reproduzierbare, plattformunabhängige und isolierte Entwicklungsumgebung zu gewährleisten und Konflikte mit dem globalen macOS-System zu vermeiden, wurde eine dedizierte Python-Infrastruktur aufgesetzt.
+Um eine reproduzierbare, plattformunabhängige und isolierte Entwicklungsumgebung zu gewährleisten und Konflikte mit dem globalen System zu vermeiden, wurde eine dedizierte Python-Infrastruktur aufgesetzt.
 
-* **Virtual Environment (Conda):** Es wurde eine virtuelle Umgebung namens `aria_conda` mittels Anaconda auf einem Apple-Silicon-System eingerichtet. Dies stellt sicher, dass alle hardwarenahen, vorkompilierten C++-Bindings des Meta SDKs exakt mit den Python-Bibliotheken harmonieren.
+* **Virtual Environment (Conda):** Es wurde eine virtuelle Umgebung namens `aria_conda` mittels Anaconda eingerichtet. Dies stellt sicher, dass alle hardwarenahen, vorkompilierten C++-Bindings des Meta SDKs exakt mit den Python-Bibliotheken harmonieren.
 * **Python-Version:** Verwendung von Python 3.10, um maximale Stabilität mit den Deep-Learning-Bibliotheken (PyTorch) und dem Meta-Aria-Ecosystem zu garantieren.
-* **Hardware-Abstraktion:** Die Pipeline nutzt die hardwarebeschleunigte Dekodierung (VideoToolbox HW acceleration) des Mac, fällt bei inkompatiblen Farbformaten jedoch nahtlos auf einen robusten Software-Dekoder (`H.265 SW decoder via xprs`) zurück.
+* **Hardware-Abstraktion:** Die Pipeline nutzt auf Linux-Infrastrukturen die Nvidia CUDA-Beschleunigung für das parallele Deep-Learning-Training. Die lokale Vorverarbeitung unterstützt zudem hardwarebeschleunigte Dekodierung, fällt bei Bedarf jedoch nahtlos auf einen robusten Software-Dekoder (`H.265 SW decoder via xprs`) zurück.
 
 ---
 
@@ -53,7 +53,7 @@ Ein wichtiger architektonischer Meilenstein ist die Entscheidung gegen das physi
   2. **Intentions-Kopplung:** Der Eye-Gaze-Vektor (Modul F) wird mit den YOLO-Bounding-Boxes verschnitten. Das System bestimmt, welche Objektklasse der Proband fixiert (*Intention Alignment*).
   3. **Geometrische Posenschätzung:** Gleichzeitig isoliert der OpenCV-ArUco-Detektor die Ecken des physisch auf dem Objekt angebrachten 5x5-Markers. Über den PnP-Schätzer (`cv2.solvePnP`) wird die hochpräzise 3D-Raumkoordinate und Orientierung relativ zur Brille berechnet.
   4. **Koordinaten-Transformation:** Die ermittelte 3D-Pose des Objekts wird über die homogenen Transformationsmatrizen (Tisch-Anker aus Modul C) direkt in das Basis-Koordinatensystem des Franka Panda Roboters transformiert.
-* **Warum:** Dieser zweigleisige Ansatz kombiniert die Stärken beider Welten: YOLOv8 liefert eine robuste semantische Klassifizierung über weite Distanzen und weite Blickwinkel. Das 5x5-ArUco-Grid sorgt im Nahbereich und während der physischen Manipulation für eine millimetergenaue, driftfreie 3D-Pose für den Roboter, selbst wenn das Objekt durch die Hand des Nutzers teilweise verdeckt wird.
+* **Warum:** Dieser zweigleisige Ansatz kombiniert die Stärken beider Welten: YOLOv8 liefert eine robuste semantische Klassifizierung über weite Distanzen und weite Blickwinkel. Das 5x5-ArUco-Grid sorgt im Nahbereich und während der physischen Manipulation für eine millimetergenaue, driftfreie 3D-Pose für den Roboter, selbst wenn das Object durch die Hand des Nutzers teilweise verdeckt wird.
 
 ---
 
@@ -70,5 +70,27 @@ Die aus Modul E und G gewonnenen Datenströme werden anhand der verbalen Trigger
 
 ---
 
-### Aktueller Meilenstein-Status
-Die komplette **Eingabe-, Kalibrierungs-, Lokalisierungs- und Post-Processing-Pipeline** für die Hardware der Meta Aria Gen 2 wurde erfolgreich implementiert und lokal auf dem System validiert. Die mathematische Integration der markerbasierten 3D-Objekt-Lokalisierung (ArUco 5x5 Grid) zur eindeutigen Koordinatengenerierung steht als stabiles Modul bereit. Damit ist das technische Fundament für den Start der Probanden-Aufnahmen im Labor vollständig gelegt.
+## 5. Durchführung der Probanden-Studie & Datenerhebung
+
+Zur Evaluierung des Frameworks und zum späteren Training des Multimodal Transformers wurde eine systematische Datenerhebung im Labor durchgeführt. Der Fokus lag hierbei auf der Erzeugung einer variantenreichen, realistischen Interaktionsumgebung bei gleichzeitiger Wahrung einer präzisen mathematischen Kontrollstruktur (Ground Truth).
+
+### 5.1 Kohorte und Datengröße
+* **Probandenanzahl:** $N = 9$ Teilnehmer.
+* **Sequenzen pro Proband:** Jeweils 4 vollständige Videosequenzen, was einer Gesamtzahl von **36 multimodalen Datensätzen** entspricht.
+* **Durchschnittliche Sequenzlänge:** ca. 17–18 Sekunden pro Durchlauf.
+
+### 5.2 Versuchsaufbau und Varianzkontrolle
+Als Interaktionsobjekte wurde künstliches Plastik-Obst (z. B. Äpfel, Bananen, Zitronen) verwendet, da dieses eine ideale semantische Erkennung über die vortrainierten YOLOv8-Klassen bietet. 
+
+Um ein Überfitten des Modells auf feste Raumkoordinaten zu verhindern, wurden folgende Parameter **vor jeder Aufnahme** bewusst variiert:
+* Die physische Position des Tisches relativ zum Roboter sowie der Abstand zwischen dem Tisch-AprilTag und dem Roboter-Basis-Marker wurden modifiziert (Szenariovarianz).
+* Die Anzahl, Auswahl und geometrische Startplatzierung der Objekte auf der Tischoberfläche wurden für jeden Durchlauf randomisiert (stochastische Verteilung).
+
+### 5.3 Chronologischer Ablauf einer Sequenz
+Jeder der 36 aufgezeichneten Durchläufe folgte einer strikten zeitlichen und verhaltensbasierten Phaseneinteilung, um die in Abschnitt 4 definierte Tutor-Logik abzubilden:
+
+1. **Explorations- und Manipulationsphase (ca. 0–15 Sekunden):** Nach dem verbalen Trigger `"start"` interagierte der Proband frei mit den Objekten in seiner unmittelbaren Nähe (Inspizieren, Bewegen, Umlagern). Dies dient dem ML-Modell als negatives Trainingssignal (Hintergrundrauschen ohne Intention bezüglich des Roboters).
+2. **Fixations- und Pointing-Phase (ca. 15–17 Sekunden):** Der Proband fokussierte visuell ein spezifisches Zielobjekt, welches sich in der Übergabezone nahe des Roboters befand, für 2–3 Sekunden und zeigte explizit mit der Hand darauf (Kopplung von *Eye-Gaze* und *Hand-Pose-Pointing*). In diesem Fenster erfolgte der verbale Trigger `"second"`.
+3. **Trajektorien- und Übergabephase (ca. 17–18 Sekunden):** Der Proband leitete die finale Übergbebewegung ein, indem er die Hand mitsamt dem Gelbobjekt geradlinig in Richtung der Roboterbasis ausstreckte (*Hand Position Prediction* unter den Triggern `"third"` und `"done"`).
+
+Die Auswertung dieser 36 extrahierten `.vrs`-Dateien über die Module A bis G liefert nun die zeitlich hochaufgelöste, nanosekundengenaue Feature-Matrix (Blickvektoren, 21 Hand-Skelett-Landmarks, YOLO-Klassen und Sprach-Zeitstempel) für das anschließende KI-Training.

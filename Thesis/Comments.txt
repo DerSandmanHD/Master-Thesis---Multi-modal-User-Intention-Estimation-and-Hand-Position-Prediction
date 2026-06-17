@@ -15,3 +15,8 @@ the handover position and move his hand towards the position, "done " to finish 
 So intent 1 timestamp after "start" and slightly before "first". Intent 2 slightly after 
 "second" and slightly before first "done". Intent 3 slightly after "third"
  and slightly after second "done" 
+
+
+
+ Use gated transformers or any lager transformer, not build from scratch-> use other peoples models and modifie it and try that with clip
+ 

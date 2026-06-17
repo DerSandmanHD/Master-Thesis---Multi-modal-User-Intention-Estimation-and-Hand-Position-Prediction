@@ -1,0 +1,14 @@
+name: aria_conda
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10
+  - apriltag
+  - numpy
+  - opencv
+  - pip
+  - pip:
+    - ultralytics
+    - faster-whisper
+    - projectaria-tools

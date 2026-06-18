@@ -13,84 +13,79 @@ Um eine reproduzierbare, plattformunabhängige und isolierte Entwicklungsumgebun
 ## 2. Implementierte Software-Module & Kernfunktionen
 
 ### Modul A: Daten-Parsing & Sensor-Streaming (`projectaria_tools`)
-* **Funktion:** Zugriff, Aktivierung und Dekapselung des proprietären Meta `.vrs`-Datenformats. Das Skript initialisiert und synchronisiert die hochfrequenten Datenströme der RGB-Weitwinkelkamera, der Eye-Tracking-Infrarotkameras, des 7-Kanal-Mikrofon-Arrays, der On-Device-Hand-Tracking-Schnittstelle sowie der IMU- und VIO-Sensoren.
+* **Funktion:** Zugriff, Aktivierung und Dekapselung des proprietären Meta `.vrs`-Datenformats. Das Skript initialisiert und synchronisiert die hochfrequenten Datenströme der RGB-Weitwinkelkamera (aufgenommen in Profil 10 mit 30 Hz), der Eye-Tracking-Infrarotkameras, des 7-Kanal-Mikrofon-Arrays, der Hand-Tracking-Schnittstelle sowie der IMU- und VIO-Sensoren.
 * **Warum:** Aus Datenschutz- und Performancegründen speichert das Aria-System Sensordaten nicht als Standard-Multimediadatei. Ohne dieses Modul wäre ein zeitsynchroner, framegenauer Zugriff auf die Rohdaten für das spätere KI-Training unmöglich.
 
 ### Modul B: Automatische Kamera-Kalibrierung & Rektifizierung
 * **Funktion:** Automatisches Auslesen der werkseitigen intrinsischen Kameraparameter direkt aus den Metadaten der VRS-Aufnahme. Das Skript extrahiert die Brennweiten (`get_focal_lengths()`) und den Hauptpunkt (`get_principal_point()`), um die Kamera-Matrix $K$ zur Laufzeit mathematisch korrekt aufzubauen.
-* **Warum:** Da es sich um Fisheye-Objektive handelt, weist das Bild starke Verzerrungen auf. Für die spätere 3D-Berechnung im Raum muss die genaue optische Geometrie der Linse bekannt sein. Da das Meta-SDK die Bilder bereits rektifiziert (verzerrungsfrei) übergibt, wird die Linsenverzerrung im Algorithmus präzise genullt.
+* **Warum:** Da es sich um Fisheye-Objektive handelt, weist das Bild starke Verzerrungen auf. Da das Meta-SDK die Bilder bereits rektifiziert (verzerrungsfrei) übergibt, wird die Linsenverzerrung im Algorithmus präzise genullt, was für die exakte 3D-Geometrie zwingend erforderlich ist.
 
-### Modul C: Modernisierte AprilTag-Detektion & 3D-Posenschätzung
-* **Funktion:** Implementierung der modernisierten OpenCV-Struktur (`cv2.aruco.ArucoDetector`) zur Erkennung der AprilTag-Familie `tag36h11`. Über den PnP-Algorithmus (`cv2.solvePnP`) wird die 2D-Bildkoordinate des Tags mit seiner realen physischen Größe ($10\text{ cm}$) und der Kamera-Matrix verknüpft.
-* **Warum:** Das System benötigt einen fixen Bezugspunkt zur realen Welt. Indem ein AprilTag starr an der Basis des Franka Emika Panda Roboters sowie auf der Arbeitsfläche (Tisch) platziert wird, kann die Brille die millimetergenaue 3D-Position ($X, Y, Z$) und Orientierung der Roboterbasis relativ zum Kopf des Probanden berechnen. Dank der SLAM-Raumkartierung (VIO) der Brille muss diese Kalibrierung zur Transformation der globalen Koordinatensysteme nur **einmalig zu Beginn** (statisch) stattfinden und spart im Post-Processing massiv Rechenleistung.
+### Modul C: Visuelle Extraktion & MP4-Videokonvertierung
+* **Funktion:** Extrahieren der kontinuierlichen RGB-Videodaten aus dem VRS-Container und native Umwandlung in das standardisierte `.mp4`-Format. Das Modul berechnet dynamisch die exakte Framerate anhand der Nanosekunden-Zeitstempel der Hardware (z. B. 30 FPS), um das Video in Echtzeitgeschwindigkeit auszugeben. 
+* **Warum:** Dies ermöglicht eine schnelle visuelle Inspektion der aufgezeichneten Daten, das reibungslose Teilen von Sequenzen und dient als Grundlage für die überlagerte Visualisierung der 3D-Koordinaten.
 
-### Modul D: Visuelle Validierung (Reprojektion)
-* **Funktion:** Mathematische Rückprojektion der berechneten 3D-Raumkoordinaten auf die 2D-Bildebene mittels `cv2.projectPoints`. Es zeichnet ein virtuelles 3D-Koordinatenkreuz (Rot=$X$, Grün=$Y$, Blau=$Z$) direkt auf den AprilTag im Videobild.
-* **Warum:** Dies dient als visueller "Ground Truth"-Beweis. Sitzt das Koordinatenkreuz in der Videovorschau stabil und im exakten Winkel auf dem physischen Tag, ist die mathematische Korrektheit der gesamten Geometrie-Pipeline und der homogenen Transformationsmatrizen bewiesen.
-
-### Modul E: Synchronisiertes Audio-Annotation-System (Aria Gen 2 Codec-Handling)
-* **Funktion:** Da die Meta Aria Gen 2 im standardmäßigen Aufnahmeprofil (`profile8`) komprimierte Audio-Datenblöcke verwendet, liest dieses Modul die Datenblöcke sequenziell als `float32`-Arrays über den SDK-Daten-Provider aus dem VRS-Container aus. Es mischt die Kanäle des Mikrofon-Arrays im Interleaved-Layout mathematisch zu einer Mono-Spur zusammen, normalisiert die Amplituden auf den Bereich $[-1, 1]$ und exportiert ein unkomprimiertes 16-Bit-PCM-WAV-Signal mit einer Ziel-Abtastrate von $16\text{ kHz}$.
-* Dieses Signal wird an ein lokales **Faster-Whisper-Modell** übergeben. Das Skript scannt die Spur nach den vom Tutor vorgegebenen Zustands-Triggern (*"Start"*, *"Second"*, *"Third"*, *"Done"*). Über den SDK-Aufruf `get_first_time_ns` wird der exakte Hardware-Startzeitpunkt des Mikrofons im Gerätesystem (`TimeDomain.DEVICE_TIME`) abgegriffen und mit den relativen Wort-Zeitstempeln von Whisper verrechnet.
-* **Warum:** Für das überwachte Lernen (Supervised Learning) des Multimodal Transformers wird ein gelabelter Datensatz benötigt. Durch die Verrechnung mit der `DEVICE_TIME` wird eine nanosekundengenaue, automatisierte zeitliche Synchronität zwischen dem gesprochenen Befehl und den physikalischen Augen- und Handbewegungen des Probanden hergestellt, ohne dass Videodateien manuell geschnitten werden müssen.
+### Modul D: Synchronisiertes Audio-Annotation-System (Aria Gen 2 Codec-Handling)
+* **Funktion:** Da die Meta Aria Gen 2 komprimierte Audio-Datenblöcke verwendet, mischt das Modul die channels des Mikrofon-Arrays mathematisch zu einer Mono-Spur zusammen und exportiert ein unkomprimiertes 16-Bit-PCM-WAV-Signal (16 kHz).
+* Dieses Signal wird an ein lokales **Faster-Whisper-Modell** übergeben, welches die Spur nach der exakten sequentiellen Trigger-Abfolge (*"Start"*, *"Second"*, *"Done"*, *"Third"*) scannt. Über den Aufruf `get_first_time_ns` wird der Hardware-Startzeitpunkt (`TimeDomain.DEVICE_TIME`) abgegriffen und mit den relativen Wort-Zeitstempeln von Whisper verrechnet.
+* **Warum:** Für das Supervised Learning wird so eine nanosekundengenaue, automatisierte zeitliche Synchronität zwischen dem gesprochenen Befehl und den physikalischen Augen- und Handbewegungen des Probanden hergestellt.
+* **Architektonischer Ausschluss von Feature-Leckagen:** Die extrahierten Audio-Befehle dienen ausschließlich der automatisierten Offline-Phasensegmentierung (Ersatz für manuelles Frame-Labeling). Die Audiospur wird **not** als Feature in die finale KI-Dateneinspeisung übernommen. Das neuronale Netz lernt rein auf den physikalischen Geometrie- und Bilddaten.
 
 ---
 
-## 3. Struktur der finalen KI-Dateneinspeisung & Feature-Matrix
+## 3. Structure der finalen KI-Dateneinspeisung & Feature-Matrix
 
-Ein wichtiger architektonischer Meilenstein ist die Entscheidung gegen das physische Zerschneiden von Videodateien. Die originalen VRS-Dateien bleiben als kontinuierliche Rohdaten erhalten, während der PyTorch-`DataLoader` die generierte `metadata.json` als virtuelles Schnittbuch nutzt, um über ein "Sliding Window" auf die relevanten Sensorfenster zuzugreifen.
+Ein wichtiger architektonischer Meilenstein ist die Trennung von visueller Kontrolle und mathematischem KI-Training. Die originalen hochfrequenten Sensordaten werden nicht zerschnitten, sondern über Nanosekunden-Zeitstempel in eine Master-Tabelle überführt, über die der PyTorch-`DataLoader` mittels "Sliding Window" iteriert.
 
-### Modul F: Synchronisierte On-Device Tracking-Extraktion (Hand- & Eye-Tracking)
-* **Funktion:** Simultanes Auslesen und zeitliches Resampling der On-Device Machine Perception (MP) Datenströme für das Eyegaze-Tracking und das Hand-Pose-Tracking. Das Modul nutzt die hardwarenahe C++-Schnittstelle `get_index_by_time_ns` in Kombination mit der `TimeQueryOptions.CLOSEST`-Metrik, um für jeden Hand-Tracking-Frame den mathematisch am exaktesten passenden Blickvektor im Nanosekundenbereich zuzuordnen.
+### Modul E: Cloud-optimierte Tracking-Extraktion (MPS)
+* **Funktion:** Anstelle der reinen On-Device-Berechnung werden die Meta Perception Services (MPS) genutzt, um eine hochpräzise Offline-Optimierung (SLAM) über das gesamte Video laufen zu lassen. 
 * **Extraktion der Features:**
-  * **Hand-Pose:** Extraktion von 21 3D-Skelett-Landmarks pro Hand im lokalen *Device-Koordinatensystem*, inklusive der gerätegenerierten Konfidenzwerte sowie der präzisen 3D-Vektoren für das Handgelenk (`wrist`) und die Handfläche (`palm`).
-  * **Eye-Gaze:** Abfrage der Blickrichtungswerte für Rotation (Yaw, Pitch) und die geschätzte Fixationstiefe (Depth) aus dem *Central Pupil Frame (CPF)*.
-* **Warum:** Diese numerischen Features bilden die Eingangsmatrix für den Transformer. Die Blickrichtung dient als multimodaler Prädiktor (Input), während die synchronen 3D-Handgelenkskoordinaten als Ground Truth für die Positionsvorhersage (*Hand Position Prediction*) fungieren.
+  * **Hand-Pose:** Extraktion der geglätteten 3D-Skelett-Landmarks (z. B. `wrist_position`) im Brillen-Koordinatensystem.
+  * **SLAM (Brillenpose):** Hochfrequente Welt-Koordinaten ($tx, ty, tz$ und Quaternionen) der Brille im initialisierten Raum.
+  * **Eye-Gaze:** Abfrage der Blickrichtungswerte aus dem *Central Pupil Frame (CPF)* über die geräteinterne `TimeQueryOptions.CLOSEST`-Metrik.
 
-### Modul G: Hybride 3D-Objekt-Lokalisierung via YOLOv8 & ArUco 5x5 Grid
-* **Funktion:** Integration eines tiefenlernbasierten **YOLOv8-Detektionsmodells** gekoppelt mit einer klassischen **ArUco-Marker-Posenschätzung** im 5x5-Grid (`DICT_5X5_50`). Dieser hybride Ansatz realisiert ein redundantes System aus semantischer Objekterkennung und geometrisch präziser 3D-Referenzierung.
-* **Der mathematische Ablauf (Sensor Fusion & Alignment):**
-  1. **Semantische Erkennung:** YOLOv8 detektiert die Objekte (z. B. Bausteine) im 2D-RGB-Schnittfeld der Brille und liefert eine Bounding-Box mitsamt Objektklasse.
-  2. **Intentions-Kopplung:** Der Eye-Gaze-Vektor (Modul F) wird mit den YOLO-Bounding-Boxes verschnitten. Das System bestimmt, welche Objektklasse der Proband fixiert (*Intention Alignment*).
-  3. **Geometrische Posenschätzung:** Gleichzeitig isoliert der OpenCV-ArUco-Detektor die Ecken des physisch auf dem Objekt angebrachten 5x5-Markers. Über den PnP-Schätzer (`cv2.solvePnP`) wird die hochpräzise 3D-Raumkoordinate und Orientierung relativ zur Brille berechnet.
-  4. **Koordinaten-Transformation:** Die ermittelte 3D-Pose des Objekts wird über die homogenen Transformationsmatrizen (Tisch-Anker aus Modul C) direkt in das Basis-Koordinatensystem des Franka Panda Roboters transformiert.
-* **Warum:** Dieser zweigleisige Ansatz kombiniert die Stärken beider Welten: YOLOv8 liefert eine robuste semantische Klassifizierung über weite Distanzen und weite Blickwinkel. Das 5x5-ArUco-Grid sorgt im Nahbereich und während der physischen Manipulation für eine millimetergenaue, driftfreie 3D-Pose für den Roboter, selbst wenn das Object durch die Hand des Nutzers teilweise verdeckt wird.
+### Modul F: Duale 3D-Lokalisierung (AprilTag & ArUco 4x4 Mix)
+* **Funktion:** Eine zweigleisige geometrische 3D-Posenschätzung (`cv2.aruco.ArucoDetector`), die auf die unterschiedlichen physischen Größen und Typen der Marker im Versuchsaufbau abgestimmt ist.
+* **Der mathematische Ablauf (Sensor Fusion):**
+  1. **Infrastruktur-Tracking (AprilTags 36h11):** Die Marker an der Roboterbasis (100 mm) und auf der Tischoberfläche (80 mm) werden detektiert, um die Tischebene und den globalen Nullpunkt stabil zu definieren.
+  2. **Objekt-Tracking (ArUco 4x4):** Die auf dem künstlichen Obst (z. B. Äpfel, Bananen) angebrachten kleinen 50 mm Marker aus der Familie `DICT_4X4_50` werden parallel detektiert. Der Roboterarm selbst wird simulativ über einen markanten ArUco-Marker im Video-Feed lokalisiert.
+  3. **3D-Pose & Export:** Über den PnP-Schätzer (`cv2.solvePnP`) werden die hochpräzisen 3D-Raumkoordinaten ($X, Y, Z$) relativ zur Brille berechnet. Diese Posen werden zusammen mit dem `timestamp_ns` framegenau in eine strukturierte CSV-Datei exportiert.
+
+### Modul G: Multimodale Datenfusion (Sensor Alignment)
+* **Funktion:** Eine asynchrone Zeitreihen-Zusammenführung (`pandas merge_asof`). Da die RGB/ArUco-Kamera, das Eye-Tracking und das MPS-SLAM mit leicht unterschiedlichen Taktungen laufen, synchronisiert dieses Modul alle Datenströme auf Basis des Aufnahme-Zeitstempels (`timestamp_ns`) mit einer maximalen Toleranz im Millisekundenbereich.
+* **Warum:** Das Ergebnis ist eine fehlerfreie Master-Dataset-Matrix, die pro Zeile (Frame) alle benötigten multimodalen Features für den PyTorch-Transformer enthält.
 
 ---
 
-## 4. Übersicht der Pipeline-Zustände (Tutor-Logik)
+## 4. Übersicht der Pipeline-Zustände (Phasen-Grenzlogik)
 
-Die aus Modul E und G gewonnenen Datenströme werden anhand der verbalen Trigger in vier distinkte Phasen für das KI-Modell unterteilt:
+Die kontinuierlichen Datenströme werden anhand der verbalen Meilensteine zeitlich segmentiert. Die Audio-Trigger definieren exakt die Start- und Endpunkte (Grenzen) der jeweiligen Phase für das spätere Supervised Learning.
 
-| Phase | Verbaler Trigger | Systemzustand / Aktivität | Zielsetzung für das ML-Modell |
-| :--- | :--- | :--- | :--- |
-| **1** | `"start"` | Proband beginnt die Montageaufgabe (Assembly Task) | Stabilisierung der Baseline, Erkennung des Startmusters |
-| **2** | `"second"` | Proband fokussiert das von YOLO detektierte und mit dem ArUco-Marker versehene Zielobjekt | *Intention Alignment*: Verknüpfung von Gaze-Vektor, YOLO-Klasse und Objekt-ID |
-| **3** | `"third"` | Proband greift das Objekt und führt Bewegung aus | *Hand Position Prediction*: Trajektorien-Vorhersage des Handgelenks |
-| **4** | `"done"` | Übergabephase / Interaktion abgeschlossen | Triggerung der ROS/Deoxys-Zielpose; Roboter beendet Greifvorgang |
+| Phase / Segment | Start-Trigger | End-Trigger | Aktivität des Probanden | Intentionsklasse (ML-Target) | Zielsetzung für das ML-Modell |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **1** | `"start"` | `"second"` | Proband manipuliert, inspiziert oder lagert Objekte frei um (Explorationsphase). | **continue** | Stabilisierung der Baseline; Erkennung von Alltagsbewegungen ohne Roboterbezug (Hintergrundrauschen). |
+| **2** | `"second"` | `"done"` | Proband fokussiert visuell ein Zielobjekt nahe des (simulierten) Roboterarms. | **fetch** | *Intention Alignment*: Verknüpfung von Gaze-Vektor und räumlicher Objekt-ID/YOLO-Klasse zur Zielerkennung. |
+| **3** | `"done"` | `"third"` | Proband streckt seine offene Hand in Richtung des Roboters aus (Einleitung der Übergabe). | **handover** | Aktivierung des Übergabe-Zustands + *Hand Position Prediction*: Kontinuierliche Trajektorien-Vorhersage des Handgelenks für die Pfadplanung. |
 
 ---
 
 ## 5. Durchführung der Probanden-Studie & Datenerhebung
 
-Zur Evaluierung des Frameworks und zum späteren Training des Multimodal Transformers wurde eine systematische Datenerhebung im Labor durchgeführt. Der Fokus lag hierbei auf der Erzeugung einer variantenreichen, realistischen Interaktionsumgebung bei gleichzeitiger Wahrung einer präzisen mathematischen Kontrollstruktur (Ground Truth).
+Zur Evaluierung des Frameworks und zum späteren Training des Multimodal Transformers wurde eine systematische Datenerhebung im Labor durchgeführt. Der Fokus lag auf der Erzeugung einer variantenreichen, realistischen Interaktionsumgebung bei gleichzeitiger Wahrung einer präzisen mathematischen Kontrollstruktur (Ground Truth).
 
 ### 5.1 Kohorte und Datengröße
-* **Probandenanzahl:** $N = 9$ Teilnehmer.
-* **Sequenzen pro Proband:** Jeweils 4 vollständige Videosequenzen, was einer Gesamtzahl von **36 multimodalen Datensätzen** entspricht.
-* **Durchschnittliche Sequenzlänge:** ca. 17–18 Sekunden pro Durchlauf.
+* **Probandenanzahl:** $N = 12$ Teilnehmer.
+* **Sequenzen pro Proband:** Jeweils 8 bis 10 vollständige Videosequenzen.
+* **Gesamtdatensatz:** Ca. 96 bis 120 multimodale, synchronisierte Aufnahmesequenzen.
+* **Durchschnittliche Sequenzlänge:** Ca. 25–40 Sekunden pro Durchlauf.
 
 ### 5.2 Versuchsaufbau und Varianzkontrolle
-Als Interaktionsobjekte wurde künstliches Plastik-Obst (z. B. Äpfel, Bananen, Zitronen) verwendet, da dieses eine ideale semantische Erkennung über die vortrainierten YOLOv8-Klassen bietet. 
-
-Um ein Überfitten des Modells auf feste Raumkoordinaten zu verhindern, wurden folgende Parameter **vor jeder Aufnahme** bewusst variiert:
-* Die physische Position des Tisches relativ zum Roboter sowie der Abstand zwischen dem Tisch-AprilTag und dem Roboter-Basis-Marker wurden modifiziert (Szenariovarianz).
-* Die Anzahl, Auswahl und geometrische Startplatzierung der Objekte auf der Tischoberfläche wurden für jeden Durchlauf randomisiert (stochastische Verteilung).
+Als Interaktionsobjekte wurde künstliches Plastik-Obst verwendet. Um ein Überfitten des Modells auf feste Raumkoordinaten zu verhindern, wurden folgende Parameter vor jeder Aufnahme modifiziert:
+* Die physische Position des Tisches relativ zum Roboter sowie der Abstand zwischen dem Tisch-AprilTag und der Roboterbasis.
+* Die Anzahl, Auswahl und geometrische Startplatzierung der ArUco-Objekte auf der Tischoberfläche (stochastische Verteilung).
 
 ### 5.3 Chronologischer Ablauf einer Sequenz
-Jeder der 36 aufgezeichneten Durchläufe folgte einer strikten zeitlichen und verhaltensbasierten Phaseneinteilung, um die in Abschnitt 4 definierte Tutor-Logik abzubilden:
+Jeder Durchlauf folgt einer strikten zeitlichen Abfolge. Die verbalen Befehle des Probanden dienen als exakte Zeitstempel für die Phasen-Segmentierung im Post-Processing:
 
-1. **Explorations- und Manipulationsphase (ca. 0–15 Sekunden):** Nach dem verbalen Trigger `"start"` interagierte der Proband frei mit den Objekten in seiner unmittelbaren Nähe (Inspizieren, Bewegen, Umlagern). Dies dient dem ML-Modell als negatives Trainingssignal (Hintergrundrauschen ohne Intention bezüglich des Roboters).
-2. **Fixations- und Pointing-Phase (ca. 15–17 Sekunden):** Der Proband fokussierte visuell ein spezifisches Zielobjekt, welches sich in der Übergabezone nahe des Roboters befand, für 2–3 Sekunden und zeigte explizit mit der Hand darauf (Kopplung von *Eye-Gaze* und *Hand-Pose-Pointing*). In diesem Fenster erfolgte der verbale Trigger `"second"`.
-3. **Trajektorien- und Übergabephase (ca. 17–18 Sekunden):** Der Proband leitete die finale Übergbebewegung ein, indem er die Hand mitsamt dem Gelbobjekt geradlinig in Richtung der Roboterbasis ausstreckte (*Hand Position Prediction* unter den Triggern `"third"` und `"done"`).
-
-Die Auswertung dieser 36 extrahierten `.vrs`-Dateien über die Module A bis G liefert nun die zeitlich hochaufgelöste, nanosekundengenaue Feature-Matrix (Blickvektoren, 21 Hand-Skelett-Landmarks, YOLO-Klassen und Sprach-Zeitstempel) für das anschließende KI-Training.
+1. **Explorations- und Manipulationsphase (ca. 10–20 Sekunden):** Der Trigger `"start"` öffnet die Sequenz. Der Proband spielt frei mit den Gegenständen (Umlagern, Sortieren). Das Zeitfenster von `"start"` bis `"second"` liefert die Trainingsdaten für die Klasse `continue`.
+2. **Fixations- und Pointing-Phase (ca. 2–4 Sekunden):** Nach dem Trigger `"second"` fokussiert der Proband visuell ein spezifisches Zielobjekt nahe des Roboterarms. Das Zeitfenster von `"second"` bis `"done"` generiert die Trainingsdaten für die Klasse `fetch` (Ziel-Fokussierung / Fetching).
+3. **Trajektorien- und Übergabephase (ca. 5–10 Sekunden):** Mit dem Trigger `"done"` leitet der Proband die physische Bewegung ein und streckt seine offene Hand flach in Richtung des Roboters aus. Das Zeitfenster von `"done"` bis zum finalen Trigger `"third"` liefert die Ground Truth für die Klasse `handover` und dient dem Regressions-Kopf als Berechnungsfenster für die zukünftige Handposition-Prognose. Mit `"third"` wird die Interaktion erfolgreich abgeschlossen und die Aufnahme beendet.

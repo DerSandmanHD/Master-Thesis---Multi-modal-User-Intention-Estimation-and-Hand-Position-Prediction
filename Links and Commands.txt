@@ -28,3 +28,14 @@ aria_gen2 streaming stop -> stop the streaming
 
 ssh:
 ssh uni-pc
+
+TCML Cluster
+
+Basic commands:
+scp -P 443 -r * eker@134.2.17.202:~/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/
+-> copy from current directory to the destination folder 
+
+Sandbox writable machen:
+
+1. srun --partition=test --gres=gpu:1 --time=00:15:00 --pty bash 
+2. SINGULARITY_NV=0 singularity shell --contain --writable sandbox_image

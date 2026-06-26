@@ -1,2 +1,11 @@
 Test_recordings/
 Data_collection
+__pycache__/
+*.pyc
+BackUp_Videos
+*.vrs
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wav

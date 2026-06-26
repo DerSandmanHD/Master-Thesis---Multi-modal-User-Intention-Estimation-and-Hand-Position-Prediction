@@ -22,11 +22,15 @@ Um eine reproduzierbare, plattformunabhängige und isolierte Entwicklungsumgebun
 
 ### Modul C: Visuelle Extraktion & MP4-Videokonvertierung
 * **Funktion:** Extrahieren der kontinuierlichen RGB-Videodaten aus dem VRS-Container und native Umwandlung in das standardisierte `.mp4`-Format. Das Modul berechnet dynamisch die exakte Framerate anhand der Nanosekunden-Zeitstempel der Hardware (z. B. 30 FPS), um das Video in Echtzeitgeschwindigkeit auszugeben. 
+* **Aktualisierung des Batch-Skripts:** Das Skript `Code/vrs_to_mp4_all.py` wurde zu einem robusten CLI-Tool erweitert. Es unterstützt nun frei wählbare Eingabe- und Ausgabeordner (`--input-dir`, `--output-dir`), Dry-Runs (`--dry-run`), begrenzte Testläufe (`--limit`), optionales Überschreiben (`--overwrite`), alternative Konvertierungsbefehle (`--tool`) und eine Fehlerzusammenfassung am Ende. Standardmäßig werden nur fehlende MP4-Dateien erzeugt; vorhandene Exporte bleiben unverändert.
 * **Warum:** Dies ermöglicht eine schnelle visuelle Inspektion der aufgezeichneten Daten, das reibungslose Teilen von Sequenzen und dient als Grundlage für die überlagerte Visualisierung der 3D-Koordinaten.
 
 ### Modul D: Synchronisiertes Audio-Annotation-System (Aria Gen 2 Codec-Handling)
 * **Funktion:** Da die Meta Aria Gen 2 komprimierte Audio-Datenblöcke verwendet, mischt das Modul die channels des Mikrofon-Arrays mathematisch zu einer Mono-Spur zusammen und exportiert ein unkomprimiertes 16-Bit-PCM-WAV-Signal (16 kHz).
-* Dieses Signal wird an ein lokales **Faster-Whisper-Modell** übergeben, welches die Spur nach der exakten sequentiellen Trigger-Abfolge (*"Start"*, *"Second"*, *"Done"*, *"Third"*) scannt. Über den Aufruf `get_first_time_ns` wird der Hardware-Startzeitpunkt (`TimeDomain.DEVICE_TIME`) abgegriffen und mit den relativen Wort-Zeitstempeln von Whisper verrechnet.
+* **Robuste Audio-Vorverarbeitung:** Da sich bei den bisherigen Aufnahmen gezeigt hat, dass die Sprachkommandos teilweise sehr leise aufgenommen wurden, wurde das Skript `Code/speech_recognition_demo.py` erweitert. Die aus dem VRS-Container extrahierte Audiospur wird nun zuerst per RMS-Normalisierung angehoben. Wenn `ffmpeg` verfügbar ist, wird zusätzlich eine Whisper-optimierte Vorverarbeitung angewendet (`highpass`, Kompressor und Loudness-Normalisierung auf ca. -16 LUFS). Dadurch wird die Erkennung leiser kurzer Befehle deutlich stabiler, ohne dass die Rohdaten verändert werden.
+* **Verbesserte Command-Erkennung:** Das normalisierte Signal wird an ein lokales **Faster-Whisper-Modell** übergeben, welches die Spur nach der sequentiellen Trigger-Abfolge (*"Start"*, *"Second"*, *"Done"*, *"Third"*) scannt. Die Erkennung basiert nicht mehr nur auf exakten Worttreffern, sondern nutzt zusätzlich Fuzzy-Matching und Alias-Listen für typische Fehltranskriptionen (z. B. `"star"` für `"start"` oder `"down"` für `"done"`). Die finale Auswahl wird anschließend über die erwartete chronologische Reihenfolge `START -> SECOND -> DONE -> THIRD` stabilisiert.
+* **Debug- und QA-Ausgaben:** Die finale Datei `timestamps_summary.json` bleibt für nachgelagerte Pipelines kompatibel und enthält nur die final ausgewählten Trigger-Zeitpunkte. Zusätzlich erzeugt das Skript nun `timestamps_debug.json`, in der erkannte Kandidaten, Match-Scores und Warnungen wie fehlende Trigger gespeichert werden. Optional können mit `--keep-debug-audio` die normalisierten WAV-Dateien zur manuellen Kontrolle abgelegt werden.
+* Über den Aufruf `get_first_time_ns` wird weiterhin der Hardware-Startzeitpunkt (`TimeDomain.DEVICE_TIME`) abgegriffen und mit den relativen Wort-Zeitstempeln von Whisper verrechnet. Die daraus resultierenden Trigger-Zeitpunkte bleiben somit nanosekundengenau mit den Sensorströmen synchronisiert.
 * **Warum:** Für das Supervised Learning wird so eine nanosekundengenaue, automatisierte zeitliche Synchronität zwischen dem gesprochenen Befehl und den physikalischen Augen- und Handbewegungen des Probanden hergestellt.
 * **Architektonischer Ausschluss von Feature-Leckagen:** Die extrahierten Audio-Befehle dienen ausschließlich der automatisierten Offline-Phasensegmentierung (Ersatz für manuelles Frame-Labeling). Die Audiospur wird **not** als Feature in die finale KI-Dateneinspeisung übernommen. Das neuronale Netz lernt rein auf den physikalischen Geometrie- und Bilddaten.
 
@@ -53,6 +57,15 @@ Ein wichtiger architektonischer Meilenstein ist die Trennung von visueller Kontr
 ### Modul G: Multimodale Datenfusion (Sensor Alignment)
 * **Funktion:** Eine asynchrone Zeitreihen-Zusammenführung (`pandas merge_asof`). Da die RGB/ArUco-Kamera, das Eye-Tracking und das MPS-SLAM mit leicht unterschiedlichen Taktungen laufen, synchronisiert dieses Modul alle Datenströme auf Basis des Aufnahme-Zeitstempels (`timestamp_ns`) mit einer maximalen Toleranz im Millisekundenbereich.
 * **Warum:** Das Ergebnis ist eine fehlerfreie Master-Dataset-Matrix, die pro Zeile (Frame) alle benötigten multimodalen Features für den PyTorch-Transformer enthält.
+
+### Modul H: Dataset-QA und Manifest-Generierung
+* **Funktion:** Zur systematischen Kontrolle des Datensatzes wurde das Skript `Code/dataset_qa.py` eingeführt. Es erstellt aus den aktuell vorhandenen Roh- und Zwischendaten eine Sequenzübersicht in `Data_collection/dataset_manifest.csv` sowie einen aggregierten Bericht in `Data_collection/dataset_qa_report.json`.
+* **Validierte Artefakte pro Sequenz:** Das Skript prüft, ob die jeweilige `.vrs`-Datei, die konvertierte `.mp4`-Datei, der passende MPS-Ordner, `hand_tracking_results.csv`, `closed_loop_trajectory.csv`, optionale ArUco-CSV-Dateien sowie ein Eintrag in `timestamps_summary.json` vorhanden sind.
+* **Backup-Abgleich:** Zusätzlich wird der Backup-Ordner `BackUp_Videos/` mit `Data_collection/Data_vrs/` abgeglichen. Dadurch wird sichtbar, ob Arbeitsordner und Backup dieselben VRS-Aufnahmen enthalten und ob gleichnamige Dateien Größenunterschiede aufweisen.
+* **Trainings-Ausschlusskandidaten:** Sequenzen mit Präfixen wie `Test_*`, `Unknown_*` oder `unknown_*` werden im Manifest als `include_in_training=False` markiert und mit einem Ausschlussgrund versehen. Dadurch können Test- und unklare Aufnahmen im Arbeitsordner bleiben, ohne später versehentlich in das Training einzufließen.
+* **MPS-Fortschrittskontrolle:** Fehlende und unvollständige MPS-Ausgaben werden nun explizit im QA-Report zusammengefasst. Das ist besonders nützlich während der laufenden Verarbeitung mit `aria_mps single -i`.
+* **Label-QA:** Zusätzlich wird kontrolliert, ob die Trigger `START`, `SECOND`, `DONE` und `THIRD` vollständig vorhanden sind und der erwarteten Reihenfolge `START -> SECOND -> DONE -> THIRD` folgen. Daraus werden Phasendauern für `continue`, `fetch` und `handover` berechnet.
+* **Status- und Handlungsempfehlung:** Für jede Sequenz werden ein `status` und eine `next_action` erzeugt, z. B. `fix_timestamps`, `convert_mp4`, `download_or_process_mps`, `run_aruco_extraction` oder `ready_for_master_merge`. Das Skript verändert keine Rohdaten; es dient ausschließlich als Validierungs- und Fortschrittskontrolle.
 
 ---
 
@@ -89,3 +102,58 @@ Jeder Durchlauf folgt einer strikten zeitlichen Abfolge. Die verbalen Befehle de
 1. **Explorations- und Manipulationsphase (ca. 10–20 Sekunden):** Der Trigger `"start"` öffnet die Sequenz. Der Proband spielt frei mit den Gegenständen (Umlagern, Sortieren). Das Zeitfenster von `"start"` bis `"second"` liefert die Trainingsdaten für die Klasse `continue`.
 2. **Fixations- und Pointing-Phase (ca. 2–4 Sekunden):** Nach dem Trigger `"second"` fokussiert der Proband visuell ein spezifisches Zielobjekt nahe des Roboterarms. Das Zeitfenster von `"second"` bis `"done"` generiert die Trainingsdaten für die Klasse `fetch` (Ziel-Fokussierung / Fetching).
 3. **Trajektorien- und Übergabephase (ca. 5–10 Sekunden):** Mit dem Trigger `"done"` leitet der Proband die physische Bewegung ein und streckt seine offene Hand flach in Richtung des Roboters aus. Das Zeitfenster von `"done"` bis zum finalen Trigger `"third"` liefert die Ground Truth für die Klasse `handover` und dient dem Regressions-Kopf als Berechnungsfenster für die zukünftige Handposition-Prognose. Mit `"third"` wird die Interaktion erfolgreich abgeschlossen und die Aufnahme beendet.
+
+---
+
+## 6. Aktueller Verarbeitungsstand und QA-Ergebnis
+
+Nach der Erweiterung der Audio-Annotation wurde die automatische Command-Erkennung erneut auf allen damals vorhandenen VRS-Dateien ausgeführt. Da das lokal gecachte `medium.en`-Modell unvollständig war und der vollständige CPU-Batch damit nicht praktikabel abschloss, wurde der vollständige Batchlauf mit `tiny.en` durchgeführt. Die verbesserte Audio-Normalisierung, das Fuzzy-Matching und die Sequenzlogik wurden dabei verwendet.
+
+Anschließend wurde der neu angelegte Backup-Ordner `BackUp_Videos/` mit dem Arbeitsordner `Data_collection/Data_vrs/` abgeglichen. Dabei wurden 94 fehlende VRS-Dateien in den Arbeitsordner kopiert, ohne bestehende Dateien zu überschreiben. Aktuell enthalten beide Ordner dieselben 136 VRS-Dateinamen.
+
+### 6.1 Erzeugte Artefakte
+* **Backup der vorherigen Whisper-Ausgabe:** `Data_collection/Data_vrs/timestamps_summary.before_audio_fix.json`
+* **Aktualisierte automatische Trigger-Datei:** `Data_collection/Data_vrs/timestamps_summary.json`
+* **Debug-Ausgabe mit Kandidaten und Warnungen:** `Data_collection/Data_vrs/timestamps_debug.json`
+* **Normalisierte Debug-Audios:** `Data_collection/Data_vrs/debug_audio/` (42 WAV-Dateien)
+* **Dataset-Manifest:** `Data_collection/dataset_manifest.csv`
+* **QA-Report:** `Data_collection/dataset_qa_report.json`
+
+### 6.2 Ergebnis des aktuellen QA-Laufs
+
+| Kennzahl | Wert |
+| :--- | ---: |
+| Gesamtzahl erkannter Sequenzen | 136 |
+| Trainingskandidaten (`include_in_training=True`) | 124 |
+| Ausgeschlossene Test-/Unknown-Sequenzen | 12 |
+| Aktuell nutzbar (`valid` oder `valid_with_warnings`) | 21 |
+| Vollständig validiert (`valid`) | 1 |
+| Nutzbar mit Folgearbeit (`valid_with_warnings`) | 20 |
+| Unvollständige Trigger (`partial_timestamps`) | 18 |
+| Fehlender MPS-Ordner | 37 |
+| Fehlendes oder unvollständiges Handtracking | 59 |
+| Fehlende SLAM-Trajektorie | 1 |
+| Backup/Data_vrs Namensabgleich | 136 / 136, keine fehlenden Dateien |
+| Vorhandene MP4-Dateien | 31 |
+| Fehlende MP4-Dateien laut Dry-Run | 105 |
+
+### 6.3 Nächste automatisch abgeleitete Arbeitsschritte
+
+| `next_action` | Anzahl Sequenzen | Bedeutung |
+| :--- | ---: | :--- |
+| `download_or_process_mps` | 97 | MPS-Daten, Handtracking oder SLAM sind noch fehlend oder unvollständig. |
+| `fix_timestamps` | 18 | Fehlende Trigger müssen manuell oder halbautomatisch korrigiert werden. |
+| `run_aruco_extraction` | 14 | Labels und MPS sind grundsätzlich vorhanden; ArUco-Posen fehlen noch. |
+| `convert_mp4` | 6 | Sequenzen sind grundsätzlich nutzbar, aber MP4-Exports fehlen noch. |
+| `ready_for_master_merge` | 1 | Sequenz ist für den nächsten Merge-Schritt vollständig vorbereitet. |
+
+Ein wichtiger Fortschritt gegenüber dem vorherigen Stand ist, dass nach der verbesserten Audio-Erkennung keine Sequenz mehr wegen `bad_timestamp_order` klassifiziert wird. Durch den Backup-Abgleich ist der VRS-Arbeitsbestand nun vollständig. Der aktuelle Hauptengpass liegt dadurch nicht mehr beim Vorhandensein der Rohdaten, sondern bei der noch laufenden MPS-Verarbeitung sowie bei 18 Sequenzen mit unvollständigen Triggern (`partial_timestamps`), insbesondere fehlendem `DONE` oder `THIRD`.
+
+### 6.4 Durchgeführte Skript-Tests
+* `python3 -m py_compile Code/dataset_qa.py Code/vrs_to_mp4_all.py`
+* `python3 Code/dataset_qa.py`
+* `python3 Code/dataset_qa.py --help`
+* `python3 Code/vrs_to_mp4_all.py --help`
+* `python3 Code/vrs_to_mp4_all.py --dry-run --limit 5`
+
+Der Dry-Run der MP4-Konvertierung erkannte 136 VRS-Dateien, 31 bereits vorhandene MP4-Dateien und 105 noch fehlende MP4-Exporte. Es wurde dabei keine echte Konvertierung gestartet.

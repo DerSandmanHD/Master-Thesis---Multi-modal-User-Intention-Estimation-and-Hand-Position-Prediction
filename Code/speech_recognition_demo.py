@@ -189,6 +189,18 @@ def parse_args():
         help="Faster-Whisper model size. For English trigger words, medium.en is a good default.",
     )
     parser.add_argument(
+        "--device",
+        type=str,
+        default="cpu",
+        help="Faster-Whisper device. Use 'cuda' on a GPU node, otherwise 'cpu'. Default: cpu.",
+    )
+    parser.add_argument(
+        "--compute-type",
+        type=str,
+        default="int8",
+        help="Faster-Whisper compute type. Typical values: int8 for CPU, float16 for CUDA. Default: int8.",
+    )
+    parser.add_argument(
         "--vad",
         action="store_true",
         help="Enable VAD. Leave disabled for very quiet short commands unless testing proves it helps.",
@@ -210,8 +222,11 @@ def main():
         return
 
     # 2. Whisper Model laden
-    print(f"Lade Whisper Model ({args.model_size})...")
-    model = WhisperModel(args.model_size, device="cpu", compute_type="int8")
+    print(
+        f"Lade Whisper Model ({args.model_size}, "
+        f"device={args.device}, compute_type={args.compute_type})..."
+    )
+    model = WhisperModel(args.model_size, device=args.device, compute_type=args.compute_type)
     
     # Hier speichern wir alle Ergebnisse
     summary_data = {}

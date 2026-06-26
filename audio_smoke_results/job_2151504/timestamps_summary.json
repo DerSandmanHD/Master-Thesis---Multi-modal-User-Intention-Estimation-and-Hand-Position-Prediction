@@ -1,0 +1,262 @@
+{
+    "Atilla_1_20260616_184923.vrs": {
+        "START": {
+            "timestamp_ns": 3876472787555,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3901292787555,
+            "relative_seconds": 24.82,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3906472787555,
+            "relative_seconds": 30.0,
+            "raw_word": "done",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3909292787555,
+            "relative_seconds": 32.82,
+            "raw_word": "third",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_2_20260616_185042.vrs": {
+        "START": {
+            "timestamp_ns": 3955856787611,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3975856787611,
+            "relative_seconds": 20.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3979856787611,
+            "relative_seconds": 24.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3982156787611,
+            "relative_seconds": 26.3,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_3_20260616_185212.vrs": {
+        "START": {
+            "timestamp_ns": 4045624787431,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4063444787431,
+            "relative_seconds": 17.82,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4068364787431,
+            "relative_seconds": 22.74,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4070444787431,
+            "relative_seconds": 24.82,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_4_20260616_185327.vrs": {
+        "START": {
+            "timestamp_ns": 4120560787341,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4136440787341,
+            "relative_seconds": 15.88,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4141260787341,
+            "relative_seconds": 20.7,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4144300787341,
+            "relative_seconds": 23.74,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_5_20260616_185449.vrs": {
+        "START": {
+            "timestamp_ns": 4202096787563,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4224016787563,
+            "relative_seconds": 21.92,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4228376787563,
+            "relative_seconds": 26.28,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4232096787563,
+            "relative_seconds": 30.0,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_6_20260616_185613.vrs": {
+        "START": {
+            "timestamp_ns": 4286744787645,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4308484787645,
+            "relative_seconds": 21.74,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4313624787645,
+            "relative_seconds": 26.88,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4316744787645,
+            "relative_seconds": 30.0,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_7_20260616_185714.vrs": {
+        "START": {
+            "timestamp_ns": 4347264787431,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4368204787431,
+            "relative_seconds": 20.94,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4372804787431,
+            "relative_seconds": 25.54,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4375924787431,
+            "relative_seconds": 28.66,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_8_20260616_185812.vrs": {
+        "START": {
+            "timestamp_ns": 4407848787437,
+            "relative_seconds": 2.24,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4427148787437,
+            "relative_seconds": 21.54,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4432448787437,
+            "relative_seconds": 26.84,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4435608787437,
+            "relative_seconds": 30.0,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_10_20260616_142950.vrs": {
+        "START": {
+            "timestamp_ns": 1041698288677,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1065378288677,
+            "relative_seconds": 23.68,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1070358288677,
+            "relative_seconds": 28.66,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1073698288677,
+            "relative_seconds": 32.0,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_1_20260604_154611.vrs": {
+        "START": {
+            "timestamp_ns": 2833476805099,
+            "relative_seconds": 3.0,
+            "raw_word": "start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2858996805099,
+            "relative_seconds": 28.52,
+            "raw_word": "Second",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2861416805099,
+            "relative_seconds": 30.94,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2866556805099,
+            "relative_seconds": 36.08,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    }
+}

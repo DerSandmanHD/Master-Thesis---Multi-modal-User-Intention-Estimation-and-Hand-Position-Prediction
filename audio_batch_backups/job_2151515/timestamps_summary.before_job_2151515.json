@@ -1,0 +1,620 @@
+{
+    "Berat_1_20260604_154611.vrs": {
+        "START": {
+            "timestamp_ns": 2833796805099,
+            "relative_seconds": 3.32
+        },
+        "SECOND": {
+            "timestamp_ns": 2870116805099,
+            "relative_seconds": 39.64
+        },
+        "DONE": {
+            "timestamp_ns": 2863156805099,
+            "relative_seconds": 32.68
+        },
+        "THIRD": {
+            "timestamp_ns": 2867416805099,
+            "relative_seconds": 36.94
+        }
+    },
+    "Berat_2_20260604_154801.vrs": {
+        "START": {
+            "timestamp_ns": 2941084804703,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2965044804703,
+            "relative_seconds": 23.96
+        }
+    },
+    "Berat_3_20260604_154928.vrs": {},
+    "Berat_4_20260604_155100.vrs": {
+        "START": {
+            "timestamp_ns": 3119728804987,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3155408804987,
+            "relative_seconds": 35.68
+        },
+        "DONE": {
+            "timestamp_ns": 3151468804987,
+            "relative_seconds": 31.74
+        },
+        "THIRD": {
+            "timestamp_ns": 3155108804987,
+            "relative_seconds": 35.38
+        }
+    },
+    "Berat_5_20260604_155234.vrs": {
+        "SECOND": {
+            "timestamp_ns": 3259156804931,
+            "relative_seconds": 45.56
+        },
+        "DONE": {
+            "timestamp_ns": 3260156804931,
+            "relative_seconds": 46.56
+        },
+        "THIRD": {
+            "timestamp_ns": 3258776804931,
+            "relative_seconds": 45.18
+        }
+    },
+    "Edu_1_20260604_170154.vrs": {
+        "START": {
+            "timestamp_ns": 7373970748593,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 7409610748593,
+            "relative_seconds": 35.64
+        }
+    },
+    "Edu_2_20260604_170420.vrs": {
+        "SECOND": {
+            "timestamp_ns": 7536978748489,
+            "relative_seconds": 17.74
+        }
+    },
+    "Edu_3_20260604_170622.vrs": {
+        "START": {
+            "timestamp_ns": 7642170748357,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 7661150748357,
+            "relative_seconds": 18.98
+        },
+        "THIRD": {
+            "timestamp_ns": 7666570748357,
+            "relative_seconds": 24.4
+        }
+    },
+    "Edu_4_20260604_170837.vrs": {
+        "START": {
+            "timestamp_ns": 7777074748413,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 7801314748413,
+            "relative_seconds": 24.24
+        }
+    },
+    "Edu_5_20260604_170944.vrs": {
+        "START": {
+            "timestamp_ns": 7845758748411,
+            "relative_seconds": 2.1
+        },
+        "SECOND": {
+            "timestamp_ns": 7876598748411,
+            "relative_seconds": 32.94
+        },
+        "THIRD": {
+            "timestamp_ns": 7872078748411,
+            "relative_seconds": 28.42
+        }
+    },
+    "Ermal_1_20260604_151723.vrs": {
+        "START": {
+            "timestamp_ns": 1104420231543,
+            "relative_seconds": 1.78
+        },
+        "SECOND": {
+            "timestamp_ns": 1124220231543,
+            "relative_seconds": 21.58
+        },
+        "DONE": {
+            "timestamp_ns": 1128280231543,
+            "relative_seconds": 25.64
+        }
+    },
+    "Ermal_2_20260604_151912.vrs": {
+        "START": {
+            "timestamp_ns": 1213632231363,
+            "relative_seconds": 1.96
+        },
+        "SECOND": {
+            "timestamp_ns": 1242232231363,
+            "relative_seconds": 30.56
+        },
+        "DONE": {
+            "timestamp_ns": 1246812231363,
+            "relative_seconds": 35.14
+        }
+    },
+    "Ermal_3_20260604_152032.vrs": {
+        "START": {
+            "timestamp_ns": 1294120231385,
+            "relative_seconds": 2.48
+        },
+        "SECOND": {
+            "timestamp_ns": 1311640231385,
+            "relative_seconds": 20.0
+        },
+        "DONE": {
+            "timestamp_ns": 1317020231385,
+            "relative_seconds": 25.38
+        }
+    },
+    "Ermal_4_20260604_152214.vrs": {
+        "START": {
+            "timestamp_ns": 1394120231585,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1415600231585,
+            "relative_seconds": 21.48
+        },
+        "DONE": {
+            "timestamp_ns": 1420180231585,
+            "relative_seconds": 26.06
+        }
+    },
+    "Felix_1_20260604_171928.vrs": {},
+    "Felix_1_20260604_171946.vrs": {
+        "START": {
+            "timestamp_ns": 8445609637987,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 8479929637987,
+            "relative_seconds": 34.32
+        },
+        "DONE": {
+            "timestamp_ns": 8472189637987,
+            "relative_seconds": 26.58
+        },
+        "THIRD": {
+            "timestamp_ns": 8476309637987,
+            "relative_seconds": 30.7
+        }
+    },
+    "Felix_2_20260604_172102.vrs": {
+        "START": {
+            "timestamp_ns": 8522761638121,
+            "relative_seconds": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 8542301638121,
+            "relative_seconds": 20.54
+        },
+        "DONE": {
+            "timestamp_ns": 8547701638121,
+            "relative_seconds": 25.94
+        },
+        "THIRD": {
+            "timestamp_ns": 8554341638121,
+            "relative_seconds": 32.58
+        }
+    },
+    "Felix_3_20260604_172212.vrs": {
+        "START": {
+            "timestamp_ns": 8591301638121,
+            "relative_seconds": 0.0
+        },
+        "DONE": {
+            "timestamp_ns": 8618201638121,
+            "relative_seconds": 26.9
+        }
+    },
+    "Felix_4_20260604_172358.vrs": {
+        "START": {
+            "timestamp_ns": 8699049638309,
+            "relative_seconds": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 8721029638309,
+            "relative_seconds": 22.98
+        },
+        "DONE": {
+            "timestamp_ns": 8727409638309,
+            "relative_seconds": 29.36
+        }
+    },
+    "Jan_1_20260604_161550.vrs": {
+        "START": {
+            "timestamp_ns": 4643498003413,
+            "relative_seconds": 34.14
+        },
+        "SECOND": {
+            "timestamp_ns": 4629558003413,
+            "relative_seconds": 20.2
+        },
+        "DONE": {
+            "timestamp_ns": 4634858003413,
+            "relative_seconds": 25.5
+        },
+        "THIRD": {
+            "timestamp_ns": 4638458003413,
+            "relative_seconds": 29.1
+        }
+    },
+    "Jan_2_20260604_161704.vrs": {
+        "DONE": {
+            "timestamp_ns": 4710418003351,
+            "relative_seconds": 26.74
+        },
+        "START": {
+            "timestamp_ns": 4684798003351,
+            "relative_seconds": 1.12
+        },
+        "SECOND": {
+            "timestamp_ns": 4706218003351,
+            "relative_seconds": 22.54
+        },
+        "THIRD": {
+            "timestamp_ns": 4711118003351,
+            "relative_seconds": 27.44
+        }
+    },
+    "Jan_3_20260604_161835.vrs": {
+        "START": {
+            "timestamp_ns": 4805790003197,
+            "relative_seconds": 31.24
+        },
+        "SECOND": {
+            "timestamp_ns": 4797510003197,
+            "relative_seconds": 22.96
+        },
+        "DONE": {
+            "timestamp_ns": 4801910003197,
+            "relative_seconds": 27.36
+        }
+    },
+    "Jan_4_20260604_162000.vrs": {
+        "START": {
+            "timestamp_ns": 4861286003565,
+            "relative_seconds": 1.74
+        },
+        "SECOND": {
+            "timestamp_ns": 4882966003565,
+            "relative_seconds": 23.42
+        },
+        "THIRD": {
+            "timestamp_ns": 4886566003565,
+            "relative_seconds": 27.02
+        }
+    },
+    "Jan_5_20260604_162111.vrs": {
+        "START": {
+            "timestamp_ns": 4930526003397,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4958006003397,
+            "relative_seconds": 27.48
+        },
+        "DONE": {
+            "timestamp_ns": 4959406003397,
+            "relative_seconds": 28.88
+        },
+        "THIRD": {
+            "timestamp_ns": 4964446003397,
+            "relative_seconds": 33.92
+        }
+    },
+    "Leys_1_20260604_163147.vrs": {
+        "START": {
+            "timestamp_ns": 5580498525883,
+            "relative_seconds": 14.02
+        },
+        "SECOND": {
+            "timestamp_ns": 5581898525883,
+            "relative_seconds": 15.42
+        },
+        "DONE": {
+            "timestamp_ns": 5587738525883,
+            "relative_seconds": 21.26
+        },
+        "THIRD": {
+            "timestamp_ns": 5589718525883,
+            "relative_seconds": 23.24
+        }
+    },
+    "Leys_2_20260604_163417.vrs": {
+        "START": {
+            "timestamp_ns": 5716638525791,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5731358525791,
+            "relative_seconds": 14.72
+        },
+        "DONE": {
+            "timestamp_ns": 5738298525791,
+            "relative_seconds": 21.66
+        },
+        "THIRD": {
+            "timestamp_ns": 5736518525791,
+            "relative_seconds": 19.88
+        }
+    },
+    "Leys_3_20260604_163535.vrs": {
+        "START": {
+            "timestamp_ns": 5795614526041,
+            "relative_seconds": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5827754526041,
+            "relative_seconds": 33.14
+        },
+        "DONE": {
+            "timestamp_ns": 5820154526041,
+            "relative_seconds": 25.54
+        },
+        "THIRD": {
+            "timestamp_ns": 5821534526041,
+            "relative_seconds": 26.92
+        }
+    },
+    "Leys_4_20260604_163704.vrs": {
+        "START": {
+            "timestamp_ns": 5884142525757,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5905522525757,
+            "relative_seconds": 21.38
+        },
+        "DONE": {
+            "timestamp_ns": 5910082525757,
+            "relative_seconds": 25.94
+        },
+        "THIRD": {
+            "timestamp_ns": 5910422525757,
+            "relative_seconds": 26.28
+        }
+    },
+    "Leys_5_20260604_163854.vrs": {
+        "START": {
+            "timestamp_ns": 6012446525861,
+            "relative_seconds": 18.36
+        },
+        "SECOND": {
+            "timestamp_ns": 6023906525861,
+            "relative_seconds": 29.82
+        },
+        "DONE": {
+            "timestamp_ns": 6018126525861,
+            "relative_seconds": 24.04
+        },
+        "THIRD": {
+            "timestamp_ns": 6021366525861,
+            "relative_seconds": 27.28
+        }
+    },
+    "Miro_1_20260604_153303.vrs": {
+        "START": {
+            "timestamp_ns": 2045983574391,
+            "relative_seconds": 3.48
+        },
+        "SECOND": {
+            "timestamp_ns": 2076523574391,
+            "relative_seconds": 34.02
+        },
+        "DONE": {
+            "timestamp_ns": 2065823574391,
+            "relative_seconds": 23.32
+        },
+        "THIRD": {
+            "timestamp_ns": 2076523574391,
+            "relative_seconds": 34.02
+        }
+    },
+    "Miro_2_20260604_153451.vrs": {
+        "START": {
+            "timestamp_ns": 2153483574363,
+            "relative_seconds": 3.26
+        },
+        "SECOND": {
+            "timestamp_ns": 2162183574363,
+            "relative_seconds": 11.96
+        },
+        "DONE": {
+            "timestamp_ns": 2170023574363,
+            "relative_seconds": 19.8
+        },
+        "THIRD": {
+            "timestamp_ns": 2173083574363,
+            "relative_seconds": 22.86
+        }
+    },
+    "Miro_3_20260604_153609.vrs": {
+        "START": {
+            "timestamp_ns": 2231095574141,
+            "relative_seconds": 2.4
+        },
+        "SECOND": {
+            "timestamp_ns": 2241155574141,
+            "relative_seconds": 12.46
+        },
+        "DONE": {
+            "timestamp_ns": 2246915574141,
+            "relative_seconds": 18.22
+        },
+        "THIRD": {
+            "timestamp_ns": 2248315574141,
+            "relative_seconds": 19.62
+        }
+    },
+    "Miro_4_20260604_153734.vrs": {
+        "START": {
+            "timestamp_ns": 2315075574169,
+            "relative_seconds": 1.9
+        },
+        "SECOND": {
+            "timestamp_ns": 2335695574169,
+            "relative_seconds": 22.52
+        },
+        "DONE": {
+            "timestamp_ns": 2342095574169,
+            "relative_seconds": 28.92
+        },
+        "THIRD": {
+            "timestamp_ns": 2344935574169,
+            "relative_seconds": 31.76
+        }
+    },
+    "Suthan_1_20260604_164834.vrs": {
+        "START": {
+            "timestamp_ns": 6578179837057,
+            "relative_seconds": 4.18
+        },
+        "SECOND": {
+            "timestamp_ns": 6604559837057,
+            "relative_seconds": 30.56
+        }
+    },
+    "Suthan_2_20260604_165031.vrs": {
+        "START": {
+            "timestamp_ns": 6692703836711,
+            "relative_seconds": 2.12
+        },
+        "SECOND": {
+            "timestamp_ns": 6716323836711,
+            "relative_seconds": 25.74
+        },
+        "DONE": {
+            "timestamp_ns": 6718863836711,
+            "relative_seconds": 28.28
+        },
+        "THIRD": {
+            "timestamp_ns": 6722103836711,
+            "relative_seconds": 31.52
+        }
+    },
+    "Suthan_3_20260604_165324.vrs": {
+        "START": {
+            "timestamp_ns": 6863707836919,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 6890267836919,
+            "relative_seconds": 26.56
+        },
+        "DONE": {
+            "timestamp_ns": 6893247836919,
+            "relative_seconds": 29.54
+        }
+    },
+    "Suthan_4_20260604_165434.vrs": {
+        "START": {
+            "timestamp_ns": 6933607836897,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 6957747836897,
+            "relative_seconds": 24.14
+        },
+        "DONE": {
+            "timestamp_ns": 6960547836897,
+            "relative_seconds": 26.94
+        }
+    },
+    "Urim_1_20260604_160102.vrs": {
+        "START": {
+            "timestamp_ns": 3721198152919,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3747438152919,
+            "relative_seconds": 26.24
+        },
+        "DONE": {
+            "timestamp_ns": 3752958152919,
+            "relative_seconds": 31.76
+        }
+    },
+    "Urim_2_20260604_160234.vrs": {
+        "START": {
+            "timestamp_ns": 3815038152919,
+            "relative_seconds": 1.52
+        },
+        "SECOND": {
+            "timestamp_ns": 3825138152919,
+            "relative_seconds": 11.62
+        },
+        "DONE": {
+            "timestamp_ns": 3830658152919,
+            "relative_seconds": 17.14
+        },
+        "THIRD": {
+            "timestamp_ns": 3834038152919,
+            "relative_seconds": 20.52
+        }
+    },
+    "Urim_3_20260604_160345.vrs": {
+        "START": {
+            "timestamp_ns": 3884682152793,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3904922152793,
+            "relative_seconds": 20.24
+        },
+        "DONE": {
+            "timestamp_ns": 3911202152793,
+            "relative_seconds": 26.52
+        },
+        "THIRD": {
+            "timestamp_ns": 3914302152793,
+            "relative_seconds": 29.62
+        }
+    },
+    "Urim_4_20260604_160502.vrs": {
+        "START": {
+            "timestamp_ns": 3961550152495,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3983550152495,
+            "relative_seconds": 22.0
+        },
+        "DONE": {
+            "timestamp_ns": 3989530152495,
+            "relative_seconds": 27.98
+        },
+        "THIRD": {
+            "timestamp_ns": 3993010152495,
+            "relative_seconds": 31.46
+        }
+    },
+    "Urim_5_20260604_160634.vrs": {
+        "START": {
+            "timestamp_ns": 4053646152591,
+            "relative_seconds": 0.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4090146152591,
+            "relative_seconds": 36.5
+        },
+        "DONE": {
+            "timestamp_ns": 4083626152591,
+            "relative_seconds": 29.98
+        },
+        "THIRD": {
+            "timestamp_ns": 4086906152591,
+            "relative_seconds": 33.26
+        }
+    }
+}

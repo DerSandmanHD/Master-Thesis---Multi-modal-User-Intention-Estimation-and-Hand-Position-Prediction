@@ -1,0 +1,2912 @@
+{
+    "Atilla_1_20260616_184923.vrs": {
+        "START": {
+            "timestamp_ns": 3876472787555,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3901292787555,
+            "relative_seconds": 24.82,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3906472787555,
+            "relative_seconds": 30.0,
+            "raw_word": "done",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3909292787555,
+            "relative_seconds": 32.82,
+            "raw_word": "third",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_2_20260616_185042.vrs": {
+        "START": {
+            "timestamp_ns": 3955856787611,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3975856787611,
+            "relative_seconds": 20.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3979856787611,
+            "relative_seconds": 24.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3982156787611,
+            "relative_seconds": 26.3,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_3_20260616_185212.vrs": {
+        "START": {
+            "timestamp_ns": 4045624787431,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4063444787431,
+            "relative_seconds": 17.82,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4068364787431,
+            "relative_seconds": 22.74,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4070444787431,
+            "relative_seconds": 24.82,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_4_20260616_185327.vrs": {
+        "START": {
+            "timestamp_ns": 4120560787341,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4136440787341,
+            "relative_seconds": 15.88,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4141260787341,
+            "relative_seconds": 20.7,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4144300787341,
+            "relative_seconds": 23.74,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_5_20260616_185449.vrs": {
+        "START": {
+            "timestamp_ns": 4202096787563,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4224016787563,
+            "relative_seconds": 21.92,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4228376787563,
+            "relative_seconds": 26.28,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4232096787563,
+            "relative_seconds": 30.0,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_6_20260616_185613.vrs": {
+        "START": {
+            "timestamp_ns": 4286744787645,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4308484787645,
+            "relative_seconds": 21.74,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4313624787645,
+            "relative_seconds": 26.88,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4316744787645,
+            "relative_seconds": 30.0,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_7_20260616_185714.vrs": {
+        "START": {
+            "timestamp_ns": 4347264787431,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4368204787431,
+            "relative_seconds": 20.94,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4372804787431,
+            "relative_seconds": 25.54,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4375924787431,
+            "relative_seconds": 28.66,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Atilla_8_20260616_185812.vrs": {
+        "START": {
+            "timestamp_ns": 4407848787437,
+            "relative_seconds": 2.24,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4427148787437,
+            "relative_seconds": 21.54,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4432448787437,
+            "relative_seconds": 26.84,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4435608787437,
+            "relative_seconds": 30.0,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_10_20260616_142950.vrs": {
+        "START": {
+            "timestamp_ns": 1041698288677,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1065378288677,
+            "relative_seconds": 23.68,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1070358288677,
+            "relative_seconds": 28.66,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1073698288677,
+            "relative_seconds": 32.0,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_1_20260604_154611.vrs": {
+        "START": {
+            "timestamp_ns": 2833476805099,
+            "relative_seconds": 3.0,
+            "raw_word": "start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2858996805099,
+            "relative_seconds": 28.52,
+            "raw_word": "Second",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2861416805099,
+            "relative_seconds": 30.94,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2866556805099,
+            "relative_seconds": 36.08,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_2_20260604_154801.vrs": {
+        "START": {
+            "timestamp_ns": 2941084804703,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2964604804703,
+            "relative_seconds": 23.52,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2969404804703,
+            "relative_seconds": 28.32,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2972404804703,
+            "relative_seconds": 31.32,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_3_20260604_154928.vrs": {
+        "START": {
+            "timestamp_ns": 3028092804925,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3060112804925,
+            "relative_seconds": 32.02,
+            "raw_word": "Third",
+            "match_score": 1.0
+        }
+    },
+    "Berat_4_20260604_155100.vrs": {
+        "START": {
+            "timestamp_ns": 3119728804987,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3147448804987,
+            "relative_seconds": 27.72,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3149708804987,
+            "relative_seconds": 29.98,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3154328804987,
+            "relative_seconds": 34.6,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_5_20260604_155234.vrs": {
+        "START": {
+            "timestamp_ns": 3213596804931,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3253716804931,
+            "relative_seconds": 40.12,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3255116804931,
+            "relative_seconds": 41.52,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3257896804931,
+            "relative_seconds": 44.3,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_6_20260616_142129.vrs": {
+        "START": {
+            "timestamp_ns": 540666288873,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 562246288873,
+            "relative_seconds": 21.58,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 567606288873,
+            "relative_seconds": 26.94,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_7_20260616_142358.vrs": {
+        "START": {
+            "timestamp_ns": 689466288921,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 711406288921,
+            "relative_seconds": 21.94,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 715466288921,
+            "relative_seconds": 26.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 716246288921,
+            "relative_seconds": 26.78,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_8_20260616_142539.vrs": {
+        "START": {
+            "timestamp_ns": 790138288775,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 816998288775,
+            "relative_seconds": 26.86,
+            "raw_word": "Second",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 819918288775,
+            "relative_seconds": 29.78,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 824738288775,
+            "relative_seconds": 34.6,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Berat_9_20260616_142847.vrs": {
+        "START": {
+            "timestamp_ns": 979678288851,
+            "relative_seconds": 1.86,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1002678288851,
+            "relative_seconds": 24.86,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1006878288851,
+            "relative_seconds": 29.06,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1009738288851,
+            "relative_seconds": 31.92,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Edu_10_20260616_150412.vrs": {
+        "START": {
+            "timestamp_ns": 3103025525413,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3122705525413,
+            "relative_seconds": 19.68,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3127305525413,
+            "relative_seconds": 24.28,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Edu_1_20260604_170154.vrs": {
+        "SECOND": {
+            "timestamp_ns": 7408510748593,
+            "relative_seconds": 34.54,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 7411810748593,
+            "relative_seconds": 37.84,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Edu_2_20260604_170420.vrs": {
+        "START": {
+            "timestamp_ns": 7519238748489,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 7535978748489,
+            "relative_seconds": 16.74,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 7539818748489,
+            "relative_seconds": 20.58,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Edu_3_20260604_170622.vrs": {
+        "START": {
+            "timestamp_ns": 7642170748357,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 7661090748357,
+            "relative_seconds": 18.92,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 7665730748357,
+            "relative_seconds": 23.56,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Edu_4_20260604_170837.vrs": {
+        "START": {
+            "timestamp_ns": 7777074748413,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 7800854748413,
+            "relative_seconds": 23.78,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        }
+    },
+    "Edu_5_20260604_170944.vrs": {
+        "START": {
+            "timestamp_ns": 7843658748411,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 7867658748411,
+            "relative_seconds": 24.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 7868938748411,
+            "relative_seconds": 25.28,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Edu_6_20260616_145740.vrs": {
+        "START": {
+            "timestamp_ns": 2711177525531,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2728977525531,
+            "relative_seconds": 17.8,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2734137525531,
+            "relative_seconds": 22.96,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Edu_7_20260616_145927.vrs": {
+        "START": {
+            "timestamp_ns": 2818097525495,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2836017525495,
+            "relative_seconds": 17.92,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2839777525495,
+            "relative_seconds": 21.68,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2842597525495,
+            "relative_seconds": 24.5,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Edu_8_20260616_150108.vrs": {
+        "START": {
+            "timestamp_ns": 2919137525273,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2933137525273,
+            "relative_seconds": 14.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2938137525273,
+            "relative_seconds": 19.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2940217525273,
+            "relative_seconds": 21.08,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Edu_9_20260616_150247.vrs": {
+        "START": {
+            "timestamp_ns": 3018745525447,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3035265525447,
+            "relative_seconds": 16.52,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3041245525447,
+            "relative_seconds": 22.5,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3043105525447,
+            "relative_seconds": 24.36,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Ermal_1_20260604_151723.vrs": {
+        "START": {
+            "timestamp_ns": 1102640231543,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1124200231543,
+            "relative_seconds": 21.56,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1127540231543,
+            "relative_seconds": 24.9,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Ermal_2_20260604_151912.vrs": {
+        "START": {
+            "timestamp_ns": 1213572231363,
+            "relative_seconds": 1.9,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1242092231363,
+            "relative_seconds": 30.42,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1245632231363,
+            "relative_seconds": 33.96,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Ermal_3_20260604_152032.vrs": {
+        "START": {
+            "timestamp_ns": 1294180231385,
+            "relative_seconds": 2.54,
+            "raw_word": "Start",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1311520231385,
+            "relative_seconds": 19.88,
+            "raw_word": "Second",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1315800231385,
+            "relative_seconds": 24.16,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Ermal_4_20260604_152214.vrs": {
+        "START": {
+            "timestamp_ns": 1395820231585,
+            "relative_seconds": 1.7,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1414760231585,
+            "relative_seconds": 20.64,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1419020231585,
+            "relative_seconds": 24.9,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Ermal_5_20260616_153530.vrs": {
+        "START": {
+            "timestamp_ns": 4981070748269,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4997070748269,
+            "relative_seconds": 16.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5000770748269,
+            "relative_seconds": 19.7,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5003030748269,
+            "relative_seconds": 21.96,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Ermal_6_20260616_153648.vrs": {
+        "START": {
+            "timestamp_ns": 5059278748533,
+            "relative_seconds": 0.0,
+            "raw_word": "Start!",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5076378748533,
+            "relative_seconds": 17.1,
+            "raw_word": "Second!",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5089078748533,
+            "relative_seconds": 29.8,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5093378748533,
+            "relative_seconds": 34.1,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Ermal_7_20260616_153921.vrs": {
+        "START": {
+            "timestamp_ns": 5212310818955,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5246090818955,
+            "relative_seconds": 33.78,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5253990818955,
+            "relative_seconds": 41.68,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5257710818955,
+            "relative_seconds": 45.4,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Ermal_8_20260616_154054.vrs": {
+        "START": {
+            "timestamp_ns": 5306790818831,
+            "relative_seconds": 1.52,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5332770818831,
+            "relative_seconds": 27.5,
+            "raw_word": "Second",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5338150818831,
+            "relative_seconds": 32.88,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5341550818831,
+            "relative_seconds": 36.28,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Ermal_9_20260616_154205.vrs": {
+        "START": {
+            "timestamp_ns": 5376038818969,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5400998818969,
+            "relative_seconds": 24.96,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5406758818969,
+            "relative_seconds": 30.72,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5411098818969,
+            "relative_seconds": 35.06,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Felix_1_20260604_171928.vrs": {
+        "SECOND": {
+            "timestamp_ns": 8431933638079,
+            "relative_seconds": 3.78,
+            "raw_word": "seconds.",
+            "match_score": 1.0
+        }
+    },
+    "Felix_1_20260604_171946.vrs": {
+        "START": {
+            "timestamp_ns": 8445609637987,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 8467489637987,
+            "relative_seconds": 21.88,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 8469389637987,
+            "relative_seconds": 23.78,
+            "raw_word": "done.",
+            "match_score": 1.0
+        }
+    },
+    "Felix_2_20260604_172102.vrs": {
+        "START": {
+            "timestamp_ns": 8521761638121,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 8542761638121,
+            "relative_seconds": 21.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 8547221638121,
+            "relative_seconds": 25.46,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 8549161638121,
+            "relative_seconds": 27.4,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Felix_3_20260604_172212.vrs": {
+        "START": {
+            "timestamp_ns": 8591301638121,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 8613961638121,
+            "relative_seconds": 22.66,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 8618081638121,
+            "relative_seconds": 26.78,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 8618781638121,
+            "relative_seconds": 27.48,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Felix_4_20260604_172358.vrs": {
+        "START": {
+            "timestamp_ns": 8701649638309,
+            "relative_seconds": 3.6,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 8720909638309,
+            "relative_seconds": 22.86,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 8724609638309,
+            "relative_seconds": 26.56,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 8727149638309,
+            "relative_seconds": 29.1,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Jan_1_20260604_161550.vrs": {
+        "START": {
+            "timestamp_ns": 4609358003413,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4629338003413,
+            "relative_seconds": 19.98,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4634358003413,
+            "relative_seconds": 25.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Jan_2_20260604_161704.vrs": {
+        "START": {
+            "timestamp_ns": 4685878003351,
+            "relative_seconds": 2.2,
+            "raw_word": "start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4705298003351,
+            "relative_seconds": 21.62,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4709978003351,
+            "relative_seconds": 26.3,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4712378003351,
+            "relative_seconds": 28.7,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Jan_3_20260604_161835.vrs": {
+        "START": {
+            "timestamp_ns": 4774550003197,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4797310003197,
+            "relative_seconds": 22.76,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4801530003197,
+            "relative_seconds": 26.98,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Jan_4_20260604_162000.vrs": {
+        "START": {
+            "timestamp_ns": 4859546003565,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4882086003565,
+            "relative_seconds": 22.54,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4886426003565,
+            "relative_seconds": 26.88,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Jan_5_20260604_162111.vrs": {
+        "START": {
+            "timestamp_ns": 4930526003397,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4957886003397,
+            "relative_seconds": 27.36,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4961246003397,
+            "relative_seconds": 30.72,
+            "raw_word": "done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4961966003397,
+            "relative_seconds": 31.44,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Jola_1_20260624_131133.vrs": {
+        "SECOND": {
+            "timestamp_ns": 3407315009779,
+            "relative_seconds": 32.12,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3411875009779,
+            "relative_seconds": 36.68,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Jola_2_20260624_131246.vrs": {
+        "SECOND": {
+            "timestamp_ns": 3484467007327,
+            "relative_seconds": 35.76,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3485867007327,
+            "relative_seconds": 37.16,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3487787007327,
+            "relative_seconds": 39.08,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Jola_3_20260624_131435.vrs": {
+        "SECOND": {
+            "timestamp_ns": 3590103007509,
+            "relative_seconds": 32.82,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3594983007509,
+            "relative_seconds": 37.7,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Jola_4_20260624_131548.vrs": {
+        "SECOND": {
+            "timestamp_ns": 3666971007313,
+            "relative_seconds": 36.28,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3668371007313,
+            "relative_seconds": 37.68,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3670431007313,
+            "relative_seconds": 39.74,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Jola_5_20260624_131818.vrs": {
+        "SECOND": {
+            "timestamp_ns": 3817775007473,
+            "relative_seconds": 37.42,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3820355007473,
+            "relative_seconds": 40.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3822655007473,
+            "relative_seconds": 42.3,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Jola_6_20260624_132027.vrs": {
+        "SECOND": {
+            "timestamp_ns": 3921491007141,
+            "relative_seconds": 12.32,
+            "raw_word": "second",
+            "match_score": 1.0
+        }
+    },
+    "Jona_1_20260616_181413.vrs": {
+        "START": {
+            "timestamp_ns": 1766695839773,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1778395839773,
+            "relative_seconds": 11.7,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1782455839773,
+            "relative_seconds": 15.76,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1785715839773,
+            "relative_seconds": 19.02,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Jona_2_20260616_181551.vrs": {
+        "START": {
+            "timestamp_ns": 1864279839501,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1892919839501,
+            "relative_seconds": 28.64,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1898579839501,
+            "relative_seconds": 34.3,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1902679839501,
+            "relative_seconds": 38.4,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Jona_3_20260616_181717.vrs": {
+        "START": {
+            "timestamp_ns": 1950775839829,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1985395839829,
+            "relative_seconds": 34.62,
+            "raw_word": "second",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1989815839829,
+            "relative_seconds": 39.04,
+            "raw_word": "done",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1993255839829,
+            "relative_seconds": 42.48,
+            "raw_word": "third",
+            "match_score": 1.0
+        }
+    },
+    "Jona_4_20260616_181855.vrs": {
+        "START": {
+            "timestamp_ns": 2048719839773,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2074039839773,
+            "relative_seconds": 25.32,
+            "raw_word": "second",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2079559839773,
+            "relative_seconds": 30.84,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2083459839773,
+            "relative_seconds": 34.74,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Jona_5_20260616_182002.vrs": {
+        "START": {
+            "timestamp_ns": 2115759840065,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2143159840065,
+            "relative_seconds": 27.4,
+            "raw_word": "Second",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2150619840065,
+            "relative_seconds": 34.86,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2153659840065,
+            "relative_seconds": 37.9,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Jona_6_20260616_182111.vrs": {
+        "START": {
+            "timestamp_ns": 2186307839933,
+            "relative_seconds": 2.14,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2206707839933,
+            "relative_seconds": 22.54,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2211767839933,
+            "relative_seconds": 27.6,
+            "raw_word": "Done!",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2215447839933,
+            "relative_seconds": 31.28,
+            "raw_word": "Third",
+            "match_score": 1.0
+        }
+    },
+    "Jona_7_20260616_182214.vrs": {
+        "START": {
+            "timestamp_ns": 2248143839987,
+            "relative_seconds": 1.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2272163839987,
+            "relative_seconds": 25.02,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2277403839987,
+            "relative_seconds": 30.26,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2281003839987,
+            "relative_seconds": 33.86,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Julienco_1_20260624_125251.vrs": {
+        "SECOND": {
+            "timestamp_ns": 2275943520419,
+            "relative_seconds": 22.56,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2277343520419,
+            "relative_seconds": 23.96,
+            "raw_word": "third,",
+            "match_score": 1.0
+        }
+    },
+    "Julienco_2_20260624_125435.vrs": {
+        "SECOND": {
+            "timestamp_ns": 2371779520371,
+            "relative_seconds": 14.1,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2375659520371,
+            "relative_seconds": 17.98,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2378099520371,
+            "relative_seconds": 20.42,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Julienco_3_20260624_125549.vrs": {
+        "SECOND": {
+            "timestamp_ns": 2446055520551,
+            "relative_seconds": 14.4,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2461055520551,
+            "relative_seconds": 29.4,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2464395520551,
+            "relative_seconds": 32.74,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Julienco_4_20260624_125717.vrs": {
+        "SECOND": {
+            "timestamp_ns": 2542211520371,
+            "relative_seconds": 23.46,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2545971520371,
+            "relative_seconds": 27.22,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Julienco_4_2_20260624_125830.vrs": {
+        "SECOND": {
+            "timestamp_ns": 2611203520509,
+            "relative_seconds": 18.94,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2615803520509,
+            "relative_seconds": 23.54,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2619123520509,
+            "relative_seconds": 26.86,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Julienco_5_20260624_125942.vrs": {
+        "SECOND": {
+            "timestamp_ns": 2688031499738,
+            "relative_seconds": 24.2,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2691751499738,
+            "relative_seconds": 27.92,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Julienco_6_20260624_130048.vrs": {
+        "SECOND": {
+            "timestamp_ns": 2749735499536,
+            "relative_seconds": 19.56,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2754315499536,
+            "relative_seconds": 24.14,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2756475499536,
+            "relative_seconds": 26.3,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Julienco_7_20260624_130215.vrs": {
+        "SECOND": {
+            "timestamp_ns": 2834483520433,
+            "relative_seconds": 17.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2838323520433,
+            "relative_seconds": 20.84,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2841063520433,
+            "relative_seconds": 23.58,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Julienco_8_20260624_130311.vrs": {
+        "SECOND": {
+            "timestamp_ns": 2889491520245,
+            "relative_seconds": 16.14,
+            "raw_word": "second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2893731520245,
+            "relative_seconds": 20.38,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2897651520245,
+            "relative_seconds": 24.3,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Leys_1_20260604_163147.vrs": {
+        "START": {
+            "timestamp_ns": 5566478525883,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5582378525883,
+            "relative_seconds": 15.9,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5587258525883,
+            "relative_seconds": 20.78,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5589618525883,
+            "relative_seconds": 23.14,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Leys_2_20260604_163417.vrs": {
+        "START": {
+            "timestamp_ns": 5716638525791,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5731278525791,
+            "relative_seconds": 14.64,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5735638525791,
+            "relative_seconds": 19.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5737678525791,
+            "relative_seconds": 21.04,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Leys_3_20260604_163535.vrs": {
+        "START": {
+            "timestamp_ns": 5794614526041,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5815614526041,
+            "relative_seconds": 21.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5819614526041,
+            "relative_seconds": 25.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5821174526041,
+            "relative_seconds": 26.56,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Leys_4_20260604_163704.vrs": {
+        "START": {
+            "timestamp_ns": 5884142525757,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 5904682525757,
+            "relative_seconds": 20.54,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5908902525757,
+            "relative_seconds": 24.76,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5911222525757,
+            "relative_seconds": 27.08,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Leys_5_20260604_163854.vrs": {
+        "START": {
+            "timestamp_ns": 5994086525861,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 6013686525861,
+            "relative_seconds": 19.6,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 6017666525861,
+            "relative_seconds": 23.58,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 6019926525861,
+            "relative_seconds": 25.84,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Maria_1_20260624_133852.vrs": {
+        "SECOND": {
+            "timestamp_ns": 5040533255925,
+            "relative_seconds": 26.44,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5045653255925,
+            "relative_seconds": 31.56,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Maria_2_20260624_134005.vrs": {
+        "SECOND": {
+            "timestamp_ns": 5107589256037,
+            "relative_seconds": 20.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5111649256037,
+            "relative_seconds": 24.06,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Maria_3_20260624_134101.vrs": {
+        "SECOND": {
+            "timestamp_ns": 5167493256607,
+            "relative_seconds": 24.52,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5171113256607,
+            "relative_seconds": 28.14,
+            "raw_word": "third,",
+            "match_score": 1.0
+        }
+    },
+    "Maria_4_20260624_134233.vrs": {
+        "SECOND": {
+            "timestamp_ns": 5254197255919,
+            "relative_seconds": 19.38,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5257017255919,
+            "relative_seconds": 22.2,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5258837255919,
+            "relative_seconds": 24.02,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Maria_5_20260624_134337.vrs": {
+        "SECOND": {
+            "timestamp_ns": 5326729256009,
+            "relative_seconds": 27.78,
+            "raw_word": "second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5328269256009,
+            "relative_seconds": 29.32,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5330469256009,
+            "relative_seconds": 31.52,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Maria_6_20260624_134443.vrs": {
+        "SECOND": {
+            "timestamp_ns": 5395489255995,
+            "relative_seconds": 30.34,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 5398269255995,
+            "relative_seconds": 33.12,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 5400489255995,
+            "relative_seconds": 35.34,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Melih_10_20260616_180515.vrs": {
+        "START": {
+            "timestamp_ns": 1228590808669,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1258590808669,
+            "relative_seconds": 30.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1264450808669,
+            "relative_seconds": 35.86,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1266390808669,
+            "relative_seconds": 37.8,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Melih_1_20260616_175140.vrs": {
+        "START": {
+            "timestamp_ns": 413702809759,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 429702809759,
+            "relative_seconds": 16.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 433722809759,
+            "relative_seconds": 20.02,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 436822809759,
+            "relative_seconds": 23.12,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Melih_2_20260616_175310.vrs": {
+        "START": {
+            "timestamp_ns": 503686808717,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 520706808717,
+            "relative_seconds": 17.02,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 527446808717,
+            "relative_seconds": 23.76,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 529406808717,
+            "relative_seconds": 25.72,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Melih_3_20260616_175418.vrs": {
+        "START": {
+            "timestamp_ns": 571174808599,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 588994808599,
+            "relative_seconds": 17.82,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 595054808599,
+            "relative_seconds": 23.88,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 597594808599,
+            "relative_seconds": 26.42,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Melih_4_20260616_175523.vrs": {
+        "START": {
+            "timestamp_ns": 636222808341,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 653022808341,
+            "relative_seconds": 16.8,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 659222808341,
+            "relative_seconds": 23.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 661282808341,
+            "relative_seconds": 25.06,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Melih_5_20260616_175612.vrs": {
+        "START": {
+            "timestamp_ns": 685758787842,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 703758787842,
+            "relative_seconds": 18.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 710278787842,
+            "relative_seconds": 24.52,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 713318787842,
+            "relative_seconds": 27.56,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Melih_6_20260616_180104.vrs": {
+        "START": {
+            "timestamp_ns": 981082808571,
+            "relative_seconds": 3.42,
+            "raw_word": "start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 997582808571,
+            "relative_seconds": 19.92,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1003662808571,
+            "relative_seconds": 26.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1005562808571,
+            "relative_seconds": 27.9,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Melih_7_20260616_180202.vrs": {
+        "START": {
+            "timestamp_ns": 1038730787564,
+            "relative_seconds": 3.02,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1057350787564,
+            "relative_seconds": 21.64,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1065130787564,
+            "relative_seconds": 29.42,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1066510787564,
+            "relative_seconds": 30.8,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Melih_8_20260616_180307.vrs": {
+        "START": {
+            "timestamp_ns": 1100190808739,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1119810808739,
+            "relative_seconds": 19.62,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1124810808739,
+            "relative_seconds": 24.62,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1127730808739,
+            "relative_seconds": 27.54,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Melih_9_20260616_180402.vrs": {
+        "START": {
+            "timestamp_ns": 1158314808823,
+            "relative_seconds": 2.62,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1176694808823,
+            "relative_seconds": 21.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1183134808823,
+            "relative_seconds": 27.44,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1186374808823,
+            "relative_seconds": 30.68,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Miro_1_20260604_153303.vrs": {
+        "START": {
+            "timestamp_ns": 2045523574391,
+            "relative_seconds": 3.02,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2060503574391,
+            "relative_seconds": 18.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2065423574391,
+            "relative_seconds": 22.92,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2067523574391,
+            "relative_seconds": 25.02,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Miro_2_20260604_153451.vrs": {
+        "START": {
+            "timestamp_ns": 2151203574363,
+            "relative_seconds": 0.98,
+            "raw_word": "start",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2164183574363,
+            "relative_seconds": 13.96,
+            "raw_word": "second",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2170003574363,
+            "relative_seconds": 19.78,
+            "raw_word": "done",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2171403574363,
+            "relative_seconds": 21.18,
+            "raw_word": "third",
+            "match_score": 1.0
+        }
+    },
+    "Miro_3_20260604_153609.vrs": {
+        "START": {
+            "timestamp_ns": 2228695574141,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2241575574141,
+            "relative_seconds": 12.88,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2246695574141,
+            "relative_seconds": 18.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2248615574141,
+            "relative_seconds": 19.92,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Miro_4_20260604_153734.vrs": {
+        "START": {
+            "timestamp_ns": 2316735574169,
+            "relative_seconds": 3.56,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2335715574169,
+            "relative_seconds": 22.54,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2341335574169,
+            "relative_seconds": 28.16,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2344115574169,
+            "relative_seconds": 30.94,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Mona_1_20260624_123312.vrs": {
+        "SECOND": {
+            "timestamp_ns": 1094729975745,
+            "relative_seconds": 20.58,
+            "raw_word": "Second?",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1099329975745,
+            "relative_seconds": 25.18,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1101229975745,
+            "relative_seconds": 27.08,
+            "raw_word": "Third?",
+            "match_score": 1.0
+        }
+    },
+    "Mona_2_20260624_123443.vrs": {
+        "SECOND": {
+            "timestamp_ns": 1189601975725,
+            "relative_seconds": 24.78,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1195641975725,
+            "relative_seconds": 30.82,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1198141975725,
+            "relative_seconds": 33.32,
+            "raw_word": "Third?",
+            "match_score": 1.0
+        }
+    },
+    "Mona_3_20260624_123548.vrs": {
+        "SECOND": {
+            "timestamp_ns": 1255921975821,
+            "relative_seconds": 25.98,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1261961975821,
+            "relative_seconds": 32.02,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1263681975821,
+            "relative_seconds": 33.74,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Mona_4_20260624_123706.vrs": {
+        "SECOND": {
+            "timestamp_ns": 1336125975897,
+            "relative_seconds": 28.04,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1339105975897,
+            "relative_seconds": 31.02,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1344445975897,
+            "relative_seconds": 36.36,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Mona_5_20260624_123814.vrs": {
+        "SECOND": {
+            "timestamp_ns": 1409497975857,
+            "relative_seconds": 33.62,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1415017975857,
+            "relative_seconds": 39.14,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1417577975857,
+            "relative_seconds": 41.7,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Mona_6_20260624_123930.vrs": {
+        "SECOND": {
+            "timestamp_ns": 1485297975863,
+            "relative_seconds": 33.34,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1491097975863,
+            "relative_seconds": 39.14,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1493377975863,
+            "relative_seconds": 41.42,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Mona_7_20260624_124051.vrs": {
+        "SECOND": {
+            "timestamp_ns": 1565197975641,
+            "relative_seconds": 32.36,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1570937975641,
+            "relative_seconds": 38.1,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1573237975641,
+            "relative_seconds": 40.4,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Mona_8_20260624_124414.vrs": {
+        "SECOND": {
+            "timestamp_ns": 1778417975857,
+            "relative_seconds": 42.1,
+            "raw_word": "Second?",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1782237975857,
+            "relative_seconds": 45.92,
+            "raw_word": "Done?",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1784597975857,
+            "relative_seconds": 48.28,
+            "raw_word": "Third?",
+            "match_score": 1.0
+        }
+    },
+    "Suthan_1_20260604_164834.vrs": {
+        "START": {
+            "timestamp_ns": 6575559837057,
+            "relative_seconds": 1.56,
+            "raw_word": "start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 6604999837057,
+            "relative_seconds": 31.0,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 6607579837057,
+            "relative_seconds": 33.58,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 6609859837057,
+            "relative_seconds": 35.86,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Suthan_2_20260604_165031.vrs": {
+        "START": {
+            "timestamp_ns": 6692543836711,
+            "relative_seconds": 1.96,
+            "raw_word": "start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 6716263836711,
+            "relative_seconds": 25.68,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 6719683836711,
+            "relative_seconds": 29.1,
+            "raw_word": "Done",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 6721563836711,
+            "relative_seconds": 30.98,
+            "raw_word": "Third",
+            "match_score": 1.0
+        }
+    },
+    "Suthan_3_20260604_165324.vrs": {
+        "START": {
+            "timestamp_ns": 6863707836919,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        }
+    },
+    "Suthan_4_20260604_165434.vrs": {
+        "START": {
+            "timestamp_ns": 6933607836897,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 6957487836897,
+            "relative_seconds": 23.88,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 6960507836897,
+            "relative_seconds": 26.9,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 6963007836897,
+            "relative_seconds": 29.4,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Test_1_20260624_122109.vrs": {
+        "THIRD": {
+            "timestamp_ns": 373904841265,
+            "relative_seconds": 22.6,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Test_2_20260624_122206.vrs": {
+        "SECOND": {
+            "timestamp_ns": 426084841183,
+            "relative_seconds": 17.84,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 430184841183,
+            "relative_seconds": 21.94,
+            "raw_word": "done.",
+            "match_score": 1.0
+        }
+    },
+    "Test_3_20260522_160036.vrs": {
+        "START": {
+            "timestamp_ns": 274699695277,
+            "relative_seconds": 14.28,
+            "raw_word": "started,",
+            "match_score": 1.0
+        }
+    },
+    "Test_3_20260624_122314.vrs": {
+        "SECOND": {
+            "timestamp_ns": 490676841175,
+            "relative_seconds": 14.52,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 493516841175,
+            "relative_seconds": 17.36,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 497696841175,
+            "relative_seconds": 21.54,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Test_4_20260527_161832.vrs": {
+        "START": {
+            "timestamp_ns": 247940287035,
+            "relative_seconds": 14.46,
+            "raw_word": "start,",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 250880287035,
+            "relative_seconds": 17.4,
+            "raw_word": "second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 255800287035,
+            "relative_seconds": 22.32,
+            "raw_word": "done.",
+            "match_score": 1.0
+        }
+    },
+    "Test_4_20260624_122416.vrs": {
+        "SECOND": {
+            "timestamp_ns": 557228841375,
+            "relative_seconds": 19.16,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 558628841375,
+            "relative_seconds": 20.56,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 561428841375,
+            "relative_seconds": 23.36,
+            "raw_word": "third,",
+            "match_score": 1.0
+        }
+    },
+    "Test_5_20260624_122509.vrs": {
+        "SECOND": {
+            "timestamp_ns": 607140841279,
+            "relative_seconds": 15.44,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 608540841279,
+            "relative_seconds": 16.84,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 611320841279,
+            "relative_seconds": 19.62,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Test_6_20260624_122607.vrs": {
+        "SECOND": {
+            "timestamp_ns": 665980841369,
+            "relative_seconds": 16.72,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 667380841369,
+            "relative_seconds": 18.12,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 670340841369,
+            "relative_seconds": 21.08,
+            "raw_word": "third,",
+            "match_score": 1.0
+        }
+    },
+    "Test_7_20260601_165002.vrs": {
+        "START": {
+            "timestamp_ns": 682741758683,
+            "relative_seconds": 1.0,
+            "raw_word": "Start",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 698741758683,
+            "relative_seconds": 17.0,
+            "raw_word": "Second",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 703741758683,
+            "relative_seconds": 22.0,
+            "raw_word": "Done",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 707341758683,
+            "relative_seconds": 25.6,
+            "raw_word": "Third",
+            "match_score": 1.0
+        }
+    },
+    "Test_7_20260624_122709.vrs": {
+        "SECOND": {
+            "timestamp_ns": 727004841453,
+            "relative_seconds": 16.28,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 728404841453,
+            "relative_seconds": 17.68,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 731164841453,
+            "relative_seconds": 20.44,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Unknown_2_20260616_141751.vrs": {},
+    "Urim_10_20260616_145015.vrs": {
+        "START": {
+            "timestamp_ns": 2268190230731,
+            "relative_seconds": 1.44,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2292590230731,
+            "relative_seconds": 25.84,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 2298430230731,
+            "relative_seconds": 31.68,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2301510230731,
+            "relative_seconds": 34.76,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Urim_1_20260604_160102.vrs": {
+        "START": {
+            "timestamp_ns": 3721198152919,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3747398152919,
+            "relative_seconds": 26.2,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3752078152919,
+            "relative_seconds": 30.88,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3755978152919,
+            "relative_seconds": 34.78,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Urim_2_20260604_160234.vrs": {
+        "START": {
+            "timestamp_ns": 3813518152919,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3824258152919,
+            "relative_seconds": 10.74,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3829518152919,
+            "relative_seconds": 16.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3833518152919,
+            "relative_seconds": 20.0,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Urim_3_20260604_160345.vrs": {
+        "START": {
+            "timestamp_ns": 3884682152793,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3904642152793,
+            "relative_seconds": 19.96,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3910682152793,
+            "relative_seconds": 26.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3911482152793,
+            "relative_seconds": 26.8,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Urim_4_20260604_160502.vrs": {
+        "START": {
+            "timestamp_ns": 3961550152495,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 3983450152495,
+            "relative_seconds": 21.9,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 3989310152495,
+            "relative_seconds": 27.76,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 3991830152495,
+            "relative_seconds": 30.28,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Urim_5_20260604_160634.vrs": {
+        "START": {
+            "timestamp_ns": 4053646152591,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 4076186152591,
+            "relative_seconds": 22.54,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4083646152591,
+            "relative_seconds": 30.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4086546152591,
+            "relative_seconds": 32.9,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Urim_6_20260616_144055.vrs": {
+        "START": {
+            "timestamp_ns": 1707642231043,
+            "relative_seconds": 1.62,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1728882231043,
+            "relative_seconds": 22.86,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1733022231043,
+            "relative_seconds": 27.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1736022231043,
+            "relative_seconds": 30.0,
+            "raw_word": "Third",
+            "match_score": 1.0
+        }
+    },
+    "Urim_7_20260616_144229.vrs": {
+        "START": {
+            "timestamp_ns": 1804850230669,
+            "relative_seconds": 4.1,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1822830230669,
+            "relative_seconds": 22.08,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1827810230669,
+            "relative_seconds": 27.06,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1830750230669,
+            "relative_seconds": 30.0,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Urim_8_20260616_144352.vrs": {
+        "START": {
+            "timestamp_ns": 1883686230835,
+            "relative_seconds": 0.0,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 1907226230835,
+            "relative_seconds": 23.54,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 1909226230835,
+            "relative_seconds": 25.54,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 1914366230835,
+            "relative_seconds": 30.68,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Urim_9_20260616_144841.vrs": {
+        "START": {
+            "timestamp_ns": 2174258230641,
+            "relative_seconds": 2.38,
+            "raw_word": "Start.",
+            "match_score": 1.0
+        },
+        "SECOND": {
+            "timestamp_ns": 2198498230641,
+            "relative_seconds": 26.62,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 2204458230641,
+            "relative_seconds": 32.58,
+            "raw_word": "Third.",
+            "match_score": 1.0
+        }
+    },
+    "Vanessa_1_20260624_132542.vrs": {
+        "SECOND": {
+            "timestamp_ns": 4250466675287,
+            "relative_seconds": 26.72,
+            "raw_word": "second.",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4259006675287,
+            "relative_seconds": 35.26,
+            "raw_word": "Third",
+            "match_score": 1.0
+        }
+    },
+    "Vanessa_2_20260624_132710.vrs": {
+        "SECOND": {
+            "timestamp_ns": 4340082675073,
+            "relative_seconds": 27.44,
+            "raw_word": "second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4340722675073,
+            "relative_seconds": 28.08,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4345962675073,
+            "relative_seconds": 33.32,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "Vanessa_3_20260624_132807.vrs": {
+        "THIRD": {
+            "timestamp_ns": 4375430675231,
+            "relative_seconds": 5.9,
+            "raw_word": "this",
+            "match_score": 0.8
+        }
+    },
+    "Vanessa_4_20260624_132943.vrs": {
+        "SECOND": {
+            "timestamp_ns": 4485866675183,
+            "relative_seconds": 20.68,
+            "raw_word": "Second.",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4491306675183,
+            "relative_seconds": 26.12,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Vanessa_5_20260624_133059.vrs": {
+        "DONE": {
+            "timestamp_ns": 4571322675099,
+            "relative_seconds": 30.0,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Vanessa_6_20260624_133209.vrs": {
+        "DONE": {
+            "timestamp_ns": 4642714675029,
+            "relative_seconds": 31.08,
+            "raw_word": "Done.",
+            "match_score": 1.0
+        }
+    },
+    "Vanessa_7_20260624_133405.vrs": {
+        "SECOND": {
+            "timestamp_ns": 4751722675197,
+            "relative_seconds": 24.48,
+            "raw_word": "Second?",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4754722675197,
+            "relative_seconds": 27.48,
+            "raw_word": "Done?",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4755822675197,
+            "relative_seconds": 28.58,
+            "raw_word": "Third?",
+            "match_score": 1.0
+        }
+    },
+    "Vanessa_8_20260624_133505.vrs": {
+        "SECOND": {
+            "timestamp_ns": 4821322675045,
+            "relative_seconds": 33.96,
+            "raw_word": "Second,",
+            "match_score": 1.0
+        },
+        "DONE": {
+            "timestamp_ns": 4822462675045,
+            "relative_seconds": 35.1,
+            "raw_word": "done,",
+            "match_score": 1.0
+        },
+        "THIRD": {
+            "timestamp_ns": 4824022675045,
+            "relative_seconds": 36.66,
+            "raw_word": "third.",
+            "match_score": 1.0
+        }
+    },
+    "unknown_20260604_150319.vrs": {}
+}

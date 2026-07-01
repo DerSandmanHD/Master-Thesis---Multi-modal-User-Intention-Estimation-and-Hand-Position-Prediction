@@ -60,6 +60,12 @@ def parse_args():
         default=180.0,
         help="Warn when START->THIRD is longer than this value.",
     )
+    parser.add_argument(
+        "--min-handover-hand-valid-ratio",
+        type=float,
+        default=0.8,
+        help="Warn when neither hand is valid in at least this fraction of DONE->THIRD rows. Default: 0.8.",
+    )
     return parser.parse_args()
 
 
@@ -146,6 +152,56 @@ def extract_command_seconds(timestamp_entry: dict) -> dict[str, float | None]:
     return seconds
 
 
+def command_timestamp_ns(timestamp_entry: dict, command: str) -> int | None:
+    value = timestamp_entry.get(command)
+    if not isinstance(value, dict) or not isinstance(value.get("timestamp_ns"), (int, float)):
+        return None
+    return int(value["timestamp_ns"])
+
+
+def hand_tracking_phase_stats(path: Path, start_ns: int | None, end_ns: int | None) -> dict:
+    stats = {
+        "rows": 0,
+        "left_valid_rows": 0,
+        "right_valid_rows": 0,
+        "either_valid_rows": 0,
+        "left_valid_ratio": None,
+        "right_valid_ratio": None,
+        "either_valid_ratio": None,
+    }
+    if not path.exists() or start_ns is None or end_ns is None or end_ns <= start_ns:
+        return stats
+
+    try:
+        with path.open("r", encoding="utf-8", errors="replace", newline="") as handle:
+            reader = csv.DictReader(handle)
+            required = {
+                "tracking_timestamp_us",
+                "left_tracking_confidence",
+                "right_tracking_confidence",
+            }
+            if not reader.fieldnames or not required.issubset(reader.fieldnames):
+                return stats
+            for row in reader:
+                timestamp_ns = int(row["tracking_timestamp_us"]) * 1000
+                if timestamp_ns < start_ns or timestamp_ns > end_ns:
+                    continue
+                left_valid = float(row["left_tracking_confidence"]) > 0.0
+                right_valid = float(row["right_tracking_confidence"]) > 0.0
+                stats["rows"] += 1
+                stats["left_valid_rows"] += int(left_valid)
+                stats["right_valid_rows"] += int(right_valid)
+                stats["either_valid_rows"] += int(left_valid or right_valid)
+    except (OSError, TypeError, ValueError):
+        return stats
+
+    if stats["rows"]:
+        stats["left_valid_ratio"] = round(stats["left_valid_rows"] / stats["rows"], 4)
+        stats["right_valid_ratio"] = round(stats["right_valid_rows"] / stats["rows"], 4)
+        stats["either_valid_ratio"] = round(stats["either_valid_rows"] / stats["rows"], 4)
+    return stats
+
+
 def check_timestamps(command_seconds: dict, min_phase_seconds: float, max_sequence_seconds: float):
     issues = []
     warnings = []
@@ -195,6 +251,7 @@ def classify_status(issues: list[str], warnings: list[str]) -> str:
         "missing_vrs",
         "missing_mps",
         "missing_hand_tracking",
+        "missing_handover_hand_tracking",
         "missing_slam",
         "missing_timestamps",
         "partial_timestamps",
@@ -215,27 +272,94 @@ def choose_next_action(issues: list[str], warnings: list[str]) -> str:
         return "download_or_process_mps"
     if any(issue in issues for issue in ("missing_timestamps", "partial_timestamps", "bad_timestamp_order")):
         return "fix_timestamps"
+    if "missing_handover_hand_tracking" in issues or "low_handover_hand_tracking" in warnings:
+        return "review_or_exclude_sequence"
+    if any(warning in warnings for warning in ("missing_aruco_csv", "aruco_timestamp_mismatch")):
+        return "run_aruco_extraction"
     if "missing_mp4" in warnings:
         return "convert_mp4"
-    if "missing_aruco_csv" in warnings:
-        return "run_aruco_extraction"
     if any(warning.startswith("short_") or warning == "long_sequence" for warning in warnings):
         return "manual_review"
     return "ready_for_master_merge"
 
 
-def aruco_csv_for(data_root: Path, sequence_id: str) -> Path | None:
-    exact = data_root / f"aruco_poses_{sequence_id}.csv"
-    if exact.exists():
-        return exact
+def timestamp_ns_range(timestamp_entry: dict) -> tuple[int, int] | None:
+    values = [
+        value.get("timestamp_ns")
+        for value in timestamp_entry.values()
+        if isinstance(value, dict) and isinstance(value.get("timestamp_ns"), (int, float))
+    ]
+    if not values:
+        return None
+    return int(min(values)), int(max(values))
 
-    # Older test outputs sometimes use only participant + trial, e.g. aruco_poses_Edu_5.csv.
+
+def csv_timestamp_ns_range(path: Path) -> tuple[int, int] | None:
+    minimum = None
+    maximum = None
+    try:
+        with path.open("r", encoding="utf-8", errors="replace", newline="") as handle:
+            reader = csv.DictReader(handle)
+            if not reader.fieldnames or "timestamp_ns" not in reader.fieldnames:
+                return None
+            for row in reader:
+                value = row.get("timestamp_ns")
+                if not value:
+                    continue
+                timestamp_ns = int(value)
+                minimum = timestamp_ns if minimum is None else min(minimum, timestamp_ns)
+                maximum = timestamp_ns if maximum is None else max(maximum, timestamp_ns)
+    except (OSError, TypeError, ValueError):
+        return None
+    if minimum is None or maximum is None:
+        return None
+    return minimum, maximum
+
+
+def ranges_overlap(first: tuple[int, int], second: tuple[int, int]) -> bool:
+    return max(first[0], second[0]) <= min(first[1], second[1])
+
+
+def aruco_csv_candidates(data_root: Path, sequence_id: str) -> list[Path]:
+    candidates = [data_root / f"aruco_poses_{sequence_id}.csv"]
+
+    # Older outputs sometimes use only participant + trial, e.g. aruco_poses_Edu_5.csv.
     match = re.match(r"^(.+?_\d+)_\d{8}_\d{6}$", sequence_id)
     if match:
-        compact = data_root / f"aruco_poses_{match.group(1)}.csv"
-        if compact.exists():
-            return compact
-    return None
+        candidates.append(data_root / f"aruco_poses_{match.group(1)}.csv")
+    return candidates
+
+
+def aruco_csv_for(
+    data_root: Path,
+    sequence_id: str,
+    timestamp_entry: dict,
+) -> tuple[Path | None, tuple[int, int] | None, list[Path]]:
+    expected_range = timestamp_ns_range(timestamp_entry)
+    rejected = []
+
+    for index, candidate in enumerate(aruco_csv_candidates(data_root, sequence_id)):
+        if not candidate.exists():
+            continue
+        actual_range = csv_timestamp_ns_range(candidate)
+
+        # Exact full-sequence filenames remain usable without labels, but their CSV
+        # must contain at least one valid timestamp. Legacy compact names are only
+        # accepted after proving temporal overlap with this exact recording.
+        is_exact = index == 0
+        if actual_range is None:
+            rejected.append(candidate)
+            continue
+        if expected_range is None:
+            if is_exact:
+                return candidate, actual_range, rejected
+            rejected.append(candidate)
+            continue
+        if ranges_overlap(expected_range, actual_range):
+            return candidate, actual_range, rejected
+        rejected.append(candidate)
+
+    return None, None, rejected
 
 
 def build_row(sequence_id: str, data_root: Path, backup_dir: Path, timestamps: dict, args) -> dict:
@@ -247,9 +371,20 @@ def build_row(sequence_id: str, data_root: Path, backup_dir: Path, timestamps: d
     mps_dir = vrs_dir / f"mps_{sequence_id}_vrs"
     hand_tracking_path = mps_dir / "hand_tracking" / "hand_tracking_results.csv"
     slam_path = mps_dir / "slam" / "closed_loop_trajectory.csv"
-    aruco_path = aruco_csv_for(data_root, sequence_id)
 
     timestamp_entry = timestamp_entry_for(sequence_id, timestamps)
+    done_timestamp_ns = command_timestamp_ns(timestamp_entry, "DONE")
+    third_timestamp_ns = command_timestamp_ns(timestamp_entry, "THIRD")
+    handover_hand_stats = hand_tracking_phase_stats(
+        hand_tracking_path,
+        done_timestamp_ns,
+        third_timestamp_ns,
+    )
+    aruco_path, aruco_timestamp_range, rejected_aruco_paths = aruco_csv_for(
+        data_root,
+        sequence_id,
+        timestamp_entry,
+    )
     command_seconds = extract_command_seconds(timestamp_entry)
     timestamp_issues, timestamp_warnings, missing_commands, continue_s, fetch_s, handover_s = check_timestamps(
         command_seconds,
@@ -270,10 +405,18 @@ def build_row(sequence_id: str, data_root: Path, backup_dir: Path, timestamps: d
         issues.append("missing_mps")
     if not hand_tracking_path.exists():
         issues.append("missing_hand_tracking")
+    elif done_timestamp_ns is not None and third_timestamp_ns is not None:
+        if handover_hand_stats["rows"] == 0 or handover_hand_stats["either_valid_rows"] == 0:
+            issues.append("missing_handover_hand_tracking")
+        elif handover_hand_stats["either_valid_ratio"] < args.min_handover_hand_valid_ratio:
+            warnings.append("low_handover_hand_tracking")
     if not slam_path.exists():
         issues.append("missing_slam")
     if aruco_path is None:
-        warnings.append("missing_aruco_csv")
+        if rejected_aruco_paths:
+            warnings.append("aruco_timestamp_mismatch")
+        else:
+            warnings.append("missing_aruco_csv")
 
     issues.extend(timestamp_issues)
     exclusion_reason = training_exclusion_reason(sequence_id)
@@ -305,11 +448,21 @@ def build_row(sequence_id: str, data_root: Path, backup_dir: Path, timestamps: d
         "mps_exists": mps_dir.exists(),
         "hand_tracking_exists": hand_tracking_path.exists(),
         "hand_tracking_rows": count_csv_rows(hand_tracking_path),
+        "handover_hand_rows": handover_hand_stats["rows"],
+        "handover_left_valid_rows": handover_hand_stats["left_valid_rows"],
+        "handover_right_valid_rows": handover_hand_stats["right_valid_rows"],
+        "handover_either_valid_rows": handover_hand_stats["either_valid_rows"],
+        "handover_left_valid_ratio": handover_hand_stats["left_valid_ratio"],
+        "handover_right_valid_ratio": handover_hand_stats["right_valid_ratio"],
+        "handover_either_valid_ratio": handover_hand_stats["either_valid_ratio"],
         "slam_exists": slam_path.exists(),
         "slam_rows": count_csv_rows(slam_path),
         "aruco_csv_exists": aruco_path is not None,
         "aruco_csv_path": str(aruco_path) if aruco_path else "",
         "aruco_rows": count_csv_rows(aruco_path) if aruco_path else None,
+        "aruco_timestamp_start_ns": aruco_timestamp_range[0] if aruco_timestamp_range else None,
+        "aruco_timestamp_end_ns": aruco_timestamp_range[1] if aruco_timestamp_range else None,
+        "aruco_rejected_paths": ";".join(str(path) for path in rejected_aruco_paths),
         "timestamps_exists": bool(timestamp_entry),
         "missing_commands": ";".join(missing_commands),
         "start_s": command_seconds["START"],
@@ -344,11 +497,21 @@ def write_manifest(path: Path, rows: list[dict]) -> None:
         "mps_exists",
         "hand_tracking_exists",
         "hand_tracking_rows",
+        "handover_hand_rows",
+        "handover_left_valid_rows",
+        "handover_right_valid_rows",
+        "handover_either_valid_rows",
+        "handover_left_valid_ratio",
+        "handover_right_valid_ratio",
+        "handover_either_valid_ratio",
         "slam_exists",
         "slam_rows",
         "aruco_csv_exists",
         "aruco_csv_path",
         "aruco_rows",
+        "aruco_timestamp_start_ns",
+        "aruco_timestamp_end_ns",
+        "aruco_rejected_paths",
         "timestamps_exists",
         "missing_commands",
         "start_s",

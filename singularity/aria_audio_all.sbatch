@@ -69,6 +69,7 @@ echo
 echo "Backing up existing timestamp outputs if present..."
 cp "$VRS_DIR/timestamps_summary.json" "$RESULT_BACKUP_DIR/timestamps_summary.before_job_$SLURM_JOB_ID.json" 2>/dev/null || true
 cp "$VRS_DIR/timestamps_debug.json" "$RESULT_BACKUP_DIR/timestamps_debug.before_job_$SLURM_JOB_ID.json" 2>/dev/null || true
+cp "$VRS_DIR/timestamps_review_queue.json" "$RESULT_BACKUP_DIR/timestamps_review_queue.before_job_$SLURM_JOB_ID.json" 2>/dev/null || true
 
 echo
 echo "============================================================"
@@ -91,6 +92,7 @@ echo
 echo "Copying new timestamp outputs to backup directory..."
 cp "$VRS_DIR/timestamps_summary.json" "$RESULT_BACKUP_DIR/" || true
 cp "$VRS_DIR/timestamps_debug.json" "$RESULT_BACKUP_DIR/" || true
+cp "$VRS_DIR/timestamps_review_queue.json" "$RESULT_BACKUP_DIR/" || true
 
 echo
 echo "============================================================"

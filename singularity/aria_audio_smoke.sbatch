@@ -172,6 +172,7 @@ echo "============================================================"
 
 cp "$TEST_VRS_DIR/timestamps_summary.json" "$RESULT_DIR/" || true
 cp "$TEST_VRS_DIR/timestamps_debug.json" "$RESULT_DIR/" || true
+cp "$TEST_VRS_DIR/timestamps_review_queue.json" "$RESULT_DIR/" || true
 cp "$SCRATCH_DIR/problem_vrs_list.txt" "$RESULT_DIR/"
 
 if [ -d "$TEST_VRS_DIR/debug_audio" ]; then

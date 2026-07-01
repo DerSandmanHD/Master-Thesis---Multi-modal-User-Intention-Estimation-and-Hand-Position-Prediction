@@ -2,7 +2,7 @@
 
 **Dokument aktualisiert:** 1. Juli 2026
 
-**Dokumentierter Repository-Stand:** 26. Juni 2026
+**Dokumentierter Entwicklungsstand:** 1. Juli 2026
 
 ## 1. System-Architektur & Infrastruktur
 
@@ -57,14 +57,22 @@ Ein wichtiger architektonischer Meilenstein ist die Trennung von visueller Kontr
 
 ### Modul F: Duale 3D-Lokalisierung (AprilTag & ArUco 4x4 Mix)
 * **Funktion:** Eine zweigleisige geometrische 3D-Posenschätzung (`cv2.aruco.ArucoDetector`), die auf die unterschiedlichen physischen Größen und Typen der Marker im Versuchsaufbau abgestimmt ist.
+* **Kalibrierte Extraktion:** `Code/detect_tags.py` wurde zu einem CLI-Tool umgebaut. Die RGB-Fisheye-Bilder werden vor der Detektion mit der Project-Aria-Kalibrierung in ein lineares Kameramodell rektifiziert. Damit basiert `solvePnP` nicht mehr fälschlich auf unverzerrten Pinhole-Annahmen für ein rohes Fisheye-Bild.
+* **Eindeutige Markertrennung:** Infrastrukturmarker werden als `apriltag_36h11` mit den erlaubten IDs 0–5, Objektmarker als `aruco_4x4_50` mit den IDs 6–14 gespeichert. Nicht erlaubte beziehungsweise wahrscheinlich falsch positive IDs werden verworfen und im Laufprotokoll gezählt.
+* **Erweitertes Ausgabeformat:** Pro Marker und Bildzeitpunkt werden vollständige Sequenz-ID, Markerfamilie, semantische Rolle, physische Größe, Translation, Rotationsvektor, Quaternion, Reprojektionsfehler und Markerfläche exportiert. Die Ausgabedateien verwenden die vollständige Sequenz-ID, um mehrdeutige Zuordnungen wie `Miro_1` versus `Miro_2` zu verhindern.
 * **Der mathematische Ablauf (Sensor Fusion):**
-  1. **Infrastruktur-Tracking (AprilTags 36h11):** Die Marker an der Roboterbasis (100 mm) und auf der Tischoberfläche (80 mm) werden detektiert, um die Tischebene und den globalen Nullpunkt stabil zu definieren.
-  2. **Objekt-Tracking (ArUco 4x4):** Die auf dem künstlichen Obst (z. B. Äpfel, Bananen) angebrachten kleinen 50 mm Marker aus der Familie `DICT_4X4_50` werden parallel detektiert. Der Roboterarm selbst wird simulativ über einen markanten ArUco-Marker im Video-Feed lokalisiert.
-  3. **3D-Pose & Export:** Über den PnP-Schätzer (`cv2.solvePnP`) werden die hochpräzisen 3D-Raumkoordinaten ($X, Y, Z$) relativ zur Brille berechnet. Diese Posen werden zusammen mit dem `timestamp_ns` framegenau in eine strukturierte CSV-Datei exportiert.
+  1. **Infrastruktur-Tracking (AprilTags 36h11):** AprilTag 0 an der Roboterreferenz (100 mm) und die Marker auf der Tischoberfläche (80 mm) werden detektiert, um eine stabile räumliche Referenz aufzubauen.
+  2. **Objekt-Tracking (ArUco 4x4):** Die auf dem künstlichen Obst (z. B. Äpfel, Bananen) angebrachten kleinen 50-mm-Marker aus der Familie `DICT_4X4_50` werden parallel detektiert und über die IDs 6–14 eindeutig unterschieden.
+  3. **3D-Pose & Export:** Über den PnP-Schätzer (`cv2.solvePnP`) werden Position und Orientierung zunächst relativ zur rektifizierten RGB-Kamera berechnet. Diese Posen werden zusammen mit `timestamp_ns` framegenau exportiert und erst in der Master-Pipeline in Device-, Welt- und Robotermarkerkoordinaten transformiert.
 
 ### Modul G: Multimodale Datenfusion (Sensor Alignment)
-* **Funktion:** Eine asynchrone Zeitreihen-Zusammenführung (`pandas merge_asof`). Da die RGB/ArUco-Kamera, das Eye-Tracking und das MPS-SLAM mit leicht unterschiedlichen Taktungen laufen, synchronisiert dieses Modul alle Datenströme auf Basis des Aufnahme-Zeitstempels (`timestamp_ns`) mit einer maximalen Toleranz im Millisekundenbereich.
-* **Warum:** Das Ergebnis ist eine fehlerfreie Master-Dataset-Matrix, die pro Zeile (Frame) alle benötigten multimodalen Features für den PyTorch-Transformer enthält.
+* **Native Gaze-Extraktion:** `Code/extract_multimodal_data.py` wurde von einem fest verdrahteten Hand-/Gaze-JSON-Prototyp zu einem wiederverwendbaren CLI-Extractor umgebaut. Er exportiert Eye-Gaze mit nativer Abtastrate, Validitätsmaske, Yaw, Pitch, Tiefe, Vergenzwerten sowie Blickpunkt und normalisierter Blickrichtung im CPF- und Device-Koordinatensystem. Die statischen Transformationen `T_Device_CPF` und `T_Device_Camera` werden direkt aus der VRS-Kalibrierung gelesen.
+* **Autoritative Handquelle:** Für den Master-Datensatz werden die umfangreicheren MPS-Handtracking-Dateien verwendet. Sie enthalten beide Hände, 21 Landmarken, Wrist-Translation und -Quaternion, Palm-/Wrist-Normalen sowie Konfidenzen. Zeilen mit ungültiger Konfidenz werden explizit maskiert; die von MPS eingetragenen Nullkoordinaten werden nicht als echte Messwerte interpretiert.
+* **Master-Dataset-Builder:** Das neue Skript `Code/build_master_dataset.py` verwendet die native Gaze-/RGB-Taktung von ungefähr 30 Hz als Zeitachse. MPS-Handdaten (ca. 60 Hz), SLAM (ca. 1 kHz) und Markerposen (ca. 30 Hz) werden über `pandas.merge_asof` mit konfigurierbaren Millisekunden-Toleranzen auf den jeweils nächsten Hardwarezeitstempel abgebildet.
+* **Koordinatentransformationen:** Hand, Gaze und Objekte werden mit den kalibrierten Extrinsiken und der SLAM-Pose aus dem Device- beziehungsweise Kamerasystem in Weltkoordinaten transformiert. Wenn AprilTag 0 sichtbar ist, werden zusätzlich robotermarker-relative Positionen und Orientierungen berechnet. Der noch nicht vermessene physische Offset vom Marker zur realen Roboterbasis wird bewusst nicht angenommen.
+* **Trainingsziele:** Jede Zeile erhält eines der drei Intentionslabels `continue`, `fetch` oder `handover`. Zusätzlich werden zukünftige Wrist-Positionen und -Quaternionen beider Hände für einen standardmäßigen Vorhersagehorizont von 1 s erzeugt. Fehlende zukünftige Posen erhalten Validitätsmasken.
+* **Gaze-Objekt-Relationen:** Für jeden sichtbaren Objektmarker werden Abstand und Winkel zum Blickstrahl berechnet. Diese Größen können später für den Objektselektionskopf verwendet werden, ohne die noch fehlende Ground-Truth-Objekt-ID vorwegzunehmen.
+* **Warum:** Das Ergebnis ist eine flache, zeitlich sortierte Master-Dataset-Matrix mit expliziten Koordinatensystemen, Messmasken und Zielwerten für den PyTorch-Transformer.
 
 ### Modul H: Dataset-QA und Manifest-Generierung
 * **Funktion:** Zur systematischen Kontrolle des Datensatzes wurde das Skript `Code/dataset_qa.py` eingeführt. Es erstellt aus den aktuell vorhandenen Roh- und Zwischendaten eine Sequenzübersicht in `Data_collection/dataset_manifest.csv` sowie einen aggregierten Bericht in `Data_collection/dataset_qa_report.json`.
@@ -73,6 +81,8 @@ Ein wichtiger architektonischer Meilenstein ist die Trennung von visueller Kontr
 * **Trainings-Ausschlusskandidaten:** Sequenzen mit Präfixen wie `Test_*`, `Unknown_*` oder `unknown_*` werden im Manifest als `include_in_training=False` markiert und mit einem Ausschlussgrund versehen. Dadurch können Test- und unklare Aufnahmen im Arbeitsordner bleiben, ohne später versehentlich in das Training einzufließen.
 * **MPS-Fortschrittskontrolle:** Fehlende und unvollständige MPS-Ausgaben werden nun explizit im QA-Report zusammengefasst. Das ist besonders nützlich während der laufenden Verarbeitung mit `aria_mps single -i`.
 * **Label-QA:** Zusätzlich wird kontrolliert, ob die Trigger `START`, `SECOND`, `DONE` und `THIRD` vollständig vorhanden sind und der erwarteten Reihenfolge `START -> SECOND -> DONE -> THIRD` folgen. Daraus werden Phasendauern für `continue`, `fetch` und `handover` berechnet.
+* **Phasenspezifische Hand-QA:** Die reine Existenz einer Handtracking-Datei reicht nicht mehr als Qualitätskriterium. Für das Fenster `DONE -> THIRD` werden Zeilenzahl und gültige Anteile der linken, rechten und mindestens einer Hand berechnet. Sequenzen ohne gültige Hand im Handover werden als `missing_handover_hand_tracking` blockiert; eine Abdeckung unter standardmäßig 80 % erzeugt `low_handover_hand_tracking`.
+* **Marker-Zeitbereichsprüfung:** Markerdateien werden nur akzeptiert, wenn ihr `timestamp_ns`-Bereich mit dem Triggerbereich derselben Aufnahme überlappt. Dadurch wurde erkannt, dass die Legacy-Datei `aruco_poses_Miro_1.csv` zeitlich zu `Miro_2` gehört und nicht für `Miro_1` verwendet werden darf.
 * **Status- und Handlungsempfehlung:** Für jede Sequenz werden ein `status` und eine `next_action` erzeugt, z. B. `fix_timestamps`, `convert_mp4`, `download_or_process_mps`, `run_aruco_extraction` oder `ready_for_master_merge`. Das Skript verändert keine Rohdaten; es dient ausschließlich als Validierungs- und Fortschrittskontrolle.
 
 ---
@@ -130,6 +140,11 @@ Anschließend wurde der neu angelegte Backup-Ordner `BackUp_Videos/` mit dem Arb
 * **Archivierte Audio-Batch-Ausgaben:** `audio_batch_backups/job_2151515/` und `audio_batch_backups/job_2151518/`
 * **VRS-Health-Check-Berichte:** zehn Berichte unter `Test_SLAM/`, davon neun unterschiedliche Julienco-Aufnahmen und ein zusätzlicher Bericht aus dem Einzeltest-Verzeichnis
 * **Reproduzierbare Clusterumgebung:** `singularity/singularity.recipe`
+* **Kalibrierte Markerposen der Golden Sequence:** `Data_collection/aruco_poses_Jona_6_20260616_182111.csv`
+* **Annotiertes Marker-Kontrollvideo:** `Data_collection/aruco_Jona_6_20260616_182111.mp4`
+* **Nativer Gaze-Export:** `Data_collection/gaze_Jona_6_20260616_182111.csv`
+* **Master-Dataset:** `Data_collection/master_datasets/Jona_6_20260616_182111_master.csv`
+* **Master-Dataset-Validierung:** `Data_collection/master_datasets/Jona_6_20260616_182111_master_report.json`
 
 ### 6.2 Ergebnis des aktuellen QA-Laufs
 
@@ -138,28 +153,34 @@ Anschließend wurde der neu angelegte Backup-Ordner `BackUp_Videos/` mit dem Arb
 | Gesamtzahl erkannter Sequenzen | 136 |
 | Trainingskandidaten (`include_in_training=True`) | 124 |
 | Ausgeschlossene Test-/Unknown-Sequenzen | 12 |
-| Aktuell nutzbar (`valid` oder `valid_with_warnings`) | 21 |
+| Aktuell nutzbar (`valid` oder `valid_with_warnings`) | 60 |
 | Vollständig validiert (`valid`) | 1 |
-| Nutzbar mit Folgearbeit (`valid_with_warnings`) | 20 |
-| Unvollständige Trigger (`partial_timestamps`) | 18 |
-| Fehlender MPS-Ordner | 37 |
-| Fehlendes oder unvollständiges Handtracking | 59 |
-| Fehlende SLAM-Trajektorie | 1 |
+| Nutzbar mit Folgearbeit (`valid_with_warnings`) | 59 |
+| Status `partial_timestamps` | 24 |
+| Sequenzen mit mindestens einem unvollständigen Triggerproblem | 51 |
+| Fehlender MPS-Ordner | 0 |
+| Unvollständige MPS-Ausgaben | 47 |
+| Fehlende Handtracking-Datei | 46 |
+| Keine gültige Hand im Handover | 2 |
+| Zu geringe Handabdeckung im Handover | 1 |
 | Backup/Data_vrs Namensabgleich | 136 / 136, keine fehlenden Dateien |
-| Vorhandene MP4-Dateien | 31 |
-| Fehlende MP4-Dateien laut Dry-Run | 105 |
+| Vorhandene MP4-Dateien | 32 |
+| Fehlende MP4-Dateien | 104 |
+| Fehlende Marker-CSV-Dateien | 131 |
+| Marker-CSV mit falschem Zeitbereich | 1 |
 
 ### 6.3 Nächste automatisch abgeleitete Arbeitsschritte
 
 | `next_action` | Anzahl Sequenzen | Bedeutung |
 | :--- | ---: | :--- |
-| `download_or_process_mps` | 97 | MPS-Daten, Handtracking oder SLAM sind noch fehlend oder unvollständig. |
-| `fix_timestamps` | 18 | Fehlende Trigger müssen manuell oder halbautomatisch korrigiert werden. |
-| `run_aruco_extraction` | 14 | Labels und MPS sind grundsätzlich vorhanden; ArUco-Posen fehlen noch. |
-| `convert_mp4` | 6 | Sequenzen sind grundsätzlich nutzbar, aber MP4-Exports fehlen noch. |
+| `download_or_process_mps` | 47 | Handtracking oder SLAM sind noch fehlend beziehungsweise unvollständig. |
+| `fix_timestamps` | 27 | Fehlende Trigger müssen manuell oder halbautomatisch korrigiert werden. |
+| `run_aruco_extraction` | 57 | Labels und MPS sind grundsätzlich vorhanden; kalibrierte Markerposen fehlen noch. |
+| `review_or_exclude_sequence` | 3 | Handtracking im Handover fehlt oder unterschreitet die Mindestabdeckung. |
+| `manual_review` | 1 | Eine ungewöhnlich kurze Phase muss manuell geprüft werden. |
 | `ready_for_master_merge` | 1 | Sequenz ist für den nächsten Merge-Schritt vollständig vorbereitet. |
 
-Ein wichtiger Fortschritt gegenüber dem vorherigen Stand ist, dass nach der verbesserten Audio-Erkennung keine Sequenz mehr wegen `bad_timestamp_order` klassifiziert wird. Durch den Backup-Abgleich ist der VRS-Arbeitsbestand nun vollständig. Der aktuelle Hauptengpass liegt dadurch nicht mehr beim Vorhandensein der Rohdaten, sondern bei der noch laufenden MPS-Verarbeitung sowie bei 18 Sequenzen mit unvollständigen Triggern (`partial_timestamps`), insbesondere fehlendem `DONE` oder `THIRD`.
+Ein wichtiger Fortschritt gegenüber dem vorherigen Stand ist, dass die QA nun nicht nur Dateiexistenz, sondern die tatsächliche zeitliche Nutzbarkeit der Hand- und Markerdaten bewertet. Der aktuelle Hauptengpass liegt bei 47 unvollständigen MPS-Ausgaben, 27 Sequenzen mit zu korrigierenden Triggern und 57 noch ausstehenden kalibrierten Markerextraktionen.
 
 ### 6.4 Durchgeführte Skript-Tests
 * `python3 -m py_compile Code/dataset_qa.py Code/vrs_to_mp4_all.py`
@@ -167,8 +188,14 @@ Ein wichtiger Fortschritt gegenüber dem vorherigen Stand ist, dass nach der ver
 * `python3 Code/dataset_qa.py --help`
 * `python3 Code/vrs_to_mp4_all.py --help`
 * `python3 Code/vrs_to_mp4_all.py --dry-run --limit 5`
+* `python3 -m py_compile Code/detect_tags.py Code/extract_multimodal_data.py Code/build_master_dataset.py`
+* `conda run -n aria_conda python Code/detect_tags.py --help`
+* Marker-Smoke-Test mit drei Frames von `Miro_2_20260604_153451`
+* Vollständige Markerextraktion und visuelle Kontrolle für `Jona_6_20260616_182111`
+* `conda run -n aria_conda python Code/build_master_dataset.py --sequence-id Jona_6_20260616_182111 --overwrite`
+* Struktur-, Zeit-, Label-, Transformations- und Overwrite-Guard-Prüfungen des erzeugten Master-Datensatzes
 
-Der Dry-Run der MP4-Konvertierung erkannte 136 VRS-Dateien, 31 bereits vorhandene MP4-Dateien und 105 noch fehlende MP4-Exporte. Es wurde dabei keine echte Konvertierung gestartet.
+Der damalige Dry-Run der MP4-Konvertierung erkannte 136 VRS-Dateien, 31 bereits vorhandene MP4-Dateien und 105 noch fehlende MP4-Exporte. Dabei wurde keine echte Konvertierung gestartet. Durch den späteren Export der Golden Sequence liegt der aktuelle Stand bei 32 vorhandenen und 104 fehlenden MP4-Dateien.
 
 ### 6.5 Audio-Verarbeitung auf dem TCML-Cluster
 
@@ -195,3 +222,37 @@ Alle vier ausgewerteten Aria-Gen-2-Prüfprofile (`Default`, `CI`, `Location` und
 * Die technische Statusdokumentation und die Problemliste wurden im Verzeichnis `Thesis/` gebündelt; zusätzlich wurde die TCML-Dokumentation als `Thesis/TCML_Documentation_2025-10.28.pdf` aufgenommen.
 * Die veralteten Marker-PDFs unter `Marker/` wurden entfernt. Die im Versuchsaufbau verwendeten Markerfamilien und physischen Größen bleiben in Abschnitt 3 dokumentiert.
 * `.gitignore` wurde um generierte Python-Dateien, lokale Daten- und Backupordner sowie große Audio-/Videoformate erweitert. Dadurch sollen Rohdaten und abgeleitete Medien nicht versehentlich eingecheckt werden; gezielt versionierte QA- und Ergebnisarchive bleiben davon unberührt.
+
+### 6.8 Golden Sequence und erster Master-Datensatz
+
+Für die End-to-End-Validierung wurde zunächst `Miro_2_20260604_153451` untersucht. Marker, Trigger und SLAM waren zeitlich kompatibel, im gesamten Handover-Fenster von 78 Handtracking-Zeilen war jedoch weder die linke noch die rechte Hand gültig. Die Sequenz wird deshalb nicht für die Handpositionsvorhersage verwendet und von der erweiterten QA als `missing_handover_hand_tracking` markiert.
+
+Als Golden Sequence wurde anschließend `Jona_6_20260616_182111` ausgewählt. Sie besitzt ein 5,44 s langes Handover-Fenster mit 327 Handtracking-Zeilen. Mindestens eine Hand ist in 100 % dieser Zeilen gültig; die linke Hand erreicht 100 %, die rechte Hand 90,52 %. Das annotierte Kontrollvideo bestätigt gleichzeitig sichtbare Hand-, Roboter- und Objektmarker während der Übergabe.
+
+Die kalibrierte Markerextraktion für diese Sequenz verarbeitete 1.096 RGB-Frames und erzeugte 9.550 akzeptierte 6-DoF-Markerposen. Drei nicht erlaubte ArUco-IDs wurden als wahrscheinliche Fehlpositive verworfen. Der mediane Reprojektionsfehler beträgt 0,48 px; 95 % der Posen liegen unter 1,41 px. Im Handover-Fenster sind Roboteranker und Objektmarker in allen ungefähr 164 RGB-Frames vorhanden.
+
+Der daraus erzeugte Master-Datensatz besitzt folgende Eigenschaften:
+
+| Kennzahl | Wert |
+| :--- | ---: |
+| Zeitpunkte bei ungefähr 30 Hz | 936 |
+| Spalten/Features einschließlich Masken und Targets | 576 |
+| Dauer | 31,167 s |
+| `continue` | 576 Zeilen |
+| `fetch` | 196 Zeilen |
+| `handover` | 164 Zeilen |
+| Gültige Gaze-Samples | 95,19 % |
+| Gültige linke Hand | 95,41 % |
+| Gültige rechte Hand | 87,82 % |
+| SLAM-Matchrate | 96,15 % |
+| Sichtbarkeit Roboter-AprilTag 0 | 88,68 % |
+| Gültiges zukünftiges linkes Wrist-Target bei +1 s | 84,08 % |
+| Gültiges zukünftiges rechtes Wrist-Target bei +1 s | 76,50 % |
+
+Die zeitliche Zuordnung liegt für Handtracking maximal 5,4 ms und für SLAM maximal 0,36 ms vom jeweiligen Master-Zeitpunkt entfernt. Der aus SLAM und AprilTag 0 berechnete Roboteranker schwankt in Weltkoordinaten nur ungefähr 2–3 mm, was die implementierte Transformationskette für diesen ersten Datensatz plausibilisiert.
+
+Noch offene Ground-Truth- und Kalibrierungspunkte:
+
+* **Zielobjekt:** `target_object_id` bleibt aktuell `-1` beziehungsweise unbekannt. Blickwinkel zu allen sichtbaren Objektmarkern sind als Eingabefeatures vorhanden, dürfen aber ohne manuell oder protokollbasiert bestätigte Objekt-ID nicht als Ground Truth behandelt werden.
+* **Empfangende Hand:** Zukünftige Posen werden vorerst für beide Hände erzeugt. Welche Hand tatsächlich die Zielhand ist, muss pro Sequenz gelabelt oder über eine klar dokumentierte Regel bestimmt werden.
+* **Roboterbasis:** Die robotermarker-relativen Koordinaten verwenden AprilTag 0 als Referenz. Vor einer realen Roboteransteuerung muss noch die starre Transformation vom Marker zur physischen Roboterbasis vermessen und angewendet werden.

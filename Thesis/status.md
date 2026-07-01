@@ -1,5 +1,9 @@
 # Technische Dokumentation: Entwicklungsstand Framework zur multimodalen Intentionsschätzung
 
+**Dokument aktualisiert:** 1. Juli 2026
+
+**Dokumentierter Repository-Stand:** 26. Juni 2026
+
 ## 1. System-Architektur & Infrastruktur
 
 Um eine reproduzierbare, plattformunabhängige und isolierte Entwicklungsumgebung zu gewährleisten und Konflikte mit dem globalen System zu vermeiden, wurde eine dedizierte Python-Infrastruktur aufgesetzt.
@@ -7,6 +11,9 @@ Um eine reproduzierbare, plattformunabhängige und isolierte Entwicklungsumgebun
 * **Virtual Environment (Conda):** Es wurde eine virtuelle Umgebung namens `aria_conda` mittels Anaconda eingerichtet. Dies stellt sicher, dass alle hardwarenahen, vorkompilierten C++-Bindings des Meta SDKs exakt mit den Python-Bibliotheken harmonieren.
 * **Python-Version:** Verwendung von Python 3.10, um maximale Stabilität mit den Deep-Learning-Bibliotheken (PyTorch) und dem Meta-Aria-Ecosystem zu garantieren.
 * **Hardware-Abstraktion:** Die Pipeline nutzt auf Linux-Infrastrukturen die Nvidia CUDA-Beschleunigung für das parallele Deep-Learning-Training. Die lokale Vorverarbeitung unterstützt zudem hardwarebeschleunigte Dekodierung, fällt bei Bedarf jedoch nahtlos auf einen robusten Software-Dekoder (`H.265 SW decoder via xprs`) zurück.
+* **TCML-Cluster-Container:** Für reproduzierbare Verarbeitung auf dem TCML-GPU-Cluster wurde unter `singularity/singularity.recipe` eine Singularity-Definition angelegt. Das Image basiert auf Ubuntu 22.04 mit CUDA 12.4.1 und cuDNN und verwendet eine isolierte Python-3.10-Umgebung unter `/opt/aria_env`.
+* **Festgeschriebene Kernabhängigkeiten:** Der Container installiert unter anderem PyTorch 2.4.1 mit CUDA 12.4, OpenCV Contrib 4.10, Project Aria Tools 2.1.2, Project Aria MPS 1.2.1, Faster-Whisper 1.2.1 und Ultralytics 8.4.53. Ein integrierter Smoke-Test prüft die zentralen Imports, die Verfügbarkeit von `cv2.aruco`, `ffmpeg` und `vrs_to_mp4` sowie die erkannte CUDA-Laufzeit.
+* **Cluster-Ausführung:** Der Container ist für den Aufruf mit `singularity --nv` vorgesehen. Hinweise zur Datenübertragung, zur Anforderung eines GPU-Knotens und zum Start einer beschreibbaren Sandbox sind in `Links and Commands.txt` dokumentiert.
 
 ---
 
@@ -26,17 +33,18 @@ Um eine reproduzierbare, plattformunabhängige und isolierte Entwicklungsumgebun
 * **Warum:** Dies ermöglicht eine schnelle visuelle Inspektion der aufgezeichneten Daten, das reibungslose Teilen von Sequenzen und dient als Grundlage für die überlagerte Visualisierung der 3D-Koordinaten.
 
 ### Modul D: Synchronisiertes Audio-Annotation-System (Aria Gen 2 Codec-Handling)
-* **Funktion:** Da die Meta Aria Gen 2 komprimierte Audio-Datenblöcke verwendet, mischt das Modul die channels des Mikrofon-Arrays mathematisch zu einer Mono-Spur zusammen und exportiert ein unkomprimiertes 16-Bit-PCM-WAV-Signal (16 kHz).
+* **Funktion:** Da die Meta Aria Gen 2 komprimierte Audio-Datenblöcke verwendet, mischt das Modul die Kanäle des Mikrofon-Arrays mathematisch zu einer Mono-Spur zusammen und exportiert ein unkomprimiertes 16-Bit-PCM-WAV-Signal (16 kHz).
 * **Robuste Audio-Vorverarbeitung:** Da sich bei den bisherigen Aufnahmen gezeigt hat, dass die Sprachkommandos teilweise sehr leise aufgenommen wurden, wurde das Skript `Code/speech_recognition_demo.py` erweitert. Die aus dem VRS-Container extrahierte Audiospur wird nun zuerst per RMS-Normalisierung angehoben. Wenn `ffmpeg` verfügbar ist, wird zusätzlich eine Whisper-optimierte Vorverarbeitung angewendet (`highpass`, Kompressor und Loudness-Normalisierung auf ca. -16 LUFS). Dadurch wird die Erkennung leiser kurzer Befehle deutlich stabiler, ohne dass die Rohdaten verändert werden.
 * **Verbesserte Command-Erkennung:** Das normalisierte Signal wird an ein lokales **Faster-Whisper-Modell** übergeben, welches die Spur nach der sequentiellen Trigger-Abfolge (*"Start"*, *"Second"*, *"Done"*, *"Third"*) scannt. Die Erkennung basiert nicht mehr nur auf exakten Worttreffern, sondern nutzt zusätzlich Fuzzy-Matching und Alias-Listen für typische Fehltranskriptionen (z. B. `"star"` für `"start"` oder `"down"` für `"done"`). Die finale Auswahl wird anschließend über die erwartete chronologische Reihenfolge `START -> SECOND -> DONE -> THIRD` stabilisiert.
+* **CPU-/GPU-Konfiguration:** Die Ausführungsplattform und numerische Repräsentation von Faster-Whisper sind nun über `--device` und `--compute-type` konfigurierbar. Lokal bleibt `--device cpu --compute-type int8` der Standard; auf einem GPU-Knoten kann die Erkennung beispielsweise mit `--device cuda --compute-type float16` ausgeführt werden. Damit ist dasselbe Skript ohne Codeänderung lokal und auf dem TCML-Cluster nutzbar.
 * **Debug- und QA-Ausgaben:** Die finale Datei `timestamps_summary.json` bleibt für nachgelagerte Pipelines kompatibel und enthält nur die final ausgewählten Trigger-Zeitpunkte. Zusätzlich erzeugt das Skript nun `timestamps_debug.json`, in der erkannte Kandidaten, Match-Scores und Warnungen wie fehlende Trigger gespeichert werden. Optional können mit `--keep-debug-audio` die normalisierten WAV-Dateien zur manuellen Kontrolle abgelegt werden.
 * Über den Aufruf `get_first_time_ns` wird weiterhin der Hardware-Startzeitpunkt (`TimeDomain.DEVICE_TIME`) abgegriffen und mit den relativen Wort-Zeitstempeln von Whisper verrechnet. Die daraus resultierenden Trigger-Zeitpunkte bleiben somit nanosekundengenau mit den Sensorströmen synchronisiert.
 * **Warum:** Für das Supervised Learning wird so eine nanosekundengenaue, automatisierte zeitliche Synchronität zwischen dem gesprochenen Befehl und den physikalischen Augen- und Handbewegungen des Probanden hergestellt.
-* **Architektonischer Ausschluss von Feature-Leckagen:** Die extrahierten Audio-Befehle dienen ausschließlich der automatisierten Offline-Phasensegmentierung (Ersatz für manuelles Frame-Labeling). Die Audiospur wird **not** als Feature in die finale KI-Dateneinspeisung übernommen. Das neuronale Netz lernt rein auf den physikalischen Geometrie- und Bilddaten.
+* **Architektonischer Ausschluss von Feature-Leckagen:** Die extrahierten Audio-Befehle dienen ausschließlich der automatisierten Offline-Phasensegmentierung (Ersatz für manuelles Frame-Labeling). Die Audiospur wird **nicht** als Feature in die finale KI-Dateneinspeisung übernommen. Das neuronale Netz lernt rein auf den physikalischen Geometrie- und Bilddaten.
 
 ---
 
-## 3. Structure der finalen KI-Dateneinspeisung & Feature-Matrix
+## 3. Struktur der finalen KI-Dateneinspeisung & Feature-Matrix
 
 Ein wichtiger architektonischer Meilenstein ist die Trennung von visueller Kontrolle und mathematischem KI-Training. Die originalen hochfrequenten Sensordaten werden nicht zerschnitten, sondern über Nanosekunden-Zeitstempel in eine Master-Tabelle überführt, über die der PyTorch-`DataLoader` mittels "Sliding Window" iteriert.
 
@@ -118,6 +126,10 @@ Anschließend wurde der neu angelegte Backup-Ordner `BackUp_Videos/` mit dem Arb
 * **Normalisierte Debug-Audios:** `Data_collection/Data_vrs/debug_audio/` (42 WAV-Dateien)
 * **Dataset-Manifest:** `Data_collection/dataset_manifest.csv`
 * **QA-Report:** `Data_collection/dataset_qa_report.json`
+* **Archivierte Audio-Smoke-Test-Ausgabe:** `audio_smoke_results/job_2151504/`
+* **Archivierte Audio-Batch-Ausgaben:** `audio_batch_backups/job_2151515/` und `audio_batch_backups/job_2151518/`
+* **VRS-Health-Check-Berichte:** zehn Berichte unter `Test_SLAM/`, davon neun unterschiedliche Julienco-Aufnahmen und ein zusätzlicher Bericht aus dem Einzeltest-Verzeichnis
+* **Reproduzierbare Clusterumgebung:** `singularity/singularity.recipe`
 
 ### 6.2 Ergebnis des aktuellen QA-Laufs
 
@@ -157,3 +169,29 @@ Ein wichtiger Fortschritt gegenüber dem vorherigen Stand ist, dass nach der ver
 * `python3 Code/vrs_to_mp4_all.py --dry-run --limit 5`
 
 Der Dry-Run der MP4-Konvertierung erkannte 136 VRS-Dateien, 31 bereits vorhandene MP4-Dateien und 105 noch fehlende MP4-Exporte. Es wurde dabei keine echte Konvertierung gestartet.
+
+### 6.5 Audio-Verarbeitung auf dem TCML-Cluster
+
+Die GPU-Unterstützung des Audio-Skripts wurde für die Batchverarbeitung auf dem TCML-Cluster vorbereitet. Neben der Wahl des Whisper-Modells können Gerät und Rechentyp nun explizit übergeben werden. Dadurch ist insbesondere die Kombination `--device cuda --compute-type float16` auf einem GPU-Knoten möglich, während lokale CPU-Läufe weiterhin mit `int8` durchgeführt werden können.
+
+Die Ergebnisse mehrerer Clusterläufe wurden getrennt vom aktiven Datensatz im Repository archiviert:
+
+| Job | Umfang | Archivierte Dateien | Zweck |
+| :--- | ---: | :--- | :--- |
+| `2151504` | 10 VRS-Sequenzen | `timestamps_summary.json`, `timestamps_debug.json`, `problem_vrs_list.txt` | Smoke-Test der Verarbeitungskette |
+| `2151515` | 136 VRS-Sequenzen | vorheriger Summary-Stand, neuer Summary-Stand und Debug-Ausgabe | Vollständiger Batchlauf mit reproduzierbarem Vorher-/Nachher-Vergleich |
+| `2151518` | 136 VRS-Sequenzen | vorheriger Summary-Stand, neuer Summary-Stand und Debug-Ausgabe | Weiterer vollständiger Batchlauf zur Ergebnisprüfung |
+
+Die beiden vollständigen Batchläufe erzeugten unterschiedliche Ergebnisdateien. Die Archive werden deshalb als Laufprotokolle und nicht als austauschbare Kopien behandelt. Die produktiv verwendete Trigger-Datei bleibt `Data_collection/Data_vrs/timestamps_summary.json`; ein archivierter Jobstand darf sie nur nach separater QA ersetzen.
+
+### 6.6 VRS-Health-Checks der SLAM-Testaufnahmen
+
+Für neun unterschiedliche Julienco-Testaufnahmen wurden detaillierte `vrs_health_check.json`-Berichte erzeugt. Ein zehnter Bericht liegt zusätzlich im Verzeichnis `Test_SLAM/mps_test_single/` und dokumentiert den separaten Einzeltest derselben ersten Sequenz. Die Berichte prüfen unter anderem Vollständigkeit, Zeitstempelmonotonie, Drop-Raten und Synchronität der Kamera-, Audio-, IMU-, Gaze-, Hand- und VIO-Ströme.
+
+Alle vier ausgewerteten Aria-Gen-2-Prüfprofile (`Default`, `CI`, `Location` und `Handtracking`) markieren diese Dateien formal als `fail`. Als fehlgeschlagener Check wird jeweils ausschließlich `file_level_checks.streams_match_profile` aufgeführt. Die Detailmeldung nennt zusätzliche beziehungsweise nicht zugeordnete Gen-2-Ströme wie GPS, Time-Domain-Mapping und Battery Data. Das Ergebnis ist daher zunächst als Profilkompatibilitätsproblem des Health-Check-Regelsatzes zu behandeln und nicht automatisch als Nachweis beschädigter Sensordaten. Bei einzelnen Aufnahmen werden zusätzlich Warnungen zur größten Periodenabweichung der SLAM-Kameras ausgegeben.
+
+### 6.7 Repository- und Dokumentationspflege
+
+* Die technische Statusdokumentation und die Problemliste wurden im Verzeichnis `Thesis/` gebündelt; zusätzlich wurde die TCML-Dokumentation als `Thesis/TCML_Documentation_2025-10.28.pdf` aufgenommen.
+* Die veralteten Marker-PDFs unter `Marker/` wurden entfernt. Die im Versuchsaufbau verwendeten Markerfamilien und physischen Größen bleiben in Abschnitt 3 dokumentiert.
+* `.gitignore` wurde um generierte Python-Dateien, lokale Daten- und Backupordner sowie große Audio-/Videoformate erweitert. Dadurch sollen Rohdaten und abgeleitete Medien nicht versehentlich eingecheckt werden; gezielt versionierte QA- und Ergebnisarchive bleiben davon unberührt.

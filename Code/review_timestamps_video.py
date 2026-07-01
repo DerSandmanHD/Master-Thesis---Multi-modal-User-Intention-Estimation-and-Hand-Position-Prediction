@@ -1,29 +1,30 @@
 #!/usr/bin/env python3
-"""Interactive video review tool for command timestamps.
+"""Interactive MP4 + WAV timestamp review tool.
 
-Reads Data_collection/dataset_manifest.csv, opens matching MP4 files, overlays
-automatic timestamps, and writes manual corrections to
-Data_collection/manual_timestamp_review.csv.
+Shows the MP4 with OpenCV, plays the matching WAV with sounddevice, and lets you
+write manual command timestamp corrections using keyboard shortcuts.
+
+Inputs:
+  Data_collection/dataset_manifest.csv
+  Data_collection/Data_mp4/<sequence_id>.mp4
+  Data_collection/Data_vrs/debug_audio/<sequence_id>.wav
+
+Output:
+  Data_collection/manual_timestamp_review.csv
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
-import os
+import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
 import cv2
+import sounddevice as sd
+import soundfile as sf
 
-
-COMMANDS = ["START", "SECOND", "DONE", "THIRD"]
-TIME_COLUMNS = {
-    "START": "start_s",
-    "SECOND": "second_s",
-    "DONE": "done_s",
-    "THIRD": "third_s",
-}
 
 REVIEW_FIELDS = [
     "sequence_id",
@@ -43,8 +44,134 @@ REVIEW_FIELDS = [
 ]
 
 
+COMMAND_TO_MANUAL_COLUMN = {
+    "START": "manual_start_s",
+    "SECOND": "manual_second_s",
+    "DONE": "manual_done_s",
+    "THIRD": "manual_third_s",
+}
+
+
+class WavPlayer:
+    def __init__(self, wav_path: Path):
+        self.wav_path = wav_path
+        self.audio, self.sample_rate = sf.read(str(wav_path), dtype="float32", always_2d=True)
+        self.duration_s = len(self.audio) / float(self.sample_rate)
+        self.stream: Optional[sd.OutputStream] = None
+        self.position_sample = 0
+        self.next_sample = 0
+        self.playing = False
+        self.finished = False
+        self.first_dac_time: Optional[float] = None
+        self.first_dac_sample = 0
+        self.last_status = ""
+
+    def _callback(self, outdata, frames, time_info, status):
+        if status:
+            self.last_status = str(status)
+
+        start = self.next_sample
+        end = min(start + frames, len(self.audio))
+        chunk = self.audio[start:end]
+
+        outdata.fill(0)
+
+        if len(chunk) > 0:
+            outdata[: len(chunk), :] = chunk
+
+        if self.first_dac_time is None:
+            self.first_dac_time = float(time_info.outputBufferDacTime)
+            self.first_dac_sample = start
+
+        self.next_sample = end
+
+        if self.next_sample >= len(self.audio):
+            self.finished = True
+            raise sd.CallbackStop
+
+    def _finished_callback(self) -> None:
+        if self.finished:
+            self.position_sample = len(self.audio)
+        self.playing = False
+
+    def play(self) -> None:
+        if self.playing:
+            return
+
+        self._close_stream()
+        self.next_sample = self.position_sample
+        self.first_dac_time = None
+        self.first_dac_sample = self.position_sample
+        self.finished = self.position_sample >= len(self.audio)
+        if self.finished:
+            return
+
+        try:
+            self.stream = sd.OutputStream(
+                samplerate=self.sample_rate,
+                channels=self.audio.shape[1],
+                dtype="float32",
+                callback=self._callback,
+                finished_callback=self._finished_callback,
+                blocksize=0,
+            )
+            self.playing = True
+            self.stream.start()
+        except Exception:
+            self.playing = False
+            self._close_stream()
+            raise
+
+    def pause(self) -> None:
+        current_sample = int(round(self.current_time() * self.sample_rate))
+        self.playing = False
+        self._close_stream()
+        self.position_sample = max(0, min(current_sample, len(self.audio)))
+        self.next_sample = self.position_sample
+        self.first_dac_time = None
+        self.finished = self.position_sample >= len(self.audio)
+
+    def _close_stream(self) -> None:
+        if self.stream is not None:
+            try:
+                self.stream.stop()
+            except Exception:
+                pass
+            try:
+                self.stream.close()
+            except Exception:
+                pass
+            self.stream = None
+
+    def seek(self, time_s: float) -> None:
+        was_playing = self.playing
+        self.pause()
+        time_s = max(0.0, min(float(time_s), self.duration_s))
+        self.position_sample = int(time_s * self.sample_rate)
+        self.next_sample = self.position_sample
+        self.finished = self.position_sample >= len(self.audio)
+        if was_playing:
+            self.play()
+
+    def current_time(self) -> float:
+        if self.playing and self.stream is not None and self.first_dac_time is not None:
+            try:
+                stream_time = float(self.stream.time)
+                played_seconds = max(0.0, stream_time - self.first_dac_time)
+                audible_sample = self.first_dac_sample + int(played_seconds * self.sample_rate)
+                audible_sample = max(0, min(audible_sample, len(self.audio)))
+                return audible_sample / float(self.sample_rate)
+            except Exception:
+                pass
+        return self.position_sample / float(self.sample_rate)
+
+    def close(self) -> None:
+        self.pause()
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+
     parser.add_argument(
         "--data-root",
         type=Path,
@@ -55,31 +182,37 @@ def parse_args() -> argparse.Namespace:
         "--manifest",
         type=Path,
         default=None,
-        help="Path to dataset_manifest.csv. Default: Data_collection/dataset_manifest.csv",
+        help="Default: Data_collection/dataset_manifest.csv",
     )
     parser.add_argument(
         "--mp4-dir",
         type=Path,
         default=None,
-        help="Path to MP4 directory. Default: Data_collection/Data_mp4",
+        help="Default: Data_collection/Data_mp4",
+    )
+    parser.add_argument(
+        "--wav-dir",
+        type=Path,
+        default=None,
+        help="Default: Data_collection/Data_vrs/debug_audio",
     )
     parser.add_argument(
         "--review-csv",
         type=Path,
         default=None,
-        help="Manual review CSV. Default: Data_collection/manual_timestamp_review.csv",
+        help="Default: Data_collection/manual_timestamp_review.csv",
     )
     parser.add_argument(
         "--only-next-action",
         type=str,
         default=None,
-        help="Only review rows with this next_action, e.g. fix_timestamps.",
+        help="Example: fix_timestamps",
     )
     parser.add_argument(
         "--only-status",
         type=str,
         default=None,
-        help="Only review rows with this status, e.g. partial_timestamps.",
+        help="Example: partial_timestamps",
     )
     parser.add_argument(
         "--sequence",
@@ -98,6 +231,24 @@ def parse_args() -> argparse.Namespace:
         default=0,
         help="Start at this index in the filtered review list.",
     )
+    parser.add_argument(
+        "--no-audio",
+        action="store_true",
+        help="Disable WAV audio playback.",
+    )
+    parser.add_argument(
+        "--max-display-width",
+        type=int,
+        default=1280,
+        help="Resize large frames for display. Use 0 to keep the original width.",
+    )
+    parser.add_argument(
+        "--max-display-height",
+        type=int,
+        default=900,
+        help="Resize large frames for display. Use 0 to keep the original height.",
+    )
+
     return parser.parse_args()
 
 
@@ -169,8 +320,30 @@ def find_video(mp4_dir: Path, sequence_id: str) -> Optional[Path]:
     return None
 
 
+def find_wav(wav_dir: Path, sequence_id: str) -> Optional[Path]:
+    candidates = [
+        wav_dir / f"{sequence_id}.wav",
+        wav_dir / f"{sequence_id}.WAV",
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    matches = sorted(wav_dir.glob(f"{sequence_id}*.wav"))
+    if matches:
+        return matches[0]
+
+    matches = sorted(wav_dir.glob(f"{sequence_id}*.WAV"))
+    if matches:
+        return matches[0]
+
+    return None
+
+
 def initial_seek_time(row: Dict[str, str]) -> float:
     missing = row.get("missing_commands", "").strip()
+
     start_s = to_float(row.get("start_s", ""))
     second_s = to_float(row.get("second_s", ""))
     done_s = to_float(row.get("done_s", ""))
@@ -214,15 +387,9 @@ def make_review_row(row: Dict[str, str], existing: Optional[Dict[str, str]] = No
 
 
 def set_manual_time(review: Dict[str, str], command: str, time_s: float) -> None:
-    column = {
-        "START": "manual_start_s",
-        "SECOND": "manual_second_s",
-        "DONE": "manual_done_s",
-        "THIRD": "manual_third_s",
-    }[command]
+    column = COMMAND_TO_MANUAL_COLUMN[command]
     review[column] = f"{time_s:.3f}"
-    if not review.get("decision"):
-        review["decision"] = "manual_fix"
+    review["decision"] = "manual_fix"
 
 
 def put_text_lines(frame, lines: List[str]) -> None:
@@ -232,6 +399,18 @@ def put_text_lines(frame, lines: List[str]) -> None:
 
     for i, line in enumerate(lines):
         yy = y + i * line_height
+
+        cv2.putText(
+            frame,
+            line,
+            (x + 2, yy + 2),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.65,
+            (0, 0, 0),
+            3,
+            cv2.LINE_AA,
+        )
+
         cv2.putText(
             frame,
             line,
@@ -244,17 +423,32 @@ def put_text_lines(frame, lines: List[str]) -> None:
         )
 
 
+def resize_for_display(frame, max_width: int, max_height: int):
+    height, width = frame.shape[:2]
+    width_scale = max_width / width if max_width > 0 and width > max_width else 1.0
+    height_scale = max_height / height if max_height > 0 and height > max_height else 1.0
+    scale = min(width_scale, height_scale)
+    if scale >= 1.0:
+        return frame
+    display_size = (max(1, int(width * scale)), max(1, int(height * scale)))
+    return cv2.resize(frame, display_size, interpolation=cv2.INTER_AREA)
+
+
 def review_video(
     row: Dict[str, str],
     video_path: Path,
+    wav_path: Optional[Path],
     review_rows: Dict[str, Dict[str, str]],
     review_csv_path: Path,
     index: int,
     total: int,
+    audio_enabled: bool,
+    max_display_width: int,
+    max_display_height: int,
 ) -> str:
     sequence_id = row["sequence_id"]
-    cap = cv2.VideoCapture(str(video_path))
 
+    cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         print(f"Could not open video: {video_path}")
         return "next"
@@ -264,16 +458,32 @@ def review_video(
         fps = 30.0
 
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    duration_s = frame_count / fps if frame_count > 0 else 0.0
+    video_duration_s = frame_count / fps if frame_count > 0 else 0.0
 
-    start_time = initial_seek_time(row)
-    cap.set(cv2.CAP_PROP_POS_MSEC, start_time * 1000.0)
+    wav_player: Optional[WavPlayer] = None
+    if audio_enabled and wav_path is not None:
+        try:
+            wav_player = WavPlayer(wav_path)
+        except Exception as exc:
+            print(f"WARNING: Could not open WAV audio: {wav_path}")
+            print(f"Reason: {exc}")
+            wav_player = None
+
+    playback_duration_s = video_duration_s
+    if wav_player is not None:
+        playback_duration_s = min(video_duration_s, wav_player.duration_s)
+
+    start_time = min(initial_seek_time(row), playback_duration_s)
 
     existing = review_rows.get(sequence_id)
     review = make_review_row(row, existing)
     review_rows[sequence_id] = review
 
-    paused = False
+    paused = True
+    last_frame = None
+    last_frame_index = -1
+    timeline_s = start_time
+    playback_start_wall = time.monotonic()
 
     auto_times = {
         "START": to_float(row.get("start_s", "")),
@@ -285,126 +495,241 @@ def review_video(
     print()
     print("============================================================")
     print(f"[{index + 1}/{total}] {sequence_id}")
-    print(f"Video: {video_path}")
+    print(f"MP4: {video_path}")
+    print(f"WAV: {wav_path if wav_path else 'missing'}")
     print(f"Start review at: {start_time:.3f}s")
-    print("Keys: 1 START, 2 SECOND, 3 DONE, 4 THIRD, space pause, n next, p previous, q quit")
-    print("      a -1s, d +1s, z -5s, c +5s, v accept_auto, e exclude, u uncertain")
+    print("Keys:")
+    print("  1 = set START")
+    print("  2 = set SECOND")
+    print("  3 = set DONE")
+    print("  4 = set THIRD")
+    print("  space = pause/play")
+    print("  a/d = -1s/+1s")
+    print("  z/c = -5s/+5s")
+    print("  v = accept_auto")
+    print("  e = exclude")
+    print("  u = uncertain")
+    print("  n = next")
+    print("  p = previous")
+    print("  q = quit")
     print("============================================================")
 
-    last_frame = None
+    def seek_video(new_time_s: float) -> bool:
+        nonlocal last_frame, last_frame_index
 
-    while True:
-        if not paused or last_frame is None:
-            ok, frame = cap.read()
-            if not ok:
+        target_index = min(
+            max(0, int(new_time_s * fps)),
+            max(0, frame_count - 1),
+        )
+        cap.set(cv2.CAP_PROP_POS_FRAMES, target_index)
+        ok, decoded_frame = cap.read()
+        if not ok:
+            last_frame = None
+            return False
+
+        last_frame = decoded_frame
+        next_index = int(round(cap.get(cv2.CAP_PROP_POS_FRAMES)))
+        last_frame_index = max(target_index, next_index - 1)
+        return True
+
+    def current_time_s() -> float:
+        if paused:
+            return timeline_s
+        if wav_player is not None:
+            return min(playback_duration_s, wav_player.current_time())
+        return min(playback_duration_s, timeline_s + (time.monotonic() - playback_start_wall))
+
+    def start_playback(new_time_s: float) -> None:
+        nonlocal paused, timeline_s, playback_start_wall, wav_player
+
+        timeline_s = max(0.0, min(float(new_time_s), playback_duration_s))
+        if wav_player is not None:
+            try:
+                wav_player.seek(timeline_s)
+                wav_player.play()
+            except Exception as exc:
+                print(f"WARNING: Audio playback disabled: {exc}")
+                wav_player.close()
+                wav_player = None
+        playback_start_wall = time.monotonic()
+        paused = False
+
+    def pause_playback() -> None:
+        nonlocal paused, timeline_s
+
+        timeline_s = current_time_s()
+        if wav_player is not None:
+            wav_player.pause()
+            timeline_s = min(playback_duration_s, wav_player.current_time())
+        paused = True
+
+    def seek_all(new_time_s: float) -> None:
+        nonlocal timeline_s
+
+        was_paused = paused
+        if not was_paused:
+            pause_playback()
+        new_time_s = max(0.0, min(float(new_time_s), playback_duration_s))
+        timeline_s = new_time_s
+        if wav_player is not None:
+            wav_player.seek(new_time_s)
+        seek_video(new_time_s)
+        if not was_paused:
+            start_playback(new_time_s)
+
+    if not seek_video(start_time):
+        print(f"Could not decode video: {video_path}")
+        cap.release()
+        return "next"
+    start_playback(start_time)
+
+    try:
+        while True:
+            current_s = current_time_s()
+            if not paused and current_s >= playback_duration_s:
                 return "next"
-            last_frame = frame
-        else:
-            frame = last_frame.copy()
 
-        current_msec = cap.get(cv2.CAP_PROP_POS_MSEC)
-        current_s = current_msec / 1000.0
+            target_frame_index = min(
+                max(0, int(current_s * fps)),
+                max(0, frame_count - 1),
+            )
+            frame_gap = target_frame_index - last_frame_index
 
-        lines = [
-            f"[{index + 1}/{total}] {sequence_id}",
-            f"t={current_s:.3f}s / {duration_s:.3f}s",
-            f"status={row.get('status', '')} next={row.get('next_action', '')}",
-            f"missing={row.get('missing_commands', '') or 'none'}",
-            "",
-            f"AUTO  START  {fmt_time(auto_times['START'])}",
-            f"AUTO  SECOND {fmt_time(auto_times['SECOND'])}",
-            f"AUTO  DONE   {fmt_time(auto_times['DONE'])}",
-            f"AUTO  THIRD  {fmt_time(auto_times['THIRD'])}",
-            "",
-            f"MAN   START  {review.get('manual_start_s', '') or '-'}",
-            f"MAN   SECOND {review.get('manual_second_s', '') or '-'}",
-            f"MAN   DONE   {review.get('manual_done_s', '') or '-'}",
-            f"MAN   THIRD  {review.get('manual_third_s', '') or '-'}",
-            f"decision={review.get('decision', '') or '-'}",
-        ]
+            if frame_gap < 0 or frame_gap > max(5, int(fps / 2)):
+                if not seek_video(current_s):
+                    return "next"
+            elif frame_gap > 0:
+                for _ in range(frame_gap):
+                    ok, decoded_frame = cap.read()
+                    if not ok:
+                        return "next"
+                    last_frame = decoded_frame
+                    last_frame_index += 1
 
-        put_text_lines(frame, lines)
-        cv2.imshow("Timestamp review", frame)
+            frame = resize_for_display(
+                last_frame.copy(),
+                max_display_width,
+                max_display_height,
+            )
 
-        delay = 30 if not paused else 0
-        key = cv2.waitKey(delay) & 0xFF
+            lines = [
+                f"[{index + 1}/{total}] {sequence_id}",
+                f"t={current_s:.3f}s / video={video_duration_s:.3f}s",
+                f"status={row.get('status', '')}",
+                f"next={row.get('next_action', '')}",
+                f"missing={row.get('missing_commands', '') or 'none'}",
+                f"audio={'on' if wav_player is not None else 'off'} paused={'yes' if paused else 'no'}",
+                "",
+                f"AUTO  START  {fmt_time(auto_times['START'])}",
+                f"AUTO  SECOND {fmt_time(auto_times['SECOND'])}",
+                f"AUTO  DONE   {fmt_time(auto_times['DONE'])}",
+                f"AUTO  THIRD  {fmt_time(auto_times['THIRD'])}",
+                "",
+                f"MAN   START  {review.get('manual_start_s', '') or '-'}",
+                f"MAN   SECOND {review.get('manual_second_s', '') or '-'}",
+                f"MAN   DONE   {review.get('manual_done_s', '') or '-'}",
+                f"MAN   THIRD  {review.get('manual_third_s', '') or '-'}",
+                f"decision={review.get('decision', '') or '-'}",
+            ]
 
-        if key == 255:
-            continue
+            put_text_lines(frame, lines)
+            cv2.imshow("Timestamp review", frame)
 
-        if key == ord(" "):
-            paused = not paused
+            if paused:
+                wait_ms = 0
+            else:
+                next_frame_s = (last_frame_index + 1) / fps
+                wait_ms = max(1, min(33, int((next_frame_s - current_s) * 1000.0)))
+            key = cv2.waitKey(wait_ms) & 0xFF
 
-        elif key == ord("q"):
-            write_review_csv(review_csv_path, review_rows)
-            cap.release()
-            cv2.destroyAllWindows()
-            return "quit"
+            if key == 255:
+                continue
 
-        elif key == ord("n"):
-            write_review_csv(review_csv_path, review_rows)
-            cap.release()
-            return "next"
+            if key == ord(" "):
+                if paused:
+                    start_playback(timeline_s)
+                else:
+                    pause_playback()
 
-        elif key == ord("p"):
-            write_review_csv(review_csv_path, review_rows)
-            cap.release()
-            return "previous"
+            elif key == ord("q"):
+                write_review_csv(review_csv_path, review_rows)
+                if wav_player is not None:
+                    wav_player.close()
+                cap.release()
+                cv2.destroyAllWindows()
+                return "quit"
 
-        elif key == ord("a"):
-            new_t = max(0.0, current_s - 1.0)
-            cap.set(cv2.CAP_PROP_POS_MSEC, new_t * 1000.0)
-            last_frame = None
+            elif key == ord("n"):
+                write_review_csv(review_csv_path, review_rows)
+                if wav_player is not None:
+                    wav_player.close()
+                cap.release()
+                return "next"
 
-        elif key == ord("d"):
-            new_t = min(duration_s, current_s + 1.0)
-            cap.set(cv2.CAP_PROP_POS_MSEC, new_t * 1000.0)
-            last_frame = None
+            elif key == ord("p"):
+                write_review_csv(review_csv_path, review_rows)
+                if wav_player is not None:
+                    wav_player.close()
+                cap.release()
+                return "previous"
 
-        elif key == ord("z"):
-            new_t = max(0.0, current_s - 5.0)
-            cap.set(cv2.CAP_PROP_POS_MSEC, new_t * 1000.0)
-            last_frame = None
+            elif key == ord("a"):
+                seek_all(current_time_s() - 1.0)
 
-        elif key == ord("c"):
-            new_t = min(duration_s, current_s + 5.0)
-            cap.set(cv2.CAP_PROP_POS_MSEC, new_t * 1000.0)
-            last_frame = None
+            elif key == ord("d"):
+                seek_all(current_time_s() + 1.0)
 
-        elif key == ord("1"):
-            set_manual_time(review, "START", current_s)
-            write_review_csv(review_csv_path, review_rows)
-            print(f"{sequence_id}: START -> {current_s:.3f}s")
+            elif key == ord("z"):
+                seek_all(current_time_s() - 5.0)
 
-        elif key == ord("2"):
-            set_manual_time(review, "SECOND", current_s)
-            write_review_csv(review_csv_path, review_rows)
-            print(f"{sequence_id}: SECOND -> {current_s:.3f}s")
+            elif key == ord("c"):
+                seek_all(current_time_s() + 5.0)
 
-        elif key == ord("3"):
-            set_manual_time(review, "DONE", current_s)
-            write_review_csv(review_csv_path, review_rows)
-            print(f"{sequence_id}: DONE -> {current_s:.3f}s")
+            elif key == ord("1"):
+                t = current_time_s()
+                set_manual_time(review, "START", t)
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: START -> {t:.3f}s")
 
-        elif key == ord("4"):
-            set_manual_time(review, "THIRD", current_s)
-            write_review_csv(review_csv_path, review_rows)
-            print(f"{sequence_id}: THIRD -> {current_s:.3f}s")
+            elif key == ord("2"):
+                t = current_time_s()
+                set_manual_time(review, "SECOND", t)
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: SECOND -> {t:.3f}s")
 
-        elif key == ord("v"):
-            review["decision"] = "accept_auto"
-            write_review_csv(review_csv_path, review_rows)
-            print(f"{sequence_id}: accept_auto")
+            elif key == ord("3"):
+                t = current_time_s()
+                set_manual_time(review, "DONE", t)
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: DONE -> {t:.3f}s")
 
-        elif key == ord("e"):
-            review["decision"] = "exclude"
-            write_review_csv(review_csv_path, review_rows)
-            print(f"{sequence_id}: exclude")
+            elif key == ord("4"):
+                t = current_time_s()
+                set_manual_time(review, "THIRD", t)
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: THIRD -> {t:.3f}s")
 
-        elif key == ord("u"):
-            review["decision"] = "uncertain"
-            write_review_csv(review_csv_path, review_rows)
-            print(f"{sequence_id}: uncertain")
+            elif key == ord("v"):
+                review["decision"] = "accept_auto"
+                for column in COMMAND_TO_MANUAL_COLUMN.values():
+                    review[column] = ""
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: accept_auto")
+
+            elif key == ord("e"):
+                review["decision"] = "exclude"
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: exclude")
+
+            elif key == ord("u"):
+                review["decision"] = "uncertain"
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: uncertain")
+
+    finally:
+        if wav_player is not None:
+            wav_player.close()
+        cap.release()
 
 
 def filter_rows(rows: List[Dict[str, str]], args: argparse.Namespace) -> List[Dict[str, str]]:
@@ -438,6 +763,7 @@ def main() -> int:
     data_root = args.data_root
     manifest_path = args.manifest or data_root / "dataset_manifest.csv"
     mp4_dir = args.mp4_dir or data_root / "Data_mp4"
+    wav_dir = args.wav_dir or data_root / "Data_vrs" / "debug_audio"
     review_csv_path = args.review_csv or data_root / "manual_timestamp_review.csv"
 
     if not manifest_path.exists():
@@ -462,20 +788,30 @@ def main() -> int:
     while 0 <= i < len(rows):
         row = rows[i]
         seq = row["sequence_id"]
-        video_path = find_video(mp4_dir, seq)
 
+        video_path = find_video(mp4_dir, seq)
         if video_path is None:
             print(f"[{i + 1}/{len(rows)}] Missing MP4 for {seq}, skipping.")
             i += 1
             continue
 
+        wav_path = None
+        if not args.no_audio:
+            wav_path = find_wav(wav_dir, seq)
+            if wav_path is None:
+                print(f"[{i + 1}/{len(rows)}] Missing WAV for {seq}. Continuing without audio.")
+
         action = review_video(
             row=row,
             video_path=video_path,
+            wav_path=wav_path,
             review_rows=review_rows,
             review_csv_path=review_csv_path,
             index=i,
             total=len(rows),
+            audio_enabled=not args.no_audio,
+            max_display_width=args.max_display_width,
+            max_display_height=args.max_display_height,
         )
 
         if action == "quit":

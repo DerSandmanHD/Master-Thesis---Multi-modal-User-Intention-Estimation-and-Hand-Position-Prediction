@@ -1,0 +1,1067 @@
+Job ID: 2154198
+Node: tcml-node5
+Repo dir: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction
+Image: /home/eker/singularity/aria_master.simg
+VRS dir: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs
+Debug audio dir: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/debug_audio
+Backup dir: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/audio_batch_backups/job_2154198
+Model: medium.en
+Device: cuda
+Compute type: int8
+Keep debug audio: 1
+Started: Wed Jul  1 04:54:20 PM CEST 2026
+
+============================================================
+1) Input overview
+============================================================
+VRS count:
+136
+
+Existing debug audio count:
+0
+
+Backing up existing timestamp outputs if present...
+
+============================================================
+2) Run speech recognition for all VRS files
+============================================================
+Loading Whisper (medium.en, device=cuda, compute_type=int8)...
+Processing 136 file(s)...
+  Atilla_1_20260616_184923.vrs: auto_accept (no warnings)
+  Atilla_2_20260616_185042.vrs: auto_accept (no warnings)
+  Atilla_3_20260616_185212.vrs: auto_accept (no warnings)
+  Atilla_4_20260616_185327.vrs: auto_accept (no warnings)
+  Atilla_5_20260616_185449.vrs: auto_accept (no warnings)
+  Atilla_6_20260616_185613.vrs: auto_accept (no warnings)
+  Atilla_7_20260616_185714.vrs: auto_accept (no warnings)
+  Atilla_8_20260616_185812.vrs: auto_accept (no warnings)
+  Berat_10_20260616_142950.vrs: auto_accept (no warnings)
+  Berat_1_20260604_154611.vrs: auto_accept (no warnings)
+  Berat_2_20260604_154801.vrs: auto_accept (no warnings)
+  Berat_3_20260604_154928.vrs: auto_accept (no warnings)
+  Berat_4_20260604_155100.vrs: auto_accept (no warnings)
+  Berat_5_20260604_155234.vrs: auto_accept (no warnings)
+  Berat_6_20260616_142129.vrs: auto_accept (no warnings)
+  Berat_7_20260616_142358.vrs: auto_accept (no warnings)
+  Berat_8_20260616_142539.vrs: auto_accept (no warnings)
+  Berat_9_20260616_142847.vrs: auto_accept (no warnings)
+  Edu_10_20260616_150412.vrs: auto_accept (no warnings)
+  Edu_1_20260604_170154.vrs: manual_review (missing_done)
+  Edu_2_20260604_170420.vrs: manual_review (missing_done)
+  Edu_3_20260604_170622.vrs: manual_review (missing_done)
+  Edu_4_20260604_170837.vrs: manual_review (missing_done)
+  Edu_5_20260604_170944.vrs: manual_review (missing_done)
+  Edu_6_20260616_145740.vrs: manual_review (missing_done)
+  Edu_7_20260616_145927.vrs: auto_accept (no warnings)
+  Edu_8_20260616_150108.vrs: auto_accept (no warnings)
+  Edu_9_20260616_150247.vrs: auto_accept (no warnings)
+  Ermal_1_20260604_151723.vrs: manual_review (missing_third)
+  Ermal_2_20260604_151912.vrs: manual_review (missing_third)
+  Ermal_3_20260604_152032.vrs: manual_review (missing_third)
+  Ermal_4_20260604_152214.vrs: manual_review (missing_third)
+  Ermal_5_20260616_153530.vrs: auto_accept (no warnings)
+  Ermal_6_20260616_153648.vrs: auto_accept (no warnings)
+  Ermal_7_20260616_153921.vrs: auto_accept (no warnings)
+  Ermal_8_20260616_154054.vrs: auto_accept (no warnings)
+  Ermal_9_20260616_154205.vrs: auto_accept (no warnings)
+  Felix_1_20260604_171928.vrs: manual_review (missing_start, missing_done, missing_third)
+  Felix_1_20260604_171946.vrs: auto_accept (no warnings)
+  Felix_2_20260604_172102.vrs: auto_accept (no warnings)
+  Felix_3_20260604_172212.vrs: auto_accept (no warnings)
+  Felix_4_20260604_172358.vrs: auto_accept (no warnings)
+  Jan_1_20260604_161550.vrs: auto_accept (no warnings)
+  Jan_2_20260604_161704.vrs: auto_accept (no warnings)
+  Jan_3_20260604_161835.vrs: auto_accept (no warnings)
+  Jan_4_20260604_162000.vrs: manual_review (missing_done)
+  Jan_5_20260604_162111.vrs: auto_accept (no warnings)
+  Jola_1_20260624_131133.vrs: manual_review (missing_start, missing_done)
+  Jola_2_20260624_131246.vrs: manual_review (missing_start)
+  Jola_3_20260624_131435.vrs: manual_review (missing_start, missing_third)
+  Jola_4_20260624_131548.vrs: manual_review (missing_start, missing_done, missing_third)
+  Jola_5_20260624_131818.vrs: manual_review (missing_start)
+  Jola_6_20260624_132027.vrs: manual_review (missing_start, missing_done, missing_third)
+  Jona_1_20260616_181413.vrs: auto_accept (no warnings)
+  Jona_2_20260616_181551.vrs: auto_accept (no warnings)
+  Jona_3_20260616_181717.vrs: auto_accept (no warnings)
+  Jona_4_20260616_181855.vrs: auto_accept (no warnings)
+  Jona_5_20260616_182002.vrs: auto_accept (no warnings)
+  Jona_6_20260616_182111.vrs: auto_accept (no warnings)
+  Jona_7_20260616_182214.vrs: auto_accept (no warnings)
+  Julienco_1_20260624_125251.vrs: manual_review (missing_start)
+  Julienco_2_20260624_125435.vrs: manual_review (missing_start)
+  Julienco_3_20260624_125549.vrs: manual_review (missing_start, missing_done, missing_third)
+  Julienco_4_20260624_125717.vrs: manual_review (missing_start)
+  Julienco_4_2_20260624_125830.vrs: manual_review (missing_start, missing_done)
+  Julienco_5_20260624_125942.vrs: manual_review (missing_start, missing_third)
+  Julienco_6_20260624_130048.vrs: manual_review (missing_start)
+  Julienco_7_20260624_130215.vrs: manual_review (missing_start)
+  Julienco_8_20260624_130311.vrs: manual_review (missing_start)
+  Leys_1_20260604_163147.vrs: auto_accept (no warnings)
+  Leys_2_20260604_163417.vrs: auto_accept (no warnings)
+  Leys_3_20260604_163535.vrs: auto_accept (no warnings)
+  Leys_4_20260604_163704.vrs: auto_accept (no warnings)
+  Leys_5_20260604_163854.vrs: auto_accept (no warnings)
+  Maria_1_20260624_133852.vrs: manual_review (missing_start, missing_done)
+  Maria_2_20260624_134005.vrs: manual_review (missing_start, missing_second)
+  Maria_3_20260624_134101.vrs: manual_review (missing_start, missing_done, low_acoustic_logprob)
+  Maria_4_20260624_134233.vrs: manual_review (missing_start, missing_done, missing_third)
+  Maria_5_20260624_134337.vrs: manual_review (missing_start, missing_second)
+  Maria_6_20260624_134443.vrs: manual_review (missing_start, missing_done, missing_third)
+  Melih_10_20260616_180515.vrs: auto_accept (no warnings)
+  Melih_1_20260616_175140.vrs: auto_accept (no warnings)
+  Melih_2_20260616_175310.vrs: auto_accept (no warnings)
+  Melih_3_20260616_175418.vrs: auto_accept (no warnings)
+  Melih_4_20260616_175523.vrs: auto_accept (no warnings)
+  Melih_5_20260616_175612.vrs: auto_accept (no warnings)
+  Melih_6_20260616_180104.vrs: auto_accept (no warnings)
+  Melih_7_20260616_180202.vrs: auto_accept (no warnings)
+  Melih_8_20260616_180307.vrs: auto_accept (no warnings)
+  Melih_9_20260616_180402.vrs: auto_accept (no warnings)
+  Miro_1_20260604_153303.vrs: auto_accept (no warnings)
+  Miro_2_20260604_153451.vrs: auto_accept (no warnings)
+  Miro_3_20260604_153609.vrs: auto_accept (no warnings)
+  Miro_4_20260604_153734.vrs: auto_accept (no warnings)
+  Mona_1_20260624_123312.vrs: manual_review (missing_start)
+  Mona_2_20260624_123443.vrs: manual_review (missing_start)
+  Mona_3_20260624_123548.vrs: manual_review (missing_start)
+  Mona_4_20260624_123706.vrs: manual_review (missing_start)
+  Mona_5_20260624_123814.vrs: manual_review (missing_start)
+  Mona_6_20260624_123930.vrs: manual_review (missing_start, missing_done)
+  Mona_7_20260624_124051.vrs: manual_review (missing_start)
+  Mona_8_20260624_124414.vrs: manual_review (missing_start)
+  Suthan_1_20260604_164834.vrs: auto_accept (no warnings)
+  Suthan_2_20260604_165031.vrs: auto_accept (no warnings)
+  Suthan_3_20260604_165324.vrs: manual_review (missing_done, missing_third)
+  Suthan_4_20260604_165434.vrs: auto_accept (no warnings)
+  Test_1_20260624_122109.vrs: manual_review (missing_start, missing_done)
+  Test_2_20260624_122206.vrs: manual_review (missing_start, missing_third)
+  Test_3_20260522_160036.vrs: manual_review (missing_third)
+  Test_3_20260624_122314.vrs: manual_review (missing_start)
+  Test_4_20260527_161832.vrs: manual_review (missing_third)
+  Test_4_20260624_122416.vrs: manual_review (missing_start)
+  Test_5_20260624_122509.vrs: manual_review (missing_start)
+  Test_6_20260624_122607.vrs: manual_review (missing_start)
+  Test_7_20260601_165002.vrs: auto_accept (no warnings)
+  Test_7_20260624_122709.vrs: manual_review (missing_start, missing_third)
+  Unknown_2_20260616_141751.vrs: manual_review (missing_start, missing_second, missing_done, low_acoustic_logprob)
+  Urim_10_20260616_145015.vrs: auto_accept (no warnings)
+  Urim_1_20260604_160102.vrs: auto_accept (no warnings)
+  Urim_2_20260604_160234.vrs: auto_accept (no warnings)
+  Urim_3_20260604_160345.vrs: auto_accept (no warnings)
+  Urim_4_20260604_160502.vrs: auto_accept (no warnings)
+  Urim_5_20260604_160634.vrs: auto_accept (no warnings)
+  Urim_6_20260616_144055.vrs: auto_accept (no warnings)
+  Urim_7_20260616_144229.vrs: auto_accept (no warnings)
+  Urim_8_20260616_144352.vrs: auto_accept (no warnings)
+  Urim_9_20260616_144841.vrs: auto_accept (no warnings)
+  Vanessa_1_20260624_132542.vrs: manual_review (missing_start, missing_done)
+  Vanessa_2_20260624_132710.vrs: manual_review (missing_start, missing_done)
+  Vanessa_3_20260624_132807.vrs: manual_review (missing_start)
+  Vanessa_4_20260624_132943.vrs: manual_review (missing_start, missing_done, missing_third)
+  Vanessa_5_20260624_133059.vrs: manual_review (missing_start)
+  Vanessa_6_20260624_133209.vrs: manual_review (missing_start, missing_done, missing_third)
+  Vanessa_7_20260624_133405.vrs: manual_review (missing_start, missing_done, missing_third)
+  Vanessa_8_20260624_133505.vrs: manual_review (missing_start, missing_done, missing_third)
+  unknown_20260604_150319.vrs: manual_review (missing_start, missing_second, low_acoustic_logprob, missing_third)
+
+Resolved command timestamps
+
+Atilla_1_20260616_184923.vrs
+  [  0.000s] START   source=speech_window_start text='start'
+  [ 25.152s] SECOND  source=speech_window_start text='second'
+  [ 30.016s] DONE    source=speech_window_start text='done'
+  [ 33.952s] THIRD   source=speech_window_start text='third'
+
+Atilla_2_20260616_185042.vrs
+  [  1.664s] START   source=speech_window_start text='start'
+  [ 20.416s] SECOND  source=speech_window_start text='second'
+  [ 24.448s] DONE    source=speech_window_start text='done'
+  [ 26.912s] THIRD   source=speech_window_start text='third'
+
+Atilla_3_20260616_185212.vrs
+  [  0.896s] START   source=speech_window_start text='start'
+  [ 18.912s] SECOND  source=speech_window_start text='second'
+  [ 23.136s] DONE    source=speech_window_start text='done'
+  [ 25.536s] THIRD   source=speech_window_start text='third'
+
+Atilla_4_20260616_185327.vrs
+  [  1.728s] START   source=speech_window_start text='start'
+  [ 16.896s] SECOND  source=speech_window_start text='second'
+  [ 21.824s] DONE    source=speech_window_start text='done'
+  [ 24.832s] THIRD   source=speech_window_start text='third'
+
+Atilla_5_20260616_185449.vrs
+  [  1.728s] START   source=speech_window_start text='start'
+  [ 22.976s] SECOND  source=speech_window_start text='second'
+  [ 27.392s] DONE    source=speech_window_start text='done'
+  [ 30.688s] THIRD   source=speech_window_start text='third'
+
+Atilla_6_20260616_185613.vrs
+  [  1.408s] START   source=speech_window_start text='start'
+  [ 22.784s] SECOND  source=speech_window_start text='second'
+  [ 28.032s] DONE    source=speech_window_start text='done'
+  [ 31.104s] THIRD   source=speech_window_start text='third'
+
+Atilla_7_20260616_185714.vrs
+  [  1.440s] START   source=speech_window_start text='start'
+  [ 21.344s] SECOND  source=speech_window_start text='second'
+  [ 26.656s] DONE    source=speech_window_start text='done'
+  [ 29.920s] THIRD   source=speech_window_start text='third'
+
+Atilla_8_20260616_185812.vrs
+  [  2.400s] START   source=speech_window_start text='start'
+  [ 22.592s] SECOND  source=speech_window_start text='second'
+  [ 28.032s] DONE    source=speech_window_start text='done'
+  [ 31.008s] THIRD   source=speech_window_start text='third'
+
+Berat_10_20260616_142950.vrs
+  [  1.376s] START   source=speech_window_start text='start'
+  [ 24.800s] SECOND  source=speech_window_start text='second'
+  [ 29.760s] DONE    source=speech_window_start text='done'
+  [ 32.448s] THIRD   source=speech_window_start text='third'
+
+Berat_1_20260604_154611.vrs
+  [  2.944s] START   source=speech_window_start text='start'
+  [ 29.632s] SECOND  source=speech_window_start text='second'
+  [ 33.952s] DONE    source=speech_window_start text='done'
+  [ 36.896s] THIRD   source=speech_window_start text='third'
+
+Berat_2_20260604_154801.vrs
+  [  1.152s] START   source=speech_window_start text='start'
+  [ 24.640s] SECOND  source=speech_window_start text='second'
+  [ 29.600s] DONE    source=speech_window_start text='done'
+  [ 31.904s] THIRD   source=speech_window_start text='third'
+
+Berat_3_20260604_154928.vrs
+  [  1.440s] START   source=speech_window_start text='start'
+  [ 26.336s] SECOND  source=speech_window_start text='second'
+  [ 30.784s] DONE    source=speech_window_start text='done'
+  [ 33.184s] THIRD   source=speech_window_start text='third'
+
+Berat_4_20260604_155100.vrs
+  [  1.280s] START   source=speech_window_start text='start'
+  [ 28.832s] SECOND  source=speech_window_start text='second'
+  [ 33.056s] DONE    source=speech_window_start text='done'
+  [ 35.232s] THIRD   source=speech_window_start text='third'
+
+Berat_5_20260604_155234.vrs
+  [  1.152s] START   source=speech_window_start text='start'
+  [ 38.304s] SECOND  source=speech_window_start text='second'
+  [ 42.720s] DONE    source=speech_window_start text='done'
+  [ 45.184s] THIRD   source=speech_window_start text='third'
+
+Berat_6_20260616_142129.vrs
+  [  1.280s] START   source=speech_window_start text='start'
+  [ 22.688s] SECOND  source=speech_window_start text='second'
+  [ 27.360s] DONE    source=speech_window_start text='Done'
+  [ 29.792s] THIRD   source=speech_window_start text='third'
+
+Berat_7_20260616_142358.vrs
+  [  1.248s] START   source=speech_window_start text='start'
+  [ 22.400s] SECOND  source=speech_window_start text='second'
+  [ 26.560s] DONE    source=speech_window_start text='done'
+  [ 28.256s] THIRD   source=speech_window_start text='third'
+
+Berat_8_20260616_142539.vrs
+  [  1.408s] START   source=speech_window_start text='start'
+  [ 27.904s] SECOND  source=speech_window_start text='second'
+  [ 32.416s] DONE    source=speech_window_start text='done'
+  [ 35.296s] THIRD   source=speech_window_start text='third'
+
+Berat_9_20260616_142847.vrs
+  [  2.112s] START   source=speech_window_start text='start'
+  [ 25.888s] SECOND  source=speech_window_start text='second'
+  [ 30.176s] DONE    source=speech_window_start text='done'
+  [ 32.608s] THIRD   source=speech_window_start text='third'
+
+Edu_10_20260616_150412.vrs
+  [  1.152s] START   source=speech_window_start text='start'
+  [ 19.968s] SECOND  source=speech_window_start text='second'
+  [ 25.472s] DONE    source=speech_window_start text='done'
+  [ 27.680s] THIRD   source=speech_window_start text='third'
+
+Edu_1_20260604_170154.vrs
+  [  1.280s] START   source=speech_window_start text='start'
+  [ 35.936s] SECOND  source=speech_window_start text='second'
+  [ 39.104s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_done
+
+Edu_2_20260604_170420.vrs
+  [  0.864s] START   source=speech_window_start text='start'
+  [ 17.856s] SECOND  source=speech_window_start text='second'
+  [ 21.856s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_done
+
+Edu_3_20260604_170622.vrs
+  [  1.312s] START   source=speech_window_start text='start'
+  [ 20.000s] SECOND  source=speech_window_start text='second'
+  [ 24.768s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_done
+
+Edu_4_20260604_170837.vrs
+  [  0.896s] START   source=speech_window_start text='start'
+  [ 24.896s] SECOND  source=speech_window_start text='second'
+  [ 30.272s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_done
+
+Edu_5_20260604_170944.vrs
+  [  0.960s] START   source=speech_window_start text='start'
+  [ 24.480s] SECOND  source=speech_window_start text='second'
+  [ 29.376s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_done
+
+Edu_6_20260616_145740.vrs
+  [  1.152s] START   source=speech_window_start text='start'
+  [ 18.784s] SECOND  source=speech_window_start text='second'
+  [ 24.160s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_done
+
+Edu_7_20260616_145927.vrs
+  [  0.704s] START   source=speech_window_start text='start'
+  [ 18.272s] SECOND  source=speech_window_start text='second'
+  [ 22.848s] DONE    source=speech_window_start text='done'
+  [ 24.384s] THIRD   source=speech_window_start text='third'
+
+Edu_8_20260616_150108.vrs
+  [  0.960s] START   source=speech_window_start text='start'
+  [ 14.272s] SECOND  source=speech_window_start text='second'
+  [ 19.456s] DONE    source=speech_window_start text='done'
+  [ 21.376s] THIRD   source=speech_window_start text='third'
+
+Edu_9_20260616_150247.vrs
+  [  1.920s] START   source=speech_window_start text='start'
+  [ 17.568s] SECOND  source=speech_window_start text='second'
+  [ 23.008s] DONE    source=speech_window_start text='done'
+  [ 24.320s] THIRD   source=speech_window_start text='third'
+
+Ermal_1_20260604_151723.vrs
+  [  0.896s] START   source=speech_window_start text='okay start'
+  [ 22.720s] SECOND  source=speech_window_start text='second'
+  [ 25.888s] DONE    source=speech_window_start text='done'
+  WARNING: missing_third
+
+Ermal_2_20260604_151912.vrs
+  [  2.816s] START   source=speech_window_start text='start'
+  [ 31.488s] SECOND  source=speech_window_start text='second'
+  [ 35.136s] DONE    source=speech_window_start text='done'
+  WARNING: missing_third
+
+Ermal_3_20260604_152032.vrs
+  [  2.336s] START   source=speech_window_start text='start'
+  [ 20.256s] SECOND  source=speech_window_start text='second'
+  [ 25.440s] DONE    source=speech_window_start text='done'
+  WARNING: missing_third
+
+Ermal_4_20260604_152214.vrs
+  [  1.632s] START   source=speech_window_start text='start'
+  [ 21.760s] SECOND  source=speech_window_start text='second'
+  [ 26.112s] DONE    source=speech_window_start text='done'
+  WARNING: missing_third
+
+Ermal_5_20260616_153530.vrs
+  [  1.280s] START   source=speech_window_start text='start'
+  [ 16.480s] SECOND  source=speech_window_start text='second'
+  [ 20.224s] DONE    source=speech_window_start text='done'
+  [ 22.176s] THIRD   source=speech_window_start text='third'
+
+Ermal_6_20260616_153648.vrs
+  [  1.696s] START   source=speech_window_start text='start'
+  [ 26.240s] SECOND  source=speech_window_start text='second'
+  [ 30.912s] DONE    source=speech_window_start text='done'
+  [ 35.264s] THIRD   source=speech_window_start text='third'
+
+Ermal_7_20260616_153921.vrs
+  [  1.568s] START   source=speech_window_start text='start'
+  [ 34.816s] SECOND  source=speech_window_start text='second'
+  [ 42.752s] DONE    source=speech_window_start text='done'
+  [ 46.240s] THIRD   source=speech_window_start text='third'
+
+Ermal_8_20260616_154054.vrs
+  [  2.304s] START   source=speech_window_start text='start'
+  [ 28.512s] SECOND  source=speech_window_start text='second'
+  [ 34.048s] DONE    source=speech_window_start text='done'
+  [ 36.960s] THIRD   source=speech_window_start text='third'
+
+Ermal_9_20260616_154205.vrs
+  [  1.600s] START   source=speech_window_start text='start'
+  [ 26.048s] SECOND  source=speech_window_start text='second'
+  [ 31.872s] DONE    source=speech_window_start text='done'
+  [ 36.160s] THIRD   source=speech_window_start text='third'
+
+Felix_1_20260604_171928.vrs
+  [  0.384s] SECOND  source=speech_window_start text='second'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: missing_third
+
+Felix_1_20260604_171946.vrs
+  [  1.472s] START   source=speech_window_start text='start'
+  [ 23.040s] SECOND  source=speech_window_start text='Second'
+  [ 27.712s] DONE    source=speech_window_start text='done'
+  [ 29.344s] THIRD   source=speech_window_start text='third'
+
+Felix_2_20260604_172102.vrs
+  [  1.568s] START   source=speech_window_start text='start'
+  [ 21.472s] SECOND  source=speech_window_start text='second'
+  [ 25.984s] DONE    source=speech_window_start text='done'
+  [ 27.616s] THIRD   source=speech_window_start text='third'
+
+Felix_3_20260604_172212.vrs
+  [  1.792s] START   source=speech_window_start text='start'
+  [ 23.040s] SECOND  source=speech_window_start text='second'
+  [ 27.296s] DONE    source=speech_window_start text='done'
+  [ 28.736s] THIRD   source=speech_window_start text='third'
+
+Felix_4_20260604_172358.vrs
+  [  1.120s] START   source=speech_window_start text='start'
+  [ 23.232s] SECOND  source=speech_window_start text='second'
+  [ 27.776s] DONE    source=speech_window_start text='done'
+  [ 29.280s] THIRD   source=speech_window_start text='third'
+
+Jan_1_20260604_161550.vrs
+  [  1.472s] START   source=speech_window_start text='start'
+  [ 20.416s] SECOND  source=speech_window_start text='second'
+  [ 25.568s] DONE    source=speech_window_start text='done'
+  [ 28.704s] THIRD   source=speech_window_start text='third'
+
+Jan_2_20260604_161704.vrs
+  [  0.288s] START   source=speech_window_start text='Okay, start'
+  [ 22.016s] SECOND  source=speech_window_start text='second'
+  [ 26.784s] DONE    source=speech_window_start text='done'
+  [ 29.920s] THIRD   source=speech_window_start text='third'
+
+Jan_3_20260604_161835.vrs
+  [  1.344s] START   source=speech_window_start text='start'
+  [ 23.872s] SECOND  source=speech_window_start text='second'
+  [ 27.424s] DONE    source=speech_window_start text='done'
+  [ 31.008s] THIRD   source=speech_window_start text='third'
+
+Jan_4_20260604_162000.vrs
+  [  0.832s] START   source=speech_window_start text='start'
+  [ 23.648s] SECOND  source=speech_window_start text='second'
+  [ 28.096s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_done
+
+Jan_5_20260604_162111.vrs
+  [  0.960s] START   source=speech_window_start text='start'
+  [ 28.480s] SECOND  source=speech_window_start text='second'
+  [ 31.200s] DONE    source=speech_window_start text='done'
+  [ 33.920s] THIRD   source=speech_window_start text='third'
+
+Jola_1_20260624_131133.vrs
+  [ 33.280s] SECOND  source=speech_window_start text='second'
+  [ 36.224s] THIRD   source=speech_window_start text='and then third'
+  WARNING: missing_start
+  WARNING: missing_done
+
+Jola_2_20260624_131246.vrs
+  [ 35.360s] SECOND  source=speech_window_start text='second'
+  [ 38.304s] DONE    source=speech_window_start text='done'
+  [ 39.552s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Jola_3_20260624_131435.vrs
+  [ 33.888s] SECOND  source=speech_window_start text='second'
+  [ 36.608s] DONE    source=speech_window_start text='done'
+  WARNING: missing_start
+  WARNING: missing_third
+
+Jola_4_20260624_131548.vrs
+  [ 35.872s] SECOND  source=speech_window_start text='second'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: missing_third
+
+Jola_5_20260624_131818.vrs
+  [ 38.368s] SECOND  source=speech_window_start text='second'
+  [ 41.152s] DONE    source=speech_window_start text='done'
+  [ 42.272s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Jola_6_20260624_132027.vrs
+  [ 37.920s] SECOND  source=speech_window_start text='second'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: missing_third
+
+Jona_1_20260616_181413.vrs
+  [  0.608s] START   source=speech_window_start text='start'
+  [ 12.064s] SECOND  source=speech_window_start text='second'
+  [ 16.192s] DONE    source=speech_window_start text='done'
+  [ 19.552s] THIRD   source=speech_window_start text='third'
+
+Jona_2_20260616_181551.vrs
+  [  1.312s] START   source=speech_window_start text='start'
+  [ 29.696s] SECOND  source=speech_window_start text='second'
+  [ 35.424s] DONE    source=speech_window_start text='done'
+  [ 39.520s] THIRD   source=speech_window_start text='third'
+
+Jona_3_20260616_181717.vrs
+  [  2.112s] START   source=speech_window_start text='start'
+  [ 35.552s] SECOND  source=speech_window_start text='second'
+  [ 40.000s] DONE    source=speech_window_start text='done'
+  [ 43.552s] THIRD   source=speech_window_start text='third'
+
+Jona_4_20260616_181855.vrs
+  [  1.824s] START   source=speech_window_start text='start'
+  [ 26.272s] SECOND  source=speech_window_start text='second'
+  [ 31.968s] DONE    source=speech_window_start text='done'
+  [ 35.872s] THIRD   source=speech_window_start text='third'
+
+Jona_5_20260616_182002.vrs
+  [  1.632s] START   source=speech_window_start text='start'
+  [ 28.448s] SECOND  source=speech_window_start text='second'
+  [ 35.296s] DONE    source=speech_window_start text='done'
+  [ 38.528s] THIRD   source=speech_window_start text='third'
+
+Jona_6_20260616_182111.vrs
+  [  1.952s] START   source=speech_window_start text='start'
+  [ 23.328s] SECOND  source=speech_window_start text='second'
+  [ 28.736s] DONE    source=speech_window_start text='done'
+  [ 32.448s] THIRD   source=speech_window_start text='third'
+
+Jona_7_20260616_182214.vrs
+  [  1.760s] START   source=speech_window_start text='start'
+  [ 25.984s] SECOND  source=speech_window_start text='second'
+  [ 31.232s] DONE    source=speech_window_start text='done'
+  [ 34.944s] THIRD   source=speech_window_start text='third'
+
+Julienco_1_20260624_125251.vrs
+  [ 20.096s] SECOND  source=speech_window_start text='second'
+  [ 22.432s] DONE    source=speech_window_start text='done'
+  [ 27.456s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Julienco_2_20260624_125435.vrs
+  [ 10.752s] SECOND  source=speech_window_start text='second'
+  [ 15.776s] DONE    source=speech_window_start text='done'
+  [ 22.144s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Julienco_3_20260624_125549.vrs
+  [ 26.848s] SECOND  source=speech_window_start text='second'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: missing_third
+
+Julienco_4_20260624_125717.vrs
+  [ 23.648s] SECOND  source=speech_window_start text='second'
+  [ 26.944s] DONE    source=speech_window_start text='done'
+  [ 30.112s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Julienco_4_2_20260624_125830.vrs
+  [ 15.264s] SECOND  source=speech_window_start text='second'
+  [ 27.008s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+  WARNING: missing_done
+
+Julienco_5_20260624_125942.vrs
+  [ 23.072s] SECOND  source=speech_window_start text='second'
+  [ 28.160s] DONE    source=speech_window_start text='done'
+  WARNING: missing_start
+  WARNING: missing_third
+
+Julienco_6_20260624_130048.vrs
+  [ 18.720s] SECOND  source=speech_window_start text='second'
+  [ 23.744s] DONE    source=speech_window_start text='done'
+  [ 27.360s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Julienco_7_20260624_130215.vrs
+  [ 17.056s] SECOND  source=speech_window_start text='second'
+  [ 20.736s] DONE    source=speech_window_start text='done'
+  [ 23.072s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Julienco_8_20260624_130311.vrs
+  [ 17.152s] SECOND  source=speech_window_start text='second'
+  [ 21.504s] DONE    source=speech_window_start text='done'
+  [ 24.832s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Leys_1_20260604_163147.vrs
+  [  1.440s] START   source=speech_window_start text='start'
+  [ 16.288s] SECOND  source=speech_window_start text='second'
+  [ 21.184s] DONE    source=speech_window_start text='done'
+  [ 23.520s] THIRD   source=speech_window_start text='third'
+
+Leys_2_20260604_163417.vrs
+  [  1.216s] START   source=speech_window_start text='start'
+  [ 15.776s] SECOND  source=speech_window_start text='second'
+  [ 19.616s] DONE    source=speech_window_start text='done'
+  [ 21.280s] THIRD   source=speech_window_start text='third'
+
+Leys_3_20260604_163535.vrs
+  [  1.312s] START   source=speech_window_start text='start'
+  [ 21.408s] SECOND  source=speech_window_start text='second'
+  [ 25.600s] DONE    source=speech_window_start text='done'
+  [ 26.880s] THIRD   source=speech_window_start text='third'
+
+Leys_4_20260604_163704.vrs
+  [  1.664s] START   source=speech_window_start text='start'
+  [ 21.696s] SECOND  source=speech_window_start text='second'
+  [ 25.856s] DONE    source=speech_window_start text='done'
+  [ 27.296s] THIRD   source=speech_window_start text='third'
+
+Leys_5_20260604_163854.vrs
+  [  0.992s] START   source=speech_window_start text='start'
+  [ 20.704s] SECOND  source=speech_window_start text='second'
+  [ 24.064s] DONE    source=speech_window_start text='done'
+  [ 26.048s] THIRD   source=speech_window_start text='third'
+
+Maria_1_20260624_133852.vrs
+  [ 28.224s] SECOND  source=speech_window_start text='second'
+  [ 33.056s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+  WARNING: missing_done
+
+Maria_2_20260624_134005.vrs
+  [ 14.400s] DONE    source=speech_window_start text="I don't know what to say. I'm not sure what to say."
+  [ 25.024s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+  WARNING: missing_second
+
+Maria_3_20260624_134101.vrs
+  [ 26.336s] SECOND  source=speech_window_start text='second'
+  [ 33.184s] THIRD   source=speech_window_start text='and third'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: low_acoustic_logprob
+
+Maria_4_20260624_134233.vrs
+  [ 17.408s] SECOND  source=speech_window_start text='second'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: missing_third
+
+Maria_5_20260624_134337.vrs
+  [ 20.768s] DONE    source=speech_window_start text='I think she wants to sit down'
+  [ 32.576s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+  WARNING: missing_second
+
+Maria_6_20260624_134443.vrs
+  [ 26.176s] SECOND  source=speech_window_start text='second'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: missing_third
+
+Melih_10_20260616_180515.vrs
+  [  0.800s] START   source=speech_window_start text='start'
+  [ 30.752s] SECOND  source=speech_window_start text='second'
+  [ 36.288s] DONE    source=speech_window_start text='done'
+  [ 38.112s] THIRD   source=speech_window_start text='third'
+
+Melih_1_20260616_175140.vrs
+  [  1.344s] START   source=speech_window_start text='start'
+  [ 16.320s] SECOND  source=speech_window_start text='second'
+  [ 21.184s] DONE    source=speech_window_start text='done'
+  [ 23.456s] THIRD   source=speech_window_start text='third'
+
+Melih_2_20260616_175310.vrs
+  [  1.152s] START   source=speech_window_start text='start'
+  [ 17.920s] SECOND  source=speech_window_start text='second'
+  [ 24.192s] DONE    source=speech_window_start text='done'
+  [ 26.304s] THIRD   source=speech_window_start text='third'
+
+Melih_3_20260616_175418.vrs
+  [  1.088s] START   source=speech_window_start text='start'
+  [ 18.848s] SECOND  source=speech_window_start text='second'
+  [ 24.992s] DONE    source=speech_window_start text='done'
+  [ 26.720s] THIRD   source=speech_window_start text='third'
+
+Melih_4_20260616_175523.vrs
+  [  0.864s] START   source=speech_window_start text='start'
+  [ 17.856s] SECOND  source=speech_window_start text='second'
+  [ 23.520s] DONE    source=speech_window_start text='done'
+  [ 25.472s] THIRD   source=speech_window_start text='third'
+
+Melih_5_20260616_175612.vrs
+  [  1.376s] START   source=speech_window_start text='start'
+  [ 18.208s] SECOND  source=speech_window_start text='second'
+  [ 25.152s] DONE    source=speech_window_start text='done'
+  [ 28.032s] THIRD   source=speech_window_start text='third'
+
+Melih_6_20260616_180104.vrs
+  [  2.848s] START   source=speech_window_start text='start'
+  [ 20.256s] SECOND  source=speech_window_start text='second'
+  [ 26.496s] DONE    source=speech_window_start text='done'
+  [ 28.256s] THIRD   source=speech_window_start text='third'
+
+Melih_7_20260616_180202.vrs
+  [  1.344s] START   source=speech_window_start text='start'
+  [ 22.656s] SECOND  source=speech_window_start text='second'
+  [ 29.408s] DONE    source=speech_window_start text='done'
+  [ 30.944s] THIRD   source=speech_window_start text='third'
+
+Melih_8_20260616_180307.vrs
+  [  1.408s] START   source=speech_window_start text='start'
+  [ 20.704s] SECOND  source=speech_window_start text='second'
+  [ 25.792s] DONE    source=speech_window_start text='done'
+  [ 28.608s] THIRD   source=speech_window_start text='third'
+
+Melih_9_20260616_180402.vrs
+  [  2.176s] START   source=speech_window_start text='start'
+  [ 21.440s] SECOND  source=speech_window_start text='second'
+  [ 28.608s] DONE    source=speech_window_start text='done'
+  [ 30.880s] THIRD   source=speech_window_start text='third'
+
+Miro_1_20260604_153303.vrs
+  [  3.072s] START   source=speech_window_start text='start'
+  [ 18.304s] SECOND  source=speech_window_start text='second'
+  [ 23.424s] DONE    source=speech_window_start text='done'
+  [ 25.824s] THIRD   source=speech_window_start text='third'
+
+Miro_2_20260604_153451.vrs
+  [  2.080s] START   source=speech_window_start text='start'
+  [ 14.880s] SECOND  source=speech_window_start text='second'
+  [ 19.904s] DONE    source=speech_window_start text='done'
+  [ 22.208s] THIRD   source=speech_window_start text='third'
+
+Miro_3_20260604_153609.vrs
+  [  0.672s] START   source=speech_window_start text='start'
+  [ 13.024s] SECOND  source=speech_window_start text='second'
+  [ 18.496s] DONE    source=speech_window_start text='done'
+  [ 20.128s] THIRD   source=speech_window_start text='third'
+
+Miro_4_20260604_153734.vrs
+  [  0.800s] START   source=speech_window_start text='start'
+  [ 23.552s] SECOND  source=speech_window_start text='second'
+  [ 29.344s] DONE    source=speech_window_start text='done'
+  [ 31.616s] THIRD   source=speech_window_start text='third'
+
+Mona_1_20260624_123312.vrs
+  [ 21.024s] SECOND  source=speech_window_start text='second'
+  [ 25.824s] DONE    source=speech_window_start text='done'
+  [ 27.008s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Mona_2_20260624_123443.vrs
+  [ 25.632s] SECOND  source=speech_window_start text='second'
+  [ 31.328s] DONE    source=speech_window_start text='done'
+  [ 33.696s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Mona_3_20260624_123548.vrs
+  [ 27.136s] SECOND  source=speech_window_start text='second'
+  [ 32.608s] DONE    source=speech_window_start text='done'
+  [ 33.952s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Mona_4_20260624_123706.vrs
+  [ 29.152s] SECOND  source=speech_window_start text='second'
+  [ 34.816s] DONE    source=speech_window_start text='done'
+  [ 36.800s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Mona_5_20260624_123814.vrs
+  [ 34.752s] SECOND  source=speech_window_start text='second'
+  [ 40.288s] DONE    source=speech_window_start text='done'
+  [ 41.856s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Mona_6_20260624_123930.vrs
+  [ 34.464s] SECOND  source=speech_window_start text='second'
+  [ 41.632s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+  WARNING: missing_done
+
+Mona_7_20260624_124051.vrs
+  [ 33.216s] SECOND  source=speech_window_start text='Second'
+  [ 39.296s] DONE    source=speech_window_start text='done'
+  [ 40.832s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Mona_8_20260624_124414.vrs
+  [ 39.136s] SECOND  source=speech_window_start text='second'
+  [ 47.136s] DONE    source=speech_window_start text='done'
+  [ 48.288s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Suthan_1_20260604_164834.vrs
+  [  0.032s] START   source=speech_window_start text='okay start'
+  [ 31.520s] SECOND  source=speech_window_start text='second'
+  [ 34.208s] DONE    source=speech_window_start text='done'
+  [ 35.840s] THIRD   source=speech_window_start text='third'
+
+Suthan_2_20260604_165031.vrs
+  [  0.000s] START   source=speech_window_start text='okay start'
+  [ 26.080s] SECOND  source=speech_window_start text='second'
+  [ 29.600s] DONE    source=speech_window_start text='done'
+  [ 31.424s] THIRD   source=speech_window_start text='third'
+
+Suthan_3_20260604_165324.vrs
+  [  1.248s] START   source=speech_window_start text='start'
+  [ 27.488s] SECOND  source=speech_window_start text='second'
+  WARNING: missing_done
+  WARNING: missing_third
+
+Suthan_4_20260604_165434.vrs
+  [  1.408s] START   source=speech_window_start text='start'
+  [ 24.992s] SECOND  source=speech_window_start text='second'
+  [ 28.096s] DONE    source=speech_window_start text='done'
+  [ 29.568s] THIRD   source=speech_window_start text='third'
+
+Test_1_20260624_122109.vrs
+  [ 12.288s] SECOND  source=speech_window_start text='second'
+  [ 22.880s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+  WARNING: missing_done
+
+Test_2_20260624_122206.vrs
+  [ 15.360s] SECOND  source=speech_window_start text='second'
+  [ 24.032s] DONE    source=speech_window_start text='done'
+  WARNING: missing_start
+  WARNING: missing_third
+
+Test_3_20260522_160036.vrs
+  [ 15.392s] START   source=speech_window_start text='start'
+  [ 22.240s] SECOND  source=speech_window_start text='now we have to move on to the second part'
+  [ 35.904s] DONE    source=speech_window_start text='done more'
+  WARNING: missing_third
+
+Test_3_20260624_122314.vrs
+  [ 12.928s] SECOND  source=speech_window_start text='second'
+  [ 17.696s] DONE    source=speech_window_start text='done'
+  [ 21.952s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Test_4_20260527_161832.vrs
+  [ 15.584s] START   source=speech_window_start text='start'
+  [ 18.144s] SECOND  source=speech_window_start text='second'
+  [ 23.200s] DONE    source=speech_window_start text='done'
+  WARNING: missing_third
+
+Test_4_20260624_122416.vrs
+  [ 17.856s] SECOND  source=speech_window_start text='second'
+  [ 21.664s] DONE    source=speech_window_start text='done'
+  [ 25.824s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Test_5_20260624_122509.vrs
+  [ 14.496s] SECOND  source=speech_window_start text='second'
+  [ 17.984s] DONE    source=speech_window_start text='done'
+  [ 21.472s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Test_6_20260624_122607.vrs
+  [ 15.200s] SECOND  source=speech_window_start text='second'
+  [ 19.584s] DONE    source=speech_window_start text='done'
+  [ 23.584s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Test_7_20260601_165002.vrs
+  [  1.184s] START   source=speech_window_start text='start'
+  [ 17.056s] SECOND  source=speech_window_start text='second'
+  [ 22.080s] DONE    source=speech_window_start text='done'
+  [ 26.560s] THIRD   source=speech_window_start text='third'
+
+Test_7_20260624_122709.vrs
+  [ 15.136s] SECOND  source=speech_window_start text='second'
+  [ 18.816s] DONE    source=speech_window_start text='done'
+  WARNING: missing_start
+  WARNING: missing_third
+
+Unknown_2_20260616_141751.vrs
+  [  6.624s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+  WARNING: missing_second
+  WARNING: missing_done
+  WARNING: low_acoustic_logprob
+
+Urim_10_20260616_145015.vrs
+  [  1.312s] START   source=speech_window_start text='start'
+  [ 26.208s] SECOND  source=speech_window_start text='second'
+  [ 32.832s] DONE    source=speech_window_start text='done'
+  [ 35.808s] THIRD   source=speech_window_start text='third'
+
+Urim_1_20260604_160102.vrs
+  [  1.472s] START   source=speech_window_start text='start'
+  [ 27.296s] SECOND  source=speech_window_start text='second'
+  [ 33.024s] DONE    source=speech_window_start text='done'
+  [ 35.680s] THIRD   source=speech_window_start text='third'
+
+Urim_2_20260604_160234.vrs
+  [  1.696s] START   source=speech_window_start text='start'
+  [ 11.680s] SECOND  source=speech_window_start text='second'
+  [ 16.544s] DONE    source=speech_window_start text='done'
+  [ 20.064s] THIRD   source=speech_window_start text='third'
+
+Urim_3_20260604_160345.vrs
+  [  1.248s] START   source=speech_window_start text='start'
+  [ 20.320s] SECOND  source=speech_window_start text='second'
+  [ 26.560s] DONE    source=speech_window_start text='done'
+  [ 28.928s] THIRD   source=speech_window_start text='third'
+
+Urim_4_20260604_160502.vrs
+  [  1.440s] START   source=speech_window_start text='start'
+  [ 22.304s] SECOND  source=speech_window_start text='Second'
+  [ 28.928s] DONE    source=speech_window_start text='done'
+  [ 31.392s] THIRD   source=speech_window_start text='third'
+
+Urim_5_20260604_160634.vrs
+  [  1.536s] START   source=speech_window_start text='start'
+  [ 23.712s] SECOND  source=speech_window_start text='second'
+  [ 31.072s] DONE    source=speech_window_start text='done'
+  [ 33.216s] THIRD   source=speech_window_start text='third'
+
+Urim_6_20260616_144055.vrs
+  [  1.600s] START   source=speech_window_start text='start'
+  [ 23.968s] SECOND  source=speech_window_start text='second'
+  [ 28.192s] DONE    source=speech_window_start text='done'
+  [ 30.656s] THIRD   source=speech_window_start text='third'
+
+Urim_7_20260616_144229.vrs
+  [  1.728s] START   source=speech_window_start text='start'
+  [ 23.104s] SECOND  source=speech_window_start text='second'
+  [ 28.256s] DONE    source=speech_window_start text='done'
+  [ 30.176s] THIRD   source=speech_window_start text='third'
+
+Urim_8_20260616_144352.vrs
+  [  1.632s] START   source=speech_window_start text='start'
+  [ 23.936s] SECOND  source=speech_window_start text='second'
+  [ 29.024s] DONE    source=speech_window_start text='done'
+  [ 31.424s] THIRD   source=speech_window_start text='third'
+
+Urim_9_20260616_144841.vrs
+  [  3.168s] START   source=speech_window_start text='start'
+  [ 27.680s] SECOND  source=speech_window_start text='second'
+  [ 33.696s] DONE    source=speech_window_start text='done'
+  [ 35.744s] THIRD   source=speech_window_start text='third'
+
+Vanessa_1_20260624_132542.vrs
+  [ 26.336s] SECOND  source=speech_window_start text="okay I'm second"
+  [ 33.792s] THIRD   source=speech_window_start text='and then third'
+  WARNING: missing_start
+  WARNING: missing_done
+
+Vanessa_2_20260624_132710.vrs
+  [ 27.264s] SECOND  source=speech_window_start text='and second'
+  [ 29.824s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+  WARNING: missing_done
+
+Vanessa_3_20260624_132807.vrs
+  [ 34.848s] SECOND  source=speech_window_start text='second'
+  [ 38.944s] DONE    source=speech_window_start text='done'
+  [ 40.448s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Vanessa_4_20260624_132943.vrs
+  [ 18.976s] SECOND  source=speech_window_start text='second'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: missing_third
+
+Vanessa_5_20260624_133059.vrs
+  [ 24.544s] SECOND  source=speech_window_start text='second'
+  [ 30.816s] DONE    source=speech_window_start text='done'
+  [ 31.968s] THIRD   source=speech_window_start text='third'
+  WARNING: missing_start
+
+Vanessa_6_20260624_133209.vrs
+  [ 27.008s] SECOND  source=speech_window_start text='second'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: missing_third
+
+Vanessa_7_20260624_133405.vrs
+  [ 23.136s] SECOND  source=speech_window_start text='second'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: missing_third
+
+Vanessa_8_20260624_133505.vrs
+  [ 32.448s] SECOND  source=speech_window_start text='Second'
+  WARNING: missing_start
+  WARNING: missing_done
+  WARNING: missing_third
+
+unknown_20260604_150319.vrs
+  [  3.360s] DONE    source=speech_window_start text="I have no idea what he's talking about. I don't know."
+  WARNING: missing_start
+  WARNING: missing_second
+  WARNING: low_acoustic_logprob
+  WARNING: missing_third
+
+Summary: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/timestamps_summary.json
+Debug:   /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/timestamps_debug.json
+Review:  /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/timestamps_review_queue.json
+Overrides: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/timestamps_manual_overrides.json
+Auto-accepted: 75/136
+Accepted without review: 75/136
+Manual review: 61/136
+
+============================================================
+3) Copy outputs to backup directory
+============================================================
+Copying new timestamp outputs to backup directory...
+
+Debug audio count after speech recognition:
+136
+
+Copying debug audio WAV files to backup directory...
+
+============================================================
+4) Run dataset QA
+============================================================
+Using backup dir for QA: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/BackUp_Videos
+Manifest written: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/dataset_manifest.csv
+Report written:   /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/dataset_qa_report.json
+Sequences:        136
+Training incl.:   124
+Training excl.:   12
+Usable now:       25
+Backup sync:      0 missing in Data_vrs, 136 missing in backup
+Status counts:
+  missing_hand_tracking: 96
+  missing_handover_hand_tracking: 3
+  missing_slam: 1
+  partial_timestamps: 11
+  valid_with_warnings: 25
+Next actions:
+  download_or_process_mps: 97
+  fix_timestamps: 11
+  review_or_exclude_sequence: 4
+  run_aruco_extraction: 24
+
+============================================================
+5) QA summary
+============================================================
+Manifest: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/dataset_manifest.csv
+Report:   /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/dataset_qa_report.json
+
+Dataset QA:
+  total_sequences: 136
+  training_include_candidates: 124
+  training_excluded_candidates: 12
+  valid_or_warning_sequences: 25
+
+Status counts:
+  missing_hand_tracking: 96
+  missing_handover_hand_tracking: 3
+  missing_slam: 1
+  partial_timestamps: 11
+  valid_with_warnings: 25
+
+Next actions:
+  download_or_process_mps: 97
+  fix_timestamps: 11
+  review_or_exclude_sequence: 4
+  run_aruco_extraction: 24
+
+============================================================
+6) Final audio summary
+============================================================
+Debug audio directory:
+/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/debug_audio
+Debug audio WAV count:
+136
+Backup debug audio directory:
+/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/audio_batch_backups/job_2154198/debug_audio
+Backup debug audio WAV count:
+136
+
+Finished: Wed Jul  1 05:07:41 PM CEST 2026
+Full audio batch, debug audio export, and QA done.

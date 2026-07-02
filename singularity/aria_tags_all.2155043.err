@@ -1,0 +1,481 @@
+[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-02 23:36:34: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Urim_6_20260616_144055.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Urim_6_20260616_144055.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-02 23:42:14: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Urim_7_20260616_144229.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Urim_7_20260616_144229.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-02 23:47:44: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Urim_8_20260616_144352.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Urim_8_20260616_144352.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-02 23:53:28: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Urim_9_20260616_144841.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Urim_9_20260616_144841.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-03 00:00:00: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_1_20260624_132542.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_1_20260624_132542.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-03 00:06:43: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_2_20260624_132710.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_2_20260624_132710.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-03 00:12:44: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_3_20260624_132807.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_3_20260624_132807.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-03 00:19:56: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_4_20260624_132943.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_4_20260624_132943.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-03 00:25:41: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_5_20260624_133059.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_5_20260624_133059.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-03 00:31:26: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_6_20260624_133209.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_6_20260624_133209.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-03 00:37:42: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_7_20260624_133405.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_7_20260624_133405.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[ProgressLogger][INFO]: 2026-07-03 00:43:32: Opening /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_8_20260624_133505.vrs...[0m
+[0m[38;2;000;128;000m[MultiRecordFileReader][DEBUG]: Opened file '/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/Vanessa_8_20260624_133505.vrs' and assigned to reader #0[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-1/camera-et-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 211-2/camera-et-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 214-1/camera-rgb activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 231-1/mic activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 246-1/temperature activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 247-1/baro0 activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 248-1/ppg activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 281-1/gps-app activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 282-1/wps activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 283-1/bluetooth activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Utc stream found: 285-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-1/handtracking activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-2/vio activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 371-3/vio_high_frequency activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 373-1/eyegaze activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 500-1/als activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: Fail to activate streamId 502-1[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-1/slam-front-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-2/slam-front-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-3/slam-side-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1201-4/slam-side-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-1/imu-left activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1202-2/imu-right activated[0m
+[0m[38;2;000;000;255m[VrsDataProvider][INFO]: streamId 1203-1/mag0 activated[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/200x200/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::yuv420p -> vrs::yuv_i420_split)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/2016x1512/pixel=yuv_i420_split/codec=H.265: H.265/SW/hevc, yuv420p[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m[38;2;000;000;255m[XprsDecoder][INFO]: Using H.265 SW decoder named 'hevc' (xprs::gray8 -> vrs::grey8)[0m
+[0m[38;2;000;000;255m[TelemetryLogger][INFO]: make_xprs_decoder, video/512x512/pixel=grey8/codec=H.265: H.265/SW/hevc, gray8[0m
+[0m

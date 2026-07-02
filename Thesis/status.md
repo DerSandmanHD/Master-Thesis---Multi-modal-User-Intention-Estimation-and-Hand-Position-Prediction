@@ -1,6 +1,6 @@
 # Technische Dokumentation: Entwicklungsstand Framework zur multimodalen Intentionsschätzung
 
-**Dokument aktualisiert:** 1. Juli 2026
+**Dokument aktualisiert:** 2. Juli 2026
 
 **Dokumentierter Entwicklungsstand:** 1. Juli 2026
 
@@ -35,11 +35,13 @@ Um eine reproduzierbare, plattformunabhängige und isolierte Entwicklungsumgebun
 ### Modul D: Synchronisiertes Audio-Annotation-System (Aria Gen 2 Codec-Handling)
 * **Funktion:** Da die Meta Aria Gen 2 komprimierte Audio-Datenblöcke verwendet, mischt das Modul die Kanäle des Mikrofon-Arrays mathematisch zu einer Mono-Spur zusammen und exportiert ein unkomprimiertes 16-Bit-PCM-WAV-Signal (16 kHz).
 * **Robuste Audio-Vorverarbeitung:** Da sich bei den bisherigen Aufnahmen gezeigt hat, dass die Sprachkommandos teilweise sehr leise aufgenommen wurden, wurde das Skript `Code/speech_recognition_demo.py` erweitert. Die aus dem VRS-Container extrahierte Audiospur wird nun zuerst per RMS-Normalisierung angehoben. Wenn `ffmpeg` verfügbar ist, wird zusätzlich eine Whisper-optimierte Vorverarbeitung angewendet (`highpass`, Kompressor und Loudness-Normalisierung auf ca. -16 LUFS). Dadurch wird die Erkennung leiser kurzer Befehle deutlich stabiler, ohne dass die Rohdaten verändert werden.
-* **Verbesserte Command-Erkennung:** Das normalisierte Signal wird an ein lokales **Faster-Whisper-Modell** übergeben, welches die Spur nach der sequentiellen Trigger-Abfolge (*"Start"*, *"Second"*, *"Done"*, *"Third"*) scannt. Die Erkennung basiert nicht mehr nur auf exakten Worttreffern, sondern nutzt zusätzlich Fuzzy-Matching und Alias-Listen für typische Fehltranskriptionen (z. B. `"star"` für `"start"` oder `"down"` für `"done"`). Die finale Auswahl wird anschließend über die erwartete chronologische Reihenfolge `START -> SECOND -> DONE -> THIRD` stabilisiert.
+* **Sprachfensterbasierte Command-Erkennung:** Die Zeitbestimmung wurde grundlegend von Whispers Wortsegmentierung getrennt. Ein Silero-VAD aus `faster-whisper` detektiert zunächst einzelne Sprachereignisse; falls dieses nicht verfügbar ist, existiert ein energiebasierter Fallback. Jedes Sprachfenster wird anschließend unabhängig und ohne vorherigen Textkontext von Whisper als `START`, `SECOND`, `DONE` oder `THIRD` klassifiziert. Fuzzy-Matching und Alias-Listen bleiben für typische Fehltranskriptionen erhalten. Die finale Auswahl wird über getrennte, chronologisch geordnete Sprachereignisse stabilisiert.
+* **Korrigierte Zeitbasis:** Der relative Command-Zeitpunkt stammt nun vom Beginn des jeweiligen VAD-Sprachereignisses und nicht mehr von Whispers geschätzter Wortgrenze. Der Hardwarezeitpunkt wird als `audio_start_timestamp_ns + speech_event_start` berechnet. Dadurch bleibt die Zuordnung zum `DEVICE_TIME`-System erhalten, ohne eine nicht vorhandene Nanosekundengenauigkeit der Spracherkennung zu behaupten. Als praktische zeitliche Auflösung wird zusätzlich eine Unsicherheit beziehungsweise VAD-Auflösung dokumentiert.
+* **Validierter Problemfall:** Bei `Edu_1_20260604_170154` hatte die vorherige Vollspur-Transkription `SECOND` und `THIRD` in dasselbe Segment gelegt und auf 35,18 s beziehungsweise 36,26 s komprimiert. Die neue Fenstererkennung liefert `START=1,280 s`, `SECOND=35,936 s` und `THIRD=39,104 s`. Das tatsächlich nicht gesprochene `DONE` bleibt bewusst fehlend und wird zur manuellen Prüfung markiert.
 * **CPU-/GPU-Konfiguration:** Die Ausführungsplattform und numerische Repräsentation von Faster-Whisper sind nun über `--device` und `--compute-type` konfigurierbar. Lokal bleibt `--device cpu --compute-type int8` der Standard; auf einem GPU-Knoten kann die Erkennung beispielsweise mit `--device cuda --compute-type float16` ausgeführt werden. Damit ist dasselbe Skript ohne Codeänderung lokal und auf dem TCML-Cluster nutzbar.
-* **Debug- und QA-Ausgaben:** Die finale Datei `timestamps_summary.json` bleibt für nachgelagerte Pipelines kompatibel und enthält nur die final ausgewählten Trigger-Zeitpunkte. Zusätzlich erzeugt das Skript nun `timestamps_debug.json`, in der erkannte Kandidaten, Match-Scores und Warnungen wie fehlende Trigger gespeichert werden. Optional können mit `--keep-debug-audio` die normalisierten WAV-Dateien zur manuellen Kontrolle abgelegt werden.
-* Über den Aufruf `get_first_time_ns` wird weiterhin der Hardware-Startzeitpunkt (`TimeDomain.DEVICE_TIME`) abgegriffen und mit den relativen Wort-Zeitstempeln von Whisper verrechnet. Die daraus resultierenden Trigger-Zeitpunkte bleiben somit nanosekundengenau mit den Sensorströmen synchronisiert.
-* **Warum:** Für das Supervised Learning wird so eine nanosekundengenaue, automatisierte zeitliche Synchronität zwischen dem gesprochenen Befehl und den physikalischen Augen- und Handbewegungen des Probanden hergestellt.
+* **Debug-, QA- und Review-Ausgaben:** `timestamps_summary.json` bleibt für nachgelagerte Pipelines kompatibel. `timestamps_debug.json` enthält Sprachfenster, Transkripte, Konfidenzen, Zeitquelle und Warnungen. `timestamps_review_queue.json` enthält ausschließlich Sequenzen, die nicht automatisch akzeptiert werden können. Persistente Einzelkorrekturen können getrennt in `timestamps_manual_overrides.json` abgelegt und bei späteren Läufen erneut angewendet werden. Optional werden mit `--keep-debug-audio` die normalisierten WAV-Dateien zur manuellen Kontrolle gespeichert.
+* **Sichere Batchausgabe:** Bestehende Summary-, Debug- und Review-Dateien werden vor dem Ersetzen gesichert und neue JSON-Dateien atomar geschrieben. Der Einzeldateimodus schreibt standardmäßig in einen separaten Ergebnisordner, damit ein Testlauf nicht versehentlich die vollständige Batch-Summary überschreibt.
+* **Warum:** Für das Supervised Learning entsteht eine reproduzierbare Synchronisierung zwischen den erkannten Sprachereignissen und den physikalischen Augen- und Handdaten. Die verbleibende Unsicherheit der automatischen Spracherkennung wird explizit erfasst und nicht als exakte Ground Truth ausgegeben.
 * **Architektonischer Ausschluss von Feature-Leckagen:** Die extrahierten Audio-Befehle dienen ausschließlich der automatisierten Offline-Phasensegmentierung (Ersatz für manuelles Frame-Labeling). Die Audiospur wird **nicht** als Feature in die finale KI-Dateneinspeisung übernommen. Das neuronale Netz lernt rein auf den physikalischen Geometrie- und Bilddaten.
 
 ---
@@ -60,6 +62,7 @@ Ein wichtiger architektonischer Meilenstein ist die Trennung von visueller Kontr
 * **Kalibrierte Extraktion:** `Code/detect_tags.py` wurde zu einem CLI-Tool umgebaut. Die RGB-Fisheye-Bilder werden vor der Detektion mit der Project-Aria-Kalibrierung in ein lineares Kameramodell rektifiziert. Damit basiert `solvePnP` nicht mehr fälschlich auf unverzerrten Pinhole-Annahmen für ein rohes Fisheye-Bild.
 * **Eindeutige Markertrennung:** Infrastrukturmarker werden als `apriltag_36h11` mit den erlaubten IDs 0–5, Objektmarker als `aruco_4x4_50` mit den IDs 6–14 gespeichert. Nicht erlaubte beziehungsweise wahrscheinlich falsch positive IDs werden verworfen und im Laufprotokoll gezählt.
 * **Erweitertes Ausgabeformat:** Pro Marker und Bildzeitpunkt werden vollständige Sequenz-ID, Markerfamilie, semantische Rolle, physische Größe, Translation, Rotationsvektor, Quaternion, Reprojektionsfehler und Markerfläche exportiert. Die Ausgabedateien verwenden die vollständige Sequenz-ID, um mehrdeutige Zuordnungen wie `Miro_1` versus `Miro_2` zu verhindern.
+* **Resumierbare Clusterverarbeitung:** `singularity/aria_tags_all.sbatch` legt die eigentlichen CSV-Dateien unter `Data_collection/Aruco_CSV/` ab und erzeugt für QA und Master-Builder relative Symlinks unter `Data_collection/`. Vorhandene CSVs werden anhand von Dateigröße und erwartetem Header validiert und im Resume-Modus übersprungen. Nur fehlende oder ungültige Ausgaben werden neu berechnet; `OVERWRITE=1` bleibt einer bewusst vollständigen Neuberechnung vorbehalten.
 * **Der mathematische Ablauf (Sensor Fusion):**
   1. **Infrastruktur-Tracking (AprilTags 36h11):** AprilTag 0 an der Roboterreferenz (100 mm) und die Marker auf der Tischoberfläche (80 mm) werden detektiert, um eine stabile räumliche Referenz aufzubauen.
   2. **Objekt-Tracking (ArUco 4x4):** Die auf dem künstlichen Obst (z. B. Äpfel, Bananen) angebrachten kleinen 50-mm-Marker aus der Familie `DICT_4X4_50` werden parallel detektiert und über die IDs 6–14 eindeutig unterschieden.
@@ -84,6 +87,21 @@ Ein wichtiger architektonischer Meilenstein ist die Trennung von visueller Kontr
 * **Phasenspezifische Hand-QA:** Die reine Existenz einer Handtracking-Datei reicht nicht mehr als Qualitätskriterium. Für das Fenster `DONE -> THIRD` werden Zeilenzahl und gültige Anteile der linken, rechten und mindestens einer Hand berechnet. Sequenzen ohne gültige Hand im Handover werden als `missing_handover_hand_tracking` blockiert; eine Abdeckung unter standardmäßig 80 % erzeugt `low_handover_hand_tracking`.
 * **Marker-Zeitbereichsprüfung:** Markerdateien werden nur akzeptiert, wenn ihr `timestamp_ns`-Bereich mit dem Triggerbereich derselben Aufnahme überlappt. Dadurch wurde erkannt, dass die Legacy-Datei `aruco_poses_Miro_1.csv` zeitlich zu `Miro_2` gehört und nicht für `Miro_1` verwendet werden darf.
 * **Status- und Handlungsempfehlung:** Für jede Sequenz werden ein `status` und eine `next_action` erzeugt, z. B. `fix_timestamps`, `convert_mp4`, `download_or_process_mps`, `run_aruco_extraction` oder `ready_for_master_merge`. Das Skript verändert keine Rohdaten; es dient ausschließlich als Validierungs- und Fortschrittskontrolle.
+
+### Modul I: Synchronisierte manuelle Timestamp-Kontrolle
+* **Neues Review-Werkzeug:** `Code/review_timestamps_video.py` liest das Dataset-Manifest, sucht die passende MP4- und normalisierte WAV-Datei und spielt beide auf einer gemeinsamen Zeitachse ab. Automatisch erkannte Commands sowie bereits gesetzte manuelle Werte werden direkt im Videobild eingeblendet.
+* **Bedienung und persistente Entscheidungen:** Mit den Tasten `1` bis `4` werden `START`, `SECOND`, `DONE` und `THIRD` am aktuellen Zeitpunkt gesetzt. Zusätzlich stehen `accept_auto`, `exclude` und `uncertain`, Navigation zwischen Sequenzen sowie Sprünge um eine beziehungsweise fünf Sekunden zur Verfügung. Die gewünschte Objekt-ID 6–14 kann direkt zyklisch gewählt werden; `left`, `right`, `both` oder `uncertain` dokumentieren die empfangende Hand. Eine separate Konfidenz kennzeichnet unsichere semantische Annotationen. Zwischenergebnisse werden fortlaufend und atomar in `Data_collection/manual_timestamp_review.csv` gespeichert. Bestehende CSVs mit dem älteren Spaltenschema bleiben lesbar und werden beim nächsten Speichern migriert.
+* **Flüssige Audio-/Video-Wiedergabe:** Die erste Implementierung positionierte das H.264-Video vor jedem Frame neu und erreichte bei einer Messung mit `Edu_1` nur ungefähr 7,3 dekodierte FPS. Die überarbeitete Version dekodiert während normaler Wiedergabe ausschließlich sequenziell und sucht nur bei einem expliziten Zeitsprung. Derselbe Dekodierpfad erreicht ungefähr 684 FPS Kapazität und liegt damit deutlich über den benötigten 30 FPS.
+* **Synchronisationsquelle:** Die WAV-Ausgabe dient als Master-Zeitquelle. Der aktuelle Zeitpunkt wird über die tatsächliche DAC-Ausgabezeit des `sounddevice`-Streams bestimmt und nicht über bereits in den Audiopuffer geschriebene Samples. Pause, Fortsetzen und Zeitsprünge werden gemeinsam auf Audio und Video angewendet. Große Videoframes werden nur für die Anzeige verkleinert; die zugrunde liegenden Zeitwerte bleiben unverändert.
+* **Robustheit:** Fehler beim Öffnen des Audiogeräts führen zu einer kontrollierten lautlosen Wiedergabe statt zum Abbruch. Manuelle Command-Markierungen setzen die Entscheidung zuverlässig auf `manual_fix`; `accept_auto` entfernt widersprüchliche alte manuelle Werte.
+* **Objektmarker im Review:** Das Review-Fenster erkennt die ArUco-Objektmarker 6–14 live im angezeigten MP4-Frame, zeichnet Rahmen und ID direkt am Marker und hebt die ausgewählte Ziel-ID hervor. Mit `m` wird durch die aktuell sichtbaren Objekt-IDs geschaltet und die gewählte ID unmittelbar als `target_object_id` gespeichert; die Tasten 6–9 erlauben zusätzlich eine Direktauswahl. Die fertige Marker-CSV liefert frameweise sichtbare IDs als Fallback, falls ein Marker in der verkleinerten Live-Ansicht übersehen wird. Die Live-Erkennung ist auf die für das Zielobjekt relevanten ArUco-Marker beschränkt und erreicht im Test einschließlich Videodekodierung ungefähr 92,7 FPS Kapazität.
+* **Review-Import:** `Code/apply_manual_reviews.py` validiert manuelle Zeiten gegen Command-Reihenfolge, Mindestabstände, Audiodauer und Hardwarestartzeit. Standardmäßig erzeugt es eine separate `timestamps_summary.reviewed.json`, persistente `timestamps_manual_overrides.json` und einen detaillierten Importbericht. Die produktive Summary wird nur mit `--in-place` ersetzt und zuvor mit Zeitstempel gesichert. Ungültige Korrekturen werden abgelehnt, ohne die Eingabe-Summary zu verändern.
+
+### Modul J: Finalisierung und Batch-Erstellung der Trainingsdaten
+* **Gemeinsames Annotationsschema:** `Code/annotation_utils.py` definiert und validiert Review-Entscheidung, Command-Zeiten, `target_object_id`, `receiving_hand` und Annotationskonfidenz. Review, Import, QA und Master-Builder verwenden damit dieselbe Datenrepräsentation.
+* **Annotationen im Master-Datensatz:** `Code/build_master_dataset.py` liest Zielobjekt und Zielhand automatisch aus der Annotationstabelle; explizite CLI-Werte haben Vorrang. Neben den Zukunftstargets beider Hände wird ein eindeutig ausgewähltes `future_*_receiving_wrist_*`-Target erzeugt, wenn `left` oder `right` bestätigt wurde. Der Report dokumentiert Quelle, Konfidenz und Verfügbarkeit des Zielmarkers.
+* **Resumierbarer Batch-Builder:** `Code/build_master_dataset_batch.py` wählt anhand des QA-Manifests nur Sequenzen mit vollständigen VRS-, Timestamp-, MPS- und Markerartefakten aus. Vorhandene Master-Datensätze werden übersprungen, Fehler pro Sequenz protokolliert und der Lauf über `--dry-run`, `--limit`, wiederholbare `--sequence`-Filter sowie optional erforderliche semantische Annotationen kontrolliert.
+* **Erweiterte Dataset-QA:** `Code/dataset_qa.py` prüft nun zusätzlich WAV-Verfügbarkeit, MP4/WAV-Laufzeitdifferenz, Review-Entscheidung, Übernahme manueller Zeiten, Zielobjekt, Zielhand, Annotationskonfidenz, Sichtbarkeit der annotierten Objekt-ID, Trackingabdeckung der Zielhand sowie vorhandene Master-CSV- und Reportdateien. Die abgeleiteten Folgeaktionen umfassen jetzt auch `extract_wav`, `annotate_sequence` und `build_master_dataset`.
 
 ---
 
@@ -127,12 +145,19 @@ Jeder Durchlauf folgt einer strikten zeitlichen Abfolge. Die verbalen Befehle de
 
 Nach der Erweiterung der Audio-Annotation wurde die automatische Command-Erkennung erneut auf allen damals vorhandenen VRS-Dateien ausgeführt. Da das lokal gecachte `medium.en`-Modell unvollständig war und der vollständige CPU-Batch damit nicht praktikabel abschloss, wurde der vollständige Batchlauf mit `tiny.en` durchgeführt. Die verbesserte Audio-Normalisierung, das Fuzzy-Matching und die Sequenzlogik wurden dabei verwendet.
 
+Dieser Batch beschreibt den historischen Stand vor der neuen sprachfensterbasierten Zeitbestimmung. Die produktive Summary darf erst nach einem vollständigen Lauf der neuen Erkennung, der manuellen MP4/WAV-Prüfung und dem validierten Import der Review-Korrekturen als final betrachtet werden.
+
 Anschließend wurde der neu angelegte Backup-Ordner `BackUp_Videos/` mit dem Arbeitsordner `Data_collection/Data_vrs/` abgeglichen. Dabei wurden 94 fehlende VRS-Dateien in den Arbeitsordner kopiert, ohne bestehende Dateien zu überschreiben. Aktuell enthalten beide Ordner dieselben 136 VRS-Dateinamen.
 
 ### 6.1 Erzeugte Artefakte
 * **Backup der vorherigen Whisper-Ausgabe:** `Data_collection/Data_vrs/timestamps_summary.before_audio_fix.json`
 * **Aktualisierte automatische Trigger-Datei:** `Data_collection/Data_vrs/timestamps_summary.json`
 * **Debug-Ausgabe mit Kandidaten und Warnungen:** `Data_collection/Data_vrs/timestamps_debug.json`
+* **Automatische Review-Warteschlange:** `Data_collection/Data_vrs/timestamps_review_queue.json` nach dem nächsten vollständigen Lauf der neuen Sprachfenstererkennung
+* **Manuelle Timestamp-Prüfung:** `Code/review_timestamps_video.py` und `Data_collection/manual_timestamp_review.csv`
+* **Validierter Review-Import:** `Code/apply_manual_reviews.py`
+* **Gemeinsames Annotationsschema:** `Code/annotation_utils.py`
+* **Resumierbarer Master-Batch:** `Code/build_master_dataset_batch.py`
 * **Normalisierte Debug-Audios:** `Data_collection/Data_vrs/debug_audio/` (42 WAV-Dateien)
 * **Dataset-Manifest:** `Data_collection/dataset_manifest.csv`
 * **QA-Report:** `Data_collection/dataset_qa_report.json`
@@ -146,7 +171,9 @@ Anschließend wurde der neu angelegte Backup-Ordner `BackUp_Videos/` mit dem Arb
 * **Master-Dataset:** `Data_collection/master_datasets/Jona_6_20260616_182111_master.csv`
 * **Master-Dataset-Validierung:** `Data_collection/master_datasets/Jona_6_20260616_182111_master_report.json`
 
-### 6.2 Ergebnis des aktuellen QA-Laufs
+### 6.2 Ergebnis des letzten abgeschlossenen QA-Laufs
+
+Die folgenden Zahlen beschreiben den letzten vollständig abgeschlossenen QA-Lauf vor den aktuell laufenden WAV- und Marker-Batchjobs. Sie müssen nach Abschluss der Jobs und nach Übernahme der manuellen Timestamp-Korrekturen neu erzeugt werden.
 
 | Kennzahl | Wert |
 | :--- | ---: |
@@ -194,6 +221,16 @@ Ein wichtiger Fortschritt gegenüber dem vorherigen Stand ist, dass die QA nun n
 * Vollständige Markerextraktion und visuelle Kontrolle für `Jona_6_20260616_182111`
 * `conda run -n aria_conda python Code/build_master_dataset.py --sequence-id Jona_6_20260616_182111 --overwrite`
 * Struktur-, Zeit-, Label-, Transformations- und Overwrite-Guard-Prüfungen des erzeugten Master-Datensatzes
+* Syntax- und statische Prüfung von `Code/review_timestamps_video.py` mit `py_compile` und `pyflakes`
+* Isolierte Tests für Audiotakt, Pause, Fortsetzen, Zeitsprung und manuelle Entscheidungslogik
+* Headless-Test des vollständigen Review-Wiedergabe-Loops mit `Edu_1_20260604_170154`
+* Performancevergleich auf demselben H.264-Video: ungefähr 7,3 FPS beim früheren Seek-pro-Frame-Ansatz gegenüber ungefähr 684 FPS Kapazität bei sequenzieller Dekodierung
+* Live-Erkennung und ID-Overlay der Objektmarker 6–14: ungefähr 92,7 FPS inklusive Videodekodierung; getestete Auswahl einer sichtbaren ID über Tastendruck und CSV-Fallback
+* Rückwärtskompatible Migration der vorhandenen Review-CSV auf das erweiterte Objekt-/Hand-Schema
+* Erfolgreicher und abgelehnter Review-Import mit atomischen temporären JSON-Ausgaben
+* Dry-Run des Master-Batch-Builders mit Eignungs- und Skip-Gründen pro Sequenz
+* Vollständiger temporärer Master-Build für `Jona_6_20260616_182111` mit `target_object_id=6` und empfangender linker Hand: 936 Zeilen, 587 Spalten, gültiges ausgewähltes Zukunftstarget in 84,08 % der Zeilen und keine Reportwarnung
+* Erweiterter QA-Lauf in temporäre Ausgabedateien mit 136 Sequenzen sowie erfolgreicher Prüfung von Review-, Medien-, Zielobjekt-, Zielhand- und Master-Dataset-Feldern
 
 Der damalige Dry-Run der MP4-Konvertierung erkannte 136 VRS-Dateien, 31 bereits vorhandene MP4-Dateien und 105 noch fehlende MP4-Exporte. Dabei wurde keine echte Konvertierung gestartet. Durch den späteren Export der Golden Sequence liegt der aktuelle Stand bei 32 vorhandenen und 104 fehlenden MP4-Dateien.
 
@@ -256,3 +293,49 @@ Noch offene Ground-Truth- und Kalibrierungspunkte:
 * **Zielobjekt:** `target_object_id` bleibt aktuell `-1` beziehungsweise unbekannt. Blickwinkel zu allen sichtbaren Objektmarkern sind als Eingabefeatures vorhanden, dürfen aber ohne manuell oder protokollbasiert bestätigte Objekt-ID nicht als Ground Truth behandelt werden.
 * **Empfangende Hand:** Zukünftige Posen werden vorerst für beide Hände erzeugt. Welche Hand tatsächlich die Zielhand ist, muss pro Sequenz gelabelt oder über eine klar dokumentierte Regel bestimmt werden.
 * **Roboterbasis:** Die robotermarker-relativen Koordinaten verwenden AprilTag 0 als Referenz. Vor einer realen Roboteransteuerung muss noch die starre Transformation vom Marker zur physischen Roboterbasis vermessen und angewendet werden.
+
+### 6.9 Laufende Batchverarbeitung
+
+Zum Zeitpunkt dieser Aktualisierung laufen zwei länger dauernde Verarbeitungsschritte:
+
+* **Vollständiger WAV-Export:** Für alle VRS-Sequenzen werden normalisierte WAV-Dateien erzeugt. Sie dienen der synchronisierten manuellen Timestamp-Kontrolle und bleiben vom späteren Modellinput ausgeschlossen.
+* **Markerextraktion:** Der erste 12-Stunden-Clusterlauf wurde durch das SLURM-Zeitlimit nach 124 von 136 finalen CSV-Dateien beendet. Die scheinbar doppelten Einträge unter `Data_collection/` sind Symlinks auf die eigentlichen Dateien in `Aruco_CSV/` und belegen die Daten nicht doppelt. Es fehlen voraussichtlich `Urim_6` bis `Urim_9` sowie `Vanessa_1` bis `Vanessa_8`. Der gehärtete Resume-Job überspringt die 124 validierten Ausgaben und verarbeitet ausschließlich fehlende oder ungültige Sequenzen.
+
+Während diese Jobs laufen, sind Dateizahlen im lokalen Arbeitsordner nur Zwischenstände. Erst nach erfolgreichem Jobabschluss, Rückkopieren der Clusterergebnisse und Vollständigkeitsprüfung darf `dataset_qa.py` erneut als verbindlicher Status ausgeführt werden. Fehlgeschlagene oder ungewöhnlich kleine Ausgabedateien müssen separat erneut verarbeitet werden.
+
+Für 46 Sequenzen konnten die benötigten MPS-Handtracking-/SLAM-Ergebnisse wegen wiederholter Ablehnung beziehungsweise Nichtverarbeitung durch die Meta-MPS-Server nicht erzeugt werden. Da die Master-Pipeline ohne diese Daten weder zuverlässige Handfeatures noch Welttransformationen aufbauen kann, werden diese Sequenzen für das finale Training ausgeschlossen und nur als Rohdaten archiviert. Eine erneute Verarbeitung ist nur sinnvoll, falls sich der externe MPS-Dienst oder dessen Eingabevalidierung ändert.
+
+Der vollständige WAV-Lauf wurde nach aktuellem Arbeitsstand bereits ausgeführt. Vor der Timestamp-Prüfung ist noch zu bestätigen, dass für alle 136 VRS-Sequenzen eine namensgleiche WAV-Datei vorliegt; erst diese Vollständigkeitsprüfung ersetzt den früher dokumentierten Zwischenstand von 42 lokalen WAV-Dateien.
+
+### 6.10 Neue Entscheidung zur Zielobjekt-Ground-Truth
+
+Die Marker-CSV allein kann `target_object_id` nicht eindeutig liefern: Sie beschreibt, welche Objektmarker sichtbar waren und wo sie lagen, aber nicht, welches Objekt der Proband beabsichtigt hat. Zwei komplementäre Wege sind vorgesehen:
+
+1. **Manuelle Ground Truth:** Pro Sequenz wird die gewünschte Objektmarker-ID aus dem Bereich 6–14 anhand des Videos eingetragen. Gleichzeitig kann die empfangende Hand als `left`, `right` oder `uncertain` annotiert werden. Bei ungefähr 124 Trainingskandidaten ist dieser Aufwand überschaubar und liefert eine belastbare Referenz für die Evaluation.
+2. **Automatische Laufzeitbestimmung:** Im Fenster `SECOND -> DONE` werden Blickwinkel, Fixationsdauer und Sichtbarkeit aller Objektmarker ausgewertet. Das stabil fixierte Objekt kann als automatische Auswahl verwendet werden; geringe Abstände zwischen dem besten und zweitbesten Kandidaten führen zu einer manuellen Prüfung.
+
+Die bevorzugte Systemarchitektur trennt deshalb die Aufgaben: Der Transformer erkennt `continue`, `fetch` und `handover`; ein geometrisches Gaze-Marker-Modul bestimmt während `fetch` das Zielobjekt; die Handpose bestimmt während `handover` die Übergabeposition. Die manuelle `target_object_id` dient primär als Ground Truth zur Messung der Objektselektionsgenauigkeit und darf nicht als Eingabefeature in das Modell gelangen. Voraussetzung ist eine dokumentierte feste Zuordnung der Marker-IDs 6–14 zu den realen Objekten.
+
+### 6.11 Verbleibende Daten- und Kalibrierungsarbeiten vor dem Training
+
+Nach Abschluss der laufenden Jobs sind folgende Schritte notwendig:
+
+1. Manuelle Timestamp-Prüfung abschließen und `manual_timestamp_review.csv` mit `Code/apply_manual_reviews.py` validiert in eine geprüfte beziehungsweise anschließend produktive Timestamp-Datei übernehmen.
+2. Die 46 durch den Meta-MPS-Dienst nicht verarbeitbaren Sequenzen explizit als `mps_unavailable` dokumentieren und aus dem finalen Trainingssplit ausschließen; vorhandene erfolgreiche MPS-Ergebnisse vollständig zurückkopieren.
+3. `target_object_id` und empfangende Hand pro Trainingssequenz annotieren oder ausdrücklich als unbekannt markieren.
+4. Die feste Transformation von AprilTag 0 zur physischen Roboterbasis vermessen. Bis dahin bleibt AprilTag 0 das dokumentierte Referenzkoordinatensystem.
+5. `dataset_qa.py` erneut ausführen und Sequenzen mit fehlenden Dateien, unplausiblen Phasen, unzureichender Handabdeckung oder Marker-Zeitbereichsfehlern ausschließen beziehungsweise zur Nachbearbeitung markieren.
+6. `Code/build_master_dataset_batch.py` zunächst als Dry-Run und anschließend über alle freigegebenen Sequenzen ausführen. Die Einzelreports und der Batchreport müssen auf NaN-Anteile, Match-Toleranzen, Markerabdeckung, gültige Zukunftstargets und konsistente Koordinatentransformationen geprüft werden.
+
+### 6.12 Noch zu implementierende Trainings- und Evaluationspipeline
+
+Der eigentliche produktive PyTorch-Trainingscode ist noch nicht implementiert. Vor dem Transformer werden folgende Komponenten benötigt:
+
+* Sliding-Window-Dataset mit expliziter Feature-Whitelist, Validitätsmasken und train-only Normalisierung.
+* Personenbasierter Train-/Validation-/Test-Split; Fenster derselben Person dürfen nicht zufällig über mehrere Splits verteilt werden.
+* Ausschluss von Label-Leckagen: `intent_label`, `intent_id`, zukünftige Handtargets, `target_object_id` und globale Zeit seit Sequenzbeginn dürfen nicht als Eingabefeatures verwendet werden. Positional Encoding innerhalb eines lokalen Fensters bleibt zulässig.
+* Einfache Baselines wie Mehrheitsklasse, MLP sowie LSTM oder TCN, bevor der Multimodal Transformer bewertet wird.
+* Multitask-Modell mit Klassifikationskopf für drei Intentionen und Regressionskopf für die zukünftige Handpose; eine Objektselektion kann separat geometrisch oder optional als weiterer Kopf evaluiert werden.
+* Evaluation über Macro-F1, Confusion Matrix und Übergangslatenz für die Intentionen sowie euklidischen Positionsfehler in Zentimetern für die Handvorhersage. Zusätzlich sind personenbasierte Tests und Ablationen ohne Gaze, Hand, Marker beziehungsweise globale Zeitinformation erforderlich.
+
+Das methodische Hauptrisiko bleibt die feste Reihenfolge `continue -> fetch -> handover`. Das Modell darf die Klasse nicht lediglich aus der relativen Position innerhalb einer Aufnahme ableiten. Dieses Risiko muss durch die Feature-Auswahl, eine Ablation ohne globale Zeitinformation und eine offene Diskussion der Datensatzlimitation geprüft werden.

@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
+from annotation_utils import normalize_receiving_hand, parse_target_object_id, read_review_rows
 from extract_multimodal_data import default_gaze_output, extract_vrs_tracking, write_gaze_csv
 
 
@@ -48,7 +49,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-csv", type=Path, default=None, help="Output master CSV.")
     parser.add_argument("--report-out", type=Path, default=None, help="Output validation JSON.")
     parser.add_argument("--gaze-csv", type=Path, default=None, help="Native gaze CSV cache path.")
+    parser.add_argument(
+        "--annotations",
+        type=Path,
+        default=None,
+        help="Sequence annotations CSV. Default: Data_collection/manual_timestamp_review.csv when present.",
+    )
     parser.add_argument("--target-object-id", type=int, default=None, help="Ground-truth object marker ID, if known.")
+    parser.add_argument(
+        "--receiving-hand",
+        choices=("left", "right", "both", "uncertain"),
+        default=None,
+        help="Receiving hand override. Otherwise read from the annotation CSV.",
+    )
     parser.add_argument("--future-horizon-seconds", type=float, default=1.0)
     parser.add_argument("--hand-tolerance-ms", type=float, default=12.0)
     parser.add_argument("--slam-tolerance-ms", type=float, default=5.0)
@@ -72,6 +85,38 @@ def command_entry(timestamp_data: dict, sequence_id: str) -> dict:
     if missing:
         raise ValueError(f"Incomplete timestamps for {sequence_id}: {', '.join(missing)}")
     return entry
+
+
+def sequence_annotation(
+    sequence_id: str,
+    annotation_path: Path | None,
+    target_object_override: int | None,
+    receiving_hand_override: str | None,
+) -> dict:
+    row = {}
+    if annotation_path is not None and annotation_path.exists():
+        row = read_review_rows(annotation_path).get(sequence_id, {})
+    if row.get("decision") == "exclude":
+        raise ValueError(f"Sequence is excluded by manual annotation: {sequence_id}")
+
+    target_object_id = (
+        parse_target_object_id(target_object_override)
+        if target_object_override is not None
+        else parse_target_object_id(row.get("target_object_id"))
+    )
+    receiving_hand = normalize_receiving_hand(
+        receiving_hand_override
+        if receiving_hand_override is not None
+        else row.get("receiving_hand")
+    )
+    annotation_confidence = str(row.get("annotation_confidence", "")).strip().lower()
+    return {
+        "target_object_id": target_object_id,
+        "receiving_hand": receiving_hand,
+        "annotation_confidence": annotation_confidence,
+        "review_decision": row.get("decision", ""),
+        "annotation_source": str(annotation_path) if row else "",
+    }
 
 
 def label_timeline(frame: pd.DataFrame, commands: dict) -> pd.DataFrame:
@@ -392,6 +437,35 @@ def add_future_targets(master: pd.DataFrame, horizon_seconds: float, tolerance_m
     return master.merge(aligned.drop(columns=["future_query_ns"]), on="timestamp_ns", how="left")
 
 
+def add_receiving_hand_target(
+    master: pd.DataFrame,
+    horizon_seconds: float,
+    receiving_hand: str,
+) -> pd.DataFrame:
+    prefix = f"future_{horizon_seconds:g}s_"
+    selected_hand = receiving_hand if receiving_hand in {"left", "right"} else None
+    for axis in "xyz":
+        output_column = f"{prefix}receiving_wrist_robot_{axis}_m"
+        master[output_column] = (
+            master[f"{prefix}{selected_hand}_wrist_robot_{axis}_m"]
+            if selected_hand
+            else np.nan
+        )
+    for component in "xyzw":
+        output_column = f"{prefix}receiving_wrist_robot_q{component}"
+        master[output_column] = (
+            master[f"{prefix}{selected_hand}_wrist_robot_q{component}"]
+            if selected_hand
+            else np.nan
+        )
+    master[f"{prefix}receiving_wrist_valid"] = (
+        master[f"{prefix}{selected_hand}_wrist_valid"]
+        if selected_hand
+        else 0
+    )
+    return master
+
+
 def atomic_dataframe_csv(frame: pd.DataFrame, path: Path, overwrite: bool) -> None:
     path = path.expanduser().resolve()
     if path.exists() and not overwrite:
@@ -449,6 +523,9 @@ def build_report(
     marker_keys: list[str],
     output_csv: Path,
     target_object_id: int | None,
+    receiving_hand: str,
+    annotation_confidence: str,
+    annotation_source: str,
     horizon_seconds: float,
 ) -> dict:
     marker_valid_ratios = {
@@ -458,7 +535,14 @@ def build_report(
     warnings = []
     if target_object_id is None:
         warnings.append("target_object_id_unknown")
-    warnings.append("receiving_hand_not_labeled")
+    elif f"aruco_{target_object_id}" not in marker_keys:
+        warnings.append("target_object_marker_not_detected")
+    elif marker_valid_ratios[f"aruco_{target_object_id}"] == 0.0:
+        warnings.append("target_object_marker_not_visible_in_labeled_window")
+    if receiving_hand not in {"left", "right"}:
+        warnings.append("receiving_hand_not_labeled")
+    if annotation_confidence == "uncertain":
+        warnings.append("sequence_annotation_uncertain")
 
     return {
         "sequence_id": sequence_id,
@@ -483,6 +567,13 @@ def build_report(
         ),
         "target_object_id": target_object_id,
         "target_object_known": target_object_id is not None,
+        "receiving_hand": receiving_hand or None,
+        "receiving_hand_known": receiving_hand in {"left", "right"},
+        "annotation_confidence": annotation_confidence or None,
+        "annotation_source": annotation_source or None,
+        "future_receiving_wrist_valid_ratio": round(
+            float(master[f"future_{horizon_seconds:g}s_receiving_wrist_valid"].mean()), 4
+        ),
         "warnings": warnings,
         "coordinate_frames": {
             "hand_input": "device and world; robot-marker frame when AprilTag 0 is visible",
@@ -497,6 +588,21 @@ def build_report(
 def build_master(args: argparse.Namespace) -> tuple[pd.DataFrame, dict, Path, Path]:
     data_root = args.data_root.expanduser().resolve()
     sequence_id = args.sequence_id
+    default_annotations = data_root / "manual_timestamp_review.csv"
+    annotations_arg = getattr(args, "annotations", None)
+    annotation_path = (
+        annotations_arg.expanduser().resolve()
+        if annotations_arg is not None
+        else default_annotations if default_annotations.exists() else None
+    )
+    annotation = sequence_annotation(
+        sequence_id,
+        annotation_path,
+        getattr(args, "target_object_id", None),
+        getattr(args, "receiving_hand", None),
+    )
+    target_object_id = annotation["target_object_id"]
+    receiving_hand = annotation["receiving_hand"]
     vrs_dir = data_root / "Data_vrs"
     vrs_path = require_file(vrs_dir / f"{sequence_id}.vrs", "VRS")
     mps_dir = vrs_dir / f"mps_{sequence_id}_vrs"
@@ -519,7 +625,7 @@ def build_master(args: argparse.Namespace) -> tuple[pd.DataFrame, dict, Path, Pa
         raise ValueError("--future-horizon-seconds must be greater than zero")
     if min(args.hand_tolerance_ms, args.slam_tolerance_ms, args.marker_tolerance_ms) <= 0.0:
         raise ValueError("All merge tolerances must be greater than zero")
-    if args.target_object_id is not None and args.target_object_id not in range(6, 15):
+    if target_object_id is not None and target_object_id not in range(6, 15):
         raise ValueError("--target-object-id must be an object marker ID from 6 through 14")
     if not args.overwrite:
         existing = [path for path in (output_csv, report_out) if path.exists()]
@@ -537,8 +643,11 @@ def build_master(args: argparse.Namespace) -> tuple[pd.DataFrame, dict, Path, Pa
     master = label_timeline(gaze, commands)
     master.insert(0, "sequence_id", sequence_id)
     master.insert(1, "participant", sequence_id.split("_", 1)[0])
-    master["target_object_id"] = args.target_object_id if args.target_object_id is not None else -1
-    master["target_object_known"] = int(args.target_object_id is not None)
+    master["target_object_id"] = target_object_id if target_object_id is not None else -1
+    master["target_object_known"] = int(target_object_id is not None)
+    master["receiving_hand"] = receiving_hand or "unknown"
+    master["receiving_hand_id"] = {"left": 0, "right": 1, "both": 2}.get(receiving_hand, -1)
+    master["annotation_confidence"] = annotation["annotation_confidence"] or "unknown"
 
     hand = load_hand_data(hand_path)
     master = nearest_merge(master, hand, "hand_timestamp_ns", args.hand_tolerance_ms)
@@ -554,6 +663,7 @@ def build_master(args: argparse.Namespace) -> tuple[pd.DataFrame, dict, Path, Pa
 
     master = add_coordinate_transforms(master, marker_keys, tracking.transform_device_camera)
     master = add_future_targets(master, args.future_horizon_seconds, args.hand_tolerance_ms)
+    master = add_receiving_hand_target(master, args.future_horizon_seconds, receiving_hand)
     master = master.sort_values("timestamp_ns").reset_index(drop=True)
 
     report = build_report(
@@ -561,7 +671,10 @@ def build_master(args: argparse.Namespace) -> tuple[pd.DataFrame, dict, Path, Pa
         sequence_id,
         marker_keys,
         output_csv,
-        args.target_object_id,
+        target_object_id,
+        receiving_hand,
+        annotation["annotation_confidence"],
+        annotation["annotation_source"],
         args.future_horizon_seconds,
     )
     atomic_dataframe_csv(master, output_csv, args.overwrite)

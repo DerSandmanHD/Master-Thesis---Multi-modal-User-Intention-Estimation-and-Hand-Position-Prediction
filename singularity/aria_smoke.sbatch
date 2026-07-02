@@ -10,9 +10,8 @@
 
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction}"
-SUBMIT_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
-IMAGE="$HOME/singularity/aria_master.simg"
+REPO_DIR="/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
+IMAGE="/home/eker/singularity/aria_master.simg"
 
 cd "$REPO_DIR"
 
@@ -22,7 +21,6 @@ mkdir -p "$HF_HOME" "$YOLO_CONFIG_DIR"
 
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $(hostname)"
-echo "Submit dir: $SUBMIT_DIR"
 echo "Repo dir: $(pwd)"
 echo "Image: $IMAGE"
 echo "Started: $(date)"
@@ -34,11 +32,10 @@ fi
 
 if [ ! -d "$REPO_DIR/Code" ]; then
     echo "ERROR: Repo dir does not look correct: $REPO_DIR" >&2
-    echo "Submit with: REPO_DIR=/path/to/repo sbatch aria_smoke.sbatch" >&2
     exit 2
 fi
 
-singularity exec --nv "$IMAGE" python - <<'PY'
+singularity exec --nv "$IMAGE" python3 - <<'PY'
 import shutil
 from importlib.metadata import version
 
@@ -48,10 +45,8 @@ import numpy as np
 import pandas as pd
 import scipy
 import torch
+import ultralytics
 from projectaria_tools.core import data_provider
-from projectaria_tools.core.sensor_data import TimeDomain
-from projectaria_tools.core.stream_id import StreamId
-from ultralytics import YOLO
 
 print("Python imports: OK")
 print(f"numpy: {np.__version__}")
@@ -68,6 +63,7 @@ print(f"ultralytics: {version('ultralytics')}")
 
 ffmpeg = shutil.which("ffmpeg")
 vrs_to_mp4 = shutil.which("vrs_to_mp4")
+
 print(f"ffmpeg: {ffmpeg}")
 print(f"vrs_to_mp4: {vrs_to_mp4}")
 

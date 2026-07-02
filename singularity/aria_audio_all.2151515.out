@@ -1,0 +1,1039 @@
+Job ID: 2151515
+Node: tcml-node6
+Repo dir: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction
+Image: /home/eker/singularity/aria_master.simg
+VRS dir: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs
+Backup dir: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/audio_batch_backups/job_2151515
+Model: medium.en
+Device: cuda
+Compute type: int8
+Keep debug audio: 0
+Started: Fri Jun 26 05:29:11 PM CEST 2026
+
+============================================================
+1) Input overview
+============================================================
+VRS count:
+136
+
+Backing up existing timestamp outputs if present...
+
+============================================================
+2) Run speech recognition for all VRS files
+============================================================
+Lade Whisper Model (medium.en, device=cuda, compute_type=int8)...
+
+Starte Batch-Verarbeitung für 136 Dateien...
+--------------------------------------------------
+Verarbeite: Atilla_1_20260616_184923.vrs ... Fertig
+Verarbeite: Atilla_2_20260616_185042.vrs ... Fertig
+Verarbeite: Atilla_3_20260616_185212.vrs ... Fertig
+Verarbeite: Atilla_4_20260616_185327.vrs ... Fertig
+Verarbeite: Atilla_5_20260616_185449.vrs ... Fertig
+Verarbeite: Atilla_6_20260616_185613.vrs ... Fertig
+Verarbeite: Atilla_7_20260616_185714.vrs ... Fertig
+Verarbeite: Atilla_8_20260616_185812.vrs ... Fertig
+Verarbeite: Berat_10_20260616_142950.vrs ... Fertig
+Verarbeite: Berat_1_20260604_154611.vrs ... Fertig
+Verarbeite: Berat_2_20260604_154801.vrs ... Fertig
+Verarbeite: Berat_3_20260604_154928.vrs ... Fertig (Warnungen: missing_second, missing_done)
+Verarbeite: Berat_4_20260604_155100.vrs ... Fertig
+Verarbeite: Berat_5_20260604_155234.vrs ... Fertig
+Verarbeite: Berat_6_20260616_142129.vrs ... Fertig (Warnungen: missing_third)
+Verarbeite: Berat_7_20260616_142358.vrs ... Fertig
+Verarbeite: Berat_8_20260616_142539.vrs ... Fertig
+Verarbeite: Berat_9_20260616_142847.vrs ... Fertig
+Verarbeite: Edu_10_20260616_150412.vrs ... Fertig (Warnungen: missing_third)
+Verarbeite: Edu_1_20260604_170154.vrs ... Fertig (Warnungen: missing_start, missing_done)
+Verarbeite: Edu_2_20260604_170420.vrs ... Fertig (Warnungen: missing_done)
+Verarbeite: Edu_3_20260604_170622.vrs ... Fertig (Warnungen: missing_done)
+Verarbeite: Edu_4_20260604_170837.vrs ... Fertig (Warnungen: missing_done, missing_third)
+Verarbeite: Edu_5_20260604_170944.vrs ... Fertig (Warnungen: missing_done)
+Verarbeite: Edu_6_20260616_145740.vrs ... Fertig (Warnungen: missing_done)
+Verarbeite: Edu_7_20260616_145927.vrs ... Fertig
+Verarbeite: Edu_8_20260616_150108.vrs ... Fertig
+Verarbeite: Edu_9_20260616_150247.vrs ... Fertig
+Verarbeite: Ermal_1_20260604_151723.vrs ... Fertig (Warnungen: missing_third)
+Verarbeite: Ermal_2_20260604_151912.vrs ... Fertig (Warnungen: missing_third)
+Verarbeite: Ermal_3_20260604_152032.vrs ... Fertig (Warnungen: missing_third)
+Verarbeite: Ermal_4_20260604_152214.vrs ... Fertig (Warnungen: missing_third)
+Verarbeite: Ermal_5_20260616_153530.vrs ... Fertig
+Verarbeite: Ermal_6_20260616_153648.vrs ... Fertig
+Verarbeite: Ermal_7_20260616_153921.vrs ... Fertig
+Verarbeite: Ermal_8_20260616_154054.vrs ... Fertig
+Verarbeite: Ermal_9_20260616_154205.vrs ... Fertig
+Verarbeite: Felix_1_20260604_171928.vrs ... Fertig (Warnungen: missing_start, missing_done, missing_third)
+Verarbeite: Felix_1_20260604_171946.vrs ... Fertig (Warnungen: missing_third)
+Verarbeite: Felix_2_20260604_172102.vrs ... Fertig
+Verarbeite: Felix_3_20260604_172212.vrs ... Fertig
+Verarbeite: Felix_4_20260604_172358.vrs ... Fertig
+Verarbeite: Jan_1_20260604_161550.vrs ... Fertig (Warnungen: missing_third)
+Verarbeite: Jan_2_20260604_161704.vrs ... Fertig
+Verarbeite: Jan_3_20260604_161835.vrs ... Fertig (Warnungen: missing_third)
+Verarbeite: Jan_4_20260604_162000.vrs ... Fertig (Warnungen: missing_done)
+Verarbeite: Jan_5_20260604_162111.vrs ... Fertig
+Verarbeite: Jola_1_20260624_131133.vrs ... Fertig (Warnungen: missing_start, missing_done)
+Verarbeite: Jola_2_20260624_131246.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Jola_3_20260624_131435.vrs ... Fertig (Warnungen: missing_start, missing_done)
+Verarbeite: Jola_4_20260624_131548.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Jola_5_20260624_131818.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Jola_6_20260624_132027.vrs ... Fertig (Warnungen: missing_start, missing_done, missing_third)
+Verarbeite: Jona_1_20260616_181413.vrs ... Fertig
+Verarbeite: Jona_2_20260616_181551.vrs ... Fertig
+Verarbeite: Jona_3_20260616_181717.vrs ... Fertig
+Verarbeite: Jona_4_20260616_181855.vrs ... Fertig
+Verarbeite: Jona_5_20260616_182002.vrs ... Fertig
+Verarbeite: Jona_6_20260616_182111.vrs ... Fertig
+Verarbeite: Jona_7_20260616_182214.vrs ... Fertig
+Verarbeite: Julienco_1_20260624_125251.vrs ... Fertig (Warnungen: missing_start, missing_done)
+Verarbeite: Julienco_2_20260624_125435.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Julienco_3_20260624_125549.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Julienco_4_20260624_125717.vrs ... Fertig (Warnungen: missing_start, missing_third)
+Verarbeite: Julienco_4_2_20260624_125830.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Julienco_5_20260624_125942.vrs ... Fertig (Warnungen: missing_start, missing_third)
+Verarbeite: Julienco_6_20260624_130048.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Julienco_7_20260624_130215.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Julienco_8_20260624_130311.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Leys_1_20260604_163147.vrs ... Fertig
+Verarbeite: Leys_2_20260604_163417.vrs ... Fertig
+Verarbeite: Leys_3_20260604_163535.vrs ... Fertig
+Verarbeite: Leys_4_20260604_163704.vrs ... Fertig
+Verarbeite: Leys_5_20260604_163854.vrs ... Fertig
+Verarbeite: Maria_1_20260624_133852.vrs ... Fertig (Warnungen: missing_start, missing_done)
+Verarbeite: Maria_2_20260624_134005.vrs ... Fertig (Warnungen: missing_start, missing_done)
+Verarbeite: Maria_3_20260624_134101.vrs ... Fertig (Warnungen: missing_start, missing_done)
+Verarbeite: Maria_4_20260624_134233.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Maria_5_20260624_134337.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Maria_6_20260624_134443.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Melih_10_20260616_180515.vrs ... Fertig
+Verarbeite: Melih_1_20260616_175140.vrs ... Fertig
+Verarbeite: Melih_2_20260616_175310.vrs ... Fertig
+Verarbeite: Melih_3_20260616_175418.vrs ... Fertig
+Verarbeite: Melih_4_20260616_175523.vrs ... Fertig
+Verarbeite: Melih_5_20260616_175612.vrs ... Fertig
+Verarbeite: Melih_6_20260616_180104.vrs ... Fertig
+Verarbeite: Melih_7_20260616_180202.vrs ... Fertig
+Verarbeite: Melih_8_20260616_180307.vrs ... Fertig
+Verarbeite: Melih_9_20260616_180402.vrs ... Fertig
+Verarbeite: Miro_1_20260604_153303.vrs ... Fertig
+Verarbeite: Miro_2_20260604_153451.vrs ... Fertig
+Verarbeite: Miro_3_20260604_153609.vrs ... Fertig
+Verarbeite: Miro_4_20260604_153734.vrs ... Fertig
+Verarbeite: Mona_1_20260624_123312.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Mona_2_20260624_123443.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Mona_3_20260624_123548.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Mona_4_20260624_123706.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Mona_5_20260624_123814.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Mona_6_20260624_123930.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Mona_7_20260624_124051.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Mona_8_20260624_124414.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Suthan_1_20260604_164834.vrs ... Fertig
+Verarbeite: Suthan_2_20260604_165031.vrs ... Fertig
+Verarbeite: Suthan_3_20260604_165324.vrs ... Fertig (Warnungen: missing_second, missing_done, missing_third)
+Verarbeite: Suthan_4_20260604_165434.vrs ... Fertig
+Verarbeite: Test_1_20260624_122109.vrs ... Fertig (Warnungen: missing_start, missing_second, missing_done)
+Verarbeite: Test_2_20260624_122206.vrs ... Fertig (Warnungen: missing_start, missing_third)
+Verarbeite: Test_3_20260522_160036.vrs ... Fertig (Warnungen: missing_second, missing_done, missing_third)
+Verarbeite: Test_3_20260624_122314.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Test_4_20260527_161832.vrs ... Fertig (Warnungen: missing_third)
+Verarbeite: Test_4_20260624_122416.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Test_5_20260624_122509.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Test_6_20260624_122607.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Test_7_20260601_165002.vrs ... Fertig
+Verarbeite: Test_7_20260624_122709.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Unknown_2_20260616_141751.vrs ... Fertig (Warnungen: missing_start, missing_second, missing_done, missing_third)
+Verarbeite: Urim_10_20260616_145015.vrs ... Fertig
+Verarbeite: Urim_1_20260604_160102.vrs ... Fertig
+Verarbeite: Urim_2_20260604_160234.vrs ... Fertig
+Verarbeite: Urim_3_20260604_160345.vrs ... Fertig
+Verarbeite: Urim_4_20260604_160502.vrs ... Fertig
+Verarbeite: Urim_5_20260604_160634.vrs ... Fertig
+Verarbeite: Urim_6_20260616_144055.vrs ... Fertig
+Verarbeite: Urim_7_20260616_144229.vrs ... Fertig
+Verarbeite: Urim_8_20260616_144352.vrs ... Fertig
+Verarbeite: Urim_9_20260616_144841.vrs ... Fertig (Warnungen: missing_done)
+Verarbeite: Vanessa_1_20260624_132542.vrs ... Fertig (Warnungen: missing_start, missing_done)
+Verarbeite: Vanessa_2_20260624_132710.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Vanessa_3_20260624_132807.vrs ... Fertig (Warnungen: missing_start, missing_second, missing_done)
+Verarbeite: Vanessa_4_20260624_132943.vrs ... Fertig (Warnungen: missing_start, missing_third)
+Verarbeite: Vanessa_5_20260624_133059.vrs ... Fertig (Warnungen: missing_start, missing_second, missing_third)
+Verarbeite: Vanessa_6_20260624_133209.vrs ... Fertig (Warnungen: missing_start, missing_second, missing_third)
+Verarbeite: Vanessa_7_20260624_133405.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: Vanessa_8_20260624_133505.vrs ... Fertig (Warnungen: missing_start)
+Verarbeite: unknown_20260604_150319.vrs ... Fertig (Warnungen: missing_start, missing_second, missing_done, missing_third)
+
+============================================================
+ ZUSAMMENFASSUNG DER GEFUNDENEN TIMESTAMPS
+============================================================
+
+🎥 Atilla_1_20260616_184923.vrs
+   [ 0.00s] START   -> 3876472787555 ns | Start. (1.0)
+   [24.82s] SECOND  -> 3901292787555 ns | Second. (1.0)
+   [30.00s] DONE    -> 3906472787555 ns | done (1.0)
+   [32.82s] THIRD   -> 3909292787555 ns | third (1.0)
+
+🎥 Atilla_2_20260616_185042.vrs
+   [ 0.00s] START   -> 3955856787611 ns | Start. (1.0)
+   [20.00s] SECOND  -> 3975856787611 ns | Second. (1.0)
+   [24.00s] DONE    -> 3979856787611 ns | Done. (1.0)
+   [26.30s] THIRD   -> 3982156787611 ns | Third. (1.0)
+
+🎥 Atilla_3_20260616_185212.vrs
+   [ 0.00s] START   -> 4045624787431 ns | Start. (1.0)
+   [17.82s] SECOND  -> 4063444787431 ns | Second. (1.0)
+   [22.74s] DONE    -> 4068364787431 ns | Done. (1.0)
+   [24.82s] THIRD   -> 4070444787431 ns | Third. (1.0)
+
+🎥 Atilla_4_20260616_185327.vrs
+   [ 0.00s] START   -> 4120560787341 ns | Start. (1.0)
+   [15.88s] SECOND  -> 4136440787341 ns | Second. (1.0)
+   [20.70s] DONE    -> 4141260787341 ns | Done. (1.0)
+   [23.74s] THIRD   -> 4144300787341 ns | Third. (1.0)
+
+🎥 Atilla_5_20260616_185449.vrs
+   [ 0.00s] START   -> 4202096787563 ns | Start. (1.0)
+   [21.92s] SECOND  -> 4224016787563 ns | Second. (1.0)
+   [26.28s] DONE    -> 4228376787563 ns | Done. (1.0)
+   [30.00s] THIRD   -> 4232096787563 ns | Third. (1.0)
+
+🎥 Atilla_6_20260616_185613.vrs
+   [ 0.00s] START   -> 4286744787645 ns | Start. (1.0)
+   [21.74s] SECOND  -> 4308484787645 ns | Second. (1.0)
+   [26.88s] DONE    -> 4313624787645 ns | Done. (1.0)
+   [30.00s] THIRD   -> 4316744787645 ns | Third. (1.0)
+
+🎥 Atilla_7_20260616_185714.vrs
+   [ 0.00s] START   -> 4347264787431 ns | Start. (1.0)
+   [20.94s] SECOND  -> 4368204787431 ns | Second. (1.0)
+   [25.54s] DONE    -> 4372804787431 ns | Done. (1.0)
+   [28.66s] THIRD   -> 4375924787431 ns | Third. (1.0)
+
+🎥 Atilla_8_20260616_185812.vrs
+   [ 2.24s] START   -> 4407848787437 ns | Start. (1.0)
+   [21.54s] SECOND  -> 4427148787437 ns | Second. (1.0)
+   [26.84s] DONE    -> 4432448787437 ns | Done. (1.0)
+   [30.00s] THIRD   -> 4435608787437 ns | Third. (1.0)
+
+🎥 Berat_10_20260616_142950.vrs
+   [ 0.00s] START   -> 1041698288677 ns | Start. (1.0)
+   [23.68s] SECOND  -> 1065378288677 ns | Second. (1.0)
+   [28.66s] DONE    -> 1070358288677 ns | Done. (1.0)
+   [32.00s] THIRD   -> 1073698288677 ns | Third. (1.0)
+
+🎥 Berat_1_20260604_154611.vrs
+   [ 3.00s] START   -> 2833476805099 ns | start. (1.0)
+   [28.52s] SECOND  -> 2858996805099 ns | Second (1.0)
+   [30.94s] DONE    -> 2861416805099 ns | done, (1.0)
+   [36.08s] THIRD   -> 2866556805099 ns | third. (1.0)
+
+🎥 Berat_2_20260604_154801.vrs
+   [ 0.00s] START   -> 2941084804703 ns | Start. (1.0)
+   [23.52s] SECOND  -> 2964604804703 ns | Second. (1.0)
+   [28.32s] DONE    -> 2969404804703 ns | Done. (1.0)
+   [31.32s] THIRD   -> 2972404804703 ns | Third. (1.0)
+
+🎥 Berat_3_20260604_154928.vrs
+   [ 0.00s] START   -> 3028092804925 ns | Start. (1.0)
+   [32.02s] THIRD   -> 3060112804925 ns | Third (1.0)
+   WARNUNG: missing_second
+   WARNUNG: missing_done
+
+🎥 Berat_4_20260604_155100.vrs
+   [ 0.00s] START   -> 3119728804987 ns | Start. (1.0)
+   [27.72s] SECOND  -> 3147448804987 ns | Second. (1.0)
+   [29.98s] DONE    -> 3149708804987 ns | done, (1.0)
+   [34.60s] THIRD   -> 3154328804987 ns | third. (1.0)
+
+🎥 Berat_5_20260604_155234.vrs
+   [ 0.00s] START   -> 3213596804931 ns | Start. (1.0)
+   [40.12s] SECOND  -> 3253716804931 ns | Second, (1.0)
+   [41.52s] DONE    -> 3255116804931 ns | done, (1.0)
+   [44.30s] THIRD   -> 3257896804931 ns | third. (1.0)
+
+🎥 Berat_6_20260616_142129.vrs
+   [ 0.00s] START   -> 540666288873 ns | Start. (1.0)
+   [21.58s] SECOND  -> 562246288873 ns | Second. (1.0)
+   [26.94s] DONE    -> 567606288873 ns | Done. (1.0)
+   WARNUNG: missing_third
+
+🎥 Berat_7_20260616_142358.vrs
+   [ 0.00s] START   -> 689466288921 ns | Start. (1.0)
+   [21.94s] SECOND  -> 711406288921 ns | Second. (1.0)
+   [26.00s] DONE    -> 715466288921 ns | Done. (1.0)
+   [26.78s] THIRD   -> 716246288921 ns | Third. (1.0)
+
+🎥 Berat_8_20260616_142539.vrs
+   [ 0.00s] START   -> 790138288775 ns | Start. (1.0)
+   [26.86s] SECOND  -> 816998288775 ns | Second (1.0)
+   [29.78s] DONE    -> 819918288775 ns | done, (1.0)
+   [34.60s] THIRD   -> 824738288775 ns | third. (1.0)
+
+🎥 Berat_9_20260616_142847.vrs
+   [ 1.86s] START   -> 979678288851 ns | Start. (1.0)
+   [24.86s] SECOND  -> 1002678288851 ns | Second. (1.0)
+   [29.06s] DONE    -> 1006878288851 ns | Done. (1.0)
+   [31.92s] THIRD   -> 1009738288851 ns | Third. (1.0)
+
+🎥 Edu_10_20260616_150412.vrs
+   [ 0.00s] START   -> 3103025525413 ns | Start. (1.0)
+   [19.68s] SECOND  -> 3122705525413 ns | Second. (1.0)
+   [24.28s] DONE    -> 3127305525413 ns | Done. (1.0)
+   WARNUNG: missing_third
+
+🎥 Edu_1_20260604_170154.vrs
+   [34.54s] SECOND  -> 7408510748593 ns | Second, (1.0)
+   [37.84s] THIRD   -> 7411810748593 ns | third. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_done
+
+🎥 Edu_2_20260604_170420.vrs
+   [ 0.00s] START   -> 7519238748489 ns | Start. (1.0)
+   [16.74s] SECOND  -> 7535978748489 ns | Second. (1.0)
+   [20.58s] THIRD   -> 7539818748489 ns | Third. (1.0)
+   WARNUNG: missing_done
+
+🎥 Edu_3_20260604_170622.vrs
+   [ 0.00s] START   -> 7642170748357 ns | Start. (1.0)
+   [18.92s] SECOND  -> 7661090748357 ns | Second. (1.0)
+   [23.56s] THIRD   -> 7665730748357 ns | Third. (1.0)
+   WARNUNG: missing_done
+
+🎥 Edu_4_20260604_170837.vrs
+   [ 0.00s] START   -> 7777074748413 ns | Start. (1.0)
+   [23.78s] SECOND  -> 7800854748413 ns | Second. (1.0)
+   WARNUNG: missing_done
+   WARNUNG: missing_third
+
+🎥 Edu_5_20260604_170944.vrs
+   [ 0.00s] START   -> 7843658748411 ns | Start. (1.0)
+   [24.00s] SECOND  -> 7867658748411 ns | Second. (1.0)
+   [25.28s] THIRD   -> 7868938748411 ns | third. (1.0)
+   WARNUNG: missing_done
+
+🎥 Edu_6_20260616_145740.vrs
+   [ 0.00s] START   -> 2711177525531 ns | Start. (1.0)
+   [17.80s] SECOND  -> 2728977525531 ns | Second. (1.0)
+   [22.96s] THIRD   -> 2734137525531 ns | Third. (1.0)
+   WARNUNG: missing_done
+
+🎥 Edu_7_20260616_145927.vrs
+   [ 0.00s] START   -> 2818097525495 ns | Start. (1.0)
+   [17.92s] SECOND  -> 2836017525495 ns | Second. (1.0)
+   [21.68s] DONE    -> 2839777525495 ns | Done. (1.0)
+   [24.50s] THIRD   -> 2842597525495 ns | Third. (1.0)
+
+🎥 Edu_8_20260616_150108.vrs
+   [ 0.00s] START   -> 2919137525273 ns | Start. (1.0)
+   [14.00s] SECOND  -> 2933137525273 ns | Second. (1.0)
+   [19.00s] DONE    -> 2938137525273 ns | Done. (1.0)
+   [21.08s] THIRD   -> 2940217525273 ns | Third. (1.0)
+
+🎥 Edu_9_20260616_150247.vrs
+   [ 0.00s] START   -> 3018745525447 ns | Start. (1.0)
+   [16.52s] SECOND  -> 3035265525447 ns | Second. (1.0)
+   [22.50s] DONE    -> 3041245525447 ns | Done. (1.0)
+   [24.36s] THIRD   -> 3043105525447 ns | Third. (1.0)
+
+🎥 Ermal_1_20260604_151723.vrs
+   [ 0.00s] START   -> 1102640231543 ns | Start. (1.0)
+   [21.56s] SECOND  -> 1124200231543 ns | Second. (1.0)
+   [24.90s] DONE    -> 1127540231543 ns | Done. (1.0)
+   WARNUNG: missing_third
+
+🎥 Ermal_2_20260604_151912.vrs
+   [ 1.90s] START   -> 1213572231363 ns | Start. (1.0)
+   [30.42s] SECOND  -> 1242092231363 ns | Second. (1.0)
+   [33.96s] DONE    -> 1245632231363 ns | Done. (1.0)
+   WARNUNG: missing_third
+
+🎥 Ermal_3_20260604_152032.vrs
+   [ 2.54s] START   -> 1294180231385 ns | Start (1.0)
+   [19.88s] SECOND  -> 1311520231385 ns | Second (1.0)
+   [24.16s] DONE    -> 1315800231385 ns | Done. (1.0)
+   WARNUNG: missing_third
+
+🎥 Ermal_4_20260604_152214.vrs
+   [ 1.70s] START   -> 1395820231585 ns | Start. (1.0)
+   [20.64s] SECOND  -> 1414760231585 ns | Second. (1.0)
+   [24.90s] DONE    -> 1419020231585 ns | Done. (1.0)
+   WARNUNG: missing_third
+
+🎥 Ermal_5_20260616_153530.vrs
+   [ 0.00s] START   -> 4981070748269 ns | Start. (1.0)
+   [16.00s] SECOND  -> 4997070748269 ns | Second. (1.0)
+   [19.70s] DONE    -> 5000770748269 ns | Done. (1.0)
+   [21.96s] THIRD   -> 5003030748269 ns | Third. (1.0)
+
+🎥 Ermal_6_20260616_153648.vrs
+   [ 0.00s] START   -> 5059278748533 ns | Start! (1.0)
+   [17.10s] SECOND  -> 5076378748533 ns | Second! (1.0)
+   [29.80s] DONE    -> 5089078748533 ns | Done. (1.0)
+   [34.10s] THIRD   -> 5093378748533 ns | Third. (1.0)
+
+🎥 Ermal_7_20260616_153921.vrs
+   [ 0.00s] START   -> 5212310818955 ns | Start. (1.0)
+   [33.78s] SECOND  -> 5246090818955 ns | Second. (1.0)
+   [41.68s] DONE    -> 5253990818955 ns | Done. (1.0)
+   [45.40s] THIRD   -> 5257710818955 ns | Third. (1.0)
+
+🎥 Ermal_8_20260616_154054.vrs
+   [ 1.52s] START   -> 5306790818831 ns | Start. (1.0)
+   [27.50s] SECOND  -> 5332770818831 ns | Second (1.0)
+   [32.88s] DONE    -> 5338150818831 ns | Done. (1.0)
+   [36.28s] THIRD   -> 5341550818831 ns | Third. (1.0)
+
+🎥 Ermal_9_20260616_154205.vrs
+   [ 0.00s] START   -> 5376038818969 ns | Start. (1.0)
+   [24.96s] SECOND  -> 5400998818969 ns | Second. (1.0)
+   [30.72s] DONE    -> 5406758818969 ns | Done. (1.0)
+   [35.06s] THIRD   -> 5411098818969 ns | Third. (1.0)
+
+🎥 Felix_1_20260604_171928.vrs
+   [ 3.78s] SECOND  -> 8431933638079 ns | seconds. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_done
+   WARNUNG: missing_third
+
+🎥 Felix_1_20260604_171946.vrs
+   [ 0.00s] START   -> 8445609637987 ns | Start. (1.0)
+   [21.88s] SECOND  -> 8467489637987 ns | Second. (1.0)
+   [23.78s] DONE    -> 8469389637987 ns | done. (1.0)
+   WARNUNG: missing_third
+
+🎥 Felix_2_20260604_172102.vrs
+   [ 0.00s] START   -> 8521761638121 ns | Start. (1.0)
+   [21.00s] SECOND  -> 8542761638121 ns | Second. (1.0)
+   [25.46s] DONE    -> 8547221638121 ns | Done. (1.0)
+   [27.40s] THIRD   -> 8549161638121 ns | Third. (1.0)
+
+🎥 Felix_3_20260604_172212.vrs
+   [ 0.00s] START   -> 8591301638121 ns | Start. (1.0)
+   [22.66s] SECOND  -> 8613961638121 ns | Second. (1.0)
+   [26.78s] DONE    -> 8618081638121 ns | Done. (1.0)
+   [27.48s] THIRD   -> 8618781638121 ns | Third. (1.0)
+
+🎥 Felix_4_20260604_172358.vrs
+   [ 3.60s] START   -> 8701649638309 ns | Start. (1.0)
+   [22.86s] SECOND  -> 8720909638309 ns | Second. (1.0)
+   [26.56s] DONE    -> 8724609638309 ns | Done. (1.0)
+   [29.10s] THIRD   -> 8727149638309 ns | Third. (1.0)
+
+🎥 Jan_1_20260604_161550.vrs
+   [ 0.00s] START   -> 4609358003413 ns | Start. (1.0)
+   [19.98s] SECOND  -> 4629338003413 ns | Second. (1.0)
+   [25.00s] DONE    -> 4634358003413 ns | Done. (1.0)
+   WARNUNG: missing_third
+
+🎥 Jan_2_20260604_161704.vrs
+   [ 2.20s] START   -> 4685878003351 ns | start. (1.0)
+   [21.62s] SECOND  -> 4705298003351 ns | Second. (1.0)
+   [26.30s] DONE    -> 4709978003351 ns | Done. (1.0)
+   [28.70s] THIRD   -> 4712378003351 ns | Third. (1.0)
+
+🎥 Jan_3_20260604_161835.vrs
+   [ 0.00s] START   -> 4774550003197 ns | Start. (1.0)
+   [22.76s] SECOND  -> 4797310003197 ns | Second. (1.0)
+   [26.98s] DONE    -> 4801530003197 ns | Done. (1.0)
+   WARNUNG: missing_third
+
+🎥 Jan_4_20260604_162000.vrs
+   [ 0.00s] START   -> 4859546003565 ns | Start. (1.0)
+   [22.54s] SECOND  -> 4882086003565 ns | Second. (1.0)
+   [26.88s] THIRD   -> 4886426003565 ns | Third. (1.0)
+   WARNUNG: missing_done
+
+🎥 Jan_5_20260604_162111.vrs
+   [ 0.00s] START   -> 4930526003397 ns | Start. (1.0)
+   [27.36s] SECOND  -> 4957886003397 ns | Second, (1.0)
+   [30.72s] DONE    -> 4961246003397 ns | done. (1.0)
+   [31.44s] THIRD   -> 4961966003397 ns | Third. (1.0)
+
+🎥 Jola_1_20260624_131133.vrs
+   [32.12s] SECOND  -> 3407315009779 ns | Second, (1.0)
+   [36.68s] THIRD   -> 3411875009779 ns | third. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_done
+
+🎥 Jola_2_20260624_131246.vrs
+   [35.76s] SECOND  -> 3484467007327 ns | Second, (1.0)
+   [37.16s] DONE    -> 3485867007327 ns | done, (1.0)
+   [39.08s] THIRD   -> 3487787007327 ns | third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Jola_3_20260624_131435.vrs
+   [32.82s] SECOND  -> 3590103007509 ns | Second, (1.0)
+   [37.70s] THIRD   -> 3594983007509 ns | third. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_done
+
+🎥 Jola_4_20260624_131548.vrs
+   [36.28s] SECOND  -> 3666971007313 ns | Second, (1.0)
+   [37.68s] DONE    -> 3668371007313 ns | done, (1.0)
+   [39.74s] THIRD   -> 3670431007313 ns | third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Jola_5_20260624_131818.vrs
+   [37.42s] SECOND  -> 3817775007473 ns | Second. (1.0)
+   [40.00s] DONE    -> 3820355007473 ns | Done. (1.0)
+   [42.30s] THIRD   -> 3822655007473 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Jola_6_20260624_132027.vrs
+   [12.32s] SECOND  -> 3921491007141 ns | second (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_done
+   WARNUNG: missing_third
+
+🎥 Jona_1_20260616_181413.vrs
+   [ 0.00s] START   -> 1766695839773 ns | Start. (1.0)
+   [11.70s] SECOND  -> 1778395839773 ns | Second. (1.0)
+   [15.76s] DONE    -> 1782455839773 ns | Done. (1.0)
+   [19.02s] THIRD   -> 1785715839773 ns | Third. (1.0)
+
+🎥 Jona_2_20260616_181551.vrs
+   [ 0.00s] START   -> 1864279839501 ns | Start. (1.0)
+   [28.64s] SECOND  -> 1892919839501 ns | Second. (1.0)
+   [34.30s] DONE    -> 1898579839501 ns | Done. (1.0)
+   [38.40s] THIRD   -> 1902679839501 ns | Third. (1.0)
+
+🎥 Jona_3_20260616_181717.vrs
+   [ 0.00s] START   -> 1950775839829 ns | Start. (1.0)
+   [34.62s] SECOND  -> 1985395839829 ns | second (1.0)
+   [39.04s] DONE    -> 1989815839829 ns | done (1.0)
+   [42.48s] THIRD   -> 1993255839829 ns | third (1.0)
+
+🎥 Jona_4_20260616_181855.vrs
+   [ 0.00s] START   -> 2048719839773 ns | Start. (1.0)
+   [25.32s] SECOND  -> 2074039839773 ns | second (1.0)
+   [30.84s] DONE    -> 2079559839773 ns | Done. (1.0)
+   [34.74s] THIRD   -> 2083459839773 ns | Third. (1.0)
+
+🎥 Jona_5_20260616_182002.vrs
+   [ 0.00s] START   -> 2115759840065 ns | Start. (1.0)
+   [27.40s] SECOND  -> 2143159840065 ns | Second (1.0)
+   [34.86s] DONE    -> 2150619840065 ns | Done. (1.0)
+   [37.90s] THIRD   -> 2153659840065 ns | Third. (1.0)
+
+🎥 Jona_6_20260616_182111.vrs
+   [ 2.14s] START   -> 2186307839933 ns | Start. (1.0)
+   [22.54s] SECOND  -> 2206707839933 ns | Second. (1.0)
+   [27.60s] DONE    -> 2211767839933 ns | Done! (1.0)
+   [31.28s] THIRD   -> 2215447839933 ns | Third (1.0)
+
+🎥 Jona_7_20260616_182214.vrs
+   [ 1.00s] START   -> 2248143839987 ns | Start. (1.0)
+   [25.02s] SECOND  -> 2272163839987 ns | Second. (1.0)
+   [30.26s] DONE    -> 2277403839987 ns | Done. (1.0)
+   [33.86s] THIRD   -> 2281003839987 ns | Third. (1.0)
+
+🎥 Julienco_1_20260624_125251.vrs
+   [22.56s] SECOND  -> 2275943520419 ns | Second, (1.0)
+   [23.96s] THIRD   -> 2277343520419 ns | third, (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_done
+
+🎥 Julienco_2_20260624_125435.vrs
+   [14.10s] SECOND  -> 2371779520371 ns | Second. (1.0)
+   [17.98s] DONE    -> 2375659520371 ns | Done. (1.0)
+   [20.42s] THIRD   -> 2378099520371 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Julienco_3_20260624_125549.vrs
+   [14.40s] SECOND  -> 2446055520551 ns | Second. (1.0)
+   [29.40s] DONE    -> 2461055520551 ns | done, (1.0)
+   [32.74s] THIRD   -> 2464395520551 ns | third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Julienco_4_20260624_125717.vrs
+   [23.46s] SECOND  -> 2542211520371 ns | Second. (1.0)
+   [27.22s] DONE    -> 2545971520371 ns | Done. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_third
+
+🎥 Julienco_4_2_20260624_125830.vrs
+   [18.94s] SECOND  -> 2611203520509 ns | Second. (1.0)
+   [23.54s] DONE    -> 2615803520509 ns | Done. (1.0)
+   [26.86s] THIRD   -> 2619123520509 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Julienco_5_20260624_125942.vrs
+   [24.20s] SECOND  -> 2688031499738 ns | Second. (1.0)
+   [27.92s] DONE    -> 2691751499738 ns | Done. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_third
+
+🎥 Julienco_6_20260624_130048.vrs
+   [19.56s] SECOND  -> 2749735499536 ns | Second. (1.0)
+   [24.14s] DONE    -> 2754315499536 ns | Done. (1.0)
+   [26.30s] THIRD   -> 2756475499536 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Julienco_7_20260624_130215.vrs
+   [17.00s] SECOND  -> 2834483520433 ns | Second. (1.0)
+   [20.84s] DONE    -> 2838323520433 ns | Done. (1.0)
+   [23.58s] THIRD   -> 2841063520433 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Julienco_8_20260624_130311.vrs
+   [16.14s] SECOND  -> 2889491520245 ns | second. (1.0)
+   [20.38s] DONE    -> 2893731520245 ns | Done. (1.0)
+   [24.30s] THIRD   -> 2897651520245 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Leys_1_20260604_163147.vrs
+   [ 0.00s] START   -> 5566478525883 ns | Start. (1.0)
+   [15.90s] SECOND  -> 5582378525883 ns | Second. (1.0)
+   [20.78s] DONE    -> 5587258525883 ns | Done. (1.0)
+   [23.14s] THIRD   -> 5589618525883 ns | Third. (1.0)
+
+🎥 Leys_2_20260604_163417.vrs
+   [ 0.00s] START   -> 5716638525791 ns | Start. (1.0)
+   [14.64s] SECOND  -> 5731278525791 ns | Second. (1.0)
+   [19.00s] DONE    -> 5735638525791 ns | Done. (1.0)
+   [21.04s] THIRD   -> 5737678525791 ns | Third. (1.0)
+
+🎥 Leys_3_20260604_163535.vrs
+   [ 0.00s] START   -> 5794614526041 ns | Start. (1.0)
+   [21.00s] SECOND  -> 5815614526041 ns | Second. (1.0)
+   [25.00s] DONE    -> 5819614526041 ns | Done. (1.0)
+   [26.56s] THIRD   -> 5821174526041 ns | Third. (1.0)
+
+🎥 Leys_4_20260604_163704.vrs
+   [ 0.00s] START   -> 5884142525757 ns | Start. (1.0)
+   [20.54s] SECOND  -> 5904682525757 ns | Second. (1.0)
+   [24.76s] DONE    -> 5908902525757 ns | Done. (1.0)
+   [27.08s] THIRD   -> 5911222525757 ns | Third. (1.0)
+
+🎥 Leys_5_20260604_163854.vrs
+   [ 0.00s] START   -> 5994086525861 ns | Start. (1.0)
+   [19.60s] SECOND  -> 6013686525861 ns | Second. (1.0)
+   [23.58s] DONE    -> 6017666525861 ns | Done. (1.0)
+   [25.84s] THIRD   -> 6019926525861 ns | Third. (1.0)
+
+🎥 Maria_1_20260624_133852.vrs
+   [26.44s] SECOND  -> 5040533255925 ns | Second, (1.0)
+   [31.56s] THIRD   -> 5045653255925 ns | third. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_done
+
+🎥 Maria_2_20260624_134005.vrs
+   [20.00s] SECOND  -> 5107589256037 ns | Second. (1.0)
+   [24.06s] THIRD   -> 5111649256037 ns | Third. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_done
+
+🎥 Maria_3_20260624_134101.vrs
+   [24.52s] SECOND  -> 5167493256607 ns | Second. (1.0)
+   [28.14s] THIRD   -> 5171113256607 ns | third, (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_done
+
+🎥 Maria_4_20260624_134233.vrs
+   [19.38s] SECOND  -> 5254197255919 ns | Second. (1.0)
+   [22.20s] DONE    -> 5257017255919 ns | Done. (1.0)
+   [24.02s] THIRD   -> 5258837255919 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Maria_5_20260624_134337.vrs
+   [27.78s] SECOND  -> 5326729256009 ns | second, (1.0)
+   [29.32s] DONE    -> 5328269256009 ns | done, (1.0)
+   [31.52s] THIRD   -> 5330469256009 ns | third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Maria_6_20260624_134443.vrs
+   [30.34s] SECOND  -> 5395489255995 ns | Second. (1.0)
+   [33.12s] DONE    -> 5398269255995 ns | Done. (1.0)
+   [35.34s] THIRD   -> 5400489255995 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Melih_10_20260616_180515.vrs
+   [ 0.00s] START   -> 1228590808669 ns | Start. (1.0)
+   [30.00s] SECOND  -> 1258590808669 ns | Second. (1.0)
+   [35.86s] DONE    -> 1264450808669 ns | Done. (1.0)
+   [37.80s] THIRD   -> 1266390808669 ns | Third. (1.0)
+
+🎥 Melih_1_20260616_175140.vrs
+   [ 0.00s] START   -> 413702809759 ns | Start. (1.0)
+   [16.00s] SECOND  -> 429702809759 ns | Second. (1.0)
+   [20.02s] DONE    -> 433722809759 ns | Done. (1.0)
+   [23.12s] THIRD   -> 436822809759 ns | Third. (1.0)
+
+🎥 Melih_2_20260616_175310.vrs
+   [ 0.00s] START   -> 503686808717 ns | Start. (1.0)
+   [17.02s] SECOND  -> 520706808717 ns | Second. (1.0)
+   [23.76s] DONE    -> 527446808717 ns | Done. (1.0)
+   [25.72s] THIRD   -> 529406808717 ns | Third. (1.0)
+
+🎥 Melih_3_20260616_175418.vrs
+   [ 0.00s] START   -> 571174808599 ns | Start. (1.0)
+   [17.82s] SECOND  -> 588994808599 ns | Second. (1.0)
+   [23.88s] DONE    -> 595054808599 ns | Done. (1.0)
+   [26.42s] THIRD   -> 597594808599 ns | Third. (1.0)
+
+🎥 Melih_4_20260616_175523.vrs
+   [ 0.00s] START   -> 636222808341 ns | Start. (1.0)
+   [16.80s] SECOND  -> 653022808341 ns | Second. (1.0)
+   [23.00s] DONE    -> 659222808341 ns | Done. (1.0)
+   [25.06s] THIRD   -> 661282808341 ns | Third. (1.0)
+
+🎥 Melih_5_20260616_175612.vrs
+   [ 0.00s] START   -> 685758787842 ns | Start. (1.0)
+   [18.00s] SECOND  -> 703758787842 ns | Second. (1.0)
+   [24.52s] DONE    -> 710278787842 ns | Done. (1.0)
+   [27.56s] THIRD   -> 713318787842 ns | Third. (1.0)
+
+🎥 Melih_6_20260616_180104.vrs
+   [ 3.42s] START   -> 981082808571 ns | start. (1.0)
+   [19.92s] SECOND  -> 997582808571 ns | Second. (1.0)
+   [26.00s] DONE    -> 1003662808571 ns | Done. (1.0)
+   [27.90s] THIRD   -> 1005562808571 ns | Third. (1.0)
+
+🎥 Melih_7_20260616_180202.vrs
+   [ 3.02s] START   -> 1038730787564 ns | Start. (1.0)
+   [21.64s] SECOND  -> 1057350787564 ns | Second. (1.0)
+   [29.42s] DONE    -> 1065130787564 ns | Done. (1.0)
+   [30.80s] THIRD   -> 1066510787564 ns | Third. (1.0)
+
+🎥 Melih_8_20260616_180307.vrs
+   [ 0.00s] START   -> 1100190808739 ns | Start. (1.0)
+   [19.62s] SECOND  -> 1119810808739 ns | Second. (1.0)
+   [24.62s] DONE    -> 1124810808739 ns | Done. (1.0)
+   [27.54s] THIRD   -> 1127730808739 ns | Third. (1.0)
+
+🎥 Melih_9_20260616_180402.vrs
+   [ 2.62s] START   -> 1158314808823 ns | Start. (1.0)
+   [21.00s] SECOND  -> 1176694808823 ns | Second. (1.0)
+   [27.44s] DONE    -> 1183134808823 ns | Done. (1.0)
+   [30.68s] THIRD   -> 1186374808823 ns | Third. (1.0)
+
+🎥 Miro_1_20260604_153303.vrs
+   [ 3.02s] START   -> 2045523574391 ns | Start. (1.0)
+   [18.00s] SECOND  -> 2060503574391 ns | Second. (1.0)
+   [22.92s] DONE    -> 2065423574391 ns | Done. (1.0)
+   [25.02s] THIRD   -> 2067523574391 ns | Third. (1.0)
+
+🎥 Miro_2_20260604_153451.vrs
+   [ 0.98s] START   -> 2151203574363 ns | start (1.0)
+   [13.96s] SECOND  -> 2164183574363 ns | second (1.0)
+   [19.78s] DONE    -> 2170003574363 ns | done (1.0)
+   [21.18s] THIRD   -> 2171403574363 ns | third (1.0)
+
+🎥 Miro_3_20260604_153609.vrs
+   [ 0.00s] START   -> 2228695574141 ns | Start. (1.0)
+   [12.88s] SECOND  -> 2241575574141 ns | Second. (1.0)
+   [18.00s] DONE    -> 2246695574141 ns | Done. (1.0)
+   [19.92s] THIRD   -> 2248615574141 ns | Third. (1.0)
+
+🎥 Miro_4_20260604_153734.vrs
+   [ 3.56s] START   -> 2316735574169 ns | Start. (1.0)
+   [22.54s] SECOND  -> 2335715574169 ns | Second. (1.0)
+   [28.16s] DONE    -> 2341335574169 ns | Done. (1.0)
+   [30.94s] THIRD   -> 2344115574169 ns | Third. (1.0)
+
+🎥 Mona_1_20260624_123312.vrs
+   [20.58s] SECOND  -> 1094729975745 ns | Second? (1.0)
+   [25.18s] DONE    -> 1099329975745 ns | Done. (1.0)
+   [27.08s] THIRD   -> 1101229975745 ns | Third? (1.0)
+   WARNUNG: missing_start
+
+🎥 Mona_2_20260624_123443.vrs
+   [24.78s] SECOND  -> 1189601975725 ns | Second. (1.0)
+   [30.82s] DONE    -> 1195641975725 ns | Done. (1.0)
+   [33.32s] THIRD   -> 1198141975725 ns | Third? (1.0)
+   WARNUNG: missing_start
+
+🎥 Mona_3_20260624_123548.vrs
+   [25.98s] SECOND  -> 1255921975821 ns | Second. (1.0)
+   [32.02s] DONE    -> 1261961975821 ns | Done. (1.0)
+   [33.74s] THIRD   -> 1263681975821 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Mona_4_20260624_123706.vrs
+   [28.04s] SECOND  -> 1336125975897 ns | Second. (1.0)
+   [31.02s] DONE    -> 1339105975897 ns | Done. (1.0)
+   [36.36s] THIRD   -> 1344445975897 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Mona_5_20260624_123814.vrs
+   [33.62s] SECOND  -> 1409497975857 ns | Second. (1.0)
+   [39.14s] DONE    -> 1415017975857 ns | Done. (1.0)
+   [41.70s] THIRD   -> 1417577975857 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Mona_6_20260624_123930.vrs
+   [33.34s] SECOND  -> 1485297975863 ns | Second. (1.0)
+   [39.14s] DONE    -> 1491097975863 ns | Done. (1.0)
+   [41.42s] THIRD   -> 1493377975863 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Mona_7_20260624_124051.vrs
+   [32.36s] SECOND  -> 1565197975641 ns | Second. (1.0)
+   [38.10s] DONE    -> 1570937975641 ns | Done. (1.0)
+   [40.40s] THIRD   -> 1573237975641 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Mona_8_20260624_124414.vrs
+   [42.10s] SECOND  -> 1778417975857 ns | Second? (1.0)
+   [45.92s] DONE    -> 1782237975857 ns | Done? (1.0)
+   [48.28s] THIRD   -> 1784597975857 ns | Third? (1.0)
+   WARNUNG: missing_start
+
+🎥 Suthan_1_20260604_164834.vrs
+   [ 1.56s] START   -> 6575559837057 ns | start. (1.0)
+   [31.00s] SECOND  -> 6604999837057 ns | Second. (1.0)
+   [33.58s] DONE    -> 6607579837057 ns | Done. (1.0)
+   [35.86s] THIRD   -> 6609859837057 ns | Third. (1.0)
+
+🎥 Suthan_2_20260604_165031.vrs
+   [ 1.96s] START   -> 6692543836711 ns | start. (1.0)
+   [25.68s] SECOND  -> 6716263836711 ns | Second. (1.0)
+   [29.10s] DONE    -> 6719683836711 ns | Done (1.0)
+   [30.98s] THIRD   -> 6721563836711 ns | Third (1.0)
+
+🎥 Suthan_3_20260604_165324.vrs
+   [ 0.00s] START   -> 6863707836919 ns | Start. (1.0)
+   WARNUNG: missing_second
+   WARNUNG: missing_done
+   WARNUNG: missing_third
+
+🎥 Suthan_4_20260604_165434.vrs
+   [ 0.00s] START   -> 6933607836897 ns | Start. (1.0)
+   [23.88s] SECOND  -> 6957487836897 ns | Second. (1.0)
+   [26.90s] DONE    -> 6960507836897 ns | Done. (1.0)
+   [29.40s] THIRD   -> 6963007836897 ns | Third. (1.0)
+
+🎥 Test_1_20260624_122109.vrs
+   [22.60s] THIRD   -> 373904841265 ns | Third. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_second
+   WARNUNG: missing_done
+
+🎥 Test_2_20260624_122206.vrs
+   [17.84s] SECOND  -> 426084841183 ns | Second, (1.0)
+   [21.94s] DONE    -> 430184841183 ns | done. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_third
+
+🎥 Test_3_20260522_160036.vrs
+   [14.28s] START   -> 274699695277 ns | started, (1.0)
+   WARNUNG: missing_second
+   WARNUNG: missing_done
+   WARNUNG: missing_third
+
+🎥 Test_3_20260624_122314.vrs
+   [14.52s] SECOND  -> 490676841175 ns | Second. (1.0)
+   [17.36s] DONE    -> 493516841175 ns | Done. (1.0)
+   [21.54s] THIRD   -> 497696841175 ns | Third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Test_4_20260527_161832.vrs
+   [14.46s] START   -> 247940287035 ns | start, (1.0)
+   [17.40s] SECOND  -> 250880287035 ns | second, (1.0)
+   [22.32s] DONE    -> 255800287035 ns | done. (1.0)
+   WARNUNG: missing_third
+
+🎥 Test_4_20260624_122416.vrs
+   [19.16s] SECOND  -> 557228841375 ns | Second, (1.0)
+   [20.56s] DONE    -> 558628841375 ns | done, (1.0)
+   [23.36s] THIRD   -> 561428841375 ns | third, (1.0)
+   WARNUNG: missing_start
+
+🎥 Test_5_20260624_122509.vrs
+   [15.44s] SECOND  -> 607140841279 ns | Second, (1.0)
+   [16.84s] DONE    -> 608540841279 ns | done, (1.0)
+   [19.62s] THIRD   -> 611320841279 ns | third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Test_6_20260624_122607.vrs
+   [16.72s] SECOND  -> 665980841369 ns | Second, (1.0)
+   [18.12s] DONE    -> 667380841369 ns | done, (1.0)
+   [21.08s] THIRD   -> 670340841369 ns | third, (1.0)
+   WARNUNG: missing_start
+
+🎥 Test_7_20260601_165002.vrs
+   [ 1.00s] START   -> 682741758683 ns | Start (1.0)
+   [17.00s] SECOND  -> 698741758683 ns | Second (1.0)
+   [22.00s] DONE    -> 703741758683 ns | Done (1.0)
+   [25.60s] THIRD   -> 707341758683 ns | Third (1.0)
+
+🎥 Test_7_20260624_122709.vrs
+   [16.28s] SECOND  -> 727004841453 ns | Second, (1.0)
+   [17.68s] DONE    -> 728404841453 ns | done, (1.0)
+   [20.44s] THIRD   -> 731164841453 ns | third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Unknown_2_20260616_141751.vrs
+   -> Keine Ziel-Befehle gefunden.
+
+🎥 Urim_10_20260616_145015.vrs
+   [ 1.44s] START   -> 2268190230731 ns | Start. (1.0)
+   [25.84s] SECOND  -> 2292590230731 ns | Second. (1.0)
+   [31.68s] DONE    -> 2298430230731 ns | Done. (1.0)
+   [34.76s] THIRD   -> 2301510230731 ns | Third. (1.0)
+
+🎥 Urim_1_20260604_160102.vrs
+   [ 0.00s] START   -> 3721198152919 ns | Start. (1.0)
+   [26.20s] SECOND  -> 3747398152919 ns | Second. (1.0)
+   [30.88s] DONE    -> 3752078152919 ns | done, (1.0)
+   [34.78s] THIRD   -> 3755978152919 ns | third. (1.0)
+
+🎥 Urim_2_20260604_160234.vrs
+   [ 0.00s] START   -> 3813518152919 ns | Start. (1.0)
+   [10.74s] SECOND  -> 3824258152919 ns | Second. (1.0)
+   [16.00s] DONE    -> 3829518152919 ns | Done. (1.0)
+   [20.00s] THIRD   -> 3833518152919 ns | Third. (1.0)
+
+🎥 Urim_3_20260604_160345.vrs
+   [ 0.00s] START   -> 3884682152793 ns | Start. (1.0)
+   [19.96s] SECOND  -> 3904642152793 ns | Second. (1.0)
+   [26.00s] DONE    -> 3910682152793 ns | Done. (1.0)
+   [26.80s] THIRD   -> 3911482152793 ns | Third. (1.0)
+
+🎥 Urim_4_20260604_160502.vrs
+   [ 0.00s] START   -> 3961550152495 ns | Start. (1.0)
+   [21.90s] SECOND  -> 3983450152495 ns | Second. (1.0)
+   [27.76s] DONE    -> 3989310152495 ns | Done. (1.0)
+   [30.28s] THIRD   -> 3991830152495 ns | Third. (1.0)
+
+🎥 Urim_5_20260604_160634.vrs
+   [ 0.00s] START   -> 4053646152591 ns | Start. (1.0)
+   [22.54s] SECOND  -> 4076186152591 ns | Second. (1.0)
+   [30.00s] DONE    -> 4083646152591 ns | Done. (1.0)
+   [32.90s] THIRD   -> 4086546152591 ns | Third. (1.0)
+
+🎥 Urim_6_20260616_144055.vrs
+   [ 1.62s] START   -> 1707642231043 ns | Start. (1.0)
+   [22.86s] SECOND  -> 1728882231043 ns | Second. (1.0)
+   [27.00s] DONE    -> 1733022231043 ns | Done. (1.0)
+   [30.00s] THIRD   -> 1736022231043 ns | Third (1.0)
+
+🎥 Urim_7_20260616_144229.vrs
+   [ 4.10s] START   -> 1804850230669 ns | Start. (1.0)
+   [22.08s] SECOND  -> 1822830230669 ns | Second. (1.0)
+   [27.06s] DONE    -> 1827810230669 ns | Done. (1.0)
+   [30.00s] THIRD   -> 1830750230669 ns | Third. (1.0)
+
+🎥 Urim_8_20260616_144352.vrs
+   [ 0.00s] START   -> 1883686230835 ns | Start. (1.0)
+   [23.54s] SECOND  -> 1907226230835 ns | Second. (1.0)
+   [25.54s] DONE    -> 1909226230835 ns | done, (1.0)
+   [30.68s] THIRD   -> 1914366230835 ns | third. (1.0)
+
+🎥 Urim_9_20260616_144841.vrs
+   [ 2.38s] START   -> 2174258230641 ns | Start. (1.0)
+   [26.62s] SECOND  -> 2198498230641 ns | Second. (1.0)
+   [32.58s] THIRD   -> 2204458230641 ns | Third. (1.0)
+   WARNUNG: missing_done
+
+🎥 Vanessa_1_20260624_132542.vrs
+   [26.72s] SECOND  -> 4250466675287 ns | second. (1.0)
+   [35.26s] THIRD   -> 4259006675287 ns | Third (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_done
+
+🎥 Vanessa_2_20260624_132710.vrs
+   [27.44s] SECOND  -> 4340082675073 ns | second. (1.0)
+   [28.08s] DONE    -> 4340722675073 ns | done, (1.0)
+   [33.32s] THIRD   -> 4345962675073 ns | third. (1.0)
+   WARNUNG: missing_start
+
+🎥 Vanessa_3_20260624_132807.vrs
+   [ 5.90s] THIRD   -> 4375430675231 ns | this (0.8)
+   WARNUNG: missing_start
+   WARNUNG: missing_second
+   WARNUNG: missing_done
+
+🎥 Vanessa_4_20260624_132943.vrs
+   [20.68s] SECOND  -> 4485866675183 ns | Second. (1.0)
+   [26.12s] DONE    -> 4491306675183 ns | Done. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_third
+
+🎥 Vanessa_5_20260624_133059.vrs
+   [30.00s] DONE    -> 4571322675099 ns | Done. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_second
+   WARNUNG: missing_third
+
+🎥 Vanessa_6_20260624_133209.vrs
+   [31.08s] DONE    -> 4642714675029 ns | Done. (1.0)
+   WARNUNG: missing_start
+   WARNUNG: missing_second
+   WARNUNG: missing_third
+
+🎥 Vanessa_7_20260624_133405.vrs
+   [24.48s] SECOND  -> 4751722675197 ns | Second? (1.0)
+   [27.48s] DONE    -> 4754722675197 ns | Done? (1.0)
+   [28.58s] THIRD   -> 4755822675197 ns | Third? (1.0)
+   WARNUNG: missing_start
+
+🎥 Vanessa_8_20260624_133505.vrs
+   [33.96s] SECOND  -> 4821322675045 ns | Second, (1.0)
+   [35.10s] DONE    -> 4822462675045 ns | done, (1.0)
+   [36.66s] THIRD   -> 4824022675045 ns | third. (1.0)
+   WARNUNG: missing_start
+
+🎥 unknown_20260604_150319.vrs
+   -> Keine Ziel-Befehle gefunden.
+
+============================================================
+✅ Alle Daten wurden zusätzlich gespeichert in: 
+   /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/timestamps_summary.json
+🔎 Debug-Kandidaten und Warnungen: 
+   /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/timestamps_debug.json
+============================================================
+
+Copying new timestamp outputs to backup directory...
+
+============================================================
+3) Run dataset QA
+============================================================
+Using backup dir for QA: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection_backup
+Manifest written: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/dataset_manifest.csv
+Report written:   /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/dataset_qa_report.json
+Sequences:        136
+Training incl.:   124
+Training excl.:   12
+Usable now:       24
+Backup sync:      0 missing in Data_vrs, 94 missing in backup
+Status counts:
+  missing_hand_tracking: 96
+  missing_slam: 1
+  partial_timestamps: 15
+  valid: 1
+  valid_with_warnings: 23
+Next actions:
+  convert_mp4: 9
+  download_or_process_mps: 97
+  fix_timestamps: 15
+  ready_for_master_merge: 1
+  run_aruco_extraction: 14
+
+============================================================
+4) QA summary
+============================================================
+Manifest: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/dataset_manifest.csv
+Report:   /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/dataset_qa_report.json
+
+Dataset QA:
+  total_sequences: 136
+  training_include_candidates: 124
+  training_excluded_candidates: 12
+  valid_or_warning_sequences: 24
+
+Status counts:
+  missing_hand_tracking: 96
+  missing_slam: 1
+  partial_timestamps: 15
+  valid: 1
+  valid_with_warnings: 23
+
+Next actions:
+  convert_mp4: 9
+  download_or_process_mps: 97
+  fix_timestamps: 15
+  ready_for_master_merge: 1
+  run_aruco_extraction: 14
+
+Finished: Fri Jun 26 05:41:44 PM CEST 2026
+Full audio batch and QA done.

@@ -15,12 +15,15 @@ IMAGE="$HOME/singularity/aria_master.simg"
 
 DATA_DIR="$REPO_DIR/Data_collection"
 VRS_DIR="$DATA_DIR/Data_vrs"
+DEBUG_AUDIO_DIR="$VRS_DIR/debug_audio"
 RESULT_BACKUP_DIR="$DATA_DIR/audio_batch_backups/job_$SLURM_JOB_ID"
 
 MODEL_SIZE="${MODEL_SIZE:-medium.en}"
 DEVICE="${DEVICE:-cuda}"
 COMPUTE_TYPE="${COMPUTE_TYPE:-int8}"
-KEEP_DEBUG_AUDIO="${KEEP_DEBUG_AUDIO:-0}"
+
+# Wichtig: Standard jetzt 1, damit alle WAVs gespeichert werden
+KEEP_DEBUG_AUDIO="${KEEP_DEBUG_AUDIO:-1}"
 
 SCRATCH_DIR="/scratch/$SLURM_JOB_ID"
 export HF_HOME="$SCRATCH_DIR/huggingface"
@@ -34,6 +37,7 @@ echo "Node: $(hostname)"
 echo "Repo dir: $REPO_DIR"
 echo "Image: $IMAGE"
 echo "VRS dir: $VRS_DIR"
+echo "Debug audio dir: $DEBUG_AUDIO_DIR"
 echo "Backup dir: $RESULT_BACKUP_DIR"
 echo "Model: $MODEL_SIZE"
 echo "Device: $DEVICE"
@@ -66,10 +70,15 @@ echo "VRS count:"
 find "$VRS_DIR" -maxdepth 1 -type f -name "*.vrs" | wc -l
 echo
 
+echo "Existing debug audio count:"
+find "$DEBUG_AUDIO_DIR" -maxdepth 1 -type f -name "*.wav" 2>/dev/null | wc -l
+echo
+
 echo "Backing up existing timestamp outputs if present..."
 cp "$VRS_DIR/timestamps_summary.json" "$RESULT_BACKUP_DIR/timestamps_summary.before_job_$SLURM_JOB_ID.json" 2>/dev/null || true
 cp "$VRS_DIR/timestamps_debug.json" "$RESULT_BACKUP_DIR/timestamps_debug.before_job_$SLURM_JOB_ID.json" 2>/dev/null || true
 cp "$VRS_DIR/timestamps_review_queue.json" "$RESULT_BACKUP_DIR/timestamps_review_queue.before_job_$SLURM_JOB_ID.json" 2>/dev/null || true
+cp "$VRS_DIR/timestamps_manual_overrides.json" "$RESULT_BACKUP_DIR/timestamps_manual_overrides.before_job_$SLURM_JOB_ID.json" 2>/dev/null || true
 
 echo
 echo "============================================================"
@@ -89,14 +98,32 @@ singularity exec --nv "$IMAGE" python3 Code/speech_recognition_demo.py \
     "${EXTRA_ARGS[@]}"
 
 echo
+echo "============================================================"
+echo "3) Copy outputs to backup directory"
+echo "============================================================"
+
 echo "Copying new timestamp outputs to backup directory..."
 cp "$VRS_DIR/timestamps_summary.json" "$RESULT_BACKUP_DIR/" || true
 cp "$VRS_DIR/timestamps_debug.json" "$RESULT_BACKUP_DIR/" || true
 cp "$VRS_DIR/timestamps_review_queue.json" "$RESULT_BACKUP_DIR/" || true
+cp "$VRS_DIR/timestamps_manual_overrides.json" "$RESULT_BACKUP_DIR/" 2>/dev/null || true
+
+echo
+echo "Debug audio count after speech recognition:"
+find "$DEBUG_AUDIO_DIR" -maxdepth 1 -type f -name "*.wav" 2>/dev/null | wc -l
+
+echo
+echo "Copying debug audio WAV files to backup directory..."
+if [ -d "$DEBUG_AUDIO_DIR" ]; then
+    mkdir -p "$RESULT_BACKUP_DIR/debug_audio"
+    find "$DEBUG_AUDIO_DIR" -maxdepth 1 -type f -name "*.wav" -exec cp {} "$RESULT_BACKUP_DIR/debug_audio/" \; 2>/dev/null || true
+else
+    echo "No debug audio directory found: $DEBUG_AUDIO_DIR"
+fi
 
 echo
 echo "============================================================"
-echo "3) Run dataset QA"
+echo "4) Run dataset QA"
 echo "============================================================"
 
 if [ -d "$REPO_DIR/BackUp_Videos" ]; then
@@ -115,7 +142,7 @@ singularity exec --nv "$IMAGE" python3 Code/dataset_qa.py \
 
 echo
 echo "============================================================"
-echo "4) QA summary"
+echo "5) QA summary"
 echo "============================================================"
 
 singularity exec --nv "$IMAGE" python3 - <<PY
@@ -153,5 +180,22 @@ for key, value in sorted(report.get("next_action_counts", {}).items()):
 PY
 
 echo
+echo "============================================================"
+echo "6) Final audio summary"
+echo "============================================================"
+
+echo "Debug audio directory:"
+echo "$DEBUG_AUDIO_DIR"
+
+echo "Debug audio WAV count:"
+find "$DEBUG_AUDIO_DIR" -maxdepth 1 -type f -name "*.wav" 2>/dev/null | wc -l
+
+echo "Backup debug audio directory:"
+echo "$RESULT_BACKUP_DIR/debug_audio"
+
+echo "Backup debug audio WAV count:"
+find "$RESULT_BACKUP_DIR/debug_audio" -maxdepth 1 -type f -name "*.wav" 2>/dev/null | wc -l
+
+echo
 echo "Finished: $(date)"
-echo "Full audio batch and QA done."
+echo "Full audio batch, debug audio export, and QA done."

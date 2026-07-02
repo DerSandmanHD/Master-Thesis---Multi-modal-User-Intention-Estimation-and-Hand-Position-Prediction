@@ -8,6 +8,7 @@ Inputs:
   Data_collection/dataset_manifest.csv
   Data_collection/Data_mp4/<sequence_id>.mp4
   Data_collection/Data_vrs/debug_audio/<sequence_id>.wav
+  Data_collection/aruco_poses_<sequence_id>.csv (optional ID fallback)
 
 Output:
   Data_collection/manual_timestamp_review.csv
@@ -25,23 +26,7 @@ import cv2
 import sounddevice as sd
 import soundfile as sf
 
-
-REVIEW_FIELDS = [
-    "sequence_id",
-    "decision",
-    "auto_start_s",
-    "auto_second_s",
-    "auto_done_s",
-    "auto_third_s",
-    "manual_start_s",
-    "manual_second_s",
-    "manual_done_s",
-    "manual_third_s",
-    "missing_commands",
-    "status",
-    "next_action",
-    "notes",
-]
+from annotation_utils import OBJECT_MARKER_IDS, REVIEW_FIELDS, read_review_rows, write_review_rows
 
 
 COMMAND_TO_MANUAL_COLUMN = {
@@ -50,6 +35,8 @@ COMMAND_TO_MANUAL_COLUMN = {
     "DONE": "manual_done_s",
     "THIRD": "manual_third_s",
 }
+
+OBJECT_MARKER_IDS = set(OBJECT_MARKER_IDS)
 
 
 class WavPlayer:
@@ -197,6 +184,12 @@ def parse_args() -> argparse.Namespace:
         help="Default: Data_collection/Data_vrs/debug_audio",
     )
     parser.add_argument(
+        "--marker-dir",
+        type=Path,
+        default=None,
+        help="Marker CSV directory. Defaults to Data_collection and its Aruco_CSV subdirectory.",
+    )
+    parser.add_argument(
         "--review-csv",
         type=Path,
         default=None,
@@ -237,6 +230,11 @@ def parse_args() -> argparse.Namespace:
         help="Disable WAV audio playback.",
     )
     parser.add_argument(
+        "--no-live-marker-detection",
+        action="store_true",
+        help="Disable live marker boxes; IDs from an existing marker CSV remain available.",
+    )
+    parser.add_argument(
         "--max-display-width",
         type=int,
         default=1280,
@@ -258,29 +256,11 @@ def read_manifest(path: Path) -> List[Dict[str, str]]:
 
 
 def read_review_csv(path: Path) -> Dict[str, Dict[str, str]]:
-    if not path.exists():
-        return {}
-
-    with path.open(newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        rows = {}
-        for row in reader:
-            seq = row.get("sequence_id", "").strip()
-            if seq:
-                rows[seq] = row
-        return rows
+    return read_review_rows(path)
 
 
 def write_review_csv(path: Path, rows_by_seq: Dict[str, Dict[str, str]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    with path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=REVIEW_FIELDS)
-        writer.writeheader()
-
-        for seq in sorted(rows_by_seq):
-            row = {field: rows_by_seq[seq].get(field, "") for field in REVIEW_FIELDS}
-            writer.writerow(row)
+    write_review_rows(path, rows_by_seq)
 
 
 def to_float(value: str) -> Optional[float]:
@@ -341,6 +321,100 @@ def find_wav(wav_dir: Path, sequence_id: str) -> Optional[Path]:
     return None
 
 
+def find_marker_csv(marker_dir: Path, sequence_id: str) -> Optional[Path]:
+    filename = f"aruco_poses_{sequence_id}.csv"
+    candidates = [
+        marker_dir / filename,
+        marker_dir / "Aruco_CSV" / filename,
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def read_marker_frame_ids(path: Optional[Path]) -> Dict[int, set[int]]:
+    if path is None:
+        return {}
+    frame_ids: Dict[int, set[int]] = {}
+    with path.open(newline="", encoding="utf-8", errors="replace") as handle:
+        reader = csv.DictReader(handle)
+        required = {"frame_index", "marker_family", "marker_id"}
+        if not reader.fieldnames or not required.issubset(reader.fieldnames):
+            raise ValueError(f"Marker CSV has an incomplete schema: {path}")
+        for row in reader:
+            if row.get("marker_family") != "aruco_4x4_50":
+                continue
+            try:
+                frame_index = int(row["frame_index"])
+                marker_id = int(row["marker_id"])
+            except (TypeError, ValueError):
+                continue
+            if marker_id in OBJECT_MARKER_IDS:
+                frame_ids.setdefault(frame_index, set()).add(marker_id)
+    return frame_ids
+
+
+def create_live_marker_detectors():
+    parameters = cv2.aruco.DetectorParameters()
+    return (
+        (
+            "OBJECT",
+            cv2.aruco.ArucoDetector(
+                cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50),
+                parameters,
+            ),
+            OBJECT_MARKER_IDS,
+            (0, 255, 255),
+        ),
+    )
+
+
+def detect_and_draw_markers(frame, detectors, selected_target_id: int | None) -> set[int]:
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    visible_object_ids = set()
+    for family, detector, allowed_ids, default_color in detectors:
+        corners, ids, _ = detector.detectMarkers(gray)
+        if ids is None:
+            continue
+        for marker_corners, marker_id_array in zip(corners, ids):
+            marker_id = int(marker_id_array.item())
+            if marker_id not in allowed_ids:
+                continue
+            points = marker_corners.reshape(4, 2).astype("int32")
+            is_selected = family == "OBJECT" and marker_id == selected_target_id
+            color = (0, 80, 255) if is_selected else default_color
+            thickness = 4 if is_selected else 2
+            cv2.polylines(frame, [points], True, color, thickness, cv2.LINE_AA)
+            anchor = (int(points[0, 0]), max(20, int(points[0, 1]) - 8))
+            label = f"{family} ID {marker_id}"
+            if is_selected:
+                label += " SELECTED"
+            cv2.putText(
+                frame,
+                label,
+                anchor,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.65,
+                (0, 0, 0),
+                4,
+                cv2.LINE_AA,
+            )
+            cv2.putText(
+                frame,
+                label,
+                anchor,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.65,
+                color,
+                2,
+                cv2.LINE_AA,
+            )
+            if family == "OBJECT":
+                visible_object_ids.add(marker_id)
+    return visible_object_ids
+
+
 def initial_seek_time(row: Dict[str, str]) -> float:
     missing = row.get("missing_commands", "").strip()
 
@@ -392,6 +466,42 @@ def set_manual_time(review: Dict[str, str], command: str, time_s: float) -> None
     review["decision"] = "manual_fix"
 
 
+def cycle_target_object(review: Dict[str, str], direction: int) -> int:
+    marker_ids = sorted(OBJECT_MARKER_IDS)
+    current_text = str(review.get("target_object_id", "")).strip()
+    if current_text and int(current_text) in marker_ids:
+        current_index = marker_ids.index(int(current_text))
+        marker_id = marker_ids[(current_index + direction) % len(marker_ids)]
+    else:
+        marker_id = marker_ids[0] if direction >= 0 else marker_ids[-1]
+    review["target_object_id"] = str(marker_id)
+    if not review.get("annotation_confidence"):
+        review["annotation_confidence"] = "certain"
+    return marker_id
+
+
+def select_visible_target(review: Dict[str, str], visible_ids: set[int]) -> int | None:
+    marker_ids = sorted(visible_ids)
+    if not marker_ids:
+        return None
+    current_text = str(review.get("target_object_id", "")).strip()
+    if current_text and int(current_text) in marker_ids:
+        current_index = marker_ids.index(int(current_text))
+        marker_id = marker_ids[(current_index + 1) % len(marker_ids)]
+    else:
+        marker_id = marker_ids[0]
+    review["target_object_id"] = str(marker_id)
+    if not review.get("annotation_confidence"):
+        review["annotation_confidence"] = "certain"
+    return marker_id
+
+
+def set_receiving_hand(review: Dict[str, str], hand: str) -> None:
+    review["receiving_hand"] = hand
+    if not review.get("annotation_confidence"):
+        review["annotation_confidence"] = "certain"
+
+
 def put_text_lines(frame, lines: List[str]) -> None:
     x = 20
     y = 30
@@ -438,15 +548,19 @@ def review_video(
     row: Dict[str, str],
     video_path: Path,
     wav_path: Optional[Path],
+    marker_csv_path: Optional[Path],
+    marker_frame_ids: Dict[int, set[int]],
     review_rows: Dict[str, Dict[str, str]],
     review_csv_path: Path,
     index: int,
     total: int,
     audio_enabled: bool,
+    live_marker_detection: bool,
     max_display_width: int,
     max_display_height: int,
 ) -> str:
     sequence_id = row["sequence_id"]
+    live_marker_detectors = create_live_marker_detectors() if live_marker_detection else ()
 
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
@@ -497,6 +611,7 @@ def review_video(
     print(f"[{index + 1}/{total}] {sequence_id}")
     print(f"MP4: {video_path}")
     print(f"WAV: {wav_path if wav_path else 'missing'}")
+    print(f"Marker CSV: {marker_csv_path if marker_csv_path else 'missing; live detection only'}")
     print(f"Start review at: {start_time:.3f}s")
     print("Keys:")
     print("  1 = set START")
@@ -509,6 +624,12 @@ def review_video(
     print("  v = accept_auto")
     print("  e = exclude")
     print("  u = uncertain")
+    print("  5 or ] = next target object ID (6-14), [ = previous ID")
+    print("  m = select/cycle an object ID visible in the current frame")
+    print("  6/7/8/9 = set that target object ID directly")
+    print("  l/r/b/0 = receiving hand left/right/both/uncertain")
+    print("  i = toggle annotation confidence")
+    print("  x = clear object/hand annotation")
     print("  n = next")
     print("  p = previous")
     print("  q = quit")
@@ -612,6 +733,14 @@ def review_video(
                 max_display_height,
             )
 
+            selected_text = str(review.get("target_object_id", "")).strip()
+            selected_target_id = int(selected_text) if selected_text else None
+            visible_object_ids = set(marker_frame_ids.get(last_frame_index, set()))
+            if live_marker_detectors:
+                visible_object_ids.update(
+                    detect_and_draw_markers(frame, live_marker_detectors, selected_target_id)
+                )
+
             lines = [
                 f"[{index + 1}/{total}] {sequence_id}",
                 f"t={current_s:.3f}s / video={video_duration_s:.3f}s",
@@ -630,6 +759,11 @@ def review_video(
                 f"MAN   DONE   {review.get('manual_done_s', '') or '-'}",
                 f"MAN   THIRD  {review.get('manual_third_s', '') or '-'}",
                 f"decision={review.get('decision', '') or '-'}",
+                "",
+                f"TARGET ID={review.get('target_object_id', '') or '-'}",
+                f"VISIBLE OBJECT IDs={','.join(map(str, sorted(visible_object_ids))) or '-'}",
+                f"RECEIVING HAND={review.get('receiving_hand', '') or '-'}",
+                f"ANNOTATION={review.get('annotation_confidence', '') or '-'}",
             ]
 
             put_text_lines(frame, lines)
@@ -726,6 +860,59 @@ def review_video(
                 write_review_csv(review_csv_path, review_rows)
                 print(f"{sequence_id}: uncertain")
 
+            elif key == ord("["):
+                marker_id = cycle_target_object(review, -1)
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: target_object_id -> {marker_id}")
+
+            elif key in (ord("5"), ord("]")):
+                marker_id = cycle_target_object(review, 1)
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: target_object_id -> {marker_id}")
+
+            elif key == ord("m"):
+                marker_id = select_visible_target(review, visible_object_ids)
+                if marker_id is None:
+                    print(f"{sequence_id}: no object marker visible in the current frame")
+                else:
+                    write_review_csv(review_csv_path, review_rows)
+                    print(f"{sequence_id}: target_object_id -> visible ID {marker_id}")
+
+            elif key in (ord("6"), ord("7"), ord("8"), ord("9")):
+                marker_id = int(chr(key))
+                review["target_object_id"] = str(marker_id)
+                if not review.get("annotation_confidence"):
+                    review["annotation_confidence"] = "certain"
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: target_object_id -> {marker_id}")
+
+            elif key in (ord("l"), ord("r"), ord("b"), ord("0")):
+                hand = {
+                    ord("l"): "left",
+                    ord("r"): "right",
+                    ord("b"): "both",
+                    ord("0"): "uncertain",
+                }[key]
+                set_receiving_hand(review, hand)
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: receiving_hand -> {hand}")
+
+            elif key == ord("i"):
+                current = review.get("annotation_confidence", "")
+                review["annotation_confidence"] = "certain" if current == "uncertain" else "uncertain"
+                write_review_csv(review_csv_path, review_rows)
+                print(
+                    f"{sequence_id}: annotation_confidence -> "
+                    f"{review['annotation_confidence']}"
+                )
+
+            elif key == ord("x"):
+                review["target_object_id"] = ""
+                review["receiving_hand"] = ""
+                review["annotation_confidence"] = ""
+                write_review_csv(review_csv_path, review_rows)
+                print(f"{sequence_id}: object/hand annotation cleared")
+
     finally:
         if wav_player is not None:
             wav_player.close()
@@ -764,6 +951,7 @@ def main() -> int:
     manifest_path = args.manifest or data_root / "dataset_manifest.csv"
     mp4_dir = args.mp4_dir or data_root / "Data_mp4"
     wav_dir = args.wav_dir or data_root / "Data_vrs" / "debug_audio"
+    marker_dir = args.marker_dir or data_root
     review_csv_path = args.review_csv or data_root / "manual_timestamp_review.csv"
 
     if not manifest_path.exists():
@@ -801,15 +989,26 @@ def main() -> int:
             if wav_path is None:
                 print(f"[{i + 1}/{len(rows)}] Missing WAV for {seq}. Continuing without audio.")
 
+        marker_csv_path = find_marker_csv(marker_dir, seq)
+        try:
+            marker_frame_ids = read_marker_frame_ids(marker_csv_path)
+        except (OSError, ValueError) as exc:
+            print(f"[{i + 1}/{len(rows)}] WARNING: Could not read marker CSV: {exc}")
+            marker_csv_path = None
+            marker_frame_ids = {}
+
         action = review_video(
             row=row,
             video_path=video_path,
             wav_path=wav_path,
+            marker_csv_path=marker_csv_path,
+            marker_frame_ids=marker_frame_ids,
             review_rows=review_rows,
             review_csv_path=review_csv_path,
             index=i,
             total=len(rows),
             audio_enabled=not args.no_audio,
+            live_marker_detection=not args.no_live_marker_detection,
             max_display_width=args.max_display_width,
             max_display_height=args.max_display_height,
         )

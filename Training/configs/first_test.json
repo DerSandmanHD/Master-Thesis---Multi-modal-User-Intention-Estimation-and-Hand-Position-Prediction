@@ -1,0 +1,37 @@
+{
+  "data": {
+    "master_dir": "Data_collection/master_datasets",
+    "feature_profile": "multimodal_robot_frame_v1",
+    "window_size": 60,
+    "stride": 10,
+    "future_horizon_seconds": 1.0,
+    "pose_intent_ids": [1, 2],
+    "object_ids": [6, 7, 8, 9, 10, 11, 12, 13, 14],
+    "minimum_observed_fraction": 0.05,
+    "validation_fraction": 0.2,
+    "test_fraction": 0.2,
+    "validation_participants": [],
+    "test_participants": []
+  },
+  "model": {
+    "d_model": 64,
+    "nhead": 4,
+    "num_layers": 2,
+    "dim_feedforward": 128,
+    "dropout": 0.15
+  },
+  "training": {
+    "seed": 42,
+    "epochs": 10,
+    "batch_size": 32,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "classification_loss_weight": 1.0,
+    "object_loss_weight": 0.5,
+    "pose_loss_weight": 1.0,
+    "orientation_loss_weight": 0.25,
+    "gradient_clip_norm": 1.0,
+    "early_stopping_patience": 5,
+    "num_workers": 2
+  }
+}

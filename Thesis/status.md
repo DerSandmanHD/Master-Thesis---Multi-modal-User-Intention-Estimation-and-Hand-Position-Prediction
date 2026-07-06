@@ -1,8 +1,8 @@
 # Technische Dokumentation: Entwicklungsstand Framework zur multimodalen Intentionsschätzung
 
-**Dokument aktualisiert:** 2. Juli 2026
+**Dokument aktualisiert:** 4. Juli 2026
 
-**Dokumentierter Entwicklungsstand:** 1. Juli 2026
+**Dokumentierter Entwicklungsstand:** 4. Juli 2026
 
 ## 1. System-Architektur & Infrastruktur
 
@@ -158,7 +158,7 @@ Anschließend wurde der neu angelegte Backup-Ordner `BackUp_Videos/` mit dem Arb
 * **Validierter Review-Import:** `Code/apply_manual_reviews.py`
 * **Gemeinsames Annotationsschema:** `Code/annotation_utils.py`
 * **Resumierbarer Master-Batch:** `Code/build_master_dataset_batch.py`
-* **Normalisierte Debug-Audios:** `Data_collection/Data_vrs/debug_audio/` (42 WAV-Dateien)
+* **Normalisierte Debug-Audios:** `Data_collection/Data_vrs/debug_audio/` (136 WAV-Dateien)
 * **Dataset-Manifest:** `Data_collection/dataset_manifest.csv`
 * **QA-Report:** `Data_collection/dataset_qa_report.json`
 * **Archivierte Audio-Smoke-Test-Ausgabe:** `audio_smoke_results/job_2151504/`
@@ -173,41 +173,38 @@ Anschließend wurde der neu angelegte Backup-Ordner `BackUp_Videos/` mit dem Arb
 
 ### 6.2 Ergebnis des letzten abgeschlossenen QA-Laufs
 
-Die folgenden Zahlen beschreiben den letzten vollständig abgeschlossenen QA-Lauf vor den aktuell laufenden WAV- und Marker-Batchjobs. Sie müssen nach Abschluss der Jobs und nach Übernahme der manuellen Timestamp-Korrekturen neu erzeugt werden.
+Der folgende Stand stammt aus dem am 4. Juli 2026 auf dem TCML-Cluster ausgeführten Befehl `singularity exec ~/singularity/aria_master.simg python3 Code/dataset_qa.py --data-root Data_collection`. Er berücksichtigt die bis dahin in `Data_collection/Data_vrs/` hochgeladenen MPS-Ergebnisse. `status` und `next_action` sind priorisierte Felder: Eine Sequenz mit mehreren Problemen erscheint jeweils nur unter ihrem aktuell wichtigsten Status beziehungsweise Arbeitsschritt.
 
 | Kennzahl | Wert |
 | :--- | ---: |
 | Gesamtzahl erkannter Sequenzen | 136 |
 | Trainingskandidaten (`include_in_training=True`) | 124 |
 | Ausgeschlossene Test-/Unknown-Sequenzen | 12 |
-| Aktuell nutzbar (`valid` oder `valid_with_warnings`) | 60 |
-| Vollständig validiert (`valid`) | 1 |
-| Nutzbar mit Folgearbeit (`valid_with_warnings`) | 59 |
-| Status `partial_timestamps` | 24 |
-| Sequenzen mit mindestens einem unvollständigen Triggerproblem | 51 |
-| Fehlender MPS-Ordner | 0 |
-| Unvollständige MPS-Ausgaben | 47 |
-| Fehlende Handtracking-Datei | 46 |
-| Keine gültige Hand im Handover | 2 |
-| Zu geringe Handabdeckung im Handover | 1 |
-| Backup/Data_vrs Namensabgleich | 136 / 136, keine fehlenden Dateien |
-| Vorhandene MP4-Dateien | 32 |
-| Fehlende MP4-Dateien | 104 |
-| Fehlende Marker-CSV-Dateien | 131 |
-| Marker-CSV mit falschem Zeitbereich | 1 |
+| Aktuell technisch nutzbar (`valid_with_warnings`) | 70 |
+| Status `partial_timestamps` | 45 |
+| Status `missing_hand_tracking` | 15 |
+| Status `missing_slam` | 1 |
+| Status `missing_handover_hand_tracking` | 5 |
+| Sequenzen mit `download_or_process_mps` | 17 |
+| Manuell gesetzte Zielobjekt-Labels | 0 |
+| Manuell gesetzte empfangende Hände | 0 |
+| Master-Datensätze auf dem Cluster | 0 |
+| Kalibrierte Marker-CSV-Dateien | 136 / 136 |
+
+Der lokale Backup-Ordner `BackUp_Videos/` ist nicht auf den Cluster kopiert worden. Deshalb meldet der Clusterbericht 136 fehlende Backup-Dateien. Dies ist kein Datenverlust im Arbeitsordner und kein Verarbeitungsblocker; alle 136 VRS-Dateien sind weiterhin unter `Data_collection/Data_vrs/` vorhanden. Der Backup-Abgleich muss lokal erfolgen.
 
 ### 6.3 Nächste automatisch abgeleitete Arbeitsschritte
 
 | `next_action` | Anzahl Sequenzen | Bedeutung |
 | :--- | ---: | :--- |
-| `download_or_process_mps` | 47 | Handtracking oder SLAM sind noch fehlend beziehungsweise unvollständig. |
-| `fix_timestamps` | 27 | Fehlende Trigger müssen manuell oder halbautomatisch korrigiert werden. |
-| `run_aruco_extraction` | 57 | Labels und MPS sind grundsätzlich vorhanden; kalibrierte Markerposen fehlen noch. |
-| `review_or_exclude_sequence` | 3 | Handtracking im Handover fehlt oder unterschreitet die Mindestabdeckung. |
-| `manual_review` | 1 | Eine ungewöhnlich kurze Phase muss manuell geprüft werden. |
-| `ready_for_master_merge` | 1 | Sequenz ist für den nächsten Merge-Schritt vollständig vorbereitet. |
+| `download_or_process_mps` | 17 | Handtracking oder SLAM fehlen beziehungsweise sind unvollständig. |
+| `fix_timestamps` | 45 | Mindestens einer der Trigger `START`, `SECOND`, `DONE`, `THIRD` fehlt. |
+| `review_or_exclude_sequence` | 5 | Vier Miro-Sequenzen besitzen keine gültige Hand im Handover; `Suthan_2` hat eine zu geringe Handabdeckung. |
+| `annotate_sequence` | 67 | Technische Daten sind verwendbar, aber Zielobjekt und empfangende Hand sind noch nicht annotiert. |
+| `convert_mp4` | 1 | Für die nächste priorisierte Sequenz fehlt das MP4 zur visuellen Prüfung. |
+| `build_master_dataset` | 1 | Eine Sequenz erfüllt in diesem priorisierten QA-Stand die vorherigen Voraussetzungen. |
 
-Ein wichtiger Fortschritt gegenüber dem vorherigen Stand ist, dass die QA nun nicht nur Dateiexistenz, sondern die tatsächliche zeitliche Nutzbarkeit der Hand- und Markerdaten bewertet. Der aktuelle Hauptengpass liegt bei 47 unvollständigen MPS-Ausgaben, 27 Sequenzen mit zu korrigierenden Triggern und 57 noch ausstehenden kalibrierten Markerextraktionen.
+Die vier ausgeschlossenen Timestamp-Fälle `Test_3_20260522_160036`, `Test_4_20260527_161832`, `Unknown_2_20260616_141751` und `unknown_20260604_150319` müssen nicht für das Training korrigiert werden. Da `next_action` priorisiert ist, können nach der Behebung der 17 MPS-Fälle weitere bislang verdeckte Timestamp-Probleme sichtbar werden. Die QA ist deshalb nach jedem größeren Verarbeitungsschritt erneut auszuführen.
 
 ### 6.4 Durchgeführte Skript-Tests
 * `python3 -m py_compile Code/dataset_qa.py Code/vrs_to_mp4_all.py`
@@ -294,18 +291,13 @@ Noch offene Ground-Truth- und Kalibrierungspunkte:
 * **Empfangende Hand:** Zukünftige Posen werden vorerst für beide Hände erzeugt. Welche Hand tatsächlich die Zielhand ist, muss pro Sequenz gelabelt oder über eine klar dokumentierte Regel bestimmt werden.
 * **Roboterbasis:** Die robotermarker-relativen Koordinaten verwenden AprilTag 0 als Referenz. Vor einer realen Roboteransteuerung muss noch die starre Transformation vom Marker zur physischen Roboterbasis vermessen und angewendet werden.
 
-### 6.9 Laufende Batchverarbeitung
+### 6.9 Abgeschlossene und offene Batchverarbeitung
 
-Zum Zeitpunkt dieser Aktualisierung laufen zwei länger dauernde Verarbeitungsschritte:
+Die kalibrierte Markerextraktion ist abgeschlossen. Der Resume-Lauf `aria_tags_all.2155043` validierte am Ende 136 von 136 Marker-CSV-Dateien; es blieben keine fehlenden oder formal ungültigen Ausgaben. Die Dateien liegen unter `Data_collection/Aruco_CSV/`, während die Einträge direkt unter `Data_collection/` relative Symlinks für QA und Master-Builder sind.
 
-* **Vollständiger WAV-Export:** Für alle VRS-Sequenzen werden normalisierte WAV-Dateien erzeugt. Sie dienen der synchronisierten manuellen Timestamp-Kontrolle und bleiben vom späteren Modellinput ausgeschlossen.
-* **Markerextraktion:** Der erste 12-Stunden-Clusterlauf wurde durch das SLURM-Zeitlimit nach 124 von 136 finalen CSV-Dateien beendet. Die scheinbar doppelten Einträge unter `Data_collection/` sind Symlinks auf die eigentlichen Dateien in `Aruco_CSV/` und belegen die Daten nicht doppelt. Es fehlen voraussichtlich `Urim_6` bis `Urim_9` sowie `Vanessa_1` bis `Vanessa_8`. Der gehärtete Resume-Job überspringt die 124 validierten Ausgaben und verarbeitet ausschließlich fehlende oder ungültige Sequenzen.
+Die verfügbaren MPS-Ergebnisse wurden anschließend in den Cluster-Arbeitsordner hochgeladen. Gegenüber dem früheren Zwischenstand von 46 fehlenden Handtracking-Dateien ist der Rückstand deutlich gesunken. Der aktuelle QA-Lauf priorisiert noch 17 Sequenzen als `download_or_process_mps`; die Statusübersicht nennt 15 Sequenzen mit `missing_hand_tracking` und eine mit `missing_slam`. Die abweichende Summe entsteht durch die getrennte Priorisierung von `status` und `next_action`; die konkreten Dateien und überlagerten Probleme stehen im Manifest. Fehlende Ergebnisse müssen erneut über MPS verarbeitet oder die betroffenen Sequenzen nachvollziehbar ausgeschlossen werden.
 
-Während diese Jobs laufen, sind Dateizahlen im lokalen Arbeitsordner nur Zwischenstände. Erst nach erfolgreichem Jobabschluss, Rückkopieren der Clusterergebnisse und Vollständigkeitsprüfung darf `dataset_qa.py` erneut als verbindlicher Status ausgeführt werden. Fehlgeschlagene oder ungewöhnlich kleine Ausgabedateien müssen separat erneut verarbeitet werden.
-
-Für 46 Sequenzen konnten die benötigten MPS-Handtracking-/SLAM-Ergebnisse wegen wiederholter Ablehnung beziehungsweise Nichtverarbeitung durch die Meta-MPS-Server nicht erzeugt werden. Da die Master-Pipeline ohne diese Daten weder zuverlässige Handfeatures noch Welttransformationen aufbauen kann, werden diese Sequenzen für das finale Training ausgeschlossen und nur als Rohdaten archiviert. Eine erneute Verarbeitung ist nur sinnvoll, falls sich der externe MPS-Dienst oder dessen Eingabevalidierung ändert.
-
-Der vollständige WAV-Lauf wurde nach aktuellem Arbeitsstand bereits ausgeführt. Vor der Timestamp-Prüfung ist noch zu bestätigen, dass für alle 136 VRS-Sequenzen eine namensgleiche WAV-Datei vorliegt; erst diese Vollständigkeitsprüfung ersetzt den früher dokumentierten Zwischenstand von 42 lokalen WAV-Dateien.
+Für die manuelle Timestamp-Kontrolle liegen normalisierte WAV-Dateien vor. Die visuelle Prüfung erfolgt lokal mit `Code/review_timestamps_video.py`, da das Werkzeug ein Videofenster und Audioausgabe benötigt. Nach dem Review werden die Korrekturen mit `Code/apply_manual_reviews.py` validiert importiert und anschließend durch einen neuen QA-Lauf geprüft.
 
 ### 6.10 Neue Entscheidung zur Zielobjekt-Ground-Truth
 
@@ -318,24 +310,22 @@ Die bevorzugte Systemarchitektur trennt deshalb die Aufgaben: Der Transformer er
 
 ### 6.11 Verbleibende Daten- und Kalibrierungsarbeiten vor dem Training
 
-Nach Abschluss der laufenden Jobs sind folgende Schritte notwendig:
+Aus dem QA-Stand vom 4. Juli ergeben sich folgende verbleibende Schritte:
 
-1. Manuelle Timestamp-Prüfung abschließen und `manual_timestamp_review.csv` mit `Code/apply_manual_reviews.py` validiert in eine geprüfte beziehungsweise anschließend produktive Timestamp-Datei übernehmen.
-2. Die 46 durch den Meta-MPS-Dienst nicht verarbeitbaren Sequenzen explizit als `mps_unavailable` dokumentieren und aus dem finalen Trainingssplit ausschließen; vorhandene erfolgreiche MPS-Ergebnisse vollständig zurückkopieren.
-3. `target_object_id` und empfangende Hand pro Trainingssequenz annotieren oder ausdrücklich als unbekannt markieren.
-4. Die feste Transformation von AprilTag 0 zur physischen Roboterbasis vermessen. Bis dahin bleibt AprilTag 0 das dokumentierte Referenzkoordinatensystem.
-5. `dataset_qa.py` erneut ausführen und Sequenzen mit fehlenden Dateien, unplausiblen Phasen, unzureichender Handabdeckung oder Marker-Zeitbereichsfehlern ausschließen beziehungsweise zur Nachbearbeitung markieren.
-6. `Code/build_master_dataset_batch.py` zunächst als Dry-Run und anschließend über alle freigegebenen Sequenzen ausführen. Die Einzelreports und der Batchreport müssen auf NaN-Anteile, Match-Toleranzen, Markerabdeckung, gültige Zukunftstargets und konsistente Koordinatentransformationen geprüft werden.
+1. Die 17 priorisierten MPS-Fälle erneut verarbeiten oder mit dokumentiertem Grund ausschließen.
+2. `dataset_qa.py` erneut ausführen, weil nach Behebung eines priorisierten Problems weitere Probleme derselben Sequenz sichtbar werden können.
+3. Die unvollständigen Trigger lokal anhand von MP4 und WAV prüfen und `manual_timestamp_review.csv` mit `Code/apply_manual_reviews.py` validiert in `timestamps_summary.reviewed.json` übernehmen.
+4. Die vier Miro-Sequenzen ohne gültige Hand im Handover und `Suthan_2` mit geringer Handabdeckung visuell prüfen; bei korrekten Zeitfenstern müssen unbrauchbare Sequenzen ausgeschlossen werden.
+5. `target_object_id` und empfangende Hand für alle verwendeten Sequenzen annotieren. Der aktuelle Clusterstand enthält für beide Felder noch null Labels.
+6. Die feste Transformation von AprilTag 0 zur physischen Roboterbasis vermessen. Bis dahin bleibt AprilTag 0 das dokumentierte Referenzkoordinatensystem.
+7. Eine abschließende QA durchführen und erst danach die freigegebenen Master-Datensätze erzeugen und validieren.
 
-### 6.12 Noch zu implementierende Trainings- und Evaluationspipeline
+### 6.12 Implementierte Trainings- und Evaluationspipeline
 
-Der eigentliche produktive PyTorch-Trainingscode ist noch nicht implementiert. Vor dem Transformer werden folgende Komponenten benötigt:
+Unter `Training/` liegt inzwischen eine reproduzierbare PyTorch-Trainingspipeline vor. Sie enthält einen fensterbasierten `Dataset`-/`DataLoader`, eine explizite Feature-Whitelist, Missing-Data-Masken, ausschließlich auf dem Trainingssplit geschätzte Normalisierung sowie personenbasierte Train-/Validation-/Test-Splits. Das Multitask-Modell besitzt Köpfe für Intention, Zielobjekt und die zukünftige Position und Orientierung der empfangenden Hand.
 
-* Sliding-Window-Dataset mit expliziter Feature-Whitelist, Validitätsmasken und train-only Normalisierung.
-* Personenbasierter Train-/Validation-/Test-Split; Fenster derselben Person dürfen nicht zufällig über mehrere Splits verteilt werden.
-* Ausschluss von Label-Leckagen: `intent_label`, `intent_id`, zukünftige Handtargets, `target_object_id` und globale Zeit seit Sequenzbeginn dürfen nicht als Eingabefeatures verwendet werden. Positional Encoding innerhalb eines lokalen Fensters bleibt zulässig.
-* Einfache Baselines wie Mehrheitsklasse, MLP sowie LSTM oder TCN, bevor der Multimodal Transformer bewertet wird.
-* Multitask-Modell mit Klassifikationskopf für drei Intentionen und Regressionskopf für die zukünftige Handpose; eine Objektselektion kann separat geometrisch oder optional als weiterer Kopf evaluiert werden.
-* Evaluation über Macro-F1, Confusion Matrix und Übergangslatenz für die Intentionen sowie euklidischen Positionsfehler in Zentimetern für die Handvorhersage. Zusätzlich sind personenbasierte Tests und Ablationen ohne Gaze, Hand, Marker beziehungsweise globale Zeitinformation erforderlich.
+Der erste reproduzierbare Lauf wird über `Training/configs/first_test.json`, `Training/smoke_test.py` und `Training/first_test.sbatch` gesteuert. Checkpoints, verwendete Konfiguration, Datenmetadaten und Metriken werden unter `Training/runs/` abgelegt. Der Testsplit wird erst nach Auswahl des besten Modells anhand der Validation-Macro-F1 ausgewertet.
+
+Noch offen sind systematische Baselines, Ablationen und die vollständige Evaluation über mehrere Seeds. Insbesondere müssen Mehrheitsklasse, MLP sowie LSTM oder TCN mit dem angepassten GTN-Modell verglichen und die Beiträge von Gaze, Hand, Markerinformationen und globaler Zeitinformation getrennt untersucht werden.
 
 Das methodische Hauptrisiko bleibt die feste Reihenfolge `continue -> fetch -> handover`. Das Modell darf die Klasse nicht lediglich aus der relativen Position innerhalb einer Aufnahme ableiten. Dieses Risiko muss durch die Feature-Auswahl, eine Ablation ohne globale Zeitinformation und eine offene Diskussion der Datensatzlimitation geprüft werden.

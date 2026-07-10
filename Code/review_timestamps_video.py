@@ -423,6 +423,9 @@ def initial_seek_time(row: Dict[str, str]) -> float:
     done_s = to_float(row.get("done_s", ""))
     third_s = to_float(row.get("third_s", ""))
 
+    if row.get("next_action", "") == "annotate_sequence" and second_s is not None:
+        return max(0.0, second_s)
+
     if missing:
         missing_set = {x.strip().upper() for x in missing.split(";") if x.strip()}
 

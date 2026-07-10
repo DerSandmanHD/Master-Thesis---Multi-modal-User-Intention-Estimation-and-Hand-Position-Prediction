@@ -22,6 +22,23 @@ python -m projectaria_tools.tools.vrs_to_mp4.vrs_to_mp4 --vrs Test_4.vrs --outpu
 MPS/SLAM:
 aria_mps single -i . -> start MPS cli with the current folder
 
+Download specific videos by name:
+1. Get the uuids:
+  aria_gen2 recording list 2>&1 \
+    | grep -E 'prototype[[:space:]]+Tarik[ _][0-9]+' \
+    | awk '{print $5}' \
+    | sort -u \
+    > tarik_uuids.txt
+2. Download from the Glasses:
+
+mkdir -p Data_collection/Data_vrs/Tarik_downloads
+
+  while read -r uuid; do
+    echo "Downloading $uuid"
+    aria_gen2 recording download --uuid "$uuid" --output Data_collection/Data_vrs/Tarik_downloads/
+  done < tarik_uuids.txt
+
+
 
 Streaming:
 aria_gen2 streaming start --profile profile10 -> start streaming with profile 8

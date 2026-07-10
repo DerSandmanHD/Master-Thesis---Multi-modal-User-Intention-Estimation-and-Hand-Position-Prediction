@@ -113,8 +113,6 @@ def participant_from_sequence(sequence_id: str) -> str:
 
 def training_exclusion_reason(sequence_id: str) -> str:
     participant = participant_from_sequence(sequence_id).lower()
-    if participant == "test" or sequence_id.lower().startswith("test_"):
-        return "test_recording"
     if participant == "unknown" or sequence_id.lower().startswith("unknown"):
         return "unknown_participant"
     return ""

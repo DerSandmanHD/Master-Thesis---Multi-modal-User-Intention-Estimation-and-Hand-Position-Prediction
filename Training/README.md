@@ -19,6 +19,12 @@ Sichtbarkeit sowie Gaze-Winkel und -Distanzen bleiben Eingabefeatures fuer den
 Objekt- und Szenenkontext. Eine Zielobjektauswahl kann separat mit einem
 geometrischen Gaze-Marker-Modul evaluiert werden.
 
+AprilTag 0 definiert einen statischen Roboteranker. Der Master-Builder schaetzt
+dessen robuste Weltpose aus allen Frames mit gleichzeitig gueltigem Tag und
+SLAM. Bei kurzzeitiger Verdeckung wird der Roboterframe ueber die aktuelle
+SLAM-Pose fortgefuehrt; `robot_frame_valid` und
+`robot_anchor_interpolated` dokumentieren dies pro Zeile.
+
 ## Architektur
 
 `model.py` implementiert einen an GTN angelehnten Zwei-Turm-Transformer. Ein
@@ -52,6 +58,7 @@ Smoke-Test:
 
 ```bash
 python3 Training/smoke_test.py
+python3 Code/Testing/static_robot_anchor_smoke.py
 ```
 
 Interaktiver Ein-Epochen-Test:

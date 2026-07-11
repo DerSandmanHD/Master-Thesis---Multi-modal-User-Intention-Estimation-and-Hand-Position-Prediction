@@ -49,6 +49,8 @@ def _candidate_features() -> list[str]:
             "slam_angular_velocity_z_device",
             "slam_quality_score",
             "apriltag_0_valid",
+            "robot_frame_valid",
+            "robot_anchor_interpolated",
         ]
     )
     for marker_id in range(6, 15):

@@ -289,6 +289,84 @@ def matrix_quaternion(matrix: np.ndarray) -> np.ndarray:
     return quaternion
 
 
+def row_world_device_transform(row: pd.Series) -> np.ndarray | None:
+    translation = row[
+        ["slam_tx_world_device", "slam_ty_world_device", "slam_tz_world_device"]
+    ].to_numpy(dtype=float)
+    quaternion = row[
+        [
+            "slam_qx_world_device",
+            "slam_qy_world_device",
+            "slam_qz_world_device",
+            "slam_qw_world_device",
+        ]
+    ].to_numpy(dtype=float)
+    return pose_matrix(translation, quaternion)
+
+
+def row_device_robot_transform(
+    row: pd.Series,
+    transform_device_camera: np.ndarray,
+) -> np.ndarray | None:
+    robot_key = "apriltag_0"
+    translation = row[
+        [
+            f"{robot_key}_tx_camera_m",
+            f"{robot_key}_ty_camera_m",
+            f"{robot_key}_tz_camera_m",
+        ]
+    ].to_numpy(dtype=float)
+    quaternion = row[
+        [
+            f"{robot_key}_qx_camera_marker",
+            f"{robot_key}_qy_camera_marker",
+            f"{robot_key}_qz_camera_marker",
+            f"{robot_key}_qw_camera_marker",
+        ]
+    ].to_numpy(dtype=float)
+    transform_camera_robot = pose_matrix(translation, quaternion)
+    return (
+        transform_device_camera @ transform_camera_robot
+        if transform_camera_robot is not None
+        else None
+    )
+
+
+def estimate_static_world_robot(
+    master: pd.DataFrame,
+    transform_device_camera: np.ndarray,
+) -> tuple[np.ndarray | None, int]:
+    candidates = []
+    for _, row in master.iterrows():
+        transform_world_device = row_world_device_transform(row)
+        transform_device_robot = row_device_robot_transform(row, transform_device_camera)
+        if transform_world_device is not None and transform_device_robot is not None:
+            candidates.append(transform_world_device @ transform_device_robot)
+    if not candidates:
+        return None, 0
+
+    translations = np.stack([matrix[:3, 3] for matrix in candidates])
+    center = np.median(translations, axis=0)
+    distances = np.linalg.norm(translations - center, axis=1)
+    median_distance = float(np.median(distances))
+    mad = float(np.median(np.abs(distances - median_distance)))
+    threshold = max(0.02, median_distance + 3.0 * 1.4826 * mad)
+    inliers = [
+        matrix for matrix, distance in zip(candidates, distances) if distance <= threshold
+    ]
+    if not inliers:
+        inliers = candidates
+
+    transform_world_robot = np.eye(4, dtype=np.float64)
+    transform_world_robot[:3, 3] = np.median(
+        np.stack([matrix[:3, 3] for matrix in inliers]), axis=0
+    )
+    transform_world_robot[:3, :3] = Rotation.from_matrix(
+        np.stack([matrix[:3, :3] for matrix in inliers])
+    ).mean().as_matrix()
+    return transform_world_robot, len(inliers)
+
+
 def add_coordinate_transforms(
     master: pd.DataFrame,
     marker_keys: list[str],
@@ -303,6 +381,12 @@ def add_coordinate_transforms(
         return derived[name]
 
     object_keys = [key for key in marker_keys if key.startswith("aruco_")]
+    static_world_robot, static_anchor_samples = estimate_static_world_robot(
+        master, transform_device_camera
+    )
+    output("robot_frame_valid")
+    output("robot_anchor_interpolated")
+    output("robot_static_anchor_samples")[:] = static_anchor_samples
 
     for object_key in object_keys:
         for frame_name in ("device", "world", "robot"):
@@ -314,34 +398,32 @@ def add_coordinate_transforms(
         output(f"{object_key}_gaze_distance_m")
 
     for row_index, (_, row) in enumerate(master.iterrows()):
-        slam_translation = row[["slam_tx_world_device", "slam_ty_world_device", "slam_tz_world_device"]].to_numpy(dtype=float)
-        slam_quaternion = row[
-            ["slam_qx_world_device", "slam_qy_world_device", "slam_qz_world_device", "slam_qw_world_device"]
-        ].to_numpy(dtype=float)
-        transform_world_device = pose_matrix(slam_translation, slam_quaternion)
-
-        robot_key = "apriltag_0"
-        robot_translation = row[
-            [f"{robot_key}_tx_camera_m", f"{robot_key}_ty_camera_m", f"{robot_key}_tz_camera_m"]
-        ].to_numpy(dtype=float)
-        robot_quaternion = row[
-            [
-                f"{robot_key}_qx_camera_marker",
-                f"{robot_key}_qy_camera_marker",
-                f"{robot_key}_qz_camera_marker",
-                f"{robot_key}_qw_camera_marker",
-            ]
-        ].to_numpy(dtype=float)
-        transform_camera_robot = pose_matrix(robot_translation, robot_quaternion)
-        transform_device_robot = (
-            transform_device_camera @ transform_camera_robot if transform_camera_robot is not None else None
+        transform_world_device = row_world_device_transform(row)
+        instantaneous_device_robot = row_device_robot_transform(
+            row, transform_device_camera
         )
-        transform_robot_device = (
-            np.linalg.inv(transform_device_robot) if transform_device_robot is not None else None
-        )
+        if static_world_robot is not None and transform_world_device is not None:
+            transform_world_robot = static_world_robot
+            transform_robot_device = (
+                np.linalg.inv(static_world_robot) @ transform_world_device
+            )
+            output("robot_anchor_interpolated")[row_index] = int(
+                instantaneous_device_robot is None
+            )
+        elif instantaneous_device_robot is not None:
+            transform_robot_device = np.linalg.inv(instantaneous_device_robot)
+            transform_world_robot = (
+                transform_world_device @ instantaneous_device_robot
+                if transform_world_device is not None
+                else None
+            )
+            output("robot_anchor_interpolated")[row_index] = 0
+        else:
+            transform_robot_device = None
+            transform_world_robot = None
+        output("robot_frame_valid")[row_index] = int(transform_robot_device is not None)
 
-        if transform_world_device is not None and transform_device_robot is not None:
-            transform_world_robot = transform_world_device @ transform_device_robot
+        if transform_world_robot is not None:
             robot_world_quaternion = matrix_quaternion(transform_world_robot)
             for axis, value in zip("xyz", transform_world_robot[:3, 3]):
                 output(f"robot_marker_world_{axis}_m")[row_index] = value
@@ -591,6 +673,11 @@ def build_report(
         "hand_right_valid_ratio": round(float(master["hand_right_valid"].fillna(0).mean()), 4),
         "slam_match_ratio": round(float(master["slam_timestamp_ns"].notna().mean()), 4),
         "robot_marker_valid_ratio": round(float(master["apriltag_0_valid"].mean()), 4),
+        "robot_frame_valid_ratio": round(float(master["robot_frame_valid"].mean()), 4),
+        "robot_anchor_interpolated_ratio": round(
+            float(master["robot_anchor_interpolated"].mean()), 4
+        ),
+        "robot_static_anchor_samples": int(master["robot_static_anchor_samples"].iloc[0]),
         "marker_valid_ratios": marker_valid_ratios,
         "future_horizon_seconds": horizon_seconds,
         "future_left_wrist_valid_ratio": round(
@@ -610,10 +697,10 @@ def build_report(
         ),
         "warnings": warnings,
         "coordinate_frames": {
-            "hand_input": "device and world; robot-marker frame when AprilTag 0 is visible",
-            "gaze_input": "CPF, device, world, and robot-marker frame",
+            "hand_input": "device and world; robot-marker frame from static Tag 0 world anchor plus SLAM",
+            "gaze_input": "CPF, device, world, and static robot-marker frame",
             "marker_input": "linear RGB camera; objects additionally in device/world/robot-marker frames",
-            "pose_target": "robot-marker frame defined by AprilTag 0; physical robot-base offset not yet applied",
+            "pose_target": "static robot-marker frame estimated from AprilTag 0 and SLAM; physical robot-base offset not yet applied",
         },
         "master_csv": str(output_csv),
     }

@@ -88,13 +88,24 @@ def target_reason(
     target_row = frame.iloc[target_index]
 
     hand_valid = truthy(target_row.get(f"hand_{receiving_hand}_valid"))
-    anchor_valid = truthy(target_row.get("apriltag_0_valid"))
-    if not hand_valid and not anchor_valid:
-        return "future_hand_and_robot_anchor_invalid", future_timestamp
+    robot_frame_valid = truthy(target_row.get("robot_frame_valid"))
+    if not hand_valid and not robot_frame_valid:
+        return "future_hand_and_robot_frame_invalid", future_timestamp
     if not hand_valid:
         return "future_hand_tracking_invalid", future_timestamp
-    if not anchor_valid:
-        return "future_robot_anchor_invalid", future_timestamp
+    if not robot_frame_valid:
+        slam_columns = [
+            "slam_tx_world_device",
+            "slam_ty_world_device",
+            "slam_tz_world_device",
+            "slam_qx_world_device",
+            "slam_qy_world_device",
+            "slam_qz_world_device",
+            "slam_qw_world_device",
+        ]
+        if not finite_row(target_row, slam_columns):
+            return "future_slam_pose_invalid", future_timestamp
+        return "future_robot_frame_invalid", future_timestamp
 
     pose_columns = [
         *(f"{prefix}receiving_wrist_robot_{axis}_m" for axis in "xyz"),
@@ -142,7 +153,7 @@ def main() -> int:
             sequence_id = record.sequence_id
             if sequence_id not in frame_cache:
                 path = master_dir / f"{sequence_id}_master.csv"
-                frame = pd.read_csv(path)
+                frame = pd.read_csv(path, low_memory=False)
                 frame_cache[sequence_id] = frame
                 timestamp_indices[sequence_id] = {
                     int(timestamp): index

@@ -85,7 +85,7 @@ def parse_args():
         "--min-handover-hand-valid-ratio",
         type=float,
         default=0.8,
-        help="Warn when neither hand is valid in at least this fraction of DONE->THIRD rows. Default: 0.8.",
+        help="Warn when neither hand is valid in at least this fraction of THIRD->recording-end rows. Default: 0.8.",
     )
     parser.add_argument(
         "--max-media-duration-delta-seconds",
@@ -227,7 +227,7 @@ def command_timestamp_ns(timestamp_entry: dict, command: str) -> int | None:
     return int(value["timestamp_ns"])
 
 
-def hand_tracking_phase_stats(path: Path, start_ns: int | None, end_ns: int | None) -> dict:
+def hand_tracking_phase_stats(path: Path, start_ns: int | None, end_ns: int | None = None) -> dict:
     stats = {
         "rows": 0,
         "left_valid_rows": 0,
@@ -237,7 +237,7 @@ def hand_tracking_phase_stats(path: Path, start_ns: int | None, end_ns: int | No
         "right_valid_ratio": None,
         "either_valid_ratio": None,
     }
-    if not path.exists() or start_ns is None or end_ns is None or end_ns <= start_ns:
+    if not path.exists() or start_ns is None or (end_ns is not None and end_ns <= start_ns):
         return stats
 
     try:
@@ -252,7 +252,7 @@ def hand_tracking_phase_stats(path: Path, start_ns: int | None, end_ns: int | No
                 return stats
             for row in reader:
                 timestamp_ns = int(row["tracking_timestamp_us"]) * 1000
-                if timestamp_ns < start_ns or timestamp_ns > end_ns:
+                if timestamp_ns < start_ns or (end_ns is not None and timestamp_ns > end_ns):
                     continue
                 left_valid = float(row["left_tracking_confidence"]) > 0.0
                 right_valid = float(row["right_tracking_confidence"]) > 0.0
@@ -270,18 +270,23 @@ def hand_tracking_phase_stats(path: Path, start_ns: int | None, end_ns: int | No
     return stats
 
 
-def check_timestamps(command_seconds: dict, min_phase_seconds: float, max_sequence_seconds: float):
+def check_timestamps(
+    command_seconds: dict,
+    min_phase_seconds: float,
+    max_sequence_seconds: float,
+    recording_duration_seconds: float | None = None,
+):
     issues = []
     warnings = []
     missing = [command for command in EXPECTED_COMMANDS if command_seconds.get(command) is None]
 
     if len(missing) == len(EXPECTED_COMMANDS):
         issues.append("missing_timestamps")
-        return issues, warnings, missing, None, None, None
+        return issues, warnings, missing, None, None, None, None
 
     if missing:
         issues.append("partial_timestamps")
-        return issues, warnings, missing, None, None, None
+        return issues, warnings, missing, None, None, None, None
 
     ordered_seconds = [float(command_seconds[command]) for command in EXPECTED_COMMANDS]
     if ordered_seconds != sorted(ordered_seconds):
@@ -289,14 +294,25 @@ def check_timestamps(command_seconds: dict, min_phase_seconds: float, max_sequen
 
     phase_continue = ordered_seconds[1] - ordered_seconds[0]
     phase_fetch = ordered_seconds[2] - ordered_seconds[1]
-    phase_handover = ordered_seconds[3] - ordered_seconds[2]
-    sequence_duration = ordered_seconds[3] - ordered_seconds[0]
+    phase_transition = ordered_seconds[3] - ordered_seconds[2]
+    phase_handover = (
+        recording_duration_seconds - ordered_seconds[3]
+        if recording_duration_seconds is not None
+        else None
+    )
+    sequence_duration = (
+        recording_duration_seconds - ordered_seconds[0]
+        if recording_duration_seconds is not None
+        else ordered_seconds[3] - ordered_seconds[0]
+    )
 
     phase_lengths = {
         "continue": phase_continue,
         "fetch": phase_fetch,
-        "handover": phase_handover,
+        "transition": phase_transition,
     }
+    if phase_handover is not None:
+        phase_lengths["handover"] = phase_handover
     for name, duration in phase_lengths.items():
         if duration < min_phase_seconds:
             warnings.append(f"short_{name}_phase")
@@ -310,7 +326,8 @@ def check_timestamps(command_seconds: dict, min_phase_seconds: float, max_sequen
         missing,
         round(phase_continue, 3),
         round(phase_fetch, 3),
-        round(phase_handover, 3),
+        round(phase_transition, 3),
+        round(phase_handover, 3) if phase_handover is not None else None,
     )
 
 
@@ -528,11 +545,9 @@ def build_row(
 
     timestamp_entry = timestamp_entry_for(sequence_id, timestamps)
     annotation = annotations.get(sequence_id, {})
-    done_timestamp_ns = command_timestamp_ns(timestamp_entry, "DONE")
     third_timestamp_ns = command_timestamp_ns(timestamp_entry, "THIRD")
     handover_hand_stats = hand_tracking_phase_stats(
         hand_tracking_path,
-        done_timestamp_ns,
         third_timestamp_ns,
     )
     aruco_path, aruco_timestamp_range, rejected_aruco_paths = aruco_csv_for(
@@ -542,10 +557,12 @@ def build_row(
     )
     aruco_object_ids = csv_object_marker_ids(aruco_path)
     command_seconds = extract_command_seconds(timestamp_entry)
-    timestamp_issues, timestamp_warnings, missing_commands, continue_s, fetch_s, handover_s = check_timestamps(
+    wav_duration = wav_duration_seconds(wav_path)
+    timestamp_issues, timestamp_warnings, missing_commands, continue_s, fetch_s, transition_s, handover_s = check_timestamps(
         command_seconds,
         args.min_phase_seconds,
         args.max_sequence_seconds,
+        wav_duration,
     )
 
     issues = []
@@ -556,7 +573,6 @@ def build_row(
     receiving_hand = annotation.get("receiving_hand", "")
     annotation_confidence = annotation.get("annotation_confidence", "")
     mp4_duration = mp4_duration_seconds(mp4_path)
-    wav_duration = wav_duration_seconds(wav_path)
     media_duration_delta = (
         round(wav_duration - mp4_duration, 3)
         if wav_duration is not None and mp4_duration is not None
@@ -584,7 +600,7 @@ def build_row(
         issues.append("missing_mps")
     if not hand_tracking_path.exists():
         issues.append("missing_hand_tracking")
-    elif done_timestamp_ns is not None and third_timestamp_ns is not None:
+    elif third_timestamp_ns is not None:
         if handover_hand_stats["rows"] == 0 or handover_hand_stats["either_valid_rows"] == 0:
             issues.append("missing_handover_hand_tracking")
         elif handover_hand_stats["either_valid_ratio"] < args.min_handover_hand_valid_ratio:
@@ -704,6 +720,7 @@ def build_row(
         "third_s": command_seconds["THIRD"],
         "continue_duration_s": continue_s,
         "fetch_duration_s": fetch_s,
+        "transition_duration_s": transition_s,
         "handover_duration_s": handover_s,
         "master_csv_exists": master_path.exists(),
         "master_csv_rows": count_csv_rows(master_path),
@@ -769,6 +786,7 @@ def write_manifest(path: Path, rows: list[dict]) -> None:
         "third_s",
         "continue_duration_s",
         "fetch_duration_s",
+        "transition_duration_s",
         "handover_duration_s",
         "master_csv_exists",
         "master_csv_rows",

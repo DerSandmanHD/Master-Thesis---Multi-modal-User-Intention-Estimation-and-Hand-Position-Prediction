@@ -127,10 +127,16 @@ def label_timeline(frame: pd.DataFrame, commands: dict) -> pd.DataFrame:
     if not start < second < done < third:
         raise ValueError("Expected START < SECOND < DONE < THIRD")
 
-    frame = frame.loc[(frame["timestamp_ns"] >= start) & (frame["timestamp_ns"] <= third)].copy()
+    # DONE -> THIRD is an unlabeled transition. Handover starts when THIRD is spoken
+    # and continues until the recording ends.
+    labeled = (
+        ((frame["timestamp_ns"] >= start) & (frame["timestamp_ns"] <= done))
+        | (frame["timestamp_ns"] >= third)
+    )
+    frame = frame.loc[labeled].copy()
     frame["time_since_start_s"] = (frame["timestamp_ns"] - start) / 1e9
     frame["intent_label"] = np.select(
-        [frame["timestamp_ns"] < second, frame["timestamp_ns"] < done],
+        [frame["timestamp_ns"] < second, frame["timestamp_ns"] <= done],
         ["continue", "fetch"],
         default="handover",
     )

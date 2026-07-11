@@ -62,6 +62,17 @@ python3 Training/train.py \
   --epochs 1
 ```
 
+Pose-Target-Verfuegbarkeit mit denselben Splits und Fensterregeln auditieren:
+
+```bash
+python3 Training/audit_pose_targets.py \
+  --config Training/configs/hierarchical_baseline_v1.json
+```
+
+Der Audit schreibt eine Zusammenfassung nach
+`Training/reports/pose_target_audit.json` und alle Handover-Fenster mit ihrer
+konkreten Ursache nach `Training/reports/pose_target_audit.csv`.
+
 GPU-Job auf dem Cluster:
 
 ```bash

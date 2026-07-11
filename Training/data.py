@@ -152,24 +152,27 @@ def load_record(
         *(f"{prefix}receiving_wrist_robot_{axis}_m" for axis in "xyz"),
         *(f"{prefix}receiving_wrist_robot_q{component}" for component in "xyzw"),
     ]
-    required = [
+    required_core = [
         "sequence_id",
         "participant",
         "timestamp_ns",
         "intent_label",
         "target_object_id",
         f"{prefix}receiving_wrist_valid",
-        *feature_columns,
         *pose_columns,
     ]
     header = pd.read_csv(path, nrows=0).columns.tolist()
-    missing = sorted(set(required) - set(header))
+    missing = sorted(set(required_core) - set(header))
     if missing:
         raise ValueError(
             f"{path.name} is not compatible with the training schema; missing: "
             f"{', '.join(missing)}. Rebuild master datasets after semantic annotation."
         )
-    frame = pd.read_csv(path, usecols=required)
+    available_features = [column for column in feature_columns if column in header]
+    frame = pd.read_csv(path, usecols=[*required_core, *available_features])
+    for column in feature_columns:
+        if column not in frame:
+            frame[column] = 0.0 if column.endswith("_valid") else np.nan
     if frame.empty:
         raise ValueError(f"Empty master CSV: {path}")
     sequence_values = frame["sequence_id"].dropna().astype(str).unique()

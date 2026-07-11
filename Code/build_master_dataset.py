@@ -13,7 +13,12 @@ import numpy as np
 import pandas as pd
 from scipy.spatial.transform import Rotation
 
-from annotation_utils import normalize_receiving_hand, parse_target_object_id, read_review_rows
+from annotation_utils import (
+    OBJECT_MARKER_IDS,
+    normalize_receiving_hand,
+    parse_target_object_id,
+    read_review_rows,
+)
 from extract_multimodal_data import default_gaze_output, extract_vrs_tracking, write_gaze_csv
 
 
@@ -251,6 +256,20 @@ def merge_markers(timeline: pd.DataFrame, marker_path: Path, tolerance_ms: float
         timeline[f"{prefix}_time_offset_ms"] = (
             timeline[f"{prefix}_timestamp_ns"] - timeline["timestamp_ns"]
         ) / 1e6
+
+    # Every sequence must expose the same object-marker schema. A marker that was
+    # never detected is an unavailable observation, not a missing feature.
+    for marker_id in sorted(OBJECT_MARKER_IDS):
+        prefix = f"aruco_{marker_id}"
+        if prefix in marker_keys:
+            continue
+        marker_keys.append(prefix)
+        timeline[f"{prefix}_timestamp_ns"] = np.nan
+        for column in pose_columns:
+            timeline[f"{prefix}_{column}"] = np.nan
+        timeline[f"{prefix}_valid"] = np.int8(0)
+        timeline[f"{prefix}_time_offset_ms"] = np.nan
+    marker_keys.sort()
     return timeline, marker_keys
 
 
@@ -284,6 +303,15 @@ def add_coordinate_transforms(
         return derived[name]
 
     object_keys = [key for key in marker_keys if key.startswith("aruco_")]
+
+    for object_key in object_keys:
+        for frame_name in ("device", "world", "robot"):
+            for axis in "xyz":
+                output(f"{object_key}_{frame_name}_{axis}_m")
+        for component in "xyzw":
+            output(f"{object_key}_robot_q{component}")
+        output(f"{object_key}_gaze_angle_rad")
+        output(f"{object_key}_gaze_distance_m")
 
     for row_index, (_, row) in enumerate(master.iterrows()):
         slam_translation = row[["slam_tx_world_device", "slam_ty_world_device", "slam_tz_world_device"]].to_numpy(dtype=float)

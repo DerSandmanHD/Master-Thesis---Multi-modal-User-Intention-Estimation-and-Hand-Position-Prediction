@@ -12,7 +12,8 @@ set -euo pipefail
 
 REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
 IMAGE="$HOME/singularity/aria_master.simg"
+CONFIG="${CONFIG:-Training/configs/participant_split_v1.json}"
 
 cd "$REPO_DIR"
 singularity exec --nv "$IMAGE" \
-    python3 Training/train.py --config Training/configs/first_test.json
+    python3 Training/train.py --config "$CONFIG"

@@ -28,10 +28,11 @@ Klassifikationskoepfe bilden die Assistenzhierarchie explizit ab; der Pose-Kopf
 wird nur mit gueltigen Handover-Targets trainiert.
 
 `data.py` stellt Missing-Data-Masken, ausschliesslich auf dem Trainingssplit
-angepasste Normalisierung und participant-wise Splits bereit. Sliding Windows
-mit einem Timestamp-Sprung ueber dem konfigurierten Grenzwert werden verworfen.
-Damit kann kein Fenster die ungelabelte Phase `DONE -> THIRD` unbemerkt
-ueberbruecken.
+angepasste Normalisierung und participant-wise Splits bereit. Die Sensorzeilen
+aus `DONE -> THIRD` bleiben als kontinuierlicher Kontext mit dem internen Label
+`transition` erhalten, duerfen aber nie Endpunkt eines Trainingsfensters sein.
+Nur Sliding Windows mit einem echten Timestamp-Sprung ueber dem konfigurierten
+Grenzwert werden verworfen.
 
 ## Datenvoraussetzung
 
@@ -79,7 +80,8 @@ enthaelt:
 
 - `best_model.pt`: bester Checkpoint nach Validation-Intention-Macro-F1
 - `config.json`: tatsaechlich verwendete Konfiguration
-- `data_metadata.json`: Features, Normalisierung, Split und verworfene Fenster
+- `data_metadata.json`: Features, Normalisierung, Split sowie wegen echter
+  Zeitluecken, geringer Beobachtung oder unlabeled Endpunkt verworfene Fenster
 - `metrics.json`: Verlauf sowie einmalige Testauswertung
 
 Die Metriken werden getrennt fuer Drei-Klassen-Intention, Assistenzbedarf,

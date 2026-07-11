@@ -259,7 +259,8 @@ Intentionsklassifikation und benoetigen gesonderte Daten- und Modellanalysen.
 
 ## Bekannte Einschraenkungen
 
-1. Fenster koennen aktuell ueber die zeitliche Luecke `DONE -> THIRD` reichen.
+1. Die Legacy-Pipeline entfernte `DONE -> THIRD` und konnte dadurch Fenster aus
+   zeitlich nicht benachbarten Zeilen zusammensetzen.
 2. Objektklassen sind zwischen den Teilnehmer-Splits unausgewogen.
 3. ArUco-ID 9 fehlt vollstaendig im Testsplit.
 4. Fuer die Pose-Auswertung stehen nur 310 gueltige Testfenster zur Verfuegung.
@@ -271,8 +272,8 @@ Intentionsklassifikation und benoetigen gesonderte Daten- und Modellanalysen.
 
 ## Priorisierte naechste Schritte
 
-1. Windowing so korrigieren, dass kein Fenster einen grossen Timestamp-Sprung
-   oder die ausgelassene Phase `DONE -> THIRD` ueberquert.
+1. `DONE -> THIRD` als kontinuierlichen, ungelabelten Sensorkontext erhalten;
+   unlabeled Endpunkte und echte Timestamp-Spruenge im Windowing verwerfen.
 2. Objekt- und Pose-Target-Verteilungen pro Teilnehmer analysieren.
 3. Teilnehmer-Split unter Beibehaltung der Leakage-Sicherheit besser nach
    Objektklassen und Anzahl gueltiger Pose-Targets ausbalancieren.

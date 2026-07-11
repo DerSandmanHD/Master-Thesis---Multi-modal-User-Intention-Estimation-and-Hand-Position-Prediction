@@ -292,6 +292,12 @@ def train(args: argparse.Namespace) -> Path:
         f"validation={bundle.validation.discarded_gap_windows}, "
         f"test={bundle.test.discarded_gap_windows}"
     )
+    print(
+        "Discarded unlabeled endpoints: "
+        f"train={bundle.train.discarded_unlabeled_windows}, "
+        f"validation={bundle.validation.discarded_unlabeled_windows}, "
+        f"test={bundle.test.discarded_unlabeled_windows}"
+    )
 
     training_config = config["training"]
     train_loader = make_loader(bundle.train, training_config, shuffle=True, device=device)

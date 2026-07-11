@@ -21,13 +21,17 @@ def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> No
     rng = np.random.default_rng(sequence_number)
     rows = 90
     timestamps = np.arange(rows, dtype=np.int64) * 33_333_333
-    timestamps[45:] += 1_000_000_000
+    timestamps[5:] += 1_000_000_000
+    intent_labels = ["continue"] * 30
+    intent_labels += ["fetch"] * 15
+    intent_labels += ["transition"] * 15
+    intent_labels += ["handover"] * 30
     frame = pd.DataFrame(
         {
             "sequence_id": [f"{participant}_{sequence_number}"] * rows,
             "participant": [participant] * rows,
             "timestamp_ns": timestamps,
-            "intent_label": np.repeat(["continue", "fetch", "handover"], rows // 3),
+            "intent_label": intent_labels,
             "gaze_valid": np.ones(rows),
             "gaze_yaw_rad": rng.normal(size=rows),
             "gaze_pitch_rad": rng.normal(size=rows),
@@ -123,6 +127,10 @@ def main() -> int:
         assert all(np.isfinite(value) for value in components.values())
         assert sum(
             dataset.discarded_gap_windows
+            for dataset in (bundle.train, bundle.validation, bundle.test)
+        ) > 0
+        assert sum(
+            dataset.discarded_unlabeled_windows
             for dataset in (bundle.train, bundle.validation, bundle.test)
         ) > 0
         training_config = {

@@ -15,7 +15,7 @@ import torch
 from torch.utils.data import Dataset
 
 
-INTENTION_TO_ID = {"continue": 0, "fetch": 1, "handover": 2}
+INTENTION_TO_ID = {"transition": -1, "continue": 0, "fetch": 1, "handover": 2}
 INTENTION_NAMES = ["continue", "fetch", "handover"]
 
 
@@ -289,6 +289,7 @@ class WindowDataset(Dataset):
         self.indices: list[tuple[int, int]] = []
         self.discarded_gap_windows = 0
         self.discarded_observation_windows = 0
+        self.discarded_unlabeled_windows = 0
         max_timestamp_gap_ns = int(max_timestamp_gap_seconds * 1e9)
         if max_timestamp_gap_ns <= 0:
             raise ValueError("max_timestamp_gap_seconds must be greater than zero")
@@ -302,6 +303,9 @@ class WindowDataset(Dataset):
             raw_feature_count = record.features.shape[1] // 2
             for endpoint in range(window_size - 1, len(record.features), stride):
                 start = endpoint - window_size + 1
+                if record.intentions[endpoint] < 0:
+                    self.discarded_unlabeled_windows += 1
+                    continue
                 if np.any(
                     np.diff(record.timestamps_ns[start : endpoint + 1])
                     > max_timestamp_gap_ns
@@ -405,6 +409,8 @@ def prepare_data(data_config: dict, seed: int, limit_sequences: int | None = Non
 
 def save_data_metadata(bundle: DataBundle, path: Path) -> None:
     data = {
+        "label_mapping": INTENTION_TO_ID,
+        "transition_policy": "context_only_never_window_target",
         "feature_columns": bundle.feature_columns,
         "model_feature_columns": bundle.normalizer.output_feature_names,
         "normalizer": bundle.normalizer.to_dict(),
@@ -418,6 +424,7 @@ def save_data_metadata(bundle: DataBundle, path: Path) -> None:
             name: {
                 "timestamp_gap": dataset.discarded_gap_windows,
                 "low_observation": dataset.discarded_observation_windows,
+                "unlabeled_endpoint": dataset.discarded_unlabeled_windows,
             }
             for name, dataset in (
                 ("train", bundle.train),

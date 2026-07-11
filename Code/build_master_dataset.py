@@ -22,7 +22,7 @@ from annotation_utils import (
 from extract_multimodal_data import default_gaze_output, extract_vrs_tracking, write_gaze_csv
 
 
-INTENT_TO_ID = {"continue": 0, "fetch": 1, "handover": 2}
+INTENT_TO_ID = {"transition": -1, "continue": 0, "fetch": 1, "handover": 2}
 HAND_COORDINATE_COLUMNS = {
     "left": ("hand_tx_left_device_wrist", "hand_ty_left_device_wrist", "hand_tz_left_device_wrist"),
     "right": ("hand_tx_right_device_wrist", "hand_ty_right_device_wrist", "hand_tz_right_device_wrist"),
@@ -132,17 +132,17 @@ def label_timeline(frame: pd.DataFrame, commands: dict) -> pd.DataFrame:
     if not start < second < done < third:
         raise ValueError("Expected START < SECOND < DONE < THIRD")
 
-    # DONE -> THIRD is an unlabeled transition. Handover starts when THIRD is spoken
-    # and continues until the recording ends.
-    labeled = (
-        ((frame["timestamp_ns"] >= start) & (frame["timestamp_ns"] <= done))
-        | (frame["timestamp_ns"] >= third)
-    )
-    frame = frame.loc[labeled].copy()
+    # Keep DONE -> THIRD as continuous sensor context, but mark it as unlabeled.
+    # The training loader may use these rows as history but never as targets.
+    frame = frame.loc[frame["timestamp_ns"] >= start].copy()
     frame["time_since_start_s"] = (frame["timestamp_ns"] - start) / 1e9
     frame["intent_label"] = np.select(
-        [frame["timestamp_ns"] < second, frame["timestamp_ns"] <= done],
-        ["continue", "fetch"],
+        [
+            frame["timestamp_ns"] < second,
+            frame["timestamp_ns"] <= done,
+            frame["timestamp_ns"] < third,
+        ],
+        ["continue", "fetch", "transition"],
         default="handover",
     )
     frame["intent_id"] = frame["intent_label"].map(INTENT_TO_ID).astype("int8")

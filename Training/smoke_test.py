@@ -13,20 +13,21 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from data import prepare_data
-from model import GatedMultimodalTransformer
+from model import HierarchicalGatedMultimodalTransformer
 from train import multitask_loss, run_epoch
 
 
 def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> None:
     rng = np.random.default_rng(sequence_number)
     rows = 90
+    timestamps = np.arange(rows, dtype=np.int64) * 33_333_333
+    timestamps[45:] += 1_000_000_000
     frame = pd.DataFrame(
         {
             "sequence_id": [f"{participant}_{sequence_number}"] * rows,
             "participant": [participant] * rows,
-            "timestamp_ns": np.arange(rows, dtype=np.int64) * 33_333_333,
+            "timestamp_ns": timestamps,
             "intent_label": np.repeat(["continue", "fetch", "handover"], rows // 3),
-            "target_object_id": [6 + sequence_number % 9] * rows,
             "gaze_valid": np.ones(rows),
             "gaze_yaw_rad": rng.normal(size=rows),
             "gaze_pitch_rad": rng.normal(size=rows),
@@ -80,16 +81,16 @@ def main() -> int:
             "window_size": 20,
             "stride": 10,
             "future_horizon_seconds": 1.0,
-            "pose_intent_ids": [1, 2],
-            "object_ids": list(range(6, 15)),
+            "pose_intent_ids": [2],
             "minimum_observed_fraction": 0.05,
+            "max_timestamp_gap_seconds": 0.2,
             "validation_fraction": 0.2,
             "test_fraction": 0.2,
             "validation_participants": [],
             "test_participants": [],
         }
         bundle = prepare_data(data_config, seed=42)
-        model = GatedMultimodalTransformer(
+        model = HierarchicalGatedMultimodalTransformer(
             input_dim=len(bundle.normalizer.output_feature_names),
             window_size=20,
             d_model=16,
@@ -100,26 +101,33 @@ def main() -> int:
         )
         batch = next(iter(DataLoader(bundle.train, batch_size=4, shuffle=False)))
         outputs = model(batch["features"])
+        assistance_criterion = nn.CrossEntropyLoss()
+        assistance_type_criterion = nn.CrossEntropyLoss()
         loss, components = multitask_loss(
             outputs,
             batch,
-            nn.CrossEntropyLoss(),
+            assistance_criterion,
+            assistance_type_criterion,
             {
-                "classification_loss_weight": 1.0,
-                "object_loss_weight": 0.5,
+                "assistance_loss_weight": 1.0,
+                "assistance_type_loss_weight": 1.0,
                 "pose_loss_weight": 1.0,
                 "orientation_loss_weight": 0.25,
             },
         )
         loss.backward()
-        assert outputs["intention_logits"].shape == (4, 3)
-        assert outputs["object_logits"].shape == (4, 9)
+        assert outputs["assistance_logits"].shape == (4, 2)
+        assert outputs["assistance_type_logits"].shape == (4, 2)
         assert outputs["pose"].shape == (4, 7)
         assert torch.isfinite(loss)
         assert all(np.isfinite(value) for value in components.values())
+        assert sum(
+            dataset.discarded_gap_windows
+            for dataset in (bundle.train, bundle.validation, bundle.test)
+        ) > 0
         training_config = {
-            "classification_loss_weight": 1.0,
-            "object_loss_weight": 0.5,
+            "assistance_loss_weight": 1.0,
+            "assistance_type_loss_weight": 1.0,
             "pose_loss_weight": 1.0,
             "orientation_loss_weight": 0.25,
             "gradient_clip_norm": 1.0,
@@ -129,12 +137,14 @@ def main() -> int:
             model,
             DataLoader(bundle.train, batch_size=8, shuffle=False),
             torch.device("cpu"),
-            nn.CrossEntropyLoss(),
+            assistance_criterion,
+            assistance_type_criterion,
             training_config,
             optimizer,
         )
         assert epoch_metrics["intention"]["samples"] == len(bundle.train)
-        assert epoch_metrics["object"]["samples"] > 0
+        assert epoch_metrics["assistance"]["samples"] == len(bundle.train)
+        assert epoch_metrics["assistance_type"]["samples"] > 0
         assert epoch_metrics["pose"]["samples"] > 0
         print("Training smoke test passed")
         print(f"Input features including masks: {len(bundle.normalizer.output_feature_names)}")

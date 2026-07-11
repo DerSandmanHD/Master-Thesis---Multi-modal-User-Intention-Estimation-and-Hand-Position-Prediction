@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train and evaluate the GTN-inspired multi-task model."""
+"""Train and evaluate the hierarchical GTN-inspired intention model."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 
 from data import INTENTION_NAMES, DataBundle, prepare_data, save_data_metadata
 from metrics import classification_metrics, pose_metrics
-from model import GatedMultimodalTransformer
+from model import HierarchicalGatedMultimodalTransformer
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -25,7 +25,11 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, default=Path("Training/configs/first_test.json"))
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path("Training/configs/hierarchical_baseline_v1.json"),
+    )
     parser.add_argument("--run-dir", type=Path, default=None)
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--device", choices=("auto", "cpu", "cuda", "mps"), default="auto")
@@ -67,21 +71,27 @@ def class_weights(counts: list[int], device: torch.device) -> torch.Tensor:
 def multitask_loss(
     outputs: dict[str, torch.Tensor],
     batch: dict,
-    intention_criterion: nn.Module,
+    assistance_criterion: nn.Module,
+    assistance_type_criterion: nn.Module,
     config: dict,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    intention_loss = intention_criterion(outputs["intention_logits"], batch["intention"])
+    intentions = batch["intention"]
+    assistance_target = (intentions != 0).long()
+    assistance_loss = assistance_criterion(
+        outputs["assistance_logits"], assistance_target
+    )
 
-    object_valid = batch["object_valid"]
-    if bool(object_valid.any()):
-        object_loss = F.cross_entropy(
-            outputs["object_logits"][object_valid],
-            batch["object_target"][object_valid],
+    assistance_valid = assistance_target.bool()
+    if bool(assistance_valid.any()):
+        assistance_type_target = intentions[assistance_valid] - 1
+        assistance_type_loss = assistance_type_criterion(
+            outputs["assistance_type_logits"][assistance_valid],
+            assistance_type_target,
         )
     else:
-        object_loss = outputs["object_logits"].sum() * 0.0
+        assistance_type_loss = outputs["assistance_type_logits"].sum() * 0.0
 
-    pose_valid = batch["pose_valid"]
+    pose_valid = batch["pose_valid"] & (intentions == 2)
     if bool(pose_valid.any()):
         predicted_pose = outputs["pose"][pose_valid]
         target_pose = batch["pose_target"][pose_valid]
@@ -97,14 +107,14 @@ def multitask_loss(
         pose_loss = outputs["pose"].sum() * 0.0
 
     total = (
-        float(config["classification_loss_weight"]) * intention_loss
-        + float(config["object_loss_weight"]) * object_loss
+        float(config["assistance_loss_weight"]) * assistance_loss
+        + float(config["assistance_type_loss_weight"]) * assistance_type_loss
         + float(config["pose_loss_weight"]) * pose_loss
     )
     components = {
         "total": float(total.detach()),
-        "intention": float(intention_loss.detach()),
-        "object": float(object_loss.detach()),
+        "assistance": float(assistance_loss.detach()),
+        "assistance_type": float(assistance_type_loss.detach()),
         "position": float(position_loss.detach()),
         "orientation": float(orientation_loss.detach()),
     }
@@ -122,7 +132,8 @@ def run_epoch(
     model: nn.Module,
     loader: DataLoader,
     device: torch.device,
-    intention_criterion: nn.Module,
+    assistance_criterion: nn.Module,
+    assistance_type_criterion: nn.Module,
     training_config: dict,
     optimizer: torch.optim.Optimizer | None = None,
 ) -> dict:
@@ -131,8 +142,10 @@ def run_epoch(
     losses: list[dict[str, float]] = []
     intention_predictions = []
     intention_targets = []
-    object_predictions = []
-    object_targets = []
+    assistance_predictions = []
+    assistance_targets = []
+    assistance_type_predictions = []
+    assistance_type_targets = []
     pose_predictions = []
     pose_targets = []
     gate_values = []
@@ -145,7 +158,11 @@ def run_epoch(
                 optimizer.zero_grad(set_to_none=True)
             outputs = model(batch["features"])
             loss, components = multitask_loss(
-                outputs, batch, intention_criterion, training_config
+                outputs,
+                batch,
+                assistance_criterion,
+                assistance_type_criterion,
+                training_config,
             )
             if is_training:
                 loss.backward()
@@ -155,13 +172,28 @@ def run_epoch(
                 optimizer.step()
             losses.append(components)
 
-            intention_predictions.append(outputs["intention_logits"].argmax(dim=-1).cpu())
-            intention_targets.append(batch["intention"].cpu())
-            object_valid = batch["object_valid"]
-            if bool(object_valid.any()):
-                object_predictions.append(outputs["object_logits"][object_valid].argmax(dim=-1).cpu())
-                object_targets.append(batch["object_target"][object_valid].cpu())
-            pose_valid = batch["pose_valid"]
+            intentions = batch["intention"]
+            assistance_target = (intentions != 0).long()
+            assistance_prediction = outputs["assistance_logits"].argmax(dim=-1)
+            assistance_type_prediction = outputs["assistance_type_logits"].argmax(dim=-1)
+            intention_prediction = torch.zeros_like(intentions)
+            predicted_assistance = assistance_prediction.bool()
+            intention_prediction[predicted_assistance] = (
+                assistance_type_prediction[predicted_assistance] + 1
+            )
+
+            intention_predictions.append(intention_prediction.cpu())
+            intention_targets.append(intentions.cpu())
+            assistance_predictions.append(assistance_prediction.cpu())
+            assistance_targets.append(assistance_target.cpu())
+            assistance_valid = assistance_target.bool()
+            if bool(assistance_valid.any()):
+                assistance_type_predictions.append(
+                    assistance_type_prediction[assistance_valid].cpu()
+                )
+                assistance_type_targets.append((intentions[assistance_valid] - 1).cpu())
+
+            pose_valid = batch["pose_valid"] & (intentions == 2)
             if bool(pose_valid.any()):
                 pose_predictions.append(outputs["pose"][pose_valid].detach().cpu())
                 pose_targets.append(batch["pose_target"][pose_valid].cpu())
@@ -176,18 +208,28 @@ def run_epoch(
     intention = classification_metrics(
         torch.cat(intention_predictions), torch.cat(intention_targets), len(INTENTION_NAMES)
     )
-    if object_targets:
-        objects = classification_metrics(
-            torch.cat(object_predictions),
-            torch.cat(object_targets),
-            model.object_head.out_features,
+    intention["class_names"] = INTENTION_NAMES
+    assistance = classification_metrics(
+        torch.cat(assistance_predictions), torch.cat(assistance_targets), 2
+    )
+    assistance["class_names"] = ["continue", "assistance"]
+    if assistance_type_targets:
+        assistance_type = classification_metrics(
+            torch.cat(assistance_type_predictions),
+            torch.cat(assistance_type_targets),
+            2,
         )
+        assistance_type["class_names"] = ["fetch", "handover"]
     else:
-        objects = {
+        assistance_type = {
             "accuracy": None,
             "macro_f1": None,
+            "macro_f1_supported": None,
+            "per_class_f1": [],
+            "support": [],
             "samples": 0,
             "confusion_matrix": [],
+            "class_names": ["fetch", "handover"],
         }
     if pose_targets:
         poses = pose_metrics(torch.cat(pose_predictions), torch.cat(pose_targets))
@@ -197,7 +239,8 @@ def run_epoch(
     return {
         "loss": averaged_losses,
         "intention": intention,
-        "object": objects,
+        "assistance": assistance,
+        "assistance_type": assistance_type,
         "pose": poses,
         "mean_gate": {"temporal": mean_gate[0], "channel": mean_gate[1]},
     }
@@ -226,7 +269,9 @@ def train(args: argparse.Namespace) -> Path:
     device = choose_device(args.device)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = resolve_project_path(args.run_dir or f"Training/runs/first_test_{timestamp}")
+    run_dir = resolve_project_path(
+        args.run_dir or f"Training/runs/hierarchical_baseline_{timestamp}"
+    )
     run_dir.mkdir(parents=True, exist_ok=False)
     (run_dir / "config.json").write_text(
         json.dumps(config, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -241,17 +286,21 @@ def train(args: argparse.Namespace) -> Path:
         f"test={len(bundle.test)}"
     )
     print(f"Participant split: {bundle.split_metadata['participants']}")
+    print(
+        "Discarded gap windows: "
+        f"train={bundle.train.discarded_gap_windows}, "
+        f"validation={bundle.validation.discarded_gap_windows}, "
+        f"test={bundle.test.discarded_gap_windows}"
+    )
 
     training_config = config["training"]
     train_loader = make_loader(bundle.train, training_config, shuffle=True, device=device)
     validation_loader = make_loader(bundle.validation, training_config, shuffle=False, device=device)
     test_loader = make_loader(bundle.test, training_config, shuffle=False, device=device)
 
-    model = GatedMultimodalTransformer(
+    model = HierarchicalGatedMultimodalTransformer(
         input_dim=len(bundle.normalizer.output_feature_names),
         window_size=int(config["data"]["window_size"]),
-        num_intentions=len(INTENTION_NAMES),
-        num_objects=len(bundle.object_ids),
         **config["model"],
     ).to(device)
     optimizer = torch.optim.AdamW(
@@ -259,8 +308,14 @@ def train(args: argparse.Namespace) -> Path:
         lr=float(training_config["learning_rate"]),
         weight_decay=float(training_config["weight_decay"]),
     )
-    criterion = nn.CrossEntropyLoss(
-        weight=class_weights(bundle.train.intention_counts(), device)
+    intention_counts = bundle.train.intention_counts()
+    assistance_criterion = nn.CrossEntropyLoss(
+        weight=class_weights(
+            [intention_counts[0], intention_counts[1] + intention_counts[2]], device
+        )
+    )
+    assistance_type_criterion = nn.CrossEntropyLoss(
+        weight=class_weights(intention_counts[1:3], device)
     )
 
     best_score = -1.0
@@ -269,10 +324,21 @@ def train(args: argparse.Namespace) -> Path:
     checkpoint_path = run_dir / "best_model.pt"
     for epoch in range(1, int(training_config["epochs"]) + 1):
         train_metrics = run_epoch(
-            model, train_loader, device, criterion, training_config, optimizer
+            model,
+            train_loader,
+            device,
+            assistance_criterion,
+            assistance_type_criterion,
+            training_config,
+            optimizer,
         )
         validation_metrics = run_epoch(
-            model, validation_loader, device, criterion, training_config
+            model,
+            validation_loader,
+            device,
+            assistance_criterion,
+            assistance_type_criterion,
+            training_config,
         )
         record = {"epoch": epoch, "train": train_metrics, "validation": validation_metrics}
         history.append(record)
@@ -280,7 +346,8 @@ def train(args: argparse.Namespace) -> Path:
         print(
             f"Epoch {epoch:03d} | loss={train_metrics['loss']['total']:.4f} | "
             f"val intent F1={score:.4f} | "
-            f"val object acc={validation_metrics['object']['accuracy']} | "
+            f"val assistance F1={validation_metrics['assistance']['macro_f1']:.4f} | "
+            f"val fetch/handover F1={validation_metrics['assistance_type']['macro_f1']:.4f} | "
             f"val pose cm={validation_metrics['pose']['position_mae_cm']}"
         )
         if score > best_score:
@@ -290,9 +357,9 @@ def train(args: argparse.Namespace) -> Path:
                 {
                     "model_state_dict": model.state_dict(),
                     "model_config": config["model"],
+                    "model_type": "hierarchical_gated_multimodal_transformer",
                     "input_dim": len(bundle.normalizer.output_feature_names),
                     "window_size": int(config["data"]["window_size"]),
-                    "num_objects": len(bundle.object_ids),
                     "epoch": epoch,
                     "validation_intention_macro_f1": score,
                 },
@@ -306,7 +373,14 @@ def train(args: argparse.Namespace) -> Path:
 
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=True)
     model.load_state_dict(checkpoint["model_state_dict"])
-    test_metrics = run_epoch(model, test_loader, device, criterion, training_config)
+    test_metrics = run_epoch(
+        model,
+        test_loader,
+        device,
+        assistance_criterion,
+        assistance_type_criterion,
+        training_config,
+    )
     report = {
         "best_epoch": checkpoint["epoch"],
         "best_validation_intention_macro_f1": best_score,
@@ -317,6 +391,11 @@ def train(args: argparse.Namespace) -> Path:
         json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     print(f"Test intention macro F1: {test_metrics['intention']['macro_f1']:.4f}")
+    print(f"Test assistance macro F1: {test_metrics['assistance']['macro_f1']:.4f}")
+    print(
+        "Test fetch/handover macro F1: "
+        f"{test_metrics['assistance_type']['macro_f1']:.4f}"
+    )
     print(f"Metrics: {run_dir / 'metrics.json'}")
     return run_dir
 

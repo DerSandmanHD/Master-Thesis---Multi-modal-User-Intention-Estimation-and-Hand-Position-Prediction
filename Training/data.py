@@ -87,8 +87,6 @@ class SequenceRecord:
     timestamps_ns: np.ndarray
     features: np.ndarray
     intentions: np.ndarray
-    object_targets: np.ndarray
-    object_valid: np.ndarray
     pose_targets: np.ndarray
     pose_valid: np.ndarray
 
@@ -145,7 +143,6 @@ def load_record(
     feature_columns: list[str],
     *,
     future_horizon_seconds: float,
-    object_ids: list[int],
 ) -> SequenceRecord:
     prefix = horizon_prefix(future_horizon_seconds)
     pose_columns = [
@@ -157,7 +154,6 @@ def load_record(
         "participant",
         "timestamp_ns",
         "intent_label",
-        "target_object_id",
         f"{prefix}receiving_wrist_valid",
         *pose_columns,
     ]
@@ -185,13 +181,6 @@ def load_record(
         unknown = sorted(frame.loc[labels.isna(), "intent_label"].astype(str).unique())
         raise ValueError(f"Unknown intention labels in {path.name}: {unknown}")
 
-    object_to_index = {int(value): index for index, value in enumerate(object_ids)}
-    raw_objects = pd.to_numeric(frame["target_object_id"], errors="coerce")
-    object_targets = np.full(len(frame), -1, dtype=np.int64)
-    for object_id, index in object_to_index.items():
-        object_targets[raw_objects.to_numpy() == object_id] = index
-    object_valid = object_targets >= 0
-
     poses = frame[pose_columns].apply(pd.to_numeric, errors="coerce").to_numpy(np.float32)
     explicit_pose_valid = (
         pd.to_numeric(frame[f"{prefix}receiving_wrist_valid"], errors="coerce")
@@ -217,8 +206,6 @@ def load_record(
         timestamps_ns=timestamps,
         features=features,
         intentions=labels.to_numpy(np.int64),
-        object_targets=object_targets,
-        object_valid=object_valid,
         pose_targets=poses,
         pose_valid=pose_valid,
     )
@@ -295,21 +282,39 @@ class WindowDataset(Dataset):
         stride: int,
         pose_intent_ids: list[int],
         minimum_observed_fraction: float,
+        max_timestamp_gap_seconds: float,
     ) -> None:
         self.records = records
         self.window_size = window_size
         self.indices: list[tuple[int, int]] = []
+        self.discarded_gap_windows = 0
+        self.discarded_observation_windows = 0
+        max_timestamp_gap_ns = int(max_timestamp_gap_seconds * 1e9)
+        if max_timestamp_gap_ns <= 0:
+            raise ValueError("max_timestamp_gap_seconds must be greater than zero")
         pose_intents = set(pose_intent_ids)
+        if pose_intents != {INTENTION_TO_ID["handover"]}:
+            raise ValueError(
+                "Hierarchical baseline requires pose_intent_ids=[2] so pose loss "
+                "is restricted to handover"
+            )
         for record_index, record in enumerate(records):
             raw_feature_count = record.features.shape[1] // 2
             for endpoint in range(window_size - 1, len(record.features), stride):
                 start = endpoint - window_size + 1
+                if np.any(
+                    np.diff(record.timestamps_ns[start : endpoint + 1])
+                    > max_timestamp_gap_ns
+                ):
+                    self.discarded_gap_windows += 1
+                    continue
                 observed_fraction = float(
                     record.features[
                         start : endpoint + 1, raw_feature_count:
                     ].mean()
                 )
                 if observed_fraction < minimum_observed_fraction:
+                    self.discarded_observation_windows += 1
                     continue
                 self.indices.append((record_index, endpoint))
             record.pose_valid &= np.isin(record.intentions, list(pose_intents))
@@ -326,8 +331,6 @@ class WindowDataset(Dataset):
         return {
             "features": torch.from_numpy(record.features[start : endpoint + 1]),
             "intention": torch.tensor(record.intentions[endpoint], dtype=torch.long),
-            "object_target": torch.tensor(record.object_targets[endpoint], dtype=torch.long),
-            "object_valid": torch.tensor(record.object_valid[endpoint], dtype=torch.bool),
             "pose_target": torch.from_numpy(record.pose_targets[endpoint]),
             "pose_valid": torch.tensor(record.pose_valid[endpoint], dtype=torch.bool),
             "sequence_id": record.sequence_id,
@@ -350,7 +353,6 @@ class DataBundle:
     normalizer: Normalizer
     feature_columns: list[str]
     split_metadata: dict
-    object_ids: list[int]
 
 
 def prepare_data(data_config: dict, seed: int, limit_sequences: int | None = None) -> DataBundle:
@@ -363,15 +365,11 @@ def prepare_data(data_config: dict, seed: int, limit_sequences: int | None = Non
 
     first_header = pd.read_csv(files[0], nrows=0).columns.tolist()
     feature_columns = select_feature_columns(first_header, data_config["feature_profile"])
-    object_ids = [int(value) for value in data_config["object_ids"]]
-    if len(set(object_ids)) != len(object_ids):
-        raise ValueError("object_ids must be unique")
     records = [
         load_record(
             path,
             feature_columns,
             future_horizon_seconds=float(data_config["future_horizon_seconds"]),
-            object_ids=object_ids,
         )
         for path in files
     ]
@@ -393,6 +391,7 @@ def prepare_data(data_config: dict, seed: int, limit_sequences: int | None = Non
         "stride": int(data_config["stride"]),
         "pose_intent_ids": [int(value) for value in data_config["pose_intent_ids"]],
         "minimum_observed_fraction": float(data_config["minimum_observed_fraction"]),
+        "max_timestamp_gap_seconds": float(data_config["max_timestamp_gap_seconds"]),
     }
     return DataBundle(
         train=WindowDataset(normalized_split["train"], **dataset_args),
@@ -401,7 +400,6 @@ def prepare_data(data_config: dict, seed: int, limit_sequences: int | None = Non
         normalizer=normalizer,
         feature_columns=feature_columns,
         split_metadata=split_metadata,
-        object_ids=object_ids,
     )
 
 
@@ -411,13 +409,30 @@ def save_data_metadata(bundle: DataBundle, path: Path) -> None:
         "model_feature_columns": bundle.normalizer.output_feature_names,
         "normalizer": bundle.normalizer.to_dict(),
         "split": bundle.split_metadata,
-        "object_ids": bundle.object_ids,
         "windows": {
             "train": len(bundle.train),
             "validation": len(bundle.validation),
             "test": len(bundle.test),
         },
-        "training_intention_counts": dict(zip(INTENTION_NAMES, bundle.train.intention_counts())),
+        "discarded_windows": {
+            name: {
+                "timestamp_gap": dataset.discarded_gap_windows,
+                "low_observation": dataset.discarded_observation_windows,
+            }
+            for name, dataset in (
+                ("train", bundle.train),
+                ("validation", bundle.validation),
+                ("test", bundle.test),
+            )
+        },
+        "intention_counts": {
+            name: dict(zip(INTENTION_NAMES, dataset.intention_counts()))
+            for name, dataset in (
+                ("train", bundle.train),
+                ("validation", bundle.validation),
+                ("test", bundle.test),
+            )
+        },
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")

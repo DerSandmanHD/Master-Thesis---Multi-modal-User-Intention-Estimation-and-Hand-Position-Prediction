@@ -20,6 +20,7 @@ def classification_metrics(
     total = int(confusion.sum())
     accuracy = float(confusion.diag().sum() / total) if total else 0.0
     f1_values = []
+    support = confusion.sum(dim=1)
     for index in range(num_classes):
         true_positive = float(confusion[index, index])
         false_positive = float(confusion[:, index].sum() - confusion[index, index])
@@ -29,7 +30,12 @@ def classification_metrics(
     return {
         "accuracy": accuracy,
         "macro_f1": sum(f1_values) / num_classes,
+        "macro_f1_supported": (
+            sum(value for value, count in zip(f1_values, support) if int(count) > 0)
+            / max(1, int((support > 0).sum()))
+        ),
         "per_class_f1": f1_values,
+        "support": support.tolist(),
         "confusion_matrix": confusion.tolist(),
         "samples": total,
     }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GTN-inspired multi-task model for multimodal Aria time series."""
+"""Hierarchical GTN-inspired model for multimodal Aria time series."""
 
 from __future__ import annotations
 
@@ -8,11 +8,15 @@ from torch import nn
 from torch.nn import functional as F
 
 
-class GatedMultimodalTransformer(nn.Module):
-    """Fuse temporal and channel-wise Transformer representations with a gate.
+class HierarchicalGatedMultimodalTransformer(nn.Module):
+    """Fuse temporal and channel-wise representations for hierarchical intent.
 
     Input shape is [batch, window, features]. The feature dimension already
     includes observation-mask channels supplied by the data pipeline.
+
+    The first classifier predicts continue versus assistance. The second is
+    trained conditionally on assistance samples and predicts fetch versus
+    handover. Future receiving-hand pose is an auxiliary handover-only target.
     """
 
     def __init__(
@@ -20,8 +24,6 @@ class GatedMultimodalTransformer(nn.Module):
         *,
         input_dim: int,
         window_size: int,
-        num_intentions: int = 3,
-        num_objects: int = 9,
         d_model: int = 64,
         nhead: int = 4,
         num_layers: int = 2,
@@ -80,8 +82,8 @@ class GatedMultimodalTransformer(nn.Module):
         )
         fused_dim = d_model * 2
         self.fusion_norm = nn.LayerNorm(fused_dim)
-        self.intention_head = nn.Linear(fused_dim, num_intentions)
-        self.object_head = nn.Linear(fused_dim, num_objects)
+        self.assistance_head = nn.Linear(fused_dim, 2)
+        self.assistance_type_head = nn.Linear(fused_dim, 2)
         self.pose_head = nn.Sequential(
             nn.Linear(fused_dim, d_model),
             nn.GELU(),
@@ -126,8 +128,8 @@ class GatedMultimodalTransformer(nn.Module):
         quaternion = F.normalize(raw_pose[:, 3:7], dim=-1, eps=1e-8)
         pose = torch.cat((raw_pose[:, :3], quaternion), dim=-1)
         return {
-            "intention_logits": self.intention_head(fused),
-            "object_logits": self.object_head(fused),
+            "assistance_logits": self.assistance_head(fused),
+            "assistance_type_logits": self.assistance_type_head(fused),
             "pose": pose,
             "gate": gate,
         }

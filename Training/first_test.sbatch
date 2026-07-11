@@ -8,12 +8,6 @@
 #SBATCH --output=aria_gtn_test.%J.out
 #SBATCH --error=aria_gtn_test.%J.err
 
-set -euo pipefail
-
-REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
-IMAGE="$HOME/singularity/aria_master.simg"
-CONFIG="${CONFIG:-Training/configs/participant_split_v1.json}"
-
-cd "$REPO_DIR"
-singularity exec --nv "$IMAGE" \
-    python3 Training/train.py --config "$CONFIG"
+echo "This job belongs to the archived flat/object baseline and is no longer runnable" >&2
+echo "with the current hierarchical model. Use Training/hierarchical_baseline.sbatch." >&2
+exit 2

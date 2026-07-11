@@ -1,64 +1,87 @@
 # Multimodales Training
 
-Dieser Ordner enthält den ersten reproduzierbaren End-to-End-Trainingslauf für
-die Aria-Master-Datensätze. Das Modell hat drei Ausgaben:
+Dieser Ordner enthaelt die reproduzierbare Trainingspipeline fuer die
+hierarchische Assistenzintention und die handover-spezifische Vorhersage der
+zukuenftigen Empfangshand.
 
-1. Intention: continue, fetch, handover
-2. Zielobjekt: ArUco-ID 6 bis 14
-3. Handpose: Position und Quaternion des empfangenden Handgelenks eine Sekunde
-   in der Zukunft, im Koordinatensystem des Robotermarkers (AprilTag 0)
+## Aufgaben
+
+Das Modell loest zwei hierarchische Klassifikationsstufen und eine bedingte
+Regressionsaufgabe:
+
+1. `continue` gegen `assistance needed`
+2. bei Assistenz: `fetch` gegen `handover`
+3. nur bei `handover`: Position und Quaternion der Empfangshand eine Sekunde
+   in der Zukunft, relativ zu AprilTag 0 am Roboter
+
+ArUco-IDs 6 bis 14 sind keine Transformer-Zielklassen. Ihre Positionen,
+Sichtbarkeit sowie Gaze-Winkel und -Distanzen bleiben Eingabefeatures fuer den
+Objekt- und Szenenkontext. Eine Zielobjektauswahl kann separat mit einem
+geometrischen Gaze-Marker-Modul evaluiert werden.
 
 ## Architektur
 
-model.py ist eine moderne, an GTN angelehnte Zwei-Turm-Architektur. Ein Turm
-modelliert zeitliche Abhängigkeiten, der zweite Abhängigkeiten zwischen
-Sensorkanälen. Ein lernbares Gate fusioniert beide Repräsentationen. Im
-Gegensatz zum unveränderten Code unter GTN/ unterstützt diese Variante fehlende
-Messwerte, participant-wise Splits und Multi-Task-Ausgaben.
+`model.py` implementiert einen an GTN angelehnten Zwei-Turm-Transformer. Ein
+Turm modelliert zeitliche Abhaengigkeiten, der zweite Beziehungen zwischen
+Sensorkanaelen. Ein lernbares Gate fusioniert beide Repraesentationen. Die
+Klassifikationskoepfe bilden die Assistenzhierarchie explizit ab; der Pose-Kopf
+wird nur mit gueltigen Handover-Targets trainiert.
 
-Das alte GTN ist eine sinnvolle Architekturidee und Vergleichsbaseline, aber
-nicht unverändert als finales Modell geeignet: Es erwartet MAT-Dateien, flacht
-alle Tokens ab, besitzt keine robuste Missing-Data-Behandlung und kann nur
-klassifizieren. Ob die angepasste GTN-Variante das finale Modell wird, muss über
-participant-held-out Ergebnisse gegen einfachere Baselines entschieden werden.
+`data.py` stellt Missing-Data-Masken, ausschliesslich auf dem Trainingssplit
+angepasste Normalisierung und participant-wise Splits bereit. Sliding Windows
+mit einem Timestamp-Sprung ueber dem konfigurierten Grenzwert werden verworfen.
+Damit kann kein Fenster die ungelabelte Phase `DONE -> THIRD` unbemerkt
+ueberbruecken.
 
 ## Datenvoraussetzung
 
 Die Eingabe sind aktuelle Dateien unter:
 
-    Data_collection/master_datasets/*_master.csv
+```text
+Data_collection/master_datasets/*_master.csv
+```
 
-Sie müssen mit semantischen Annotationen neu erzeugt worden sein, damit
-target_object_id und future_1s_receiving_wrist_* vorhanden sind. Labels und
-zukünftige Zielwerte werden niemals als Eingabefeatures verwendet.
+Erforderlich sind Intentionslabels sowie das ausgewaehlte zukuenftige
+Empfangshand-Target. Labels und Zukunftswerte werden nicht als Eingabefeatures
+verwendet.
 
-Master-Datensätze nach Abschluss der Reviews erzeugen:
+## Training
 
-    python3 Code/build_master_dataset_batch.py \
-      --data-root Data_collection \
-      --require-semantic-annotations \
-      --overwrite
+Smoke-Test:
 
-## Erster Test
+```bash
+python3 Training/smoke_test.py
+```
 
-Zuerst den Pipeline-Smoke-Test ausführen:
+Interaktiver Ein-Epochen-Test:
 
-    python3 Training/smoke_test.py
+```bash
+python3 Training/train.py \
+  --config Training/configs/hierarchical_baseline_v1.json \
+  --epochs 1
+```
 
-Dann auf dem Cluster:
+GPU-Job auf dem Cluster:
 
-    sbatch Training/first_test.sbatch
+```bash
+sbatch Training/hierarchical_baseline.sbatch
+```
 
-Alternativ interaktiv:
+Die historische Flat/Object-Baseline verwendete `first_test.json` und
+`participant_split_v1.json`. Diese Konfigurationen bleiben zur
+Nachvollziehbarkeit des ersten Laufs erhalten, sind aber nicht die aktuelle
+Thesis-Baseline.
 
-    python3 Training/train.py --config Training/configs/first_test.json
+## Ergebnisse
 
-Ergebnisse landen unter Training/runs/:
+Jeder neue Lauf landet unter `Training/runs/hierarchical_baseline_*` und
+enthaelt:
 
-- best_model.pt: bester Checkpoint nach Validation-Macro-F1
-- config.json: tatsächlich verwendete Konfiguration
-- data_metadata.json: Features, Normalisierung und participant-wise Split
-- metrics.json: Lernverlauf sowie einmalige Testauswertung
+- `best_model.pt`: bester Checkpoint nach Validation-Intention-Macro-F1
+- `config.json`: tatsaechlich verwendete Konfiguration
+- `data_metadata.json`: Features, Normalisierung, Split und verworfene Fenster
+- `metrics.json`: Verlauf sowie einmalige Testauswertung
 
-Der Test-Split wird erst nach Auswahl des besten Modells ausgewertet. Dadurch
-bleibt er von Modellwahl und Early Stopping getrennt.
+Die Metriken werden getrennt fuer Drei-Klassen-Intention, Assistenzbedarf,
+Fetch/Handover und Handover-Pose berichtet. Der Testsplit wird erst nach der
+Auswahl des besten Validation-Checkpoints ausgewertet.

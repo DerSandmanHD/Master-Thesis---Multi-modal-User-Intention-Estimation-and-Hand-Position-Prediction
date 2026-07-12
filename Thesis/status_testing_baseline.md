@@ -9,6 +9,9 @@ Stand: 11. Juli 2026
 > Assistenzhierarchie ohne Objektklassifikationskopf und mit Handover-only-Pose
 > umgestellt. Die hier dokumentierten Ergebnisse sind daher keine finalen
 > Thesis-Ergebnisse und werden nicht geloescht oder ueberschrieben.
+>
+> Die aktuelle akzeptierte Baseline ist separat dokumentiert unter
+> `Thesis/status_testing_hierarchical_tracking_baseline_v1.md`.
 
 ## Ziel
 

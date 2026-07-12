@@ -1,0 +1,30 @@
+{
+  "name": "hierarchical_tracking_baseline_v1",
+  "date": "2026-07-12",
+  "source_commit": "04c3156",
+  "cluster_run": "Training/runs/hierarchical_baseline_20260712_101448",
+  "dataset": {
+    "active_master_sequences": 127,
+    "train_windows": 7509,
+    "validation_windows": 2387,
+    "test_windows": 2412,
+    "test_handover_windows": 323,
+    "test_valid_pose_targets": 237
+  },
+  "selection": {
+    "best_epoch": 2,
+    "validation_intention_macro_f1": 0.8713
+  },
+  "test": {
+    "intention_accuracy": 0.8764510750770569,
+    "intention_macro_f1": 0.8202541857479337,
+    "assistance_macro_f1": 0.8845270011489851,
+    "assistance_type_macro_f1": 0.876939354892779,
+    "position_mae_cm": 18.80908203125,
+    "position_rmse_cm": 21.993148803710938,
+    "orientation_mean_deg": 63.82076644897461,
+    "pose_samples": 237,
+    "mean_gate_temporal": 0.8791509866714478,
+    "mean_gate_channel": 0.12084904313087463
+  }
+}

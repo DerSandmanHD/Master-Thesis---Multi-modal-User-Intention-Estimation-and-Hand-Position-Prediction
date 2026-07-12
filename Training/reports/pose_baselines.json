@@ -1,0 +1,232 @@
+{
+  "config": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/configs/hierarchical_baseline_v1.json",
+  "master_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/master_datasets",
+  "seed": 42,
+  "future_horizon_seconds": 1.0,
+  "velocity_lookback_seconds": 0.5,
+  "oracle_receiving_hand": true,
+  "fallback_policy": {
+    "last_observation": "training_mean",
+    "constant_velocity": "last_observation_then_training_mean"
+  },
+  "training_target_count_for_mean": 1082,
+  "training_mean_pose": [
+    0.27111291885375977,
+    0.38503873348236084,
+    0.10074534267187119,
+    -0.30856773257255554,
+    -0.20949196815490723,
+    0.46185851097106934,
+    0.8047271370887756
+  ],
+  "split_participants": {
+    "train": [
+      "Berat",
+      "Felix",
+      "Jan",
+      "Jola",
+      "Julienco",
+      "Leys",
+      "Maria",
+      "Melih",
+      "Suthan",
+      "Tarik",
+      "Urim"
+    ],
+    "validation": [
+      "Atilla",
+      "Ermal",
+      "Vanessa"
+    ],
+    "test": [
+      "Edu",
+      "Jona",
+      "Mona"
+    ]
+  },
+  "splits": {
+    "train": {
+      "valid_pose_targets": 1082,
+      "baselines": {
+        "training_mean": {
+          "metrics": {
+            "samples": 1082,
+            "position_mae_cm": 18.85774803161621,
+            "position_rmse_cm": 22.593406677246094,
+            "orientation_mean_deg": 61.01910400390625
+          },
+          "prediction_sources": {
+            "training_mean": 1082
+          },
+          "native_metrics": {
+            "samples": 1082,
+            "position_mae_cm": 18.85774803161621,
+            "position_rmse_cm": 22.593406677246094,
+            "orientation_mean_deg": 61.01910400390625
+          }
+        },
+        "last_observation": {
+          "metrics": {
+            "samples": 1082,
+            "position_mae_cm": 11.603472709655762,
+            "position_rmse_cm": 19.67236328125,
+            "orientation_mean_deg": 37.56476593017578
+          },
+          "prediction_sources": {
+            "last_observation": 1082
+          },
+          "native_metrics": {
+            "samples": 1082,
+            "position_mae_cm": 11.603472709655762,
+            "position_rmse_cm": 19.67236328125,
+            "orientation_mean_deg": 37.56476593017578
+          }
+        },
+        "constant_velocity": {
+          "metrics": {
+            "samples": 1082,
+            "position_mae_cm": 21.96954917907715,
+            "position_rmse_cm": 36.69939422607422,
+            "orientation_mean_deg": 37.56476593017578
+          },
+          "prediction_sources": {
+            "constant_velocity": 1081,
+            "last_observation_fallback": 1
+          },
+          "native_metrics": {
+            "samples": 1081,
+            "position_mae_cm": 21.984477996826172,
+            "position_rmse_cm": 36.71593475341797,
+            "orientation_mean_deg": 37.596107482910156
+          }
+        }
+      }
+    },
+    "validation": {
+      "valid_pose_targets": 293,
+      "baselines": {
+        "training_mean": {
+          "metrics": {
+            "samples": 293,
+            "position_mae_cm": 19.674163818359375,
+            "position_rmse_cm": 20.028505325317383,
+            "orientation_mean_deg": 31.880407333374023
+          },
+          "prediction_sources": {
+            "training_mean": 293
+          },
+          "native_metrics": {
+            "samples": 293,
+            "position_mae_cm": 19.674163818359375,
+            "position_rmse_cm": 20.028505325317383,
+            "orientation_mean_deg": 31.880407333374023
+          }
+        },
+        "last_observation": {
+          "metrics": {
+            "samples": 293,
+            "position_mae_cm": 8.269104957580566,
+            "position_rmse_cm": 14.464345932006836,
+            "orientation_mean_deg": 25.810850143432617
+          },
+          "prediction_sources": {
+            "last_observation": 290,
+            "training_mean_fallback": 3
+          },
+          "native_metrics": {
+            "samples": 290,
+            "position_mae_cm": 8.160660743713379,
+            "position_rmse_cm": 14.412821769714355,
+            "orientation_mean_deg": 25.554990768432617
+          }
+        },
+        "constant_velocity": {
+          "metrics": {
+            "samples": 293,
+            "position_mae_cm": 19.525156021118164,
+            "position_rmse_cm": 37.32756805419922,
+            "orientation_mean_deg": 25.810850143432617
+          },
+          "prediction_sources": {
+            "constant_velocity": 289,
+            "last_observation_fallback": 1,
+            "training_mean_fallback": 3
+          },
+          "native_metrics": {
+            "samples": 289,
+            "position_mae_cm": 19.587858200073242,
+            "position_rmse_cm": 37.535579681396484,
+            "orientation_mean_deg": 25.610383987426758
+          }
+        }
+      }
+    },
+    "test": {
+      "valid_pose_targets": 237,
+      "baselines": {
+        "training_mean": {
+          "metrics": {
+            "samples": 237,
+            "position_mae_cm": 19.34925079345703,
+            "position_rmse_cm": 21.750856399536133,
+            "orientation_mean_deg": 86.33385467529297
+          },
+          "prediction_sources": {
+            "training_mean": 237
+          },
+          "native_metrics": {
+            "samples": 237,
+            "position_mae_cm": 19.34925079345703,
+            "position_rmse_cm": 21.750856399536133,
+            "orientation_mean_deg": 86.33385467529297
+          }
+        },
+        "last_observation": {
+          "metrics": {
+            "samples": 237,
+            "position_mae_cm": 14.91818904876709,
+            "position_rmse_cm": 22.61589813232422,
+            "orientation_mean_deg": 42.70833206176758
+          },
+          "prediction_sources": {
+            "last_observation": 236,
+            "training_mean_fallback": 1
+          },
+          "native_metrics": {
+            "samples": 236,
+            "position_mae_cm": 14.946137428283691,
+            "position_rmse_cm": 22.657289505004883,
+            "orientation_mean_deg": 42.13263702392578
+          }
+        },
+        "constant_velocity": {
+          "metrics": {
+            "samples": 237,
+            "position_mae_cm": 35.15571594238281,
+            "position_rmse_cm": 54.76884078979492,
+            "orientation_mean_deg": 42.70833206176758
+          },
+          "prediction_sources": {
+            "constant_velocity": 236,
+            "training_mean_fallback": 1
+          },
+          "native_metrics": {
+            "samples": 236,
+            "position_mae_cm": 35.26941680908203,
+            "position_rmse_cm": 54.882083892822266,
+            "orientation_mean_deg": 42.13263702392578
+          }
+        }
+      }
+    }
+  },
+  "transformer_reference": {
+    "metrics_path": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/hierarchical_baseline_20260712_101448/metrics.json",
+    "test_pose": {
+      "samples": 237,
+      "position_mae_cm": 18.80908203125,
+      "position_rmse_cm": 21.993148803710938,
+      "orientation_mean_deg": 63.82076644897461
+    }
+  }
+}

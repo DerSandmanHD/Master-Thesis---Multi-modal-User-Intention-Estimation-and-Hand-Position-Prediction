@@ -1,0 +1,1555 @@
+{
+  "config": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/configs/hierarchical_baseline_v1.json",
+  "master_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/master_datasets",
+  "future_horizon_seconds": 1.0,
+  "splits": {
+    "train": {
+      "handover_windows": 1357,
+      "valid": 1082,
+      "invalid": 275,
+      "valid_ratio": 0.7973,
+      "reason_counts": {
+        "future_after_recording_end": 231,
+        "future_hand_and_robot_frame_invalid": 11,
+        "future_hand_tracking_invalid": 31,
+        "future_slam_pose_invalid": 2,
+        "valid": 1082
+      }
+    },
+    "validation": {
+      "handover_windows": 397,
+      "valid": 293,
+      "invalid": 104,
+      "valid_ratio": 0.738,
+      "reason_counts": {
+        "future_after_recording_end": 75,
+        "future_hand_tracking_invalid": 28,
+        "future_slam_pose_invalid": 1,
+        "valid": 293
+      }
+    },
+    "test": {
+      "handover_windows": 323,
+      "valid": 237,
+      "invalid": 86,
+      "valid_ratio": 0.7337,
+      "reason_counts": {
+        "future_after_recording_end": 75,
+        "future_hand_and_robot_frame_invalid": 2,
+        "future_hand_tracking_invalid": 9,
+        "valid": 237
+      }
+    }
+  },
+  "participants": {
+    "Atilla": {
+      "handover_windows": 144,
+      "valid": 119,
+      "invalid": 25,
+      "valid_ratio": 0.8264,
+      "reason_counts": {
+        "future_after_recording_end": 24,
+        "future_hand_tracking_invalid": 1,
+        "valid": 119
+      }
+    },
+    "Berat": {
+      "handover_windows": 144,
+      "valid": 114,
+      "invalid": 30,
+      "valid_ratio": 0.7917,
+      "reason_counts": {
+        "future_after_recording_end": 27,
+        "future_hand_tracking_invalid": 3,
+        "valid": 114
+      }
+    },
+    "Edu": {
+      "handover_windows": 140,
+      "valid": 106,
+      "invalid": 34,
+      "valid_ratio": 0.7571,
+      "reason_counts": {
+        "future_after_recording_end": 30,
+        "future_hand_and_robot_frame_invalid": 1,
+        "future_hand_tracking_invalid": 3,
+        "valid": 106
+      }
+    },
+    "Ermal": {
+      "handover_windows": 153,
+      "valid": 123,
+      "invalid": 30,
+      "valid_ratio": 0.8039,
+      "reason_counts": {
+        "future_after_recording_end": 27,
+        "future_hand_tracking_invalid": 2,
+        "future_slam_pose_invalid": 1,
+        "valid": 123
+      }
+    },
+    "Felix": {
+      "handover_windows": 55,
+      "valid": 44,
+      "invalid": 11,
+      "valid_ratio": 0.8,
+      "reason_counts": {
+        "future_after_recording_end": 9,
+        "future_hand_tracking_invalid": 1,
+        "future_slam_pose_invalid": 1,
+        "valid": 44
+      }
+    },
+    "Jan": {
+      "handover_windows": 72,
+      "valid": 56,
+      "invalid": 16,
+      "valid_ratio": 0.7778,
+      "reason_counts": {
+        "future_after_recording_end": 15,
+        "future_hand_tracking_invalid": 1,
+        "valid": 56
+      }
+    },
+    "Jola": {
+      "handover_windows": 21,
+      "valid": 15,
+      "invalid": 6,
+      "valid_ratio": 0.7143,
+      "reason_counts": {
+        "future_after_recording_end": 6,
+        "valid": 15
+      }
+    },
+    "Jona": {
+      "handover_windows": 82,
+      "valid": 61,
+      "invalid": 21,
+      "valid_ratio": 0.7439,
+      "reason_counts": {
+        "future_after_recording_end": 21,
+        "valid": 61
+      }
+    },
+    "Julienco": {
+      "handover_windows": 63,
+      "valid": 43,
+      "invalid": 20,
+      "valid_ratio": 0.6825,
+      "reason_counts": {
+        "future_after_recording_end": 9,
+        "future_hand_tracking_invalid": 11,
+        "valid": 43
+      }
+    },
+    "Leys": {
+      "handover_windows": 84,
+      "valid": 66,
+      "invalid": 18,
+      "valid_ratio": 0.7857,
+      "reason_counts": {
+        "future_after_recording_end": 15,
+        "future_hand_and_robot_frame_invalid": 1,
+        "future_hand_tracking_invalid": 2,
+        "valid": 66
+      }
+    },
+    "Maria": {
+      "handover_windows": 50,
+      "valid": 28,
+      "invalid": 22,
+      "valid_ratio": 0.56,
+      "reason_counts": {
+        "future_after_recording_end": 15,
+        "future_hand_and_robot_frame_invalid": 1,
+        "future_hand_tracking_invalid": 6,
+        "valid": 28
+      }
+    },
+    "Melih": {
+      "handover_windows": 178,
+      "valid": 146,
+      "invalid": 32,
+      "valid_ratio": 0.8202,
+      "reason_counts": {
+        "future_after_recording_end": 30,
+        "future_hand_and_robot_frame_invalid": 1,
+        "future_hand_tracking_invalid": 1,
+        "valid": 146
+      }
+    },
+    "Mona": {
+      "handover_windows": 101,
+      "valid": 70,
+      "invalid": 31,
+      "valid_ratio": 0.6931,
+      "reason_counts": {
+        "future_after_recording_end": 24,
+        "future_hand_and_robot_frame_invalid": 1,
+        "future_hand_tracking_invalid": 6,
+        "valid": 70
+      }
+    },
+    "Suthan": {
+      "handover_windows": 41,
+      "valid": 30,
+      "invalid": 11,
+      "valid_ratio": 0.7317,
+      "reason_counts": {
+        "future_after_recording_end": 9,
+        "future_hand_tracking_invalid": 2,
+        "valid": 30
+      }
+    },
+    "Tarik": {
+      "handover_windows": 506,
+      "valid": 429,
+      "invalid": 77,
+      "valid_ratio": 0.8478,
+      "reason_counts": {
+        "future_after_recording_end": 66,
+        "future_hand_and_robot_frame_invalid": 8,
+        "future_hand_tracking_invalid": 2,
+        "future_slam_pose_invalid": 1,
+        "valid": 429
+      }
+    },
+    "Urim": {
+      "handover_windows": 143,
+      "valid": 111,
+      "invalid": 32,
+      "valid_ratio": 0.7762,
+      "reason_counts": {
+        "future_after_recording_end": 30,
+        "future_hand_tracking_invalid": 2,
+        "valid": 111
+      }
+    },
+    "Vanessa": {
+      "handover_windows": 100,
+      "valid": 51,
+      "invalid": 49,
+      "valid_ratio": 0.51,
+      "reason_counts": {
+        "future_after_recording_end": 24,
+        "future_hand_tracking_invalid": 25,
+        "valid": 51
+      }
+    }
+  },
+  "sequences": {
+    "Atilla_1_20260616_184923": {
+      "handover_windows": 15,
+      "valid": 12,
+      "invalid": 3,
+      "valid_ratio": 0.8,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 12
+      }
+    },
+    "Atilla_2_20260616_185042": {
+      "handover_windows": 23,
+      "valid": 20,
+      "invalid": 3,
+      "valid_ratio": 0.8696,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 20
+      }
+    },
+    "Atilla_3_20260616_185212": {
+      "handover_windows": 27,
+      "valid": 24,
+      "invalid": 3,
+      "valid_ratio": 0.8889,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 24
+      }
+    },
+    "Atilla_4_20260616_185327": {
+      "handover_windows": 31,
+      "valid": 28,
+      "invalid": 3,
+      "valid_ratio": 0.9032,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 28
+      }
+    },
+    "Atilla_5_20260616_185449": {
+      "handover_windows": 12,
+      "valid": 9,
+      "invalid": 3,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 9
+      }
+    },
+    "Atilla_6_20260616_185613": {
+      "handover_windows": 11,
+      "valid": 7,
+      "invalid": 4,
+      "valid_ratio": 0.6364,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 7
+      }
+    },
+    "Atilla_7_20260616_185714": {
+      "handover_windows": 14,
+      "valid": 11,
+      "invalid": 3,
+      "valid_ratio": 0.7857,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 11
+      }
+    },
+    "Atilla_8_20260616_185812": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Berat_10_20260616_142950": {
+      "handover_windows": 19,
+      "valid": 16,
+      "invalid": 3,
+      "valid_ratio": 0.8421,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 16
+      }
+    },
+    "Berat_1_20260604_154611": {
+      "handover_windows": 13,
+      "valid": 10,
+      "invalid": 3,
+      "valid_ratio": 0.7692,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 10
+      }
+    },
+    "Berat_3_20260604_154928": {
+      "handover_windows": 14,
+      "valid": 11,
+      "invalid": 3,
+      "valid_ratio": 0.7857,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 11
+      }
+    },
+    "Berat_4_20260604_155100": {
+      "handover_windows": 13,
+      "valid": 10,
+      "invalid": 3,
+      "valid_ratio": 0.7692,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 10
+      }
+    },
+    "Berat_5_20260604_155234": {
+      "handover_windows": 13,
+      "valid": 9,
+      "invalid": 4,
+      "valid_ratio": 0.6923,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 9
+      }
+    },
+    "Berat_6_20260616_142129": {
+      "handover_windows": 15,
+      "valid": 12,
+      "invalid": 3,
+      "valid_ratio": 0.8,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 12
+      }
+    },
+    "Berat_7_20260616_142358": {
+      "handover_windows": 18,
+      "valid": 15,
+      "invalid": 3,
+      "valid_ratio": 0.8333,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 15
+      }
+    },
+    "Berat_8_20260616_142539": {
+      "handover_windows": 18,
+      "valid": 14,
+      "invalid": 4,
+      "valid_ratio": 0.7778,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 14
+      }
+    },
+    "Berat_9_20260616_142847": {
+      "handover_windows": 21,
+      "valid": 17,
+      "invalid": 4,
+      "valid_ratio": 0.8095,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 17
+      }
+    },
+    "Edu_10_20260616_150412": {
+      "handover_windows": 19,
+      "valid": 16,
+      "invalid": 3,
+      "valid_ratio": 0.8421,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 16
+      }
+    },
+    "Edu_1_20260604_170154": {
+      "handover_windows": 8,
+      "valid": 5,
+      "invalid": 3,
+      "valid_ratio": 0.625,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 5
+      }
+    },
+    "Edu_2_20260604_170420": {
+      "handover_windows": 8,
+      "valid": 5,
+      "invalid": 3,
+      "valid_ratio": 0.625,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 5
+      }
+    },
+    "Edu_3_20260604_170622": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Edu_4_20260604_170837": {
+      "handover_windows": 13,
+      "valid": 9,
+      "invalid": 4,
+      "valid_ratio": 0.6923,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 9
+      }
+    },
+    "Edu_5_20260604_170944": {
+      "handover_windows": 16,
+      "valid": 12,
+      "invalid": 4,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 12
+      }
+    },
+    "Edu_6_20260616_145740": {
+      "handover_windows": 31,
+      "valid": 27,
+      "invalid": 4,
+      "valid_ratio": 0.871,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 27
+      }
+    },
+    "Edu_7_20260616_145927": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Edu_8_20260616_150108": {
+      "handover_windows": 12,
+      "valid": 9,
+      "invalid": 3,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 9
+      }
+    },
+    "Edu_9_20260616_150247": {
+      "handover_windows": 11,
+      "valid": 7,
+      "invalid": 4,
+      "valid_ratio": 0.6364,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 7
+      }
+    },
+    "Ermal_1_20260604_151723": {
+      "handover_windows": 21,
+      "valid": 17,
+      "invalid": 4,
+      "valid_ratio": 0.8095,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_slam_pose_invalid": 1,
+        "valid": 17
+      }
+    },
+    "Ermal_2_20260604_151912": {
+      "handover_windows": 13,
+      "valid": 9,
+      "invalid": 4,
+      "valid_ratio": 0.6923,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 9
+      }
+    },
+    "Ermal_3_20260604_152032": {
+      "handover_windows": 10,
+      "valid": 7,
+      "invalid": 3,
+      "valid_ratio": 0.7,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 7
+      }
+    },
+    "Ermal_4_20260604_152214": {
+      "handover_windows": 19,
+      "valid": 16,
+      "invalid": 3,
+      "valid_ratio": 0.8421,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 16
+      }
+    },
+    "Ermal_5_20260616_153530": {
+      "handover_windows": 36,
+      "valid": 33,
+      "invalid": 3,
+      "valid_ratio": 0.9167,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 33
+      }
+    },
+    "Ermal_6_20260616_153648": {
+      "handover_windows": 15,
+      "valid": 12,
+      "invalid": 3,
+      "valid_ratio": 0.8,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 12
+      }
+    },
+    "Ermal_7_20260616_153921": {
+      "handover_windows": 13,
+      "valid": 10,
+      "invalid": 3,
+      "valid_ratio": 0.7692,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 10
+      }
+    },
+    "Ermal_8_20260616_154054": {
+      "handover_windows": 12,
+      "valid": 8,
+      "invalid": 4,
+      "valid_ratio": 0.6667,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 8
+      }
+    },
+    "Ermal_9_20260616_154205": {
+      "handover_windows": 14,
+      "valid": 11,
+      "invalid": 3,
+      "valid_ratio": 0.7857,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 11
+      }
+    },
+    "Felix_1_20260604_171946": {
+      "handover_windows": 16,
+      "valid": 12,
+      "invalid": 4,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_slam_pose_invalid": 1,
+        "valid": 12
+      }
+    },
+    "Felix_2_20260604_172102": {
+      "handover_windows": 21,
+      "valid": 18,
+      "invalid": 3,
+      "valid_ratio": 0.8571,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 18
+      }
+    },
+    "Felix_3_20260604_172212": {
+      "handover_windows": 18,
+      "valid": 14,
+      "invalid": 4,
+      "valid_ratio": 0.7778,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 14
+      }
+    },
+    "Jan_1_20260604_161550": {
+      "handover_windows": 18,
+      "valid": 15,
+      "invalid": 3,
+      "valid_ratio": 0.8333,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 15
+      }
+    },
+    "Jan_2_20260604_161704": {
+      "handover_windows": 15,
+      "valid": 11,
+      "invalid": 4,
+      "valid_ratio": 0.7333,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 11
+      }
+    },
+    "Jan_3_20260604_161835": {
+      "handover_windows": 10,
+      "valid": 7,
+      "invalid": 3,
+      "valid_ratio": 0.7,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 7
+      }
+    },
+    "Jan_4_20260604_162000": {
+      "handover_windows": 17,
+      "valid": 14,
+      "invalid": 3,
+      "valid_ratio": 0.8235,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 14
+      }
+    },
+    "Jan_5_20260604_162111": {
+      "handover_windows": 12,
+      "valid": 9,
+      "invalid": 3,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 9
+      }
+    },
+    "Jola_2_20260624_131246": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Jola_3_20260624_131435": {
+      "handover_windows": 10,
+      "valid": 7,
+      "invalid": 3,
+      "valid_ratio": 0.7,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 7
+      }
+    },
+    "Jona_1_20260616_181413": {
+      "handover_windows": 13,
+      "valid": 10,
+      "invalid": 3,
+      "valid_ratio": 0.7692,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 10
+      }
+    },
+    "Jona_2_20260616_181551": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Jona_3_20260616_181717": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Jona_4_20260616_181855": {
+      "handover_windows": 12,
+      "valid": 9,
+      "invalid": 3,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 9
+      }
+    },
+    "Jona_5_20260616_182002": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Jona_6_20260616_182111": {
+      "handover_windows": 12,
+      "valid": 9,
+      "invalid": 3,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 9
+      }
+    },
+    "Jona_7_20260616_182214": {
+      "handover_windows": 12,
+      "valid": 9,
+      "invalid": 3,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 9
+      }
+    },
+    "Julienco_1_20260624_125251": {
+      "handover_windows": 21,
+      "valid": 18,
+      "invalid": 3,
+      "valid_ratio": 0.8571,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 18
+      }
+    },
+    "Julienco_4_2_20260624_125830": {
+      "handover_windows": 21,
+      "valid": 14,
+      "invalid": 7,
+      "valid_ratio": 0.6667,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 4,
+        "valid": 14
+      }
+    },
+    "Julienco_6_20260624_130048": {
+      "handover_windows": 21,
+      "valid": 11,
+      "invalid": 10,
+      "valid_ratio": 0.5238,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 7,
+        "valid": 11
+      }
+    },
+    "Leys_1_20260604_163147": {
+      "handover_windows": 13,
+      "valid": 9,
+      "invalid": 4,
+      "valid_ratio": 0.6923,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 9
+      }
+    },
+    "Leys_2_20260604_163417": {
+      "handover_windows": 14,
+      "valid": 10,
+      "invalid": 4,
+      "valid_ratio": 0.7143,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 10
+      }
+    },
+    "Leys_3_20260604_163535": {
+      "handover_windows": 23,
+      "valid": 20,
+      "invalid": 3,
+      "valid_ratio": 0.8696,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 20
+      }
+    },
+    "Leys_4_20260604_163704": {
+      "handover_windows": 23,
+      "valid": 19,
+      "invalid": 4,
+      "valid_ratio": 0.8261,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 19
+      }
+    },
+    "Leys_5_20260604_163854": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Maria_1_20260624_133852": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Maria_2_20260624_134005": {
+      "handover_windows": 9,
+      "valid": 6,
+      "invalid": 3,
+      "valid_ratio": 0.6667,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 6
+      }
+    },
+    "Maria_3_20260624_134101": {
+      "handover_windows": 9,
+      "valid": 0,
+      "invalid": 9,
+      "valid_ratio": 0.0,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "future_hand_tracking_invalid": 5
+      }
+    },
+    "Maria_4_20260624_134233": {
+      "handover_windows": 10,
+      "valid": 7,
+      "invalid": 3,
+      "valid_ratio": 0.7,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 7
+      }
+    },
+    "Maria_5_20260624_134337": {
+      "handover_windows": 11,
+      "valid": 7,
+      "invalid": 4,
+      "valid_ratio": 0.6364,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 7
+      }
+    },
+    "Melih_10_20260616_180515": {
+      "handover_windows": 10,
+      "valid": 7,
+      "invalid": 3,
+      "valid_ratio": 0.7,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 7
+      }
+    },
+    "Melih_1_20260616_175140": {
+      "handover_windows": 12,
+      "valid": 9,
+      "invalid": 3,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 9
+      }
+    },
+    "Melih_2_20260616_175310": {
+      "handover_windows": 24,
+      "valid": 20,
+      "invalid": 4,
+      "valid_ratio": 0.8333,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 20
+      }
+    },
+    "Melih_3_20260616_175418": {
+      "handover_windows": 24,
+      "valid": 21,
+      "invalid": 3,
+      "valid_ratio": 0.875,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 21
+      }
+    },
+    "Melih_4_20260616_175523": {
+      "handover_windows": 28,
+      "valid": 25,
+      "invalid": 3,
+      "valid_ratio": 0.8929,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 25
+      }
+    },
+    "Melih_5_20260616_175612": {
+      "handover_windows": 18,
+      "valid": 15,
+      "invalid": 3,
+      "valid_ratio": 0.8333,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 15
+      }
+    },
+    "Melih_6_20260616_180104": {
+      "handover_windows": 17,
+      "valid": 14,
+      "invalid": 3,
+      "valid_ratio": 0.8235,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 14
+      }
+    },
+    "Melih_7_20260616_180202": {
+      "handover_windows": 16,
+      "valid": 13,
+      "invalid": 3,
+      "valid_ratio": 0.8125,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 13
+      }
+    },
+    "Melih_8_20260616_180307": {
+      "handover_windows": 18,
+      "valid": 15,
+      "invalid": 3,
+      "valid_ratio": 0.8333,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 15
+      }
+    },
+    "Melih_9_20260616_180402": {
+      "handover_windows": 11,
+      "valid": 7,
+      "invalid": 4,
+      "valid_ratio": 0.6364,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 7
+      }
+    },
+    "Mona_1_20260624_123312": {
+      "handover_windows": 22,
+      "valid": 15,
+      "invalid": 7,
+      "valid_ratio": 0.6818,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 4,
+        "valid": 15
+      }
+    },
+    "Mona_2_20260624_123443": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Mona_3_20260624_123548": {
+      "handover_windows": 13,
+      "valid": 10,
+      "invalid": 3,
+      "valid_ratio": 0.7692,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 10
+      }
+    },
+    "Mona_4_20260624_123706": {
+      "handover_windows": 10,
+      "valid": 7,
+      "invalid": 3,
+      "valid_ratio": 0.7,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 7
+      }
+    },
+    "Mona_5_20260624_123814": {
+      "handover_windows": 10,
+      "valid": 7,
+      "invalid": 3,
+      "valid_ratio": 0.7,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 7
+      }
+    },
+    "Mona_6_20260624_123930": {
+      "handover_windows": 11,
+      "valid": 7,
+      "invalid": 4,
+      "valid_ratio": 0.6364,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 7
+      }
+    },
+    "Mona_7_20260624_124051": {
+      "handover_windows": 11,
+      "valid": 7,
+      "invalid": 4,
+      "valid_ratio": 0.6364,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 7
+      }
+    },
+    "Mona_8_20260624_124414": {
+      "handover_windows": 13,
+      "valid": 9,
+      "invalid": 4,
+      "valid_ratio": 0.6923,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 9
+      }
+    },
+    "Suthan_1_20260604_164834": {
+      "handover_windows": 15,
+      "valid": 10,
+      "invalid": 5,
+      "valid_ratio": 0.6667,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 2,
+        "valid": 10
+      }
+    },
+    "Suthan_3_20260604_165324": {
+      "handover_windows": 11,
+      "valid": 8,
+      "invalid": 3,
+      "valid_ratio": 0.7273,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 8
+      }
+    },
+    "Suthan_4_20260604_165434": {
+      "handover_windows": 15,
+      "valid": 12,
+      "invalid": 3,
+      "valid_ratio": 0.8,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 12
+      }
+    },
+    "Tarik_10_20260704_142949": {
+      "handover_windows": 21,
+      "valid": 17,
+      "invalid": 4,
+      "valid_ratio": 0.8095,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 17
+      }
+    },
+    "Tarik_11_20260704_143216": {
+      "handover_windows": 30,
+      "valid": 27,
+      "invalid": 3,
+      "valid_ratio": 0.9,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 27
+      }
+    },
+    "Tarik_12_20260704_143334": {
+      "handover_windows": 21,
+      "valid": 18,
+      "invalid": 3,
+      "valid_ratio": 0.8571,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 18
+      }
+    },
+    "Tarik_13_20260704_143446": {
+      "handover_windows": 30,
+      "valid": 26,
+      "invalid": 4,
+      "valid_ratio": 0.8667,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 26
+      }
+    },
+    "Tarik_14_20260704_143554": {
+      "handover_windows": 28,
+      "valid": 25,
+      "invalid": 3,
+      "valid_ratio": 0.8929,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 25
+      }
+    },
+    "Tarik_15_20260704_143803": {
+      "handover_windows": 24,
+      "valid": 21,
+      "invalid": 3,
+      "valid_ratio": 0.875,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 21
+      }
+    },
+    "Tarik_16_20260704_143930": {
+      "handover_windows": 26,
+      "valid": 23,
+      "invalid": 3,
+      "valid_ratio": 0.8846,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 23
+      }
+    },
+    "Tarik_17_20260704_144050": {
+      "handover_windows": 26,
+      "valid": 22,
+      "invalid": 4,
+      "valid_ratio": 0.8462,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 22
+      }
+    },
+    "Tarik_18_20260704_144512": {
+      "handover_windows": 24,
+      "valid": 21,
+      "invalid": 3,
+      "valid_ratio": 0.875,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 21
+      }
+    },
+    "Tarik_1_20260704_141845": {
+      "handover_windows": 26,
+      "valid": 23,
+      "invalid": 3,
+      "valid_ratio": 0.8846,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 23
+      }
+    },
+    "Tarik_20_20260704_145000": {
+      "handover_windows": 22,
+      "valid": 18,
+      "invalid": 4,
+      "valid_ratio": 0.8182,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 18
+      }
+    },
+    "Tarik_21_20260704_145054": {
+      "handover_windows": 20,
+      "valid": 17,
+      "invalid": 3,
+      "valid_ratio": 0.85,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 17
+      }
+    },
+    "Tarik_23_20260704_145434": {
+      "handover_windows": 22,
+      "valid": 18,
+      "invalid": 4,
+      "valid_ratio": 0.8182,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 18
+      }
+    },
+    "Tarik_24_20260704_145314": {
+      "handover_windows": 23,
+      "valid": 20,
+      "invalid": 3,
+      "valid_ratio": 0.8696,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 20
+      }
+    },
+    "Tarik_2_20260704_142022": {
+      "handover_windows": 24,
+      "valid": 20,
+      "invalid": 4,
+      "valid_ratio": 0.8333,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_slam_pose_invalid": 1,
+        "valid": 20
+      }
+    },
+    "Tarik_3_20260704_142144": {
+      "handover_windows": 28,
+      "valid": 23,
+      "invalid": 5,
+      "valid_ratio": 0.8214,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 2,
+        "valid": 23
+      }
+    },
+    "Tarik_4_20260704_142308": {
+      "handover_windows": 19,
+      "valid": 15,
+      "invalid": 4,
+      "valid_ratio": 0.7895,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 15
+      }
+    },
+    "Tarik_5_20260704_142458": {
+      "handover_windows": 20,
+      "valid": 17,
+      "invalid": 3,
+      "valid_ratio": 0.85,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 17
+      }
+    },
+    "Tarik_6_20260704_142555": {
+      "handover_windows": 18,
+      "valid": 15,
+      "invalid": 3,
+      "valid_ratio": 0.8333,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 15
+      }
+    },
+    "Tarik_7_20260704_142646": {
+      "handover_windows": 17,
+      "valid": 13,
+      "invalid": 4,
+      "valid_ratio": 0.7647,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 13
+      }
+    },
+    "Tarik_8_20260704_142759": {
+      "handover_windows": 20,
+      "valid": 17,
+      "invalid": 3,
+      "valid_ratio": 0.85,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 17
+      }
+    },
+    "Tarik_9_20260704_142856": {
+      "handover_windows": 17,
+      "valid": 13,
+      "invalid": 4,
+      "valid_ratio": 0.7647,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_and_robot_frame_invalid": 1,
+        "valid": 13
+      }
+    },
+    "Urim_10_20260616_145015": {
+      "handover_windows": 12,
+      "valid": 9,
+      "invalid": 3,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 9
+      }
+    },
+    "Urim_1_20260604_160102": {
+      "handover_windows": 17,
+      "valid": 13,
+      "invalid": 4,
+      "valid_ratio": 0.7647,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 13
+      }
+    },
+    "Urim_2_20260604_160234": {
+      "handover_windows": 15,
+      "valid": 12,
+      "invalid": 3,
+      "valid_ratio": 0.8,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 12
+      }
+    },
+    "Urim_3_20260604_160345": {
+      "handover_windows": 16,
+      "valid": 13,
+      "invalid": 3,
+      "valid_ratio": 0.8125,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 13
+      }
+    },
+    "Urim_4_20260604_160502": {
+      "handover_windows": 13,
+      "valid": 10,
+      "invalid": 3,
+      "valid_ratio": 0.7692,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 10
+      }
+    },
+    "Urim_5_20260604_160634": {
+      "handover_windows": 14,
+      "valid": 10,
+      "invalid": 4,
+      "valid_ratio": 0.7143,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 10
+      }
+    },
+    "Urim_6_20260616_144055": {
+      "handover_windows": 13,
+      "valid": 10,
+      "invalid": 3,
+      "valid_ratio": 0.7692,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 10
+      }
+    },
+    "Urim_7_20260616_144229": {
+      "handover_windows": 14,
+      "valid": 11,
+      "invalid": 3,
+      "valid_ratio": 0.7857,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 11
+      }
+    },
+    "Urim_8_20260616_144352": {
+      "handover_windows": 14,
+      "valid": 11,
+      "invalid": 3,
+      "valid_ratio": 0.7857,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 11
+      }
+    },
+    "Urim_9_20260616_144841": {
+      "handover_windows": 15,
+      "valid": 12,
+      "invalid": 3,
+      "valid_ratio": 0.8,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 12
+      }
+    },
+    "Vanessa_1_20260624_132542": {
+      "handover_windows": 20,
+      "valid": 11,
+      "invalid": 9,
+      "valid_ratio": 0.55,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 6,
+        "valid": 11
+      }
+    },
+    "Vanessa_2_20260624_132710": {
+      "handover_windows": 9,
+      "valid": 5,
+      "invalid": 4,
+      "valid_ratio": 0.5556,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 1,
+        "valid": 5
+      }
+    },
+    "Vanessa_3_20260624_132807": {
+      "handover_windows": 3,
+      "valid": 0,
+      "invalid": 3,
+      "valid_ratio": 0.0,
+      "reason_counts": {
+        "future_after_recording_end": 3
+      }
+    },
+    "Vanessa_4_20260624_132943": {
+      "handover_windows": 19,
+      "valid": 6,
+      "invalid": 13,
+      "valid_ratio": 0.3158,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 10,
+        "valid": 6
+      }
+    },
+    "Vanessa_5_20260624_133059": {
+      "handover_windows": 9,
+      "valid": 6,
+      "invalid": 3,
+      "valid_ratio": 0.6667,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 6
+      }
+    },
+    "Vanessa_6_20260624_133209": {
+      "handover_windows": 12,
+      "valid": 9,
+      "invalid": 3,
+      "valid_ratio": 0.75,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 9
+      }
+    },
+    "Vanessa_7_20260624_133405": {
+      "handover_windows": 18,
+      "valid": 7,
+      "invalid": 11,
+      "valid_ratio": 0.3889,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "future_hand_tracking_invalid": 8,
+        "valid": 7
+      }
+    },
+    "Vanessa_8_20260624_133505": {
+      "handover_windows": 10,
+      "valid": 7,
+      "invalid": 3,
+      "valid_ratio": 0.7,
+      "reason_counts": {
+        "future_after_recording_end": 3,
+        "valid": 7
+      }
+    }
+  }
+}

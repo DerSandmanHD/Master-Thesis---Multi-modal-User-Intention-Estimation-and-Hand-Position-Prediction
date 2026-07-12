@@ -1,0 +1,168 @@
+Job ID: 2164934
+Node: tcml-node16
+Repo dir: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction
+Image: /home/eker/singularity/aria_master.simg
+Data dir: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection
+Master output dir: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/master_datasets
+Manifest: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/dataset_manifest.csv
+Annotations: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/manual_timestamp_review.csv
+Reviewed timestamps: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/timestamps_summary.reviewed.json
+Require semantic annotations: 1
+Overwrite: 1
+Limit: all
+Dry run only: 1
+Started: Sat Jul 11 11:55:37 AM CEST 2026
+
+============================================================
+1) Input overview
+============================================================
+Existing master CSV files:
+121
+
+Current QA next actions:
+  annotate_sequence: 8
+  build_master_dataset: 4
+  convert_mp4: 1
+  download_or_process_mps: 17
+  download_vrs: 4
+  fix_timestamps: 1
+  manual_review: 2
+  ready_for_master_merge: 106
+  review_or_exclude_sequence: 16
+
+============================================================
+2) Dry-run build plan
+============================================================
+[1/129] Atilla_1_20260616_184923: would build
+[2/129] Atilla_2_20260616_185042: would build
+[3/129] Atilla_3_20260616_185212: would build
+[4/129] Atilla_4_20260616_185327: would build
+[5/129] Atilla_5_20260616_185449: would build
+[6/129] Atilla_6_20260616_185613: would build
+[7/129] Atilla_7_20260616_185714: would build
+[8/129] Atilla_8_20260616_185812: would build
+[9/129] Berat_10_20260616_142950: would build
+[10/129] Berat_1_20260604_154611: would build
+[11/129] Berat_3_20260604_154928: would build
+[12/129] Berat_4_20260604_155100: would build
+[13/129] Berat_5_20260604_155234: would build
+[14/129] Berat_6_20260616_142129: would build
+[15/129] Berat_7_20260616_142358: would build
+[16/129] Berat_8_20260616_142539: would build
+[17/129] Berat_9_20260616_142847: would build
+[18/129] Edu_10_20260616_150412: would build
+[19/129] Edu_1_20260604_170154: would build
+[20/129] Edu_2_20260604_170420: would build
+[21/129] Edu_3_20260604_170622: would build
+[22/129] Edu_4_20260604_170837: would build
+[23/129] Edu_5_20260604_170944: would build
+[24/129] Edu_6_20260616_145740: would build
+[25/129] Edu_7_20260616_145927: would build
+[26/129] Edu_8_20260616_150108: would build
+[27/129] Edu_9_20260616_150247: would build
+[28/129] Ermal_1_20260604_151723: would build
+[29/129] Ermal_2_20260604_151912: would build
+[30/129] Ermal_3_20260604_152032: would build
+[31/129] Ermal_4_20260604_152214: would build
+[32/129] Ermal_5_20260616_153530: would build
+[33/129] Ermal_6_20260616_153648: would build
+[34/129] Ermal_7_20260616_153921: would build
+[35/129] Ermal_8_20260616_154054: would build
+[36/129] Ermal_9_20260616_154205: would build
+[37/129] Felix_1_20260604_171946: would build
+[38/129] Felix_2_20260604_172102: would build
+[39/129] Felix_3_20260604_172212: would build
+[40/129] Jan_1_20260604_161550: would build
+[41/129] Jan_2_20260604_161704: would build
+[42/129] Jan_3_20260604_161835: would build
+[43/129] Jan_4_20260604_162000: would build
+[44/129] Jan_5_20260604_162111: would build
+[45/129] Jola_2_20260624_131246: would build
+[46/129] Jola_3_20260624_131435: would build
+[47/129] Jola_4_20260624_131548: would build
+[48/129] Jona_1_20260616_181413: would build
+[49/129] Jona_2_20260616_181551: would build
+[50/129] Jona_3_20260616_181717: would build
+[51/129] Jona_4_20260616_181855: would build
+[52/129] Jona_5_20260616_182002: would build
+[53/129] Jona_6_20260616_182111: would build
+[54/129] Jona_7_20260616_182214: would build
+[55/129] Julienco_1_20260624_125251: would build
+[56/129] Julienco_4_2_20260624_125830: would build
+[57/129] Julienco_6_20260624_130048: would build
+[58/129] Leys_1_20260604_163147: would build
+[59/129] Leys_2_20260604_163417: would build
+[60/129] Leys_3_20260604_163535: would build
+[61/129] Leys_4_20260604_163704: would build
+[62/129] Leys_5_20260604_163854: would build
+[63/129] Maria_1_20260624_133852: would build
+[64/129] Maria_2_20260624_134005: would build
+[65/129] Maria_3_20260624_134101: would build
+[66/129] Maria_4_20260624_134233: would build
+[67/129] Maria_5_20260624_134337: would build
+[68/129] Melih_10_20260616_180515: would build
+[69/129] Melih_1_20260616_175140: would build
+[70/129] Melih_2_20260616_175310: would build
+[71/129] Melih_3_20260616_175418: would build
+[72/129] Melih_4_20260616_175523: would build
+[73/129] Melih_5_20260616_175612: would build
+[74/129] Melih_6_20260616_180104: would build
+[75/129] Melih_7_20260616_180202: would build
+[76/129] Melih_8_20260616_180307: would build
+[77/129] Melih_9_20260616_180402: would build
+[78/129] Mona_1_20260624_123312: would build
+[79/129] Mona_2_20260624_123443: would build
+[80/129] Mona_3_20260624_123548: would build
+[81/129] Mona_4_20260624_123706: would build
+[82/129] Mona_5_20260624_123814: would build
+[83/129] Mona_6_20260624_123930: would build
+[84/129] Mona_7_20260624_124051: would build
+[85/129] Mona_8_20260624_124414: would build
+[86/129] Suthan_1_20260604_164834: would build
+[87/129] Suthan_3_20260604_165324: would build
+[88/129] Suthan_4_20260604_165434: would build
+[89/129] Tarik_10_20260704_142949: would build
+[90/129] Tarik_11_20260704_143216: would build
+[91/129] Tarik_12_20260704_143334: would build
+[92/129] Tarik_13_20260704_143446: would build
+[93/129] Tarik_14_20260704_143554: would build
+[94/129] Tarik_15_20260704_143803: would build
+[95/129] Tarik_16_20260704_143930: would build
+[96/129] Tarik_17_20260704_144050: would build
+[97/129] Tarik_18_20260704_144512: would build
+[98/129] Tarik_1_20260704_141845: would build
+[99/129] Tarik_20_20260704_145000: would build
+[100/129] Tarik_21_20260704_145054: would build
+[101/129] Tarik_22_20260704_145150: would build
+[102/129] Tarik_23_20260704_145434: would build
+[103/129] Tarik_24_20260704_145314: would build
+[104/129] Tarik_2_20260704_142022: would build
+[105/129] Tarik_3_20260704_142144: would build
+[106/129] Tarik_4_20260704_142308: would build
+[107/129] Tarik_5_20260704_142458: would build
+[108/129] Tarik_6_20260704_142555: would build
+[109/129] Tarik_7_20260704_142646: would build
+[110/129] Tarik_8_20260704_142759: would build
+[111/129] Tarik_9_20260704_142856: would build
+[112/129] Urim_10_20260616_145015: would build
+[113/129] Urim_1_20260604_160102: would build
+[114/129] Urim_2_20260604_160234: would build
+[115/129] Urim_3_20260604_160345: would build
+[116/129] Urim_4_20260604_160502: would build
+[117/129] Urim_5_20260604_160634: would build
+[118/129] Urim_6_20260616_144055: would build
+[119/129] Urim_7_20260616_144229: would build
+[120/129] Urim_8_20260616_144352: would build
+[121/129] Urim_9_20260616_144841: would build
+[122/129] Vanessa_1_20260624_132542: would build
+[123/129] Vanessa_2_20260624_132710: would build
+[124/129] Vanessa_3_20260624_132807: would build
+[125/129] Vanessa_4_20260624_132943: would build
+[126/129] Vanessa_5_20260624_133059: would build
+[127/129] Vanessa_6_20260624_133209: would build
+[128/129] Vanessa_7_20260624_133405: would build
+[129/129] Vanessa_8_20260624_133505: would build
+Batch report: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/master_datasets/master_batch_report.json
+Selected: 129, built: 0, existing: 0, errors: 0
+
+DRY_RUN=1, stopping after dry-run plan.

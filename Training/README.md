@@ -40,6 +40,32 @@ aus `DONE -> THIRD` bleiben als kontinuierlicher Kontext mit dem internen Label
 Nur Sliding Windows mit einem echten Timestamp-Sprung ueber dem konfigurierten
 Grenzwert werden verworfen.
 
+### Residual v2
+
+`HierarchicalResidualPoseTransformer` erweitert die Baseline um eine
+Handover-spezifische Links/Rechts-Klassifikation. Der Pose-Head sagt keine
+absolute Handpose voraus, sondern eine Positionskorrektur und eine relative
+Quaternion zur letzten gueltigen Handpose im Beobachtungsfenster:
+
+```text
+future_position   = last_position + position_delta
+future_quaternion = last_quaternion * quaternion_delta
+```
+
+Der Pose-Head ist mit Positionsdelta null und Quaterniondelta Identitaet
+initialisiert. Vor dem Lernen entspricht er daher exakt Last Observation. Die
+Korrektur wird von der vorhergesagten Handwahrscheinlichkeit konditioniert.
+
+Die Auswertung unterscheidet:
+
+- `pose_oracle`: wahre Empfangshand, isoliert die Bewegungsprognose
+- `pose_end_to_end`: vorhergesagte Empfangshand und vorhergesagte Bewegung
+- `last_observation_oracle`: direkte Persistenzreferenz
+- Pose nach linker/rechter Hand und vier Abschnitten der Handover-Phase
+
+Da die aktuelle Validation nur rechte Handover-Haende enthaelt, wird die linke
+Generalisation separat berichtet und nicht zur Modellauswahl verwendet.
+
 ## Datenvoraussetzung
 
 Die Eingabe sind aktuelle Dateien unter:
@@ -68,6 +94,34 @@ python3 Training/train.py \
   --config Training/configs/hierarchical_baseline_v1.json \
   --epochs 1
 ```
+
+Residual-v2-Smoke-Test und interaktiver Ein-Epochen-Lauf:
+
+```bash
+python3 Training/residual_smoke_test.py
+
+python3 Training/train_residual.py \
+  --config Training/configs/hierarchical_residual_v2.json \
+  --epochs 1
+```
+
+Residual-v2-GPU-Job:
+
+```bash
+sbatch --export=ALL,EPOCHS=1,RUN_DIR=Training/runs/residual_v2_cluster_smoke \
+  Training/hierarchical_residual_v2.sbatch
+
+sbatch Training/hierarchical_residual_v2.sbatch
+```
+
+Der erste Befehl ist der einmalige echte Cluster-Smoke-Test. Erst wenn dieser
+ohne Schema- oder CUDA-Fehler abgeschlossen ist, wird der vollstaendige Lauf
+mit dem zweiten Befehl gestartet.
+
+Jeder v2-Lauf speichert `best_intention_model.pt` nach Validation-Intent-Macro-
+F1 und `best_pose_model.pt` nach Validation-Oracle-Position-MAE. Early Stopping
+wird nur ausgeloest, wenn sich keines der beiden Validation-Ziele innerhalb der
+konfigurierten Patience verbessert.
 
 Pose-Target-Verfuegbarkeit mit denselben Splits und Fensterregeln auditieren:
 

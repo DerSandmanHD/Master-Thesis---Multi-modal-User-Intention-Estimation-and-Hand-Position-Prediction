@@ -8,6 +8,21 @@ from torch import nn
 from torch.nn import functional as F
 
 
+def quaternion_multiply(left: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
+    """Hamilton product for quaternions stored as x, y, z, w."""
+    lx, ly, lz, lw = left.unbind(dim=-1)
+    rx, ry, rz, rw = right.unbind(dim=-1)
+    return torch.stack(
+        (
+            lw * rx + lx * rw + ly * rz - lz * ry,
+            lw * ry - lx * rz + ly * rw + lz * rx,
+            lw * rz + lx * ry - ly * rx + lz * rw,
+            lw * rw - lx * rx - ly * ry - lz * rz,
+        ),
+        dim=-1,
+    )
+
+
 class HierarchicalGatedMultimodalTransformer(nn.Module):
     """Fuse temporal and channel-wise representations for hierarchical intent.
 
@@ -96,7 +111,7 @@ class HierarchicalGatedMultimodalTransformer(nn.Module):
         nn.init.normal_(self.temporal_position, std=0.02)
         nn.init.normal_(self.channel_identity, std=0.02)
 
-    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
+    def _encode(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         if x.ndim != 3:
             raise ValueError(f"Expected [batch, window, features], got {tuple(x.shape)}")
         if x.shape[1] != self.window_size or x.shape[2] != self.input_dim:
@@ -124,6 +139,14 @@ class HierarchicalGatedMultimodalTransformer(nn.Module):
         )
         fused = self.fusion_norm(fused)
 
+        return fused, gate
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        hand_reference_pose: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor]:
+        fused, gate = self._encode(x)
         raw_pose = self.pose_head(fused)
         quaternion = F.normalize(raw_pose[:, 3:7], dim=-1, eps=1e-8)
         pose = torch.cat((raw_pose[:, :3], quaternion), dim=-1)
@@ -131,5 +154,83 @@ class HierarchicalGatedMultimodalTransformer(nn.Module):
             "assistance_logits": self.assistance_head(fused),
             "assistance_type_logits": self.assistance_type_head(fused),
             "pose": pose,
+            "gate": gate,
+        }
+
+
+class HierarchicalResidualPoseTransformer(HierarchicalGatedMultimodalTransformer):
+    """Hierarchical intent model with learned hand selection and pose residual."""
+
+    def __init__(
+        self,
+        *,
+        input_dim: int,
+        window_size: int,
+        d_model: int = 64,
+        nhead: int = 4,
+        num_layers: int = 2,
+        dim_feedforward: int = 128,
+        dropout: float = 0.15,
+    ) -> None:
+        super().__init__(
+            input_dim=input_dim,
+            window_size=window_size,
+            d_model=d_model,
+            nhead=nhead,
+            num_layers=num_layers,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+        )
+        fused_dim = d_model * 2
+        self.receiving_hand_head = nn.Linear(fused_dim, 2)
+        self.pose_head = nn.Sequential(
+            nn.Linear(fused_dim + 2, d_model),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model, 7),
+        )
+        final_layer = self.pose_head[-1]
+        assert isinstance(final_layer, nn.Linear)
+        nn.init.zeros_(final_layer.weight)
+        nn.init.zeros_(final_layer.bias)
+        with torch.no_grad():
+            final_layer.bias[6] = 1.0
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        hand_reference_pose: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor]:
+        if hand_reference_pose is None:
+            raise ValueError("Residual model requires hand_reference_pose")
+        if hand_reference_pose.ndim != 3 or hand_reference_pose.shape[1:] != (2, 7):
+            raise ValueError(
+                "Expected hand_reference_pose with shape [batch, 2, 7], got "
+                f"{tuple(hand_reference_pose.shape)}"
+            )
+        if hand_reference_pose.shape[0] != x.shape[0]:
+            raise ValueError("Feature and hand-reference batch sizes differ")
+
+        fused, gate = self._encode(x)
+        receiving_hand_logits = self.receiving_hand_head(fused)
+        hand_probabilities = F.softmax(receiving_hand_logits, dim=-1)
+        raw_residual = self.pose_head(torch.cat((fused, hand_probabilities), dim=-1))
+        position_delta = raw_residual[:, :3]
+        quaternion_delta = F.normalize(raw_residual[:, 3:7], dim=-1, eps=1e-8)
+
+        candidate_positions = hand_reference_pose[:, :, :3] + position_delta[:, None, :]
+        candidate_quaternions = quaternion_multiply(
+            hand_reference_pose[:, :, 3:7],
+            quaternion_delta[:, None, :].expand(-1, 2, -1),
+        )
+        candidate_quaternions = F.normalize(candidate_quaternions, dim=-1, eps=1e-8)
+        pose_candidates = torch.cat((candidate_positions, candidate_quaternions), dim=-1)
+        return {
+            "assistance_logits": self.assistance_head(fused),
+            "assistance_type_logits": self.assistance_type_head(fused),
+            "receiving_hand_logits": receiving_hand_logits,
+            "position_delta": position_delta,
+            "quaternion_delta": quaternion_delta,
+            "pose_candidates": pose_candidates,
             "gate": gate,
         }

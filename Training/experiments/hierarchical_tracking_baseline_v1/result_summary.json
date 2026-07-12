@@ -52,5 +52,27 @@
       "direct_predictions": 236,
       "training_mean_fallbacks": 1
     }
+  },
+  "checkpoint_prediction_analysis": {
+    "reference_metrics": "matched",
+    "test_windows": 2412,
+    "valid_pose_targets": 237,
+    "transformer_position_wins": 79,
+    "last_observation_position_wins": 158,
+    "early_handover_0_25_percent": {
+      "samples": 87,
+      "transformer_position_mae_cm": 14.420766830444336,
+      "transformer_position_rmse_cm": 16.369142532348633,
+      "last_observation_position_mae_cm": 23.083913803100586,
+      "last_observation_position_rmse_cm": 29.446224212646484,
+      "transformer_position_wins": 55,
+      "handover_detected": 76
+    },
+    "receiving_hand_orientation_deg": {
+      "right_transformer": 49.55659866333008,
+      "right_last_observation": 46.60605239868164,
+      "left_transformer": 97.85102081298828,
+      "left_last_observation": 33.40948486328125
+    }
   }
 }

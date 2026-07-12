@@ -1,0 +1,719 @@
+{
+  "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/hierarchical_baseline_20260712_101448",
+  "checkpoint": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/hierarchical_baseline_20260712_101448/best_model.pt",
+  "checkpoint_epoch": 2,
+  "device": "cuda",
+  "oracle_last_observation": true,
+  "overall": {
+    "windows": 2412,
+    "intention_accuracy": 0.8764510779436152,
+    "valid_pose_targets": 237,
+    "transformer_pose": {
+      "samples": 237,
+      "position_mae_cm": 18.809083938598633,
+      "position_rmse_cm": 21.993148803710938,
+      "orientation_mean_deg": 63.82076644897461
+    },
+    "last_observation_pose": {
+      "samples": 237,
+      "position_mae_cm": 14.91818904876709,
+      "position_rmse_cm": 22.61589813232422,
+      "orientation_mean_deg": 42.70833206176758
+    },
+    "transformer_position_wins": 79,
+    "last_observation_position_wins": 158,
+    "position_ties": 0
+  },
+  "participants": {
+    "Edu": {
+      "windows": 816,
+      "intention_accuracy": 0.8651960784313726,
+      "valid_pose_targets": 106,
+      "transformer_pose": {
+        "samples": 106,
+        "position_mae_cm": 21.237689971923828,
+        "position_rmse_cm": 25.161705017089844,
+        "orientation_mean_deg": 63.12656784057617
+      },
+      "last_observation_pose": {
+        "samples": 106,
+        "position_mae_cm": 18.535690307617188,
+        "position_rmse_cm": 23.96221160888672,
+        "orientation_mean_deg": 59.133853912353516
+      },
+      "transformer_position_wins": 47,
+      "last_observation_position_wins": 59,
+      "position_ties": 0
+    },
+    "Jona": {
+      "windows": 667,
+      "intention_accuracy": 0.889055472263868,
+      "valid_pose_targets": 61,
+      "transformer_pose": {
+        "samples": 61,
+        "position_mae_cm": 18.95511817932129,
+        "position_rmse_cm": 19.681289672851562,
+        "orientation_mean_deg": 25.97599983215332
+      },
+      "last_observation_pose": {
+        "samples": 61,
+        "position_mae_cm": 9.46233081817627,
+        "position_rmse_cm": 16.281620025634766,
+        "orientation_mean_deg": 24.836421966552734
+      },
+      "transformer_position_wins": 13,
+      "last_observation_position_wins": 48,
+      "position_ties": 0
+    },
+    "Mona": {
+      "windows": 929,
+      "intention_accuracy": 0.8772874058127018,
+      "valid_pose_targets": 70,
+      "transformer_pose": {
+        "samples": 70,
+        "position_mae_cm": 15.0042142868042,
+        "position_rmse_cm": 18.47709083557129,
+        "orientation_mean_deg": 97.85102081298828
+      },
+      "last_observation_pose": {
+        "samples": 70,
+        "position_mae_cm": 14.194643020629883,
+        "position_rmse_cm": 25.12427520751953,
+        "orientation_mean_deg": 33.40948486328125
+      },
+      "transformer_position_wins": 19,
+      "last_observation_position_wins": 51,
+      "position_ties": 0
+    }
+  },
+  "receiving_hands": {
+    "left": {
+      "windows": 929,
+      "intention_accuracy": 0.8772874058127018,
+      "valid_pose_targets": 70,
+      "transformer_pose": {
+        "samples": 70,
+        "position_mae_cm": 15.0042142868042,
+        "position_rmse_cm": 18.47709083557129,
+        "orientation_mean_deg": 97.85102081298828
+      },
+      "last_observation_pose": {
+        "samples": 70,
+        "position_mae_cm": 14.194643020629883,
+        "position_rmse_cm": 25.12427520751953,
+        "orientation_mean_deg": 33.40948486328125
+      },
+      "transformer_position_wins": 19,
+      "last_observation_position_wins": 51,
+      "position_ties": 0
+    },
+    "right": {
+      "windows": 1483,
+      "intention_accuracy": 0.8759271746459879,
+      "valid_pose_targets": 167,
+      "transformer_pose": {
+        "samples": 167,
+        "position_mae_cm": 20.4039363861084,
+        "position_rmse_cm": 23.309728622436523,
+        "orientation_mean_deg": 49.55659866333008
+      },
+      "last_observation_pose": {
+        "samples": 167,
+        "position_mae_cm": 15.221470832824707,
+        "position_rmse_cm": 21.47752571105957,
+        "orientation_mean_deg": 46.60605239868164
+      },
+      "transformer_position_wins": 60,
+      "last_observation_position_wins": 107,
+      "position_ties": 0
+    }
+  },
+  "handover_progress": {
+    "0-25%": {
+      "windows": 87,
+      "intention_accuracy": 0.8735632183908046,
+      "valid_pose_targets": 87,
+      "transformer_pose": {
+        "samples": 87,
+        "position_mae_cm": 14.420766830444336,
+        "position_rmse_cm": 16.369142532348633,
+        "orientation_mean_deg": 62.13691711425781
+      },
+      "last_observation_pose": {
+        "samples": 87,
+        "position_mae_cm": 23.083913803100586,
+        "position_rmse_cm": 29.446224212646484,
+        "orientation_mean_deg": 62.85023498535156
+      },
+      "transformer_position_wins": 55,
+      "last_observation_position_wins": 32,
+      "position_ties": 0
+    },
+    "25-50%": {
+      "windows": 81,
+      "intention_accuracy": 0.9753086419753086,
+      "valid_pose_targets": 81,
+      "transformer_pose": {
+        "samples": 81,
+        "position_mae_cm": 17.2865047454834,
+        "position_rmse_cm": 19.913217544555664,
+        "orientation_mean_deg": 60.84729766845703
+      },
+      "last_observation_pose": {
+        "samples": 81,
+        "position_mae_cm": 8.039983749389648,
+        "position_rmse_cm": 14.764711380004883,
+        "orientation_mean_deg": 25.875774383544922
+      },
+      "transformer_position_wins": 12,
+      "last_observation_position_wins": 69,
+      "position_ties": 0
+    },
+    "50-75%": {
+      "windows": 63,
+      "intention_accuracy": 0.9523809523809523,
+      "valid_pose_targets": 63,
+      "transformer_pose": {
+        "samples": 63,
+        "position_mae_cm": 25.064924240112305,
+        "position_rmse_cm": 28.330829620361328,
+        "orientation_mean_deg": 67.24246215820312
+      },
+      "last_observation_pose": {
+        "samples": 63,
+        "position_mae_cm": 13.041027069091797,
+        "position_rmse_cm": 20.892160415649414,
+        "orientation_mean_deg": 37.944427490234375
+      },
+      "transformer_position_wins": 12,
+      "last_observation_position_wins": 51,
+      "position_ties": 0
+    },
+    "75-100%": {
+      "windows": 6,
+      "intention_accuracy": 0.8333333333333334,
+      "valid_pose_targets": 6,
+      "transformer_pose": {
+        "samples": 6,
+        "position_mae_cm": 37.30813980102539,
+        "position_rmse_cm": 37.946266174316406,
+        "orientation_mean_deg": 92.45073699951172
+      },
+      "last_observation_pose": {
+        "samples": 6,
+        "position_mae_cm": 9.081161499023438,
+        "position_rmse_cm": 10.233989715576172,
+        "orientation_mean_deg": 27.911197662353516
+      },
+      "transformer_position_wins": 0,
+      "last_observation_position_wins": 6,
+      "position_ties": 0
+    }
+  },
+  "sequences": {
+    "Edu_10_20260616_150412": {
+      "windows": 87,
+      "intention_accuracy": 0.8045977011494253,
+      "valid_pose_targets": 16,
+      "transformer_pose": {
+        "samples": 16,
+        "position_mae_cm": 28.384695053100586,
+        "position_rmse_cm": 33.111454010009766,
+        "orientation_mean_deg": 82.98069763183594
+      },
+      "last_observation_pose": {
+        "samples": 16,
+        "position_mae_cm": 25.562450408935547,
+        "position_rmse_cm": 32.05584716796875,
+        "orientation_mean_deg": 63.982383728027344
+      },
+      "transformer_position_wins": 6,
+      "last_observation_position_wins": 10,
+      "position_ties": 0
+    },
+    "Edu_1_20260604_170154": {
+      "windows": 113,
+      "intention_accuracy": 0.8761061946902655,
+      "valid_pose_targets": 5,
+      "transformer_pose": {
+        "samples": 5,
+        "position_mae_cm": 18.202177047729492,
+        "position_rmse_cm": 19.177745819091797,
+        "orientation_mean_deg": 53.99481201171875
+      },
+      "last_observation_pose": {
+        "samples": 5,
+        "position_mae_cm": 18.86463165283203,
+        "position_rmse_cm": 22.311195373535156,
+        "orientation_mean_deg": 58.27851867675781
+      },
+      "transformer_position_wins": 3,
+      "last_observation_position_wins": 2,
+      "position_ties": 0
+    },
+    "Edu_2_20260604_170420": {
+      "windows": 62,
+      "intention_accuracy": 0.9838709677419355,
+      "valid_pose_targets": 5,
+      "transformer_pose": {
+        "samples": 5,
+        "position_mae_cm": 14.767522811889648,
+        "position_rmse_cm": 16.01498794555664,
+        "orientation_mean_deg": 54.567935943603516
+      },
+      "last_observation_pose": {
+        "samples": 5,
+        "position_mae_cm": 21.487743377685547,
+        "position_rmse_cm": 24.954683303833008,
+        "orientation_mean_deg": 74.2000961303711
+      },
+      "transformer_position_wins": 4,
+      "last_observation_position_wins": 1,
+      "position_ties": 0
+    },
+    "Edu_3_20260604_170622": {
+      "windows": 73,
+      "intention_accuracy": 0.958904109589041,
+      "valid_pose_targets": 8,
+      "transformer_pose": {
+        "samples": 8,
+        "position_mae_cm": 11.168140411376953,
+        "position_rmse_cm": 14.967161178588867,
+        "orientation_mean_deg": 44.999717712402344
+      },
+      "last_observation_pose": {
+        "samples": 8,
+        "position_mae_cm": 15.744230270385742,
+        "position_rmse_cm": 20.928447723388672,
+        "orientation_mean_deg": 61.71980285644531
+      },
+      "transformer_position_wins": 5,
+      "last_observation_position_wins": 3,
+      "position_ties": 0
+    },
+    "Edu_4_20260604_170837": {
+      "windows": 94,
+      "intention_accuracy": 0.925531914893617,
+      "valid_pose_targets": 9,
+      "transformer_pose": {
+        "samples": 9,
+        "position_mae_cm": 14.814927101135254,
+        "position_rmse_cm": 16.20503807067871,
+        "orientation_mean_deg": 42.60176086425781
+      },
+      "last_observation_pose": {
+        "samples": 9,
+        "position_mae_cm": 17.25484275817871,
+        "position_rmse_cm": 22.714275360107422,
+        "orientation_mean_deg": 50.35148239135742
+      },
+      "transformer_position_wins": 5,
+      "last_observation_position_wins": 4,
+      "position_ties": 0
+    },
+    "Edu_5_20260604_170944": {
+      "windows": 93,
+      "intention_accuracy": 0.967741935483871,
+      "valid_pose_targets": 12,
+      "transformer_pose": {
+        "samples": 12,
+        "position_mae_cm": 20.82274627685547,
+        "position_rmse_cm": 21.59294891357422,
+        "orientation_mean_deg": 52.7041130065918
+      },
+      "last_observation_pose": {
+        "samples": 12,
+        "position_mae_cm": 16.931360244750977,
+        "position_rmse_cm": 22.402963638305664,
+        "orientation_mean_deg": 54.0200080871582
+      },
+      "transformer_position_wins": 5,
+      "last_observation_position_wins": 7,
+      "position_ties": 0
+    },
+    "Edu_6_20260616_145740": {
+      "windows": 91,
+      "intention_accuracy": 0.6483516483516484,
+      "valid_pose_targets": 27,
+      "transformer_pose": {
+        "samples": 27,
+        "position_mae_cm": 27.91489028930664,
+        "position_rmse_cm": 30.423507690429688,
+        "orientation_mean_deg": 70.73148345947266
+      },
+      "last_observation_pose": {
+        "samples": 27,
+        "position_mae_cm": 10.950069427490234,
+        "position_rmse_cm": 16.102985382080078,
+        "orientation_mean_deg": 39.494117736816406
+      },
+      "transformer_position_wins": 3,
+      "last_observation_position_wins": 24,
+      "position_ties": 0
+    },
+    "Edu_7_20260616_145927": {
+      "windows": 72,
+      "intention_accuracy": 0.9027777777777778,
+      "valid_pose_targets": 8,
+      "transformer_pose": {
+        "samples": 8,
+        "position_mae_cm": 19.731952667236328,
+        "position_rmse_cm": 24.218578338623047,
+        "orientation_mean_deg": 76.94715118408203
+      },
+      "last_observation_pose": {
+        "samples": 8,
+        "position_mae_cm": 28.392091751098633,
+        "position_rmse_cm": 30.65839958190918,
+        "orientation_mean_deg": 107.26241302490234
+      },
+      "transformer_position_wins": 6,
+      "last_observation_position_wins": 2,
+      "position_ties": 0
+    },
+    "Edu_8_20260616_150108": {
+      "windows": 62,
+      "intention_accuracy": 0.9193548387096774,
+      "valid_pose_targets": 9,
+      "transformer_pose": {
+        "samples": 9,
+        "position_mae_cm": 19.599323272705078,
+        "position_rmse_cm": 24.85275650024414,
+        "orientation_mean_deg": 68.75916290283203
+      },
+      "last_observation_pose": {
+        "samples": 9,
+        "position_mae_cm": 27.063194274902344,
+        "position_rmse_cm": 29.666154861450195,
+        "orientation_mean_deg": 83.09065246582031
+      },
+      "transformer_position_wins": 7,
+      "last_observation_position_wins": 2,
+      "position_ties": 0
+    },
+    "Edu_9_20260616_150247": {
+      "windows": 69,
+      "intention_accuracy": 0.6956521739130435,
+      "valid_pose_targets": 7,
+      "transformer_pose": {
+        "samples": 7,
+        "position_mae_cm": 10.241090774536133,
+        "position_rmse_cm": 14.411256790161133,
+        "orientation_mean_deg": 42.98398208618164
+      },
+      "last_observation_pose": {
+        "samples": 7,
+        "position_mae_cm": 14.748724937438965,
+        "position_rmse_cm": 17.761804580688477,
+        "orientation_mean_deg": 44.95134353637695
+      },
+      "transformer_position_wins": 3,
+      "last_observation_position_wins": 4,
+      "position_ties": 0
+    },
+    "Jona_1_20260616_181413": {
+      "windows": 54,
+      "intention_accuracy": 0.9259259259259259,
+      "valid_pose_targets": 10,
+      "transformer_pose": {
+        "samples": 10,
+        "position_mae_cm": 17.152151107788086,
+        "position_rmse_cm": 17.244373321533203,
+        "orientation_mean_deg": 25.36963653564453
+      },
+      "last_observation_pose": {
+        "samples": 10,
+        "position_mae_cm": 4.124168872833252,
+        "position_rmse_cm": 7.458657741546631,
+        "orientation_mean_deg": 10.859569549560547
+      },
+      "transformer_position_wins": 1,
+      "last_observation_position_wins": 9,
+      "position_ties": 0
+    },
+    "Jona_2_20260616_181551": {
+      "windows": 108,
+      "intention_accuracy": 0.9074074074074074,
+      "valid_pose_targets": 8,
+      "transformer_pose": {
+        "samples": 8,
+        "position_mae_cm": 23.505277633666992,
+        "position_rmse_cm": 23.548131942749023,
+        "orientation_mean_deg": 30.314847946166992
+      },
+      "last_observation_pose": {
+        "samples": 8,
+        "position_mae_cm": 18.680801391601562,
+        "position_rmse_cm": 25.091659545898438,
+        "orientation_mean_deg": 43.47034454345703
+      },
+      "transformer_position_wins": 3,
+      "last_observation_position_wins": 5,
+      "position_ties": 0
+    },
+    "Jona_3_20260616_181717": {
+      "windows": 119,
+      "intention_accuracy": 0.865546218487395,
+      "valid_pose_targets": 8,
+      "transformer_pose": {
+        "samples": 8,
+        "position_mae_cm": 16.68048858642578,
+        "position_rmse_cm": 17.21287727355957,
+        "orientation_mean_deg": 21.034870147705078
+      },
+      "last_observation_pose": {
+        "samples": 8,
+        "position_mae_cm": 12.922948837280273,
+        "position_rmse_cm": 19.452178955078125,
+        "orientation_mean_deg": 33.36582946777344
+      },
+      "transformer_position_wins": 3,
+      "last_observation_position_wins": 5,
+      "position_ties": 0
+    },
+    "Jona_4_20260616_181855": {
+      "windows": 97,
+      "intention_accuracy": 0.8041237113402062,
+      "valid_pose_targets": 9,
+      "transformer_pose": {
+        "samples": 9,
+        "position_mae_cm": 17.887447357177734,
+        "position_rmse_cm": 18.04005241394043,
+        "orientation_mean_deg": 19.0196590423584
+      },
+      "last_observation_pose": {
+        "samples": 9,
+        "position_mae_cm": 9.693065643310547,
+        "position_rmse_cm": 16.995758056640625,
+        "orientation_mean_deg": 27.568208694458008
+      },
+      "transformer_position_wins": 2,
+      "last_observation_position_wins": 7,
+      "position_ties": 0
+    },
+    "Jona_5_20260616_182002": {
+      "windows": 107,
+      "intention_accuracy": 0.9065420560747663,
+      "valid_pose_targets": 8,
+      "transformer_pose": {
+        "samples": 8,
+        "position_mae_cm": 28.909481048583984,
+        "position_rmse_cm": 29.0281982421875,
+        "orientation_mean_deg": 37.61075973510742
+      },
+      "last_observation_pose": {
+        "samples": 8,
+        "position_mae_cm": 11.970061302185059,
+        "position_rmse_cm": 18.87265968322754,
+        "orientation_mean_deg": 31.352554321289062
+      },
+      "transformer_position_wins": 1,
+      "last_observation_position_wins": 7,
+      "position_ties": 0
+    },
+    "Jona_6_20260616_182111": {
+      "windows": 87,
+      "intention_accuracy": 0.8850574712643678,
+      "valid_pose_targets": 9,
+      "transformer_pose": {
+        "samples": 9,
+        "position_mae_cm": 16.08391761779785,
+        "position_rmse_cm": 16.22934341430664,
+        "orientation_mean_deg": 21.962461471557617
+      },
+      "last_observation_pose": {
+        "samples": 9,
+        "position_mae_cm": 3.4715778827667236,
+        "position_rmse_cm": 7.163802623748779,
+        "orientation_mean_deg": 11.18396282196045
+      },
+      "transformer_position_wins": 1,
+      "last_observation_position_wins": 8,
+      "position_ties": 0
+    },
+    "Jona_7_20260616_182214": {
+      "windows": 95,
+      "intention_accuracy": 0.9473684210526315,
+      "valid_pose_targets": 9,
+      "transformer_pose": {
+        "samples": 9,
+        "position_mae_cm": 14.026265144348145,
+        "position_rmse_cm": 14.173023223876953,
+        "orientation_mean_deg": 27.812957763671875
+      },
+      "last_observation_pose": {
+        "samples": 9,
+        "position_mae_cm": 7.654249668121338,
+        "position_rmse_cm": 13.496546745300293,
+        "orientation_mean_deg": 21.349647521972656
+      },
+      "transformer_position_wins": 2,
+      "last_observation_position_wins": 7,
+      "position_ties": 0
+    },
+    "Mona_1_20260624_123312": {
+      "windows": 94,
+      "intention_accuracy": 0.8936170212765957,
+      "valid_pose_targets": 15,
+      "transformer_pose": {
+        "samples": 15,
+        "position_mae_cm": 22.52602195739746,
+        "position_rmse_cm": 29.53127670288086,
+        "orientation_mean_deg": 80.25923156738281
+      },
+      "last_observation_pose": {
+        "samples": 15,
+        "position_mae_cm": 15.279343605041504,
+        "position_rmse_cm": 24.807374954223633,
+        "orientation_mean_deg": 45.46588134765625
+      },
+      "transformer_position_wins": 2,
+      "last_observation_position_wins": 13,
+      "position_ties": 0
+    },
+    "Mona_2_20260624_123443": {
+      "windows": 100,
+      "intention_accuracy": 0.92,
+      "valid_pose_targets": 8,
+      "transformer_pose": {
+        "samples": 8,
+        "position_mae_cm": 10.803373336791992,
+        "position_rmse_cm": 11.04005241394043,
+        "orientation_mean_deg": 71.53007507324219
+      },
+      "last_observation_pose": {
+        "samples": 8,
+        "position_mae_cm": 0.730087161064148,
+        "position_rmse_cm": 0.7627958059310913,
+        "orientation_mean_deg": 1.321058750152588
+      },
+      "transformer_position_wins": 0,
+      "last_observation_position_wins": 8,
+      "position_ties": 0
+    },
+    "Mona_3_20260624_123548": {
+      "windows": 105,
+      "intention_accuracy": 0.8095238095238095,
+      "valid_pose_targets": 10,
+      "transformer_pose": {
+        "samples": 10,
+        "position_mae_cm": 10.953877449035645,
+        "position_rmse_cm": 11.434670448303223,
+        "orientation_mean_deg": 93.66332244873047
+      },
+      "last_observation_pose": {
+        "samples": 10,
+        "position_mae_cm": 16.492944717407227,
+        "position_rmse_cm": 27.24740219116211,
+        "orientation_mean_deg": 37.590362548828125
+      },
+      "transformer_position_wins": 4,
+      "last_observation_position_wins": 6,
+      "position_ties": 0
+    },
+    "Mona_4_20260624_123706": {
+      "windows": 109,
+      "intention_accuracy": 0.9174311926605505,
+      "valid_pose_targets": 7,
+      "transformer_pose": {
+        "samples": 7,
+        "position_mae_cm": 18.941761016845703,
+        "position_rmse_cm": 19.047019958496094,
+        "orientation_mean_deg": 60.66181564331055
+      },
+      "last_observation_pose": {
+        "samples": 7,
+        "position_mae_cm": 1.9077330827713013,
+        "position_rmse_cm": 3.7786636352539062,
+        "orientation_mean_deg": 4.151938438415527
+      },
+      "transformer_position_wins": 0,
+      "last_observation_position_wins": 7,
+      "position_ties": 0
+    },
+    "Mona_5_20260624_123814": {
+      "windows": 125,
+      "intention_accuracy": 0.856,
+      "valid_pose_targets": 7,
+      "transformer_pose": {
+        "samples": 7,
+        "position_mae_cm": 9.787201881408691,
+        "position_rmse_cm": 10.400312423706055,
+        "orientation_mean_deg": 132.65557861328125
+      },
+      "last_observation_pose": {
+        "samples": 7,
+        "position_mae_cm": 24.405717849731445,
+        "position_rmse_cm": 34.05968475341797,
+        "orientation_mean_deg": 48.6545295715332
+      },
+      "transformer_position_wins": 4,
+      "last_observation_position_wins": 3,
+      "position_ties": 0
+    },
+    "Mona_6_20260624_123930": {
+      "windows": 124,
+      "intention_accuracy": 0.8951612903225806,
+      "valid_pose_targets": 7,
+      "transformer_pose": {
+        "samples": 7,
+        "position_mae_cm": 15.44785213470459,
+        "position_rmse_cm": 17.45269775390625,
+        "orientation_mean_deg": 153.06849670410156
+      },
+      "last_observation_pose": {
+        "samples": 7,
+        "position_mae_cm": 28.64527702331543,
+        "position_rmse_cm": 38.71234893798828,
+        "orientation_mean_deg": 62.69308853149414
+      },
+      "transformer_position_wins": 4,
+      "last_observation_position_wins": 3,
+      "position_ties": 0
+    },
+    "Mona_7_20260624_124051": {
+      "windows": 123,
+      "intention_accuracy": 0.8780487804878049,
+      "valid_pose_targets": 7,
+      "transformer_pose": {
+        "samples": 7,
+        "position_mae_cm": 13.8552827835083,
+        "position_rmse_cm": 14.06254768371582,
+        "orientation_mean_deg": 90.41033935546875
+      },
+      "last_observation_pose": {
+        "samples": 7,
+        "position_mae_cm": 2.533071756362915,
+        "position_rmse_cm": 3.311367988586426,
+        "orientation_mean_deg": 3.5187275409698486
+      },
+      "transformer_position_wins": 0,
+      "last_observation_position_wins": 7,
+      "position_ties": 0
+    },
+    "Mona_8_20260624_124414": {
+      "windows": 149,
+      "intention_accuracy": 0.8590604026845637,
+      "valid_pose_targets": 9,
+      "transformer_pose": {
+        "samples": 9,
+        "position_mae_cm": 12.246041297912598,
+        "position_rmse_cm": 13.828433990478516,
+        "orientation_mean_deg": 119.91509246826172
+      },
+      "last_observation_pose": {
+        "samples": 9,
+        "position_mae_cm": 21.24689483642578,
+        "position_rmse_cm": 31.159873962402344,
+        "orientation_mean_deg": 48.563934326171875
+      },
+      "transformer_position_wins": 5,
+      "last_observation_position_wins": 4,
+      "position_ties": 0
+    }
+  },
+  "reference_metrics": {
+    "path": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/hierarchical_baseline_20260712_101448/metrics.json",
+    "status": "matched"
+  }
+}

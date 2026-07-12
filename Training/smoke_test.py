@@ -26,13 +26,14 @@ def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> No
     intent_labels += ["fetch"] * 15
     intent_labels += ["transition"] * 15
     intent_labels += ["handover"] * 30
+    receiving_hand = "left" if sequence_number % 2 else "right"
     frame = pd.DataFrame(
         {
             "sequence_id": [f"{participant}_{sequence_number}"] * rows,
             "participant": [participant] * rows,
             "timestamp_ns": timestamps,
             "intent_label": intent_labels,
-            "receiving_hand": ["right"] * rows,
+            "receiving_hand": [receiving_hand] * rows,
             "gaze_valid": np.ones(rows),
             "gaze_yaw_rad": rng.normal(size=rows),
             "gaze_pitch_rad": rng.normal(size=rows),

@@ -17,6 +17,8 @@ from torch.utils.data import Dataset
 
 INTENTION_TO_ID = {"transition": -1, "continue": 0, "fetch": 1, "handover": 2}
 INTENTION_NAMES = ["continue", "fetch", "handover"]
+RECEIVING_HAND_TO_ID = {"left": 0, "right": 1}
+RECEIVING_HAND_NAMES = ["left", "right"]
 
 
 def _candidate_features() -> list[str]:
@@ -91,6 +93,9 @@ class SequenceRecord:
     intentions: np.ndarray
     pose_targets: np.ndarray
     pose_valid: np.ndarray
+    receiving_hand_ids: np.ndarray | None = None
+    hand_poses: np.ndarray | None = None
+    hand_pose_valid: np.ndarray | None = None
 
 
 @dataclass
@@ -145,6 +150,7 @@ def load_record(
     feature_columns: list[str],
     *,
     future_horizon_seconds: float,
+    include_hand_references: bool = False,
 ) -> SequenceRecord:
     prefix = horizon_prefix(future_horizon_seconds)
     pose_columns = [
@@ -159,6 +165,21 @@ def load_record(
         f"{prefix}receiving_wrist_valid",
         *pose_columns,
     ]
+    if include_hand_references:
+        required_core.extend(
+            [
+                "receiving_hand",
+                "robot_frame_valid",
+                "hand_left_valid",
+                "hand_right_valid",
+                *(f"{side}_wrist_robot_{axis}_m" for side in ("left", "right") for axis in "xyz"),
+                *(
+                    f"{side}_wrist_robot_q{component}"
+                    for side in ("left", "right")
+                    for component in "xyzw"
+                ),
+            ]
+        )
     header = pd.read_csv(path, nrows=0).columns.tolist()
     missing = sorted(set(required_core) - set(header))
     if missing:
@@ -167,7 +188,8 @@ def load_record(
             f"{', '.join(missing)}. Rebuild master datasets after semantic annotation."
         )
     available_features = [column for column in feature_columns if column in header]
-    frame = pd.read_csv(path, usecols=[*required_core, *available_features])
+    use_columns = list(dict.fromkeys([*required_core, *available_features]))
+    frame = pd.read_csv(path, usecols=use_columns)
     for column in feature_columns:
         if column not in frame:
             frame[column] = 0.0 if column.endswith("_valid") else np.nan
@@ -198,6 +220,55 @@ def load_record(
         poses[valid_indices, 3:7] /= quaternion_norm[valid_indices, None]
     poses[~pose_valid] = 0.0
 
+    receiving_hand_ids = None
+    hand_poses = None
+    hand_pose_valid = None
+    if include_hand_references:
+        receiving_hand_ids = (
+            frame["receiving_hand"]
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .map(RECEIVING_HAND_TO_ID)
+            .fillna(-1)
+            .to_numpy(np.int64)
+        )
+        hand_poses = np.zeros((len(frame), 2, 7), dtype=np.float32)
+        hand_poses[:, :, 6] = 1.0
+        hand_pose_valid = np.zeros((len(frame), 2), dtype=bool)
+        robot_valid = (
+            pd.to_numeric(frame["robot_frame_valid"], errors="coerce")
+            .fillna(0)
+            .to_numpy()
+            > 0
+        )
+        for side_id, side in enumerate(RECEIVING_HAND_NAMES):
+            current_columns = [
+                *(f"{side}_wrist_robot_{axis}_m" for axis in "xyz"),
+                *(f"{side}_wrist_robot_q{component}" for component in "xyzw"),
+            ]
+            current = (
+                frame[current_columns]
+                .apply(pd.to_numeric, errors="coerce")
+                .to_numpy(np.float32)
+            )
+            explicit_valid = (
+                pd.to_numeric(frame[f"hand_{side}_valid"], errors="coerce")
+                .fillna(0)
+                .to_numpy()
+                > 0
+            )
+            current_valid = explicit_valid & robot_valid & np.isfinite(current).all(axis=1)
+            current_quaternion_norm = np.linalg.norm(current[:, 3:7], axis=1)
+            current_valid &= current_quaternion_norm > 1e-6
+            current_valid_indices = np.flatnonzero(current_valid)
+            if len(current_valid_indices):
+                current[current_valid_indices, 3:7] /= current_quaternion_norm[
+                    current_valid_indices, None
+                ]
+                hand_poses[current_valid_indices, side_id] = current[current_valid_indices]
+            hand_pose_valid[:, side_id] = current_valid
+
     features = frame[feature_columns].apply(pd.to_numeric, errors="coerce").to_numpy(np.float32)
     timestamps = pd.to_numeric(frame["timestamp_ns"], errors="raise").to_numpy(np.int64)
     if np.any(np.diff(timestamps) < 0):
@@ -210,6 +281,9 @@ def load_record(
         intentions=labels.to_numpy(np.int64),
         pose_targets=poses,
         pose_valid=pose_valid,
+        receiving_hand_ids=receiving_hand_ids,
+        hand_poses=hand_poses,
+        hand_pose_valid=hand_pose_valid,
     )
 
 
@@ -285,6 +359,7 @@ class WindowDataset(Dataset):
         pose_intent_ids: list[int],
         minimum_observed_fraction: float,
         max_timestamp_gap_seconds: float,
+        include_hand_references: bool = False,
     ) -> None:
         self.records = records
         self.window_size = window_size
@@ -292,6 +367,7 @@ class WindowDataset(Dataset):
         self.discarded_gap_windows = 0
         self.discarded_observation_windows = 0
         self.discarded_unlabeled_windows = 0
+        self.include_hand_references = include_hand_references
         max_timestamp_gap_ns = int(max_timestamp_gap_seconds * 1e9)
         if max_timestamp_gap_ns <= 0:
             raise ValueError("max_timestamp_gap_seconds must be greater than zero")
@@ -327,6 +403,51 @@ class WindowDataset(Dataset):
         if not self.indices:
             raise ValueError("No valid windows were created; inspect window size and data coverage")
 
+        self.hand_reference_poses: list[np.ndarray] = []
+        self.hand_reference_valid: list[np.ndarray] = []
+        self.hand_reference_age_seconds: list[np.ndarray] = []
+        if include_hand_references:
+            for record_index, endpoint in self.indices:
+                record = records[record_index]
+                if (
+                    record.receiving_hand_ids is None
+                    or record.hand_poses is None
+                    or record.hand_pose_valid is None
+                ):
+                    raise ValueError(
+                        f"Hand-reference data was not loaded for {record.sequence_id}"
+                    )
+                start = endpoint - window_size + 1
+                references = np.zeros((2, 7), dtype=np.float32)
+                references[:, 6] = 1.0
+                validity = np.zeros(2, dtype=bool)
+                ages = np.full(2, np.nan, dtype=np.float32)
+                for side_id in range(2):
+                    valid_rows = np.flatnonzero(
+                        record.hand_pose_valid[start : endpoint + 1, side_id]
+                    )
+                    if len(valid_rows):
+                        reference_row = start + int(valid_rows[-1])
+                        references[side_id] = record.hand_poses[reference_row, side_id]
+                        validity[side_id] = True
+                        ages[side_id] = (
+                            int(record.timestamps_ns[endpoint])
+                            - int(record.timestamps_ns[reference_row])
+                        ) / 1e9
+                self.hand_reference_poses.append(references)
+                self.hand_reference_valid.append(validity)
+                self.hand_reference_age_seconds.append(ages)
+
+        self.handover_progress = np.full(len(self.indices), -1.0, dtype=np.float32)
+        handover_indices: dict[int, list[tuple[int, int]]] = {}
+        for dataset_index, (record_index, endpoint) in enumerate(self.indices):
+            if int(records[record_index].intentions[endpoint]) == INTENTION_TO_ID["handover"]:
+                handover_indices.setdefault(record_index, []).append((dataset_index, endpoint))
+        for values in handover_indices.values():
+            values.sort(key=lambda item: item[1])
+            for progress_index, (dataset_index, _) in enumerate(values):
+                self.handover_progress[dataset_index] = progress_index / max(1, len(values) - 1)
+
     def __len__(self) -> int:
         return len(self.indices)
 
@@ -334,7 +455,7 @@ class WindowDataset(Dataset):
         record_index, endpoint = self.indices[index]
         record = self.records[record_index]
         start = endpoint - self.window_size + 1
-        return {
+        item = {
             "features": torch.from_numpy(record.features[start : endpoint + 1]),
             "intention": torch.tensor(record.intentions[endpoint], dtype=torch.long),
             "pose_target": torch.from_numpy(record.pose_targets[endpoint]),
@@ -342,13 +463,64 @@ class WindowDataset(Dataset):
             "sequence_id": record.sequence_id,
             "participant": record.participant,
             "timestamp_ns": torch.tensor(record.timestamps_ns[endpoint], dtype=torch.long),
+            "handover_progress": torch.tensor(
+                self.handover_progress[index], dtype=torch.float32
+            ),
         }
+        if self.include_hand_references:
+            assert record.receiving_hand_ids is not None
+            receiving_hand = int(record.receiving_hand_ids[endpoint])
+            reference_valid = self.hand_reference_valid[index]
+            residual_pose_valid = (
+                bool(record.pose_valid[endpoint])
+                and receiving_hand in (0, 1)
+                and bool(reference_valid[receiving_hand])
+            )
+            item.update(
+                {
+                    "receiving_hand": torch.tensor(receiving_hand, dtype=torch.long),
+                    "hand_reference_pose": torch.from_numpy(
+                        self.hand_reference_poses[index]
+                    ),
+                    "hand_reference_valid": torch.from_numpy(reference_valid),
+                    "hand_reference_age_seconds": torch.from_numpy(
+                        self.hand_reference_age_seconds[index]
+                    ),
+                    "residual_pose_valid": torch.tensor(
+                        residual_pose_valid, dtype=torch.bool
+                    ),
+                }
+            )
+        return item
 
     def intention_counts(self) -> list[int]:
         counts = np.zeros(len(INTENTION_NAMES), dtype=np.int64)
         for record_index, endpoint in self.indices:
             counts[self.records[record_index].intentions[endpoint]] += 1
         return counts.tolist()
+
+    def receiving_hand_counts(self) -> list[int]:
+        counts = np.zeros(len(RECEIVING_HAND_NAMES), dtype=np.int64)
+        if not self.include_hand_references:
+            return counts.tolist()
+        for record_index, endpoint in self.indices:
+            record = self.records[record_index]
+            assert record.receiving_hand_ids is not None
+            hand_id = int(record.receiving_hand_ids[endpoint])
+            if (
+                int(record.intentions[endpoint]) == INTENTION_TO_ID["handover"]
+                and hand_id in (0, 1)
+            ):
+                counts[hand_id] += 1
+        return counts.tolist()
+
+    def residual_pose_count(self) -> int:
+        if not self.include_hand_references:
+            return 0
+        return sum(
+            bool(self[index]["residual_pose_valid"])
+            for index in range(len(self))
+        )
 
 
 @dataclass
@@ -371,11 +543,13 @@ def prepare_data(data_config: dict, seed: int, limit_sequences: int | None = Non
 
     first_header = pd.read_csv(files[0], nrows=0).columns.tolist()
     feature_columns = select_feature_columns(first_header, data_config["feature_profile"])
+    include_hand_references = bool(data_config.get("include_hand_references", False))
     records = [
         load_record(
             path,
             feature_columns,
             future_horizon_seconds=float(data_config["future_horizon_seconds"]),
+            include_hand_references=include_hand_references,
         )
         for path in files
     ]
@@ -392,17 +566,21 @@ def prepare_data(data_config: dict, seed: int, limit_sequences: int | None = Non
         name: [replace(record, features=normalizer.transform(record.features)) for record in values]
         for name, values in split.items()
     }
-    dataset_args = {
-        "window_size": int(data_config["window_size"]),
-        "stride": int(data_config["stride"]),
-        "pose_intent_ids": [int(value) for value in data_config["pose_intent_ids"]],
-        "minimum_observed_fraction": float(data_config["minimum_observed_fraction"]),
-        "max_timestamp_gap_seconds": float(data_config["max_timestamp_gap_seconds"]),
-    }
+    def make_dataset(records_for_split: list[SequenceRecord]) -> WindowDataset:
+        return WindowDataset(
+            records_for_split,
+            window_size=int(data_config["window_size"]),
+            stride=int(data_config["stride"]),
+            pose_intent_ids=[int(value) for value in data_config["pose_intent_ids"]],
+            minimum_observed_fraction=float(data_config["minimum_observed_fraction"]),
+            max_timestamp_gap_seconds=float(data_config["max_timestamp_gap_seconds"]),
+            include_hand_references=include_hand_references,
+        )
+
     return DataBundle(
-        train=WindowDataset(normalized_split["train"], **dataset_args),
-        validation=WindowDataset(normalized_split["validation"], **dataset_args),
-        test=WindowDataset(normalized_split["test"], **dataset_args),
+        train=make_dataset(normalized_split["train"]),
+        validation=make_dataset(normalized_split["validation"]),
+        test=make_dataset(normalized_split["test"]),
         normalizer=normalizer,
         feature_columns=feature_columns,
         split_metadata=split_metadata,
@@ -436,6 +614,22 @@ def save_data_metadata(bundle: DataBundle, path: Path) -> None:
         },
         "intention_counts": {
             name: dict(zip(INTENTION_NAMES, dataset.intention_counts()))
+            for name, dataset in (
+                ("train", bundle.train),
+                ("validation", bundle.validation),
+                ("test", bundle.test),
+            )
+        },
+        "receiving_hand_counts": {
+            name: dict(zip(RECEIVING_HAND_NAMES, dataset.receiving_hand_counts()))
+            for name, dataset in (
+                ("train", bundle.train),
+                ("validation", bundle.validation),
+                ("test", bundle.test),
+            )
+        },
+        "residual_pose_counts": {
+            name: dataset.residual_pose_count()
             for name, dataset in (
                 ("train", bundle.train),
                 ("validation", bundle.validation),

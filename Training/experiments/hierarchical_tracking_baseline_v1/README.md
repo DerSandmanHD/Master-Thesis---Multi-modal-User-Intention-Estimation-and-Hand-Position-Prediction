@@ -10,6 +10,8 @@ does not duplicate the Python source tree.
 - Result summary: `result_summary.json`
 - Naive pose-baseline report: `pose_baselines.json`
 - Window-level pose-baseline details: `pose_baselines.csv`
+- Window-level checkpoint predictions: `test_predictions.csv`
+- Grouped checkpoint analysis: `test_prediction_analysis.json`
 - Pose-baseline evaluator commit: `da50ab8`
 - Full documentation:
   `Thesis/status_testing_hierarchical_tracking_baseline_v1.md`
@@ -41,3 +43,9 @@ orientation error, compared with 18.81 cm and 63.82 degrees for the
 transformer. The movement baselines use the annotated receiving-hand side and
 are therefore oracle baselines; the transformer does not receive that side as
 an explicit input.
+
+The checkpoint export reproduced the original metrics exactly. In the first
+quarter of valid handover windows, the transformer improves position MAE from
+23.08 cm for last observation to 14.42 cm. After the first quarter, last
+observation is substantially better. This motivates residual future-pose
+prediction whose zero correction reproduces the last observed hand pose.

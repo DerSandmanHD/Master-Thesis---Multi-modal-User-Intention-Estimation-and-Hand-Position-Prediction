@@ -300,6 +300,60 @@ Trennung bleibt notwendig, reicht bei nur zwei Personen mit linken Aufnahmen
 aber nicht fuer eine belastbare Drei-Wege-Abdeckung von Train, Validation und
 Test.
 
+#### Fenstergenaue Checkpoint-Analyse
+
+Der Checkpoint aus Epoche 2 wurde erneut auf allen 2.412 Testfenstern
+ausgefuehrt. Die neu berechneten Gesamtmetriken stimmen mit der urspruenglichen
+`metrics.json` ueberein (`reference_metrics: matched`). Damit sind Checkpoint,
+Datenstand und Fensterreihenfolge konsistent.
+
+Auf den 237 gueltigen Pose-Targets gewinnt der Transformer den direkten
+Positionsvergleich in 79 Fenstern, Last Observation in 158 Fenstern. Nach
+Fortschritt innerhalb der Handover-Phase zeigt sich jedoch ein klarer Wechsel:
+
+| Handover-Fortschritt | n | Transformer MAE / RMSE | Last Observation MAE / RMSE | Transformer-Siege |
+|---|---:|---:|---:|---:|
+| 0-25 % | 87 | **14,42 / 16,37 cm** | 23,08 / 29,45 cm | 55 |
+| 25-50 % | 81 | 17,29 / 19,91 cm | **8,04 / 14,76 cm** | 12 |
+| 50-75 % | 63 | 25,06 / 28,33 cm | **13,04 / 20,89 cm** | 12 |
+| 75-100 % | 6 | 37,31 / 37,95 cm | **9,08 / 10,23 cm** | 0 |
+
+Im ersten Viertel reduziert der Transformer den MAE gegenueber Last
+Observation um 8,66 cm und den RMSE um 13,08 cm. Dies ist genau der Abschnitt,
+in dem die Hand noch deutlich bewegt wird und eine Zukunftsprognose Mehrwert
+hat. Danach wird die Hand haeufig stabil; der absolute Pose-Head bleibt jedoch
+von der aktuellen Handpose entfernt und verliert deutlich gegen Persistenz.
+Ueber alle gueltigen Testtargets ist die vorhergesagte Positionsstreuung mit
+6,16 / 8,75 / 3,98 cm in `x/y/z` deutlich kleiner als die Zielstreuung von
+8,20 / 15,18 / 9,34 cm. Dies stuetzt die Interpretation, dass der absolute
+Pose-Head teilweise zu einer typischen Uebergabepose regrediert.
+
+Der fruehe Vorteil tritt bei allen drei Testpersonen auf. Besonders deutlich
+ist er bei Edu (11,59 gegen 22,75 cm) und Mona (12,83 gegen 24,53 cm); bei Jona
+ist der Unterschied klein (21,20 gegen 21,80 cm). Von den 87 fruehen gueltigen
+Handover-Fenstern klassifiziert das Modell 76 korrekt als Handover und elf als
+Fetch. Eine gute Pose wird in diesen elf Faellen in einem End-to-End-System
+nicht genutzt.
+
+Nach Handseite bleibt vor allem die Orientierung problematisch:
+
+| Hand | n | Transformer Position MAE / RMSE | Transformer Orientierung | Last Observation Orientierung |
+|---|---:|---:|---:|---:|
+| rechts | 167 | 20,40 / 23,31 cm | 49,56 Grad | 46,61 Grad |
+| links | 70 | 15,00 / 18,48 cm | 97,85 Grad | 33,41 Grad |
+
+Der Transformer reduziert bei linken Haenden zwar starke Positionsausreisser,
+lernt aber keine robuste linke absolute Wrist-Orientierung. Diese Ergebnisse
+sprechen fuer ein residuales Pose-Modell relativ zur letzten beobachteten Pose:
+Die Nullkorrektur entspricht exakt Last Observation, waehrend das Modell zu
+Beginn des Handovers eine zukuenftige Bewegungskorrektur lernen kann. Eine
+relative Quaternion entfernt zudem den konstanten Unterschied zwischen linker
+und rechter absoluter Wrist-Konvention.
+
+Die vollstaendigen Artefakte liegen unter
+`Training/experiments/hierarchical_tracking_baseline_v1/test_predictions.csv`
+und `test_prediction_analysis.json`.
+
 ### Gate
 
 - Temporal: 0,8792
@@ -329,9 +383,12 @@ erforderlich.
 
 1. nicht-orakelhafte Handauswahl gegen explizites Receiving-Hand-Signal
    vergleichen
-2. Fixed-Horizon `t+1 s` gegen robuste finale Uebergabepose vergleichen
-3. Gaze-Ablation und verschiedene Beobachtungslaengen
-4. einfache MLP- sowie GRU/LSTM-Intentionsbaselines
-5. participant-wise Cross-Validation ueber mehrere Folds und Seeds
-6. verbleibende MPS- und Review-Faelle abschliessen
-7. erst danach komplexere Trajektorienmodelle oder VQ-VAE untersuchen
+2. residuales Position-/Quaternion-Modell mit Last Observation als
+   Nullkorrektur implementieren
+3. Pose sowohl mit wahrer als auch vorhergesagter Empfangshand auswerten
+4. Fixed-Horizon `t+1 s` gegen robuste finale Uebergabepose vergleichen
+5. Gaze-Ablation und verschiedene Beobachtungslaengen
+6. einfache MLP- sowie GRU/LSTM-Intentionsbaselines
+7. participant-wise Cross-Validation ueber mehrere Folds und Seeds
+8. verbleibende MPS- und Review-Faelle abschliessen
+9. erst danach komplexere Trajektorienmodelle oder VQ-VAE untersuchen

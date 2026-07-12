@@ -96,6 +96,27 @@ werden per festgelegter Fallback-Kette aufgefangen, damit alle Metriken dieselbe
 Target-Menge verwenden. Direkte Abdeckung und Metriken ohne Fallback werden
 separat berichtet.
 
+Fenstergenaue Vorhersagen eines vorhandenen Checkpoints exportieren:
+
+```bash
+python3 Training/export_checkpoint_predictions.py \
+  --run-dir Training/runs/hierarchical_baseline_20260712_101448
+```
+
+Der Export schreibt `test_predictions.csv` und
+`test_prediction_analysis.json` in das Run-Verzeichnis. Vor dem Schreiben
+werden die erneut berechneten Intention- und Pose-Metriken gegen die vorhandene
+`metrics.json` geprueft. Die Analyse gruppiert Transformer und Oracle Last
+Observation nach Teilnehmer, Handseite, Sequenz und Fortschritt innerhalb der
+Handover-Phase.
+
+GPU-Export des aktuellen Baseline-Checkpoints auf dem Cluster:
+
+```bash
+sbatch --export=ALL,RUN_DIR=Training/runs/hierarchical_baseline_20260712_101448 \
+  Training/export_checkpoint_predictions.sbatch
+```
+
 GPU-Job auf dem Cluster:
 
 ```bash

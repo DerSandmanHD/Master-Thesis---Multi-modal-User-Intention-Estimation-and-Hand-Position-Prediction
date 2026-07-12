@@ -226,6 +226,80 @@ Gegenueber der vorherigen Version ohne statische Ankerfortfuehrung:
 | Position RMSE | 27,54 cm | 21,99 cm | -20 % |
 | Orientierung | 79,72 Grad | 63,82 Grad | -20 % |
 
+### Naive Pose-Vergleichsbaselines
+
+Alle Verfahren wurden auf denselben 237 gueltigen Testtargets ausgewertet. Der
+Trainingsmittelwert wurde ausschliesslich aus den 1.082 gueltigen Targets des
+Trainingssplits berechnet. Die konstante Geschwindigkeit wurde per linearer
+Regression ueber die letzten 0,5 Sekunden geschaetzt; die Orientierung wurde
+wie bei `last_observation` unveraendert fortgeschrieben.
+
+| Verfahren | Position MAE | Position RMSE | Orientierung |
+|---|---:|---:|---:|
+| Trainingsmittelwert | 19,35 cm | 21,75 cm | 86,33 Grad |
+| Last Observation | **14,92 cm** | 22,62 cm | **42,71 Grad** |
+| konstante Geschwindigkeit | 35,16 cm | 54,77 cm | 42,71 Grad |
+| Transformer | 18,81 cm | **21,99 cm** | 63,82 Grad |
+
+`last_observation` konnte bei 236 von 237 Fenstern direkt berechnet werden;
+ein Fenster verwendete den Trainingsmittelwert als Fallback. Ohne diesen
+Fallback betragen MAE 14,95 cm, RMSE 22,66 cm und Orientierung 42,13 Grad.
+
+Der Transformer verbessert den MAE gegenueber dem Trainingsmittelwert nur um
+0,54 cm und hat einen um 0,24 cm hoeheren RMSE. Gegenueber Last Observation
+ist sein MAE um 3,89 cm und sein Orientierungsfehler um 21,11 Grad hoeher. Nur
+beim RMSE liegt der Transformer um 0,62 cm vorne. Die einfache lineare
+Geschwindigkeitsextrapolation ist fuer den einsekundigen Horizont deutlich
+instabiler, wahrscheinlich weil Trackingrauschen und nicht-konstante
+Handbewegung direkt extrapoliert werden.
+
+Last Observation und konstante Geschwindigkeit sind als
+Oracle-Receiving-Hand-Baselines einzuordnen: Sie verwenden die annotierte
+Empfangshand zur Auswahl des linken oder rechten Wrists. Der Transformer sieht
+dagegen beide Haende, aber keine `receiving_hand_id`. Der Vergleich isoliert
+damit die Bewegungsprognose bei bereits bekannter Hand, ist aber kein
+vollstaendig input-identischer Modellvergleich. Als naechstes ist eine
+nicht-orakelhafte Handauswahl oder ein explizites, fuer alle Modelle gleiches
+Receiving-Hand-Signal erforderlich.
+
+Der vollstaendige maschinenlesbare Bericht liegt unter
+`Training/experiments/hierarchical_tracking_baseline_v1/pose_baselines.json`.
+
+#### Detailanalyse der Pose-Baselines
+
+- Last Observation hat bei 157 von 237 Testfenstern einen kleineren
+  Positionsfehler als der Trainingsmittelwert.
+- Unter den drei naiven Verfahren gewinnt Last Observation bei 132 Fenstern,
+  der Trainingsmittelwert bei 77 und konstante Geschwindigkeit bei 28.
+- Der Last-Observation-Positionsfehler hat einen Median von 7,07 cm, aber ein
+  95-%-Quantil von 48,86 cm und ein Maximum von 68,97 cm. Der Mittelwert wird
+  damit von einer relevanten Ausreissergruppe beeinflusst.
+- Im ersten Viertel der Handover-Fenster pro Sequenz betraegt der
+  Last-Observation-MAE 26,39 cm. Im zweiten und dritten Viertel faellt er auf
+  9,33 beziehungsweise 8,98 cm. Die Zukunftsprognose ist somit vor allem zu
+  Beginn der Handbewegung relevant; spaetere Fenster sind oft bereits nahezu
+  statisch.
+- Der Fehler der konstanten Geschwindigkeit korreliert stark mit der
+  geschaetzten Geschwindigkeit (`r = 0,836`). Bei weniger als 0,1 m/s liegt
+  ihr MAE bei 13,15 cm, oberhalb 1 m/s bei 181,18 cm. Einsekundige
+  Extrapolation verstaerkt daher Trackingrauschen und kurzzeitige Bewegung.
+
+Die Handseiten sind nicht ausgewogen ueber Personen und Splits verteilt:
+
+| Split | rechte Targets | linke Targets | Quelle der linken Targets |
+|---|---:|---:|---|
+| Train | 891 | 191 | ausschliesslich Tarik |
+| Validation | 293 | 0 | keine |
+| Test | 167 | 70 | ausschliesslich Mona |
+
+Beim Test-Trainingsmittelwert liegt der Orientierungsfehler fuer Monas linke
+Hand bei 175,08 Grad, gegenueber 49,13 Grad fuer rechte Haende. Dies deutet auf
+unterschiedliche linke und rechte Wrist-Orientierungsmoden hin. Die aktuelle
+Validation kann linke Haende ueberhaupt nicht bewerten. Participant-wise
+Trennung bleibt notwendig, reicht bei nur zwei Personen mit linken Aufnahmen
+aber nicht fuer eine belastbare Drei-Wege-Abdeckung von Train, Validation und
+Test.
+
 ### Gate
 
 - Temporal: 0,8792
@@ -242,7 +316,8 @@ der zusammengesetzten Drei-Klassen-Entscheidung die schwaechste Klasse.
 Die statische Ankerfortfuehrung verbessert Verfuegbarkeit und Genauigkeit der
 Pose-Targets erheblich. Ein Position MAE von 18,81 cm und ein
 Orientierungsfehler von 63,82 Grad reichen dennoch nicht fuer eine praezise
-Roboteruebergabe.
+Roboteruebergabe. Zudem zeigt die Oracle-Last-Observation-Baseline, dass der
+aktuelle Transformer die zeitliche Pose-Dynamik noch nicht ueberzeugend nutzt.
 
 Der Testsplit wurde waehrend der Pipeline-Entwicklung bereits mehrfach
 ausgewertet. Weitere Hyperparameterentscheidungen duerfen deshalb nicht anhand
@@ -252,12 +327,11 @@ erforderlich.
 
 ## Naechste Schritte
 
-1. Naive Pose-Baselines: letzte Position, konstante Geschwindigkeit und
-   Trainingsmittelwert
+1. nicht-orakelhafte Handauswahl gegen explizites Receiving-Hand-Signal
+   vergleichen
 2. Fixed-Horizon `t+1 s` gegen robuste finale Uebergabepose vergleichen
 3. Gaze-Ablation und verschiedene Beobachtungslaengen
 4. einfache MLP- sowie GRU/LSTM-Intentionsbaselines
 5. participant-wise Cross-Validation ueber mehrere Folds und Seeds
 6. verbleibende MPS- und Review-Faelle abschliessen
 7. erst danach komplexere Trajektorienmodelle oder VQ-VAE untersuchen
-

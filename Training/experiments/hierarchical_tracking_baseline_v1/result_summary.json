@@ -26,5 +26,31 @@
     "pose_samples": 237,
     "mean_gate_temporal": 0.8791509866714478,
     "mean_gate_channel": 0.12084904313087463
+  },
+  "pose_baselines": {
+    "evaluator_commit": "da50ab8",
+    "future_horizon_seconds": 1.0,
+    "velocity_lookback_seconds": 0.5,
+    "oracle_receiving_hand": true,
+    "test_samples": 237,
+    "training_mean": {
+      "position_mae_cm": 19.34925079345703,
+      "position_rmse_cm": 21.750856399536133,
+      "orientation_mean_deg": 86.33385467529297
+    },
+    "last_observation": {
+      "position_mae_cm": 14.91818904876709,
+      "position_rmse_cm": 22.61589813232422,
+      "orientation_mean_deg": 42.70833206176758,
+      "direct_predictions": 236,
+      "training_mean_fallbacks": 1
+    },
+    "constant_velocity": {
+      "position_mae_cm": 35.15571594238281,
+      "position_rmse_cm": 54.76884078979492,
+      "orientation_mean_deg": 42.70833206176758,
+      "direct_predictions": 236,
+      "training_mean_fallbacks": 1
+    }
   }
 }

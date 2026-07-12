@@ -80,6 +80,22 @@ Der Audit schreibt eine Zusammenfassung nach
 `Training/reports/pose_target_audit.json` und alle Handover-Fenster mit ihrer
 konkreten Ursache nach `Training/reports/pose_target_audit.csv`.
 
+Naive Pose-Baselines auf exakt denselben gueltigen Zukunftstargets auswerten:
+
+```bash
+python3 Training/evaluate_pose_baselines.py \
+  --config Training/configs/hierarchical_baseline_v1.json \
+  --model-metrics Training/runs/hierarchical_baseline_20260712_101448/metrics.json
+```
+
+Der Evaluator vergleicht den Trainingsmittelwert, die letzte beobachtete Pose
+und eine konstante lineare Geschwindigkeit. Die beiden bewegungsbasierten
+Verfahren verwenden die annotierte Empfangshand und werden deshalb explizit
+als Oracle-Receiving-Hand-Baselines dokumentiert. Fehlende Beobachtungen
+werden per festgelegter Fallback-Kette aufgefangen, damit alle Metriken dieselbe
+Target-Menge verwenden. Direkte Abdeckung und Metriken ohne Fallback werden
+separat berichtet.
+
 GPU-Job auf dem Cluster:
 
 ```bash

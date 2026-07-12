@@ -32,6 +32,7 @@ def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> No
             "participant": [participant] * rows,
             "timestamp_ns": timestamps,
             "intent_label": intent_labels,
+            "receiving_hand": ["right"] * rows,
             "gaze_valid": np.ones(rows),
             "gaze_yaw_rad": rng.normal(size=rows),
             "gaze_pitch_rad": rng.normal(size=rows),
@@ -48,6 +49,8 @@ def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> No
             "slam_angular_velocity_z_device": rng.normal(size=rows),
             "slam_quality_score": np.ones(rows),
             "apriltag_0_valid": np.ones(rows),
+            "robot_frame_valid": np.ones(rows),
+            "robot_anchor_interpolated": np.zeros(rows),
             "future_1s_receiving_wrist_valid": np.ones(rows),
         }
     )

@@ -9,10 +9,9 @@ From: nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
       - Code/speech_recognition_demo.py
       - Code/extract_multimodal_data.py
       - Code/detect_tags.py
-      - Code/run_yolo_detection.py
       - Code/dataset_qa.py
-      - Code/Testing/*.py
-      - GTN analysis/visualization scripts except model training
+      - Training/*.py
+      - tests/integration/*.py
 
     Main runtime versions:
       - OS: Ubuntu 22.04
@@ -23,7 +22,6 @@ From: nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
       - Project Aria tools: 2.1.2
       - Project Aria MPS: 1.2.1
       - Faster-Whisper: 1.2.1
-      - Ultralytics: 8.4.53
 
 %labels
     maintainer dersandmannhd
@@ -35,7 +33,6 @@ From: nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
     opencv.version "4.10.0.84"
     projectaria_tools.version "2.1.2"
     faster_whisper.version "1.2.1"
-    ultralytics.version "8.4.53"
 
 %environment
     export VIRTUAL_ENV=/opt/aria_env
@@ -45,7 +42,6 @@ From: nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
     export MPLBACKEND=Agg
     export PIP_DISABLE_PIP_VERSION_CHECK=1
     export HF_HOME=${HF_HOME:-$HOME/.cache/huggingface}
-    export YOLO_CONFIG_DIR=${YOLO_CONFIG_DIR:-$HOME/.config/Ultralytics}
 
 %post
     set -e
@@ -114,7 +110,6 @@ From: nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
         faster-whisper==1.2.1 \
         ctranslate2==4.7.2 \
         openai-whisper==20250625 \
-        ultralytics-thop==2.0.19 \
         projectaria-tools==2.1.2 \
         projectaria-mps==1.2.1 \
         projectaria-vrs-health-check==1.2.1 \
@@ -124,10 +119,6 @@ From: nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
         polars==1.41.0 \
         pyarrow==24.0.0 \
         dtw-python==1.5.3
-
-    # Install Ultralytics without its OpenCV dependency so cv2.aruco from
-    # opencv-contrib-python-headless remains available for Code/detect_tags.py.
-    python -m pip install --no-cache-dir --no-deps ultralytics==8.4.53
 
     python -m pip check || true
 
@@ -156,7 +147,6 @@ print(f"opencv: {cv2.__version__}")
 print(f"opencv aruco available: {hasattr(cv2, 'aruco')}")
 print(f"faster-whisper: {version('faster-whisper')}")
 print(f"projectaria-tools: {version('projectaria-tools')}")
-print(f"ultralytics: {version('ultralytics')}")
 PY
     echo "vrs_to_mp4: $(command -v vrs_to_mp4 || true)"
     echo "ffmpeg: $(command -v ffmpeg || true)"
@@ -171,7 +161,6 @@ import numpy
 import scipy
 import torch
 from projectaria_tools.core import data_provider
-from ultralytics import YOLO
 
 assert hasattr(cv2, "aruco"), "OpenCV was installed without aruco support"
 print("import smoke test passed")

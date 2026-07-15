@@ -65,7 +65,7 @@ als einem Split vor. Dadurch wird verhindert, dass personenspezifische
 Bewegungsmuster aus dem Training in Validation oder Test wiederkehren.
 
 Verwendete Konfiguration:
-`Training/configs/participant_split_v1.json`
+`archive/legacy_flat_object_baseline/participant_split_v1.json`
 
 | Split | Teilnehmer | Sequenzen | Fenster |
 |---|---|---:|---:|

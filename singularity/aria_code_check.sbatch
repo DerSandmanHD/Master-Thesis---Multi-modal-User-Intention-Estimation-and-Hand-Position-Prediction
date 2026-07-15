@@ -16,8 +16,7 @@ IMAGE="/home/eker/singularity/aria_master.simg"
 cd "$REPO_DIR"
 
 export HF_HOME="/scratch/$SLURM_JOB_ID/huggingface"
-export YOLO_CONFIG_DIR="/scratch/$SLURM_JOB_ID/ultralytics"
-mkdir -p "$HF_HOME" "$YOLO_CONFIG_DIR"
+mkdir -p "$HF_HOME"
 
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $(hostname)"
@@ -61,13 +60,6 @@ except Exception as e:
     raise
 
 try:
-    import ultralytics
-    print("ultralytics: OK")
-except Exception as e:
-    print("ultralytics: FAILED", repr(e))
-    raise
-
-try:
     from projectaria_tools.core import data_provider
     print("projectaria_tools: OK")
 except Exception as e:
@@ -80,7 +72,7 @@ PY
 echo
 echo "============================================================"
 echo "2) Python syntax compile check for Code/*.py"
-echo "   Excluding Code/Testing and __pycache__"
+echo "   Excluding archived prototypes and __pycache__"
 echo "============================================================"
 
 singularity exec --nv "$IMAGE" bash -lc '

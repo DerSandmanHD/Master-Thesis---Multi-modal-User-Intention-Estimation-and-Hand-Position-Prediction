@@ -84,7 +84,7 @@ Smoke-Test:
 
 ```bash
 python3 Training/smoke_test.py
-python3 Code/Testing/static_robot_anchor_smoke.py
+python3 tests/integration/static_robot_anchor_smoke.py
 ```
 
 Interaktiver Ein-Epochen-Test:
@@ -177,10 +177,9 @@ GPU-Job auf dem Cluster:
 sbatch Training/hierarchical_baseline.sbatch
 ```
 
-Die historische Flat/Object-Baseline verwendete `first_test.json` und
-`participant_split_v1.json`. Diese Konfigurationen bleiben zur
-Nachvollziehbarkeit des ersten Laufs erhalten, sind aber nicht die aktuelle
-Thesis-Baseline.
+Die historische Flat/Object-Baseline liegt unter
+`archive/legacy_flat_object_baseline/`. Sie bleibt zur Nachvollziehbarkeit des
+ersten Laufs erhalten, ist aber nicht die aktuelle Thesis-Baseline.
 
 ## Ergebnisse
 

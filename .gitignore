@@ -1,10 +1,26 @@
-Test_recordings/
-Data_collection
-videoTEMP_MPY_wvf_snd.mp3
+# Local datasets and raw recordings
+/Data_collection/
+/BackUp_Videos/
+/Test_recordings/
+/audio_batch_backups/
+
+# Local Python environments and caches
+/aria_env/
 __pycache__/
 .mypy_cache/
-*.pyc
-BackUp_Videos
+*.py[cod]
+
+# Generated training and cluster outputs
+/Training/reports/
+*.out
+*.err
+
+# OS and editor metadata
+.DS_Store
+.idea/
+
+# Temporary media
+videoTEMP_MPY_wvf_snd.mp3
 *.vrs
 *.mp4
 *.mov

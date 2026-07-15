@@ -9,6 +9,5 @@ dependencies:
   - opencv
   - pip
   - pip:
-    - ultralytics
     - faster-whisper
     - projectaria-tools

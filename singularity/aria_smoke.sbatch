@@ -16,8 +16,7 @@ IMAGE="/home/eker/singularity/aria_master.simg"
 cd "$REPO_DIR"
 
 export HF_HOME="/scratch/$SLURM_JOB_ID/huggingface"
-export YOLO_CONFIG_DIR="/scratch/$SLURM_JOB_ID/ultralytics"
-mkdir -p "$HF_HOME" "$YOLO_CONFIG_DIR"
+mkdir -p "$HF_HOME"
 
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $(hostname)"
@@ -45,7 +44,6 @@ import numpy as np
 import pandas as pd
 import scipy
 import torch
-import ultralytics
 from projectaria_tools.core import data_provider
 
 print("Python imports: OK")
@@ -59,7 +57,6 @@ print(f"opencv: {cv2.__version__}")
 print(f"opencv aruco available: {hasattr(cv2, 'aruco')}")
 print(f"faster-whisper: {version('faster-whisper')}")
 print(f"projectaria-tools: {version('projectaria-tools')}")
-print(f"ultralytics: {version('ultralytics')}")
 
 ffmpeg = shutil.which("ffmpeg")
 vrs_to_mp4 = shutil.which("vrs_to_mp4")

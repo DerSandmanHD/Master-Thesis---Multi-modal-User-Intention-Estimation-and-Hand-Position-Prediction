@@ -1,9 +1,0 @@
-Device: cuda
-Test windows: 2412
-Valid pose targets: 237
-Transformer: MAE=18.81 cm, RMSE=21.99 cm, orientation=63.82 deg
-Last observation: MAE=14.92 cm, RMSE=22.62 cm, orientation=42.71 deg
-Position wins: transformer=79, last_observation=158, ties=0
-Reference metrics: matched
-Predictions: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/hierarchical_baseline_20260712_101448/test_predictions.csv
-Analysis:    /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/hierarchical_baseline_20260712_101448/test_prediction_analysis.json

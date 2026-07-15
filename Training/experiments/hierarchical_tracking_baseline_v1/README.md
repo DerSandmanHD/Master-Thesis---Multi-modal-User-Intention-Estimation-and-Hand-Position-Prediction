@@ -12,6 +12,8 @@ does not duplicate the Python source tree.
 - Window-level pose-baseline details: `pose_baselines.csv`
 - Window-level checkpoint predictions: `test_predictions.csv`
 - Grouped checkpoint analysis: `test_prediction_analysis.json`
+- Pose-target audit summary: `pose_target_audit.json`
+- Window-level pose-target audit: `pose_target_audit.csv`
 - Pose-baseline evaluator commit: `da50ab8`
 - Full documentation:
   `Thesis/status_testing_hierarchical_tracking_baseline_v1.md`

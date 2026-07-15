@@ -27,10 +27,9 @@ KEEP_DEBUG_AUDIO="${KEEP_DEBUG_AUDIO:-1}"
 
 SCRATCH_DIR="/scratch/$SLURM_JOB_ID"
 export HF_HOME="$SCRATCH_DIR/huggingface"
-export YOLO_CONFIG_DIR="$SCRATCH_DIR/ultralytics"
 export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 
-mkdir -p "$HF_HOME" "$YOLO_CONFIG_DIR" "$RESULT_BACKUP_DIR"
+mkdir -p "$HF_HOME" "$RESULT_BACKUP_DIR"
 
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $(hostname)"

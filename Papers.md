@@ -7,6 +7,7 @@
     *   *Title:* Gated Transformer Networks for Multivariate Time Series Classification (IJCAI 2021)
     *   *Links:* [arXiv:2103.14438](https://arxiv.org/abs/2103.14438) | [Official GitHub](https://github.com/ZZUFaceBookDL/GTN)
     *   *Role in Thesis:* Primary architecture blueprint for modeling step-wise and channel-wise dependencies in multimodal sensor matrices.
+    *   *Local note:* See [`references/GTN.md`](references/GTN.md). The active model is an independent, task-specific implementation and does not import the upstream source tree.
 *   **[InceptionTime] 1D-CNN Benchmark**
     *   *Title:* InceptionTime: Finding AlexNet for Time Series Classification (Data Mining and Knowledge Discovery 2020)
     *   *Links:* [arXiv:1909.04939](https://arxiv.org/abs/1909.04939) | [Official GitHub](https://github.com/hfawaz/InceptionTime)

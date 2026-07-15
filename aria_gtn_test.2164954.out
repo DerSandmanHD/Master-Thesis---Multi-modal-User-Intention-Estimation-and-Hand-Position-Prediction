@@ -1,9 +1,0 @@
-Device: cuda
-Run directory: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/first_test_20260711_154837
-Windows: train=7631, validation=2385, test=2414
-Participant split: {'train': ['Berat', 'Felix', 'Jan', 'Jola', 'Julienco', 'Leys', 'Maria', 'Melih', 'Suthan', 'Tarik', 'Urim'], 'validation': ['Atilla', 'Ermal', 'Vanessa'], 'test': ['Edu', 'Jona', 'Mona']}
-Epoch 001 | loss=1.3037 | val intent F1=0.8444 | val object acc=0.3132075369358063 | val pose cm=21.215843200683594
-Epoch 002 | loss=0.6723 | val intent F1=0.8470 | val object acc=0.3186582922935486 | val pose cm=17.472448348999023
-Epoch 003 | loss=0.4558 | val intent F1=0.8383 | val object acc=0.3119497001171112 | val pose cm=16.883134841918945
-Epoch 004 | loss=0.3525 | val intent F1=0.8536 | val object acc=0.31404611468315125 | val pose cm=18.167621612548828
-Epoch 005 | loss=0.2716 | val intent F1=0.8530 | val object acc=0.30482178926467896 | val pose cm=17.064542770385742

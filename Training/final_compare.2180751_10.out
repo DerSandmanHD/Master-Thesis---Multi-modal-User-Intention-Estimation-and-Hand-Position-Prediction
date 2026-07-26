@@ -1,0 +1,31 @@
+Device: cuda
+Run directory: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_residual_v2_seed43
+Windows: train=10958, validation=1780, test=1981
+Participant split: {'train': ['Angelina', 'Berat', 'David', 'Felix', 'Florian', 'Jan', 'Jola', 'Julienco', 'Leys', 'Maria', 'Melih', 'Miro', 'Suthan', 'Tarik', 'Test', 'Urim', 'Yuzhi'], 'validation': ['Atilla', 'Ermal', 'Vanessa'], 'test': ['Edu', 'Jona', 'Mona']}
+Dataset filter: selected=156, excluded_master_files=27, fingerprint=457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d
+Receiving-hand windows: train=[651, 1368], validation=[0, 309], test=[57, 214]
+Residual pose targets: train=1617, validation=247, test=202
+Trainable parameters: 184,015
+Epoch 001 | loss=0.6357 | val intent F1=0.9171 | val hand supported F1=0.9918 | val pose oracle=9.36392593383789 cm | val pose end-to-end=9.62952995300293 cm | val early pose=15.158001899719238 cm
+Epoch 002 | loss=0.3023 | val intent F1=0.9167 | val hand supported F1=0.9968 | val pose oracle=9.185495376586914 cm | val pose end-to-end=9.242328643798828 cm | val early pose=14.521196365356445 cm
+Epoch 003 | loss=0.2342 | val intent F1=0.9099 | val hand supported F1=1.0000 | val pose oracle=10.047021865844727 cm | val pose end-to-end=10.047021865844727 cm | val early pose=14.1138916015625 cm
+Epoch 004 | loss=0.1920 | val intent F1=0.9035 | val hand supported F1=0.9984 | val pose oracle=9.378142356872559 cm | val pose end-to-end=9.411714553833008 cm | val early pose=14.146044731140137 cm
+Epoch 005 | loss=0.1649 | val intent F1=0.9004 | val hand supported F1=0.9984 | val pose oracle=11.182902336120605 cm | val pose end-to-end=11.206905364990234 cm | val early pose=14.61914348602295 cm
+Epoch 006 | loss=0.1491 | val intent F1=0.8946 | val hand supported F1=1.0000 | val pose oracle=9.928435325622559 cm | val pose end-to-end=9.928435325622559 cm | val early pose=14.342602729797363 cm
+Epoch 007 | loss=0.1104 | val intent F1=0.8955 | val hand supported F1=0.9984 | val pose oracle=9.872316360473633 cm | val pose end-to-end=9.845132827758789 cm | val early pose=14.268819808959961 cm
+Epoch 008 | loss=0.1141 | val intent F1=0.8892 | val hand supported F1=0.9968 | val pose oracle=9.99686050415039 cm | val pose end-to-end=9.98560619354248 cm | val early pose=14.09039306640625 cm
+Epoch 009 | loss=0.1141 | val intent F1=0.9060 | val hand supported F1=1.0000 | val pose oracle=8.713180541992188 cm | val pose end-to-end=8.713180541992188 cm | val early pose=13.431373596191406 cm
+Epoch 010 | loss=0.0828 | val intent F1=0.8943 | val hand supported F1=0.9885 | val pose oracle=9.583982467651367 cm | val pose end-to-end=9.710986137390137 cm | val early pose=13.138790130615234 cm
+Epoch 011 | loss=0.0943 | val intent F1=0.8975 | val hand supported F1=0.9951 | val pose oracle=9.030770301818848 cm | val pose end-to-end=9.129571914672852 cm | val early pose=14.325398445129395 cm
+Epoch 012 | loss=0.0822 | val intent F1=0.8953 | val hand supported F1=0.9951 | val pose oracle=10.906067848205566 cm | val pose end-to-end=10.934164047241211 cm | val early pose=14.71564769744873 cm
+Epoch 013 | loss=0.0762 | val intent F1=0.8953 | val hand supported F1=0.9885 | val pose oracle=8.669837951660156 cm | val pose end-to-end=9.215686798095703 cm | val early pose=14.516672134399414 cm
+Epoch 014 | loss=0.0720 | val intent F1=0.8841 | val hand supported F1=0.9951 | val pose oracle=10.322672843933105 cm | val pose end-to-end=10.379598617553711 cm | val early pose=14.715361595153809 cm
+Epoch 015 | loss=0.0723 | val intent F1=0.8958 | val hand supported F1=0.9869 | val pose oracle=10.80023193359375 cm | val pose end-to-end=11.327350616455078 cm | val early pose=13.934082984924316 cm
+Epoch 016 | loss=0.0578 | val intent F1=0.8984 | val hand supported F1=0.9885 | val pose oracle=10.19234561920166 cm | val pose end-to-end=10.561234474182129 cm | val early pose=15.892635345458984 cm
+Epoch 017 | loss=0.0531 | val intent F1=0.8986 | val hand supported F1=0.9968 | val pose oracle=8.478972434997559 cm | val pose end-to-end=8.532991409301758 cm | val early pose=13.788522720336914 cm
+Epoch 018 | loss=0.0615 | val intent F1=0.8960 | val hand supported F1=0.9885 | val pose oracle=9.801361083984375 cm | val pose end-to-end=10.066481590270996 cm | val early pose=13.449089050292969 cm
+Epoch 019 | loss=0.0589 | val intent F1=0.8918 | val hand supported F1=0.9951 | val pose oracle=10.483747482299805 cm | val pose end-to-end=10.530967712402344 cm | val early pose=15.248380661010742 cm
+Epoch 020 | loss=0.0452 | val intent F1=0.8983 | val hand supported F1=0.9885 | val pose oracle=9.548195838928223 cm | val pose end-to-end=9.804420471191406 cm | val early pose=14.668436050415039 cm
+best_intention: intent F1=0.8534, hand F1=0.9592, pose oracle=14.768446922302246 cm, pose end-to-end=14.80517864227295 cm
+best_pose: intent F1=0.8556, hand F1=0.9653, pose oracle=13.191082954406738 cm, pose end-to-end=13.227903366088867 cm
+Metrics: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_residual_v2_seed43/metrics.json

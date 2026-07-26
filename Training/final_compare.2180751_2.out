@@ -1,0 +1,31 @@
+Device: cuda
+Run directory: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_transformer_v1_seed44
+Windows: train=10958, validation=1780, test=1981
+Participant split: {'train': ['Angelina', 'Berat', 'David', 'Felix', 'Florian', 'Jan', 'Jola', 'Julienco', 'Leys', 'Maria', 'Melih', 'Miro', 'Suthan', 'Tarik', 'Test', 'Urim', 'Yuzhi'], 'validation': ['Atilla', 'Ermal', 'Vanessa'], 'test': ['Edu', 'Jona', 'Mona']}
+Dataset filter: selected=156, excluded_master_files=27, fingerprint=457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d
+Discarded gap windows: train=0, validation=0, test=0
+Discarded unlabeled endpoints: train=877, validation=150, test=136
+Model: hierarchical_gated_multimodal_transformer
+Trainable parameters: 183,629
+Epoch 001 | loss=0.5875 | val intent F1=0.9035 | val assistance F1=0.9476 | val fetch/handover F1=0.9398 | val pose cm=25.528738021850586
+Epoch 002 | loss=0.3198 | val intent F1=0.9155 | val assistance F1=0.9609 | val fetch/handover F1=0.9381 | val pose cm=16.586427688598633
+Epoch 003 | loss=0.2259 | val intent F1=0.9171 | val assistance F1=0.9513 | val fetch/handover F1=0.9518 | val pose cm=14.5405855178833
+Epoch 004 | loss=0.1813 | val intent F1=0.9014 | val assistance F1=0.9528 | val fetch/handover F1=0.9206 | val pose cm=17.832124710083008
+Epoch 005 | loss=0.1520 | val intent F1=0.9154 | val assistance F1=0.9560 | val fetch/handover F1=0.9398 | val pose cm=19.2510986328125
+Epoch 006 | loss=0.1423 | val intent F1=0.8922 | val assistance F1=0.9411 | val fetch/handover F1=0.9241 | val pose cm=19.831756591796875
+Epoch 007 | loss=0.1115 | val intent F1=0.8806 | val assistance F1=0.9402 | val fetch/handover F1=0.9173 | val pose cm=12.852387428283691
+Epoch 008 | loss=0.1075 | val intent F1=0.9046 | val assistance F1=0.9517 | val fetch/handover F1=0.9342 | val pose cm=19.100919723510742
+Epoch 009 | loss=0.0999 | val intent F1=0.8909 | val assistance F1=0.9471 | val fetch/handover F1=0.9172 | val pose cm=11.544757843017578
+Epoch 010 | loss=0.0819 | val intent F1=0.8952 | val assistance F1=0.9573 | val fetch/handover F1=0.9132 | val pose cm=17.07314682006836
+Epoch 011 | loss=0.0795 | val intent F1=0.8992 | val assistance F1=0.9568 | val fetch/handover F1=0.9156 | val pose cm=15.567961692810059
+Epoch 012 | loss=0.0811 | val intent F1=0.8995 | val assistance F1=0.9500 | val fetch/handover F1=0.9191 | val pose cm=15.83139705657959
+Epoch 013 | loss=0.0629 | val intent F1=0.9026 | val assistance F1=0.9556 | val fetch/handover F1=0.9172 | val pose cm=14.596549034118652
+Epoch 014 | loss=0.0616 | val intent F1=0.8992 | val assistance F1=0.9479 | val fetch/handover F1=0.9294 | val pose cm=13.882308959960938
+Epoch 015 | loss=0.0675 | val intent F1=0.9035 | val assistance F1=0.9590 | val fetch/handover F1=0.9171 | val pose cm=17.972867965698242
+Epoch 016 | loss=0.0622 | val intent F1=0.9034 | val assistance F1=0.9571 | val fetch/handover F1=0.9205 | val pose cm=13.677769660949707
+Early stopping
+Test intention macro F1: 0.8593
+Test assistance macro F1: 0.8905
+Test fetch/handover macro F1: 0.9588
+Best-pose checkpoint test position MAE: 17.52260398864746 cm
+Metrics: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_transformer_v1_seed44/metrics.json

@@ -1,0 +1,827 @@
+{
+  "tag": "final_clean_v1",
+  "expected_seeds": [
+    42,
+    43,
+    44
+  ],
+  "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+  "split_sequences": {
+    "train": [
+      "Angelina_10_20260715_153801",
+      "Angelina_1_20260715_152929",
+      "Angelina_2_20260715_153046",
+      "Angelina_3_20260715_153144",
+      "Angelina_4_20260715_153241",
+      "Angelina_6_20260715_153440",
+      "Angelina_7_20260715_153539",
+      "Angelina_8_20260715_153620",
+      "Angelina_9_20260715_153718",
+      "Berat_10_20260616_142950",
+      "Berat_1_20260604_154611",
+      "Berat_3_20260604_154928",
+      "Berat_4_20260604_155100",
+      "Berat_5_20260604_155234",
+      "Berat_6_20260616_142129",
+      "Berat_7_20260616_142358",
+      "Berat_8_20260616_142539",
+      "Berat_9_20260616_142847",
+      "David_1_20260715_140439",
+      "David_2_20260715_140628",
+      "David_4_20260715_140931",
+      "David_5_20260715_141027",
+      "Felix_2_20260604_172102",
+      "Felix_3_20260604_172212",
+      "Florian_10_20260715_151601",
+      "Florian_1_20260715_150317",
+      "Florian_2_20260715_150637",
+      "Florian_3_20260715_150741",
+      "Florian_4_20260715_150849",
+      "Florian_5_20260715_150959",
+      "Florian_6_20260715_151126",
+      "Florian_7_20260715_151245",
+      "Florian_8_20260715_151356",
+      "Florian_9_20260715_151452",
+      "Jan_1_20260604_161550",
+      "Jan_2_20260604_161704",
+      "Jan_3_20260604_161835",
+      "Jan_4_20260604_162000",
+      "Jan_5_20260604_162111",
+      "Jola_1_20260624_131133",
+      "Jola_2_20260624_131246",
+      "Julienco_1_20260624_125251",
+      "Julienco_2_20260624_125435",
+      "Julienco_3_20260624_125549",
+      "Julienco_4_20260624_125717",
+      "Julienco_4_2_20260624_125830",
+      "Julienco_5_20260624_125942",
+      "Julienco_7_20260624_130215",
+      "Julienco_8_20260624_130311",
+      "Leys_1_20260604_163147",
+      "Leys_2_20260604_163417",
+      "Leys_3_20260604_163535",
+      "Leys_4_20260604_163704",
+      "Leys_5_20260604_163854",
+      "Maria_4_20260624_134233",
+      "Melih_10_20260616_180515",
+      "Melih_1_20260616_175140",
+      "Melih_2_20260616_175310",
+      "Melih_3_20260616_175418",
+      "Melih_4_20260616_175523",
+      "Melih_5_20260616_175612",
+      "Melih_6_20260616_180104",
+      "Melih_7_20260616_180202",
+      "Melih_8_20260616_180307",
+      "Melih_9_20260616_180402",
+      "Miro_3_20260604_153609",
+      "Suthan_1_20260604_164834",
+      "Suthan_2_20260604_165031",
+      "Suthan_4_20260604_165434",
+      "Tarik_10_20260704_142949",
+      "Tarik_11_20260704_143216",
+      "Tarik_12_20260704_143334",
+      "Tarik_13_20260704_143446",
+      "Tarik_14_20260704_143554",
+      "Tarik_15_20260704_143803",
+      "Tarik_16_20260704_143930",
+      "Tarik_17_20260704_144050",
+      "Tarik_18_20260704_144512",
+      "Tarik_1_20260704_141845",
+      "Tarik_20_20260704_145000",
+      "Tarik_21_20260704_145054",
+      "Tarik_23_20260704_145434",
+      "Tarik_24_20260704_145314",
+      "Tarik_2_20260704_142022",
+      "Tarik_3_20260704_142144",
+      "Tarik_4_20260704_142308",
+      "Tarik_5_20260704_142458",
+      "Tarik_6_20260704_142555",
+      "Tarik_7_20260704_142646",
+      "Tarik_8_20260704_142759",
+      "Tarik_9_20260704_142856",
+      "Test_2_20260624_122206",
+      "Test_3_20260624_122314",
+      "Test_5_20260624_122509",
+      "Test_7_20260624_122709",
+      "Urim_10_20260616_145015",
+      "Urim_1_20260604_160102",
+      "Urim_2_20260604_160234",
+      "Urim_3_20260604_160345",
+      "Urim_4_20260604_160502",
+      "Urim_5_20260604_160634",
+      "Urim_6_20260616_144055",
+      "Urim_7_20260616_144229",
+      "Urim_8_20260616_144352",
+      "Urim_9_20260616_144841",
+      "Yuzhi_10_20260715_135531",
+      "Yuzhi_1_20260715_134210",
+      "Yuzhi_2_20260715_134641",
+      "Yuzhi_3_20260715_134755",
+      "Yuzhi_4_20260715_134842",
+      "Yuzhi_5_20260715_134954",
+      "Yuzhi_6_20260715_135122",
+      "Yuzhi_7_20260715_135245",
+      "Yuzhi_8_20260715_135404",
+      "Yuzhi_9_20260715_135444",
+      "david_7_20260715_141225"
+    ],
+    "validation": [
+      "Atilla_1_20260616_184923",
+      "Atilla_2_20260616_185042",
+      "Atilla_3_20260616_185212",
+      "Atilla_4_20260616_185327",
+      "Atilla_5_20260616_185449",
+      "Atilla_6_20260616_185613",
+      "Atilla_7_20260616_185714",
+      "Atilla_8_20260616_185812",
+      "Ermal_1_20260604_151723",
+      "Ermal_2_20260604_151912",
+      "Ermal_3_20260604_152032",
+      "Ermal_4_20260604_152214",
+      "Ermal_5_20260616_153530",
+      "Ermal_6_20260616_153648",
+      "Ermal_7_20260616_153921",
+      "Ermal_8_20260616_154054",
+      "Ermal_9_20260616_154205",
+      "Vanessa_2_20260624_132710",
+      "Vanessa_3_20260624_132807"
+    ],
+    "test": [
+      "Edu_10_20260616_150412",
+      "Edu_2_20260604_170420",
+      "Edu_3_20260604_170622",
+      "Edu_4_20260604_170837",
+      "Edu_5_20260604_170944",
+      "Edu_6_20260616_145740",
+      "Edu_7_20260616_145927",
+      "Edu_8_20260616_150108",
+      "Edu_9_20260616_150247",
+      "Jona_1_20260616_181413",
+      "Jona_2_20260616_181551",
+      "Jona_3_20260616_181717",
+      "Jona_4_20260616_181855",
+      "Jona_5_20260616_182002",
+      "Jona_6_20260616_182111",
+      "Jona_7_20260616_182214",
+      "Mona_3_20260624_123548",
+      "Mona_4_20260624_123706",
+      "Mona_5_20260624_123814",
+      "Mona_7_20260624_124051",
+      "Mona_8_20260624_124414"
+    ]
+  },
+  "windows": {
+    "train": 10958,
+    "validation": 1780,
+    "test": 1981
+  },
+  "runs": [
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_gru_v1_seed42",
+      "model_type": "hierarchical_gru",
+      "seed": 42,
+      "trainable_parameters": 190187,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8633050997742058,
+      "assistance_macro_f1": 0.9062663010612713,
+      "assistance_type_macro_f1": 0.9451245251160827,
+      "receiving_hand_macro_f1": null,
+      "intent_checkpoint_pose_mae_cm": 17.067129135131836,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 42.80571746826172,
+      "pose_checkpoint_oracle_mae_cm": 17.06773567199707,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 40.38248062133789,
+      "pose_checkpoint_end_to_end_mae_cm": 17.06773567199707,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 40.38248062133789
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_gru_v1_seed43",
+      "model_type": "hierarchical_gru",
+      "seed": 43,
+      "trainable_parameters": 190187,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8780792699668812,
+      "assistance_macro_f1": 0.9187433492248771,
+      "assistance_type_macro_f1": 0.946978180212789,
+      "receiving_hand_macro_f1": null,
+      "intent_checkpoint_pose_mae_cm": 17.778316497802734,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 50.76652908325195,
+      "pose_checkpoint_oracle_mae_cm": 18.616004943847656,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 47.906944274902344,
+      "pose_checkpoint_end_to_end_mae_cm": 18.616004943847656,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 47.906944274902344
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_gru_v1_seed44",
+      "model_type": "hierarchical_gru",
+      "seed": 44,
+      "trainable_parameters": 190187,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8472014607806098,
+      "assistance_macro_f1": 0.9014583390509647,
+      "assistance_type_macro_f1": 0.9247843467283821,
+      "receiving_hand_macro_f1": null,
+      "intent_checkpoint_pose_mae_cm": 18.656864166259766,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 65.34772491455078,
+      "pose_checkpoint_oracle_mae_cm": 14.57793140411377,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 54.671993255615234,
+      "pose_checkpoint_end_to_end_mae_cm": 14.57793140411377,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 54.671993255615234
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_mlp_v1_seed42",
+      "model_type": "hierarchical_window_mlp",
+      "seed": 42,
+      "trainable_parameters": 197051,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8444420459119856,
+      "assistance_macro_f1": 0.8827675878207469,
+      "assistance_type_macro_f1": 0.9520749947335159,
+      "receiving_hand_macro_f1": null,
+      "intent_checkpoint_pose_mae_cm": 18.827556610107422,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 59.26850128173828,
+      "pose_checkpoint_oracle_mae_cm": 18.63216781616211,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 52.74673843383789,
+      "pose_checkpoint_end_to_end_mae_cm": 18.63216781616211,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 52.74673843383789
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_mlp_v1_seed43",
+      "model_type": "hierarchical_window_mlp",
+      "seed": 43,
+      "trainable_parameters": 197051,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8531690093346539,
+      "assistance_macro_f1": 0.8971570150997561,
+      "assistance_type_macro_f1": 0.9401142435968306,
+      "receiving_hand_macro_f1": null,
+      "intent_checkpoint_pose_mae_cm": 18.49625015258789,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 53.99961853027344,
+      "pose_checkpoint_oracle_mae_cm": 18.14203643798828,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 54.15742874145508,
+      "pose_checkpoint_end_to_end_mae_cm": 18.14203643798828,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 54.15742874145508
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_mlp_v1_seed44",
+      "model_type": "hierarchical_window_mlp",
+      "seed": 44,
+      "trainable_parameters": 197051,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.7995867447612576,
+      "assistance_macro_f1": 0.8420253875697872,
+      "assistance_type_macro_f1": 0.9469688772958953,
+      "receiving_hand_macro_f1": null,
+      "intent_checkpoint_pose_mae_cm": 18.96322250366211,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 54.064735412597656,
+      "pose_checkpoint_oracle_mae_cm": 18.40923309326172,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 53.53380584716797,
+      "pose_checkpoint_end_to_end_mae_cm": 18.40923309326172,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 53.53380584716797
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_residual_v2_seed42",
+      "model_type": "hierarchical_residual_pose_transformer_v2",
+      "seed": 42,
+      "trainable_parameters": 184015,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8782493407156114,
+      "assistance_macro_f1": 0.9171580311964203,
+      "assistance_type_macro_f1": 0.9451990632318501,
+      "receiving_hand_macro_f1": 0.971290548128059,
+      "intent_checkpoint_pose_mae_cm": 14.965620994567871,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 41.81484603881836,
+      "pose_checkpoint_oracle_mae_cm": 14.995458602905273,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 40.559207916259766,
+      "pose_checkpoint_end_to_end_mae_cm": 14.965620994567871,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 41.81484603881836
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_residual_v2_seed43",
+      "model_type": "hierarchical_residual_pose_transformer_v2",
+      "seed": 43,
+      "trainable_parameters": 184015,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8533548235511142,
+      "assistance_macro_f1": 0.904713586462325,
+      "assistance_type_macro_f1": 0.9263502454991817,
+      "receiving_hand_macro_f1": 0.959243742614674,
+      "intent_checkpoint_pose_mae_cm": 14.80517864227295,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 41.89442825317383,
+      "pose_checkpoint_oracle_mae_cm": 13.191082954406738,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 36.2726936340332,
+      "pose_checkpoint_end_to_end_mae_cm": 13.227903366088867,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 37.89553451538086
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_residual_v2_seed44",
+      "model_type": "hierarchical_residual_pose_transformer_v2",
+      "seed": 44,
+      "trainable_parameters": 184015,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8544219977553311,
+      "assistance_macro_f1": 0.8895374772553852,
+      "assistance_type_macro_f1": 0.9501189324598878,
+      "receiving_hand_macro_f1": 0.959243742614674,
+      "intent_checkpoint_pose_mae_cm": 15.27900505065918,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 44.00328063964844,
+      "pose_checkpoint_oracle_mae_cm": 15.517618179321289,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 40.345848083496094,
+      "pose_checkpoint_end_to_end_mae_cm": 15.450870513916016,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 41.52267837524414
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_transformer_v1_seed42",
+      "model_type": "hierarchical_gated_multimodal_transformer",
+      "seed": 42,
+      "trainable_parameters": 183629,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8456050513550003,
+      "assistance_macro_f1": 0.9208465488101332,
+      "assistance_type_macro_f1": 0.8836842105263158,
+      "receiving_hand_macro_f1": null,
+      "intent_checkpoint_pose_mae_cm": 18.15862464904785,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 52.35359191894531,
+      "pose_checkpoint_oracle_mae_cm": 20.391616821289062,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 51.76767349243164,
+      "pose_checkpoint_end_to_end_mae_cm": 20.391616821289062,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 51.76767349243164
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_transformer_v1_seed43",
+      "model_type": "hierarchical_gated_multimodal_transformer",
+      "seed": 43,
+      "trainable_parameters": 183629,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8495610298429871,
+      "assistance_macro_f1": 0.9080168484318875,
+      "assistance_type_macro_f1": 0.9196430919947043,
+      "receiving_hand_macro_f1": null,
+      "intent_checkpoint_pose_mae_cm": 19.105430603027344,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 56.81892013549805,
+      "pose_checkpoint_oracle_mae_cm": 17.97754669189453,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 43.483768463134766,
+      "pose_checkpoint_end_to_end_mae_cm": 17.97754669189453,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 43.483768463134766
+    },
+    {
+      "run_dir": "/mnt/beegfs/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/final_clean_v1_transformer_v1_seed44",
+      "model_type": "hierarchical_gated_multimodal_transformer",
+      "seed": 44,
+      "trainable_parameters": 183629,
+      "selected_sequences": 156,
+      "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+      "train_windows": 10958,
+      "validation_windows": 1780,
+      "test_windows": 1981,
+      "intention_macro_f1": 0.8593128992602784,
+      "assistance_macro_f1": 0.8904892215675808,
+      "assistance_type_macro_f1": 0.9587718473971059,
+      "receiving_hand_macro_f1": null,
+      "intent_checkpoint_pose_mae_cm": 18.381196975708008,
+      "intent_checkpoint_pose_samples": 202,
+      "intent_checkpoint_orientation_deg": 63.28261947631836,
+      "pose_checkpoint_oracle_mae_cm": 17.52260398864746,
+      "pose_checkpoint_oracle_samples": 202,
+      "pose_checkpoint_oracle_orientation_deg": 55.48460006713867,
+      "pose_checkpoint_end_to_end_mae_cm": 17.52260398864746,
+      "pose_checkpoint_end_to_end_samples": 202,
+      "pose_checkpoint_end_to_end_orientation_deg": 55.48460006713867
+    }
+  ],
+  "summary": {
+    "hierarchical_gated_multimodal_transformer": {
+      "runs": 3,
+      "trainable_parameters": 183629,
+      "metrics": {
+        "intention_macro_f1": {
+          "mean": 0.8514929934860885,
+          "std": 0.007055185056910912,
+          "values": [
+            0.8456050513550003,
+            0.8495610298429871,
+            0.8593128992602784
+          ]
+        },
+        "assistance_macro_f1": {
+          "mean": 0.9064508729365338,
+          "std": 0.015239128543551594,
+          "values": [
+            0.9208465488101332,
+            0.9080168484318875,
+            0.8904892215675808
+          ]
+        },
+        "assistance_type_macro_f1": {
+          "mean": 0.9206997166393753,
+          "std": 0.03755496830566763,
+          "values": [
+            0.8836842105263158,
+            0.9196430919947043,
+            0.9587718473971059
+          ]
+        },
+        "intent_checkpoint_pose_mae_cm": {
+          "mean": 18.548417409261067,
+          "std": 0.49505795991076545,
+          "values": [
+            18.15862464904785,
+            19.105430603027344,
+            18.381196975708008
+          ]
+        },
+        "intent_checkpoint_orientation_deg": {
+          "mean": 57.48504384358724,
+          "std": 5.494879564950786,
+          "values": [
+            52.35359191894531,
+            56.81892013549805,
+            63.28261947631836
+          ]
+        },
+        "pose_checkpoint_oracle_mae_cm": {
+          "mean": 18.63058916727702,
+          "std": 1.5419653090960936,
+          "values": [
+            20.391616821289062,
+            17.97754669189453,
+            17.52260398864746
+          ]
+        },
+        "pose_checkpoint_oracle_orientation_deg": {
+          "mean": 50.245347340901695,
+          "std": 6.143541118983313,
+          "values": [
+            51.76767349243164,
+            43.483768463134766,
+            55.48460006713867
+          ]
+        },
+        "pose_checkpoint_end_to_end_mae_cm": {
+          "mean": 18.63058916727702,
+          "std": 1.5419653090960936,
+          "values": [
+            20.391616821289062,
+            17.97754669189453,
+            17.52260398864746
+          ]
+        },
+        "pose_checkpoint_end_to_end_orientation_deg": {
+          "mean": 50.245347340901695,
+          "std": 6.143541118983313,
+          "values": [
+            51.76767349243164,
+            43.483768463134766,
+            55.48460006713867
+          ]
+        }
+      }
+    },
+    "hierarchical_gru": {
+      "runs": 3,
+      "trainable_parameters": 190187,
+      "metrics": {
+        "intention_macro_f1": {
+          "mean": 0.8628619435072323,
+          "std": 0.01544367396844631,
+          "values": [
+            0.8633050997742058,
+            0.8780792699668812,
+            0.8472014607806098
+          ]
+        },
+        "assistance_macro_f1": {
+          "mean": 0.908822663112371,
+          "std": 0.008921554482280027,
+          "values": [
+            0.9062663010612713,
+            0.9187433492248771,
+            0.9014583390509647
+          ]
+        },
+        "assistance_type_macro_f1": {
+          "mean": 0.9389623506857513,
+          "std": 0.012313442104698783,
+          "values": [
+            0.9451245251160827,
+            0.946978180212789,
+            0.9247843467283821
+          ]
+        },
+        "intent_checkpoint_pose_mae_cm": {
+          "mean": 17.834103266398113,
+          "std": 0.7963344083747516,
+          "values": [
+            17.067129135131836,
+            17.778316497802734,
+            18.656864166259766
+          ]
+        },
+        "intent_checkpoint_orientation_deg": {
+          "mean": 52.973323822021484,
+          "std": 11.43188445495464,
+          "values": [
+            42.80571746826172,
+            50.76652908325195,
+            65.34772491455078
+          ]
+        },
+        "pose_checkpoint_oracle_mae_cm": {
+          "mean": 16.7538906733195,
+          "std": 2.0372490006061934,
+          "values": [
+            17.06773567199707,
+            18.616004943847656,
+            14.57793140411377
+          ]
+        },
+        "pose_checkpoint_oracle_orientation_deg": {
+          "mean": 47.65380605061849,
+          "std": 7.148118777114588,
+          "values": [
+            40.38248062133789,
+            47.906944274902344,
+            54.671993255615234
+          ]
+        },
+        "pose_checkpoint_end_to_end_mae_cm": {
+          "mean": 16.7538906733195,
+          "std": 2.0372490006061934,
+          "values": [
+            17.06773567199707,
+            18.616004943847656,
+            14.57793140411377
+          ]
+        },
+        "pose_checkpoint_end_to_end_orientation_deg": {
+          "mean": 47.65380605061849,
+          "std": 7.148118777114588,
+          "values": [
+            40.38248062133789,
+            47.906944274902344,
+            54.671993255615234
+          ]
+        }
+      }
+    },
+    "hierarchical_residual_pose_transformer_v2": {
+      "runs": 3,
+      "trainable_parameters": 184015,
+      "metrics": {
+        "intention_macro_f1": {
+          "mean": 0.8620087206740189,
+          "std": 0.014074907448969911,
+          "values": [
+            0.8782493407156114,
+            0.8533548235511142,
+            0.8544219977553311
+          ]
+        },
+        "assistance_macro_f1": {
+          "mean": 0.9038030316380435,
+          "std": 0.013832772049319075,
+          "values": [
+            0.9171580311964203,
+            0.904713586462325,
+            0.8895374772553852
+          ]
+        },
+        "assistance_type_macro_f1": {
+          "mean": 0.9405560803969731,
+          "std": 0.012546138336664852,
+          "values": [
+            0.9451990632318501,
+            0.9263502454991817,
+            0.9501189324598878
+          ]
+        },
+        "receiving_hand_macro_f1": {
+          "mean": 0.9632593444524691,
+          "std": 0.006955226406027895,
+          "values": [
+            0.971290548128059,
+            0.959243742614674,
+            0.959243742614674
+          ]
+        },
+        "intent_checkpoint_pose_mae_cm": {
+          "mean": 15.0166015625,
+          "std": 0.24099197092654462,
+          "values": [
+            14.965620994567871,
+            14.80517864227295,
+            15.27900505065918
+          ]
+        },
+        "intent_checkpoint_orientation_deg": {
+          "mean": 42.57085164388021,
+          "std": 1.2411579082246598,
+          "values": [
+            41.81484603881836,
+            41.89442825317383,
+            44.00328063964844
+          ]
+        },
+        "pose_checkpoint_oracle_mae_cm": {
+          "mean": 14.568053245544434,
+          "std": 1.2207366803768986,
+          "values": [
+            14.995458602905273,
+            13.191082954406738,
+            15.517618179321289
+          ]
+        },
+        "pose_checkpoint_oracle_orientation_deg": {
+          "mean": 39.05924987792969,
+          "std": 2.415585307923961,
+          "values": [
+            40.559207916259766,
+            36.2726936340332,
+            40.345848083496094
+          ]
+        },
+        "pose_checkpoint_end_to_end_mae_cm": {
+          "mean": 14.548131624857584,
+          "std": 1.1688108339014962,
+          "values": [
+            14.965620994567871,
+            13.227903366088867,
+            15.450870513916016
+          ]
+        },
+        "pose_checkpoint_end_to_end_orientation_deg": {
+          "mean": 40.41101964314779,
+          "std": 2.183366564945531,
+          "values": [
+            41.81484603881836,
+            37.89553451538086,
+            41.52267837524414
+          ]
+        }
+      }
+    },
+    "hierarchical_window_mlp": {
+      "runs": 3,
+      "trainable_parameters": 197051,
+      "metrics": {
+        "intention_macro_f1": {
+          "mean": 0.8323992666692991,
+          "std": 0.02874954205060356,
+          "values": [
+            0.8444420459119856,
+            0.8531690093346539,
+            0.7995867447612576
+          ]
+        },
+        "assistance_macro_f1": {
+          "mean": 0.87398333016343,
+          "std": 0.028596266809994695,
+          "values": [
+            0.8827675878207469,
+            0.8971570150997561,
+            0.8420253875697872
+          ]
+        },
+        "assistance_type_macro_f1": {
+          "mean": 0.9463860385420806,
+          "std": 0.0060016387510529725,
+          "values": [
+            0.9520749947335159,
+            0.9401142435968306,
+            0.9469688772958953
+          ]
+        },
+        "intent_checkpoint_pose_mae_cm": {
+          "mean": 18.76234308878581,
+          "std": 0.2402194760824346,
+          "values": [
+            18.827556610107422,
+            18.49625015258789,
+            18.96322250366211
+          ]
+        },
+        "intent_checkpoint_orientation_deg": {
+          "mean": 55.777618408203125,
+          "std": 3.0233685649696613,
+          "values": [
+            59.26850128173828,
+            53.99961853027344,
+            54.064735412597656
+          ]
+        },
+        "pose_checkpoint_oracle_mae_cm": {
+          "mean": 18.394479115804035,
+          "std": 0.24539855715908435,
+          "values": [
+            18.63216781616211,
+            18.14203643798828,
+            18.40923309326172
+          ]
+        },
+        "pose_checkpoint_oracle_orientation_deg": {
+          "mean": 53.47932434082031,
+          "std": 0.70692146798757,
+          "values": [
+            52.74673843383789,
+            54.15742874145508,
+            53.53380584716797
+          ]
+        },
+        "pose_checkpoint_end_to_end_mae_cm": {
+          "mean": 18.394479115804035,
+          "std": 0.24539855715908435,
+          "values": [
+            18.63216781616211,
+            18.14203643798828,
+            18.40923309326172
+          ]
+        },
+        "pose_checkpoint_end_to_end_orientation_deg": {
+          "mean": 53.47932434082031,
+          "std": 0.70692146798757,
+          "values": [
+            52.74673843383789,
+            54.15742874145508,
+            53.53380584716797
+          ]
+        }
+      }
+    }
+  }
+}

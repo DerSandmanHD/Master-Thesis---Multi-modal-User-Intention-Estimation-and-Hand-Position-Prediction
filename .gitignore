@@ -11,9 +11,9 @@ __pycache__/
 *.py[cod]
 
 # Generated training and cluster outputs
-/Training/reports/
-*.out
-*.err
+# /Training/reports/
+# *.out
+# *.err
 
 # OS and editor metadata
 .DS_Store

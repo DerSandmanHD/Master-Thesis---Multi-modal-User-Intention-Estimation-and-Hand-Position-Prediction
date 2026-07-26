@@ -1,0 +1,10 @@
+Device: cuda
+Run directory: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/residual_v2_cluster_smoke
+Windows: train=7509, validation=2387, test=2412
+Participant split: {'train': ['Berat', 'Felix', 'Jan', 'Jola', 'Julienco', 'Leys', 'Maria', 'Melih', 'Suthan', 'Tarik', 'Urim'], 'validation': ['Atilla', 'Ermal', 'Vanessa'], 'test': ['Edu', 'Jona', 'Mona']}
+Receiving-hand windows: train=[222, 1135], validation=[0, 397], test=[101, 222]
+Residual pose targets: train=1082, validation=290, test=236
+Epoch 001 | loss=0.6384 | val intent F1=0.8539 | val hand supported F1=1.0000 | val pose oracle=9.246781349182129 cm | val pose end-to-end=9.246781349182129 cm | val early pose=12.99010944366455 cm
+best_intention: intent F1=0.7184, hand F1=0.9194, pose oracle=16.751506805419922 cm, pose end-to-end=17.442520141601562 cm
+best_pose: intent F1=0.7184, hand F1=0.9194, pose oracle=16.751506805419922 cm, pose end-to-end=17.442520141601562 cm
+Metrics: /home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/residual_v2_cluster_smoke/metrics.json

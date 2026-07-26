@@ -1,7 +1,14 @@
 {
   "run_name": "hierarchical_residual_v2",
+  "model_type": "hierarchical_residual_pose_transformer_v2",
   "data": {
     "master_dir": "Data_collection/master_datasets",
+    "manifest_filter": {
+      "path": "dataset_manifest.csv",
+      "allowed_statuses": ["valid"],
+      "allowed_next_actions": ["ready_for_master_merge"],
+      "strict": true
+    },
     "feature_profile": "multimodal_robot_frame_v1",
     "window_size": 60,
     "stride": 10,

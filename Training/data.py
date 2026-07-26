@@ -3,8 +3,11 @@
 
 from __future__ import annotations
 
+import csv
+import hashlib
 import json
 import random
+from collections import Counter
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Iterable
@@ -19,6 +22,18 @@ INTENTION_TO_ID = {"transition": -1, "continue": 0, "fetch": 1, "handover": 2}
 INTENTION_NAMES = ["continue", "fetch", "handover"]
 RECEIVING_HAND_TO_ID = {"left": 0, "right": 1}
 RECEIVING_HAND_NAMES = ["left", "right"]
+
+
+def canonical_participant(value: str) -> str:
+    """Return a stable display/grouping name independent of input casing."""
+    participant = str(value).strip()
+    if not participant:
+        raise ValueError("Participant name must not be empty")
+    return participant.casefold().capitalize()
+
+
+def truthy(value: object) -> bool:
+    return str(value).strip().casefold() == "true"
 
 
 def _candidate_features() -> list[str]:
@@ -123,7 +138,9 @@ class Normalizer:
         }
 
 
-def fit_normalizer(records: list[SequenceRecord], feature_names: list[str]) -> Normalizer:
+def fit_normalizer(
+    records: list[SequenceRecord], feature_names: list[str]
+) -> Normalizer:
     if not records:
         raise ValueError("Cannot fit normalization without training sequences")
     feature_count = len(feature_names)
@@ -172,7 +189,11 @@ def load_record(
                 "robot_frame_valid",
                 "hand_left_valid",
                 "hand_right_valid",
-                *(f"{side}_wrist_robot_{axis}_m" for side in ("left", "right") for axis in "xyz"),
+                *(
+                    f"{side}_wrist_robot_{axis}_m"
+                    for side in ("left", "right")
+                    for axis in "xyz"
+                ),
                 *(
                     f"{side}_wrist_robot_q{component}"
                     for side in ("left", "right")
@@ -205,7 +226,9 @@ def load_record(
         unknown = sorted(frame.loc[labels.isna(), "intent_label"].astype(str).unique())
         raise ValueError(f"Unknown intention labels in {path.name}: {unknown}")
 
-    poses = frame[pose_columns].apply(pd.to_numeric, errors="coerce").to_numpy(np.float32)
+    poses = (
+        frame[pose_columns].apply(pd.to_numeric, errors="coerce").to_numpy(np.float32)
+    )
     explicit_pose_valid = (
         pd.to_numeric(frame[f"{prefix}receiving_wrist_valid"], errors="coerce")
         .fillna(0)
@@ -258,7 +281,9 @@ def load_record(
                 .to_numpy()
                 > 0
             )
-            current_valid = explicit_valid & robot_valid & np.isfinite(current).all(axis=1)
+            current_valid = (
+                explicit_valid & robot_valid & np.isfinite(current).all(axis=1)
+            )
             current_quaternion_norm = np.linalg.norm(current[:, 3:7], axis=1)
             current_valid &= current_quaternion_norm > 1e-6
             current_valid_indices = np.flatnonzero(current_valid)
@@ -266,16 +291,22 @@ def load_record(
                 current[current_valid_indices, 3:7] /= current_quaternion_norm[
                     current_valid_indices, None
                 ]
-                hand_poses[current_valid_indices, side_id] = current[current_valid_indices]
+                hand_poses[current_valid_indices, side_id] = current[
+                    current_valid_indices
+                ]
             hand_pose_valid[:, side_id] = current_valid
 
-    features = frame[feature_columns].apply(pd.to_numeric, errors="coerce").to_numpy(np.float32)
+    features = (
+        frame[feature_columns]
+        .apply(pd.to_numeric, errors="coerce")
+        .to_numpy(np.float32)
+    )
     timestamps = pd.to_numeric(frame["timestamp_ns"], errors="raise").to_numpy(np.int64)
     if np.any(np.diff(timestamps) < 0):
         raise ValueError(f"Timestamps are not sorted in {path.name}")
     return SequenceRecord(
         sequence_id=sequence_values[0],
-        participant=participant_values[0],
+        participant=canonical_participant(participant_values[0]),
         timestamps_ns=timestamps,
         features=features,
         intentions=labels.to_numpy(np.int64),
@@ -296,21 +327,31 @@ def split_records(
     validation_participants: list[str],
     test_participants: list[str],
 ) -> tuple[dict[str, list[SequenceRecord]], dict]:
+    records = [
+        replace(record, participant=canonical_participant(record.participant))
+        for record in records
+    ]
     participants = sorted({record.participant for record in records})
     if len(participants) < 3:
-        raise ValueError("At least three participants are required for leakage-safe train/val/test splits")
+        raise ValueError(
+            "At least three participants are required for leakage-safe train/val/test splits"
+        )
 
     explicit = bool(validation_participants or test_participants)
     if explicit:
-        validation = set(validation_participants)
-        test = set(test_participants)
+        validation = {canonical_participant(value) for value in validation_participants}
+        test = {canonical_participant(value) for value in test_participants}
         unknown = (validation | test) - set(participants)
         if unknown:
-            raise ValueError(f"Configured split participants not found: {sorted(unknown)}")
+            raise ValueError(
+                f"Configured split participants not found: {sorted(unknown)}"
+            )
         if validation & test:
             raise ValueError("Validation and test participant sets overlap")
         if not validation or not test:
-            raise ValueError("Explicit splits require both validation and test participants")
+            raise ValueError(
+                "Explicit splits require both validation and test participants"
+            )
     else:
         shuffled = participants.copy()
         random.Random(seed).shuffle(shuffled)
@@ -322,20 +363,26 @@ def split_records(
             elif test_count > 1:
                 test_count -= 1
             else:
-                raise ValueError("Not enough participants for requested split fractions")
+                raise ValueError(
+                    "Not enough participants for requested split fractions"
+                )
         validation = set(shuffled[:validation_count])
         test = set(shuffled[validation_count : validation_count + test_count])
 
     train = set(participants) - validation - test
     split = {
         "train": [record for record in records if record.participant in train],
-        "validation": [record for record in records if record.participant in validation],
+        "validation": [
+            record for record in records if record.participant in validation
+        ],
         "test": [record for record in records if record.participant in test],
     }
     if any(not values for values in split.values()):
         raise ValueError("One of train/validation/test contains no sequences")
     metadata = {
-        "strategy": "explicit_participants" if explicit else "seeded_participant_group_split",
+        "strategy": "explicit_participants"
+        if explicit
+        else "seeded_participant_group_split",
         "seed": seed,
         "participants": {
             name: sorted({record.participant for record in values})
@@ -391,9 +438,7 @@ class WindowDataset(Dataset):
                     self.discarded_gap_windows += 1
                     continue
                 observed_fraction = float(
-                    record.features[
-                        start : endpoint + 1, raw_feature_count:
-                    ].mean()
+                    record.features[start : endpoint + 1, raw_feature_count:].mean()
                 )
                 if observed_fraction < minimum_observed_fraction:
                     self.discarded_observation_windows += 1
@@ -401,7 +446,9 @@ class WindowDataset(Dataset):
                 self.indices.append((record_index, endpoint))
             record.pose_valid &= np.isin(record.intentions, list(pose_intents))
         if not self.indices:
-            raise ValueError("No valid windows were created; inspect window size and data coverage")
+            raise ValueError(
+                "No valid windows were created; inspect window size and data coverage"
+            )
 
         self.hand_reference_poses: list[np.ndarray] = []
         self.hand_reference_valid: list[np.ndarray] = []
@@ -441,12 +488,19 @@ class WindowDataset(Dataset):
         self.handover_progress = np.full(len(self.indices), -1.0, dtype=np.float32)
         handover_indices: dict[int, list[tuple[int, int]]] = {}
         for dataset_index, (record_index, endpoint) in enumerate(self.indices):
-            if int(records[record_index].intentions[endpoint]) == INTENTION_TO_ID["handover"]:
-                handover_indices.setdefault(record_index, []).append((dataset_index, endpoint))
+            if (
+                int(records[record_index].intentions[endpoint])
+                == INTENTION_TO_ID["handover"]
+            ):
+                handover_indices.setdefault(record_index, []).append(
+                    (dataset_index, endpoint)
+                )
         for values in handover_indices.values():
             values.sort(key=lambda item: item[1])
             for progress_index, (dataset_index, _) in enumerate(values):
-                self.handover_progress[dataset_index] = progress_index / max(1, len(values) - 1)
+                self.handover_progress[dataset_index] = progress_index / max(
+                    1, len(values) - 1
+                )
 
     def __len__(self) -> int:
         return len(self.indices)
@@ -462,7 +516,9 @@ class WindowDataset(Dataset):
             "pose_valid": torch.tensor(record.pose_valid[endpoint], dtype=torch.bool),
             "sequence_id": record.sequence_id,
             "participant": record.participant,
-            "timestamp_ns": torch.tensor(record.timestamps_ns[endpoint], dtype=torch.long),
+            "timestamp_ns": torch.tensor(
+                record.timestamps_ns[endpoint], dtype=torch.long
+            ),
             "handover_progress": torch.tensor(
                 self.handover_progress[index], dtype=torch.float32
             ),
@@ -507,10 +563,9 @@ class WindowDataset(Dataset):
             record = self.records[record_index]
             assert record.receiving_hand_ids is not None
             hand_id = int(record.receiving_hand_ids[endpoint])
-            if (
-                int(record.intentions[endpoint]) == INTENTION_TO_ID["handover"]
-                and hand_id in (0, 1)
-            ):
+            if int(record.intentions[endpoint]) == INTENTION_TO_ID[
+                "handover"
+            ] and hand_id in (0, 1):
                 counts[hand_id] += 1
         return counts.tolist()
 
@@ -518,8 +573,7 @@ class WindowDataset(Dataset):
         if not self.include_hand_references:
             return 0
         return sum(
-            bool(self[index]["residual_pose_valid"])
-            for index in range(len(self))
+            bool(self[index]["residual_pose_valid"]) for index in range(len(self))
         )
 
 
@@ -533,16 +587,157 @@ class DataBundle:
     split_metadata: dict
 
 
-def prepare_data(data_config: dict, seed: int, limit_sequences: int | None = None) -> DataBundle:
+def sequence_id_from_master_path(path: Path) -> str:
+    suffix = "_master.csv"
+    if not path.name.endswith(suffix):
+        raise ValueError(f"Not a master CSV path: {path}")
+    return path.name[: -len(suffix)]
+
+
+def manifest_filtered_master_files(
+    files: list[Path],
+    master_dir: Path,
+    filter_config: dict | None,
+) -> tuple[list[Path], dict]:
+    file_by_sequence = {sequence_id_from_master_path(path): path for path in files}
+    if len(file_by_sequence) != len(files):
+        raise ValueError("Duplicate master dataset sequence IDs")
+    if not filter_config:
+        selected_ids = sorted(file_by_sequence)
+        return files, {
+            "enabled": False,
+            "selected_sequences": len(selected_ids),
+            "sequence_fingerprint": hashlib.sha256(
+                "\n".join(selected_ids).encode("utf-8")
+            ).hexdigest(),
+        }
+
+    manifest_value = filter_config.get("path", "dataset_manifest.csv")
+    manifest_path = Path(manifest_value).expanduser()
+    if not manifest_path.is_absolute():
+        manifest_path = master_dir.parent / manifest_path
+    manifest_path = manifest_path.resolve()
+    allowed_statuses = {
+        str(value).strip() for value in filter_config.get("allowed_statuses", ["valid"])
+    }
+    allowed_actions = {
+        str(value).strip()
+        for value in filter_config.get(
+            "allowed_next_actions", ["ready_for_master_merge"]
+        )
+    }
+    strict = bool(filter_config.get("strict", True))
+
+    with manifest_path.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    required_columns = {
+        "sequence_id",
+        "include_in_training",
+        "status",
+        "next_action",
+        "master_csv_exists",
+    }
+    available_columns = set(rows[0]) if rows else set()
+    missing_columns = sorted(required_columns - available_columns)
+    if missing_columns:
+        raise ValueError(
+            f"Manifest {manifest_path} is missing columns: {', '.join(missing_columns)}"
+        )
+
+    manifest_ids: set[str] = set()
+    eligible_ids: set[str] = set()
+    rejected_reasons: Counter[str] = Counter()
+    for row in rows:
+        sequence_id = row["sequence_id"].strip()
+        if not sequence_id:
+            raise ValueError(f"Manifest {manifest_path} contains an empty sequence_id")
+        if sequence_id in manifest_ids:
+            raise ValueError(f"Manifest contains duplicate sequence_id: {sequence_id}")
+        manifest_ids.add(sequence_id)
+
+        reasons = []
+        if not truthy(row["include_in_training"]):
+            reasons.append("excluded_from_training")
+        if row["status"].strip() not in allowed_statuses:
+            reasons.append(f"status:{row['status'].strip() or 'empty'}")
+        if row["next_action"].strip() not in allowed_actions:
+            reasons.append(f"next_action:{row['next_action'].strip() or 'empty'}")
+        if not truthy(row["master_csv_exists"]):
+            reasons.append("manifest_master_csv_missing")
+        if reasons:
+            rejected_reasons.update(reasons)
+        else:
+            eligible_ids.add(sequence_id)
+
+    unlisted_master_ids = sorted(set(file_by_sequence) - manifest_ids)
+    missing_master_ids = sorted(eligible_ids - set(file_by_sequence))
+    if strict and unlisted_master_ids:
+        preview = ", ".join(unlisted_master_ids[:10])
+        raise ValueError(
+            f"{len(unlisted_master_ids)} master CSVs are absent from {manifest_path}: "
+            f"{preview}"
+        )
+    if strict and missing_master_ids:
+        preview = ", ".join(missing_master_ids[:10])
+        raise ValueError(
+            f"{len(missing_master_ids)} eligible manifest rows have no master CSV: "
+            f"{preview}"
+        )
+
+    selected_ids = sorted(eligible_ids & set(file_by_sequence))
+    if not selected_ids:
+        raise ValueError(
+            f"Manifest filter selected no master datasets from {manifest_path}"
+        )
+    selected_files = [file_by_sequence[sequence_id] for sequence_id in selected_ids]
+    fingerprint = hashlib.sha256("\n".join(selected_ids).encode("utf-8")).hexdigest()
+    return selected_files, {
+        "enabled": True,
+        "manifest_path": str(manifest_path),
+        "allowed_statuses": sorted(allowed_statuses),
+        "allowed_next_actions": sorted(allowed_actions),
+        "strict": strict,
+        "manifest_rows": len(rows),
+        "master_files_found": len(files),
+        "selected_sequences": len(selected_ids),
+        "excluded_master_files": len(files) - len(selected_files),
+        "unlisted_master_sequence_ids": unlisted_master_ids,
+        "eligible_without_master_sequence_ids": missing_master_ids,
+        "rejected_reason_counts": dict(sorted(rejected_reasons.items())),
+        "sequence_ids": selected_ids,
+        "sequence_fingerprint": fingerprint,
+    }
+
+
+def prepare_data(
+    data_config: dict, seed: int, limit_sequences: int | None = None
+) -> DataBundle:
     master_dir = Path(data_config["master_dir"]).expanduser().resolve()
     files = sorted(master_dir.glob("*_master.csv"))
+    files, filter_metadata = manifest_filtered_master_files(
+        files,
+        master_dir,
+        data_config.get("manifest_filter"),
+    )
     if limit_sequences is not None:
         files = files[: max(0, limit_sequences)]
+        selected_ids = [sequence_id_from_master_path(path) for path in files]
+        filter_metadata = {
+            **filter_metadata,
+            "limit_sequences": int(limit_sequences),
+            "selected_sequences": len(selected_ids),
+            "sequence_ids": selected_ids,
+            "sequence_fingerprint": hashlib.sha256(
+                "\n".join(selected_ids).encode("utf-8")
+            ).hexdigest(),
+        }
     if not files:
         raise FileNotFoundError(f"No *_master.csv files found in {master_dir}")
 
     first_header = pd.read_csv(files[0], nrows=0).columns.tolist()
-    feature_columns = select_feature_columns(first_header, data_config["feature_profile"])
+    feature_columns = select_feature_columns(
+        first_header, data_config["feature_profile"]
+    )
     include_hand_references = bool(data_config.get("include_hand_references", False))
     records = [
         load_record(
@@ -561,11 +756,16 @@ def prepare_data(data_config: dict, seed: int, limit_sequences: int | None = Non
         validation_participants=list(data_config.get("validation_participants", [])),
         test_participants=list(data_config.get("test_participants", [])),
     )
+    split_metadata["dataset_filter"] = filter_metadata
     normalizer = fit_normalizer(split["train"], feature_columns)
     normalized_split = {
-        name: [replace(record, features=normalizer.transform(record.features)) for record in values]
+        name: [
+            replace(record, features=normalizer.transform(record.features))
+            for record in values
+        ]
         for name, values in split.items()
     }
+
     def make_dataset(records_for_split: list[SequenceRecord]) -> WindowDataset:
         return WindowDataset(
             records_for_split,

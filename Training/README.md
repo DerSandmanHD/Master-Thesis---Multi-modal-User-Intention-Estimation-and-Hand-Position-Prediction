@@ -64,6 +64,16 @@ aus `DONE -> THIRD` bleiben als kontinuierlicher Kontext mit dem internen Label
 Nur Sliding Windows mit einem echten Timestamp-Sprung ueber dem konfigurierten
 Grenzwert werden verworfen.
 
+Alle aktiven finalen Konfigurationen filtern die Master-CSVs strikt ueber
+`Data_collection/dataset_manifest.csv`. Verwendet werden nur Zeilen mit
+`include_in_training=True`, `status=valid`,
+`next_action=ready_for_master_merge` und vorhandenem Master-Dataset. Dateien,
+die nicht im Manifest stehen, lassen den Lauf im strikten Modus abbrechen.
+Der Teilnehmername wird fuer den Split case-insensitiv kanonisiert; dadurch
+werden beispielsweise `David` und `david` garantiert derselben Person und
+demselben Split zugeordnet. `Test` ist ein regulaerer Teilnehmername und keine
+automatische Ausschlussregel.
+
 ### Residual v2
 
 `HierarchicalResidualPoseTransformer` erweitert die Baseline um eine
@@ -135,6 +145,38 @@ Separate GPU-Jobs:
 sbatch Training/hierarchical_mlp.sbatch
 sbatch Training/hierarchical_gru.sbatch
 ```
+
+## Finaler Modellvergleich
+
+Vor dem finalen Lauf muss die QA nach dem letzten Master-Build erneut erzeugt
+worden sein. Der folgende Array-Job startet Transformer v1, MLP, GRU und
+Residual Transformer v2 jeweils mit den Seeds 42, 43 und 44. Maximal vier
+GPU-Jobs laufen gleichzeitig:
+
+```bash
+sbatch --export=ALL,FINAL_TAG=final_clean_v1 \
+  Training/final_comparison.sbatch
+```
+
+Nach Abschluss aller zwoelf Tasks werden Datensatz-Fingerprint, Sequenzsplits
+und Fensterzahlen validiert und Mittelwert sowie Standardabweichung
+aggregiert:
+
+```bash
+python3 Training/compare_final_runs.py --tag final_clean_v1
+```
+
+Erzeugt werden:
+
+```text
+Training/reports/final_clean_v1_comparison.json
+Training/reports/final_clean_v1_comparison.csv
+```
+
+Die Standardmodelle speichern `best_model.pt` als besten Intent-Checkpoint und
+zusaetzlich `best_pose_model.pt` nach Validation-Positions-MAE. Residual v2
+behaelt analog getrennte Intent- und Pose-Checkpoints. Dadurch werden Intent-
+und Poseergebnisse nicht nach dem Testset ausgewaehlt.
 
 Ein-Epochen-Cluster-Smoke-Tests koennen ohne Aenderung der Konfiguration
 gestartet werden:

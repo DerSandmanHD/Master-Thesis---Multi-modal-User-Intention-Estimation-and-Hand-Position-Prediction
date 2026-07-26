@@ -41,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--run-dir", type=Path, default=None)
     parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--seed", type=int, default=None)
     parser.add_argument(
         "--device", choices=("auto", "cpu", "cuda", "mps"), default="auto"
     )
@@ -473,6 +474,7 @@ def checkpoint_payload(
     model: nn.Module,
     config: dict,
     bundle: DataBundle,
+    trainable_parameters: int,
     epoch: int,
     selection_metric: str,
     selection_value: float,
@@ -483,6 +485,7 @@ def checkpoint_payload(
         "model_type": "hierarchical_residual_pose_transformer_v2",
         "input_dim": len(bundle.normalizer.output_feature_names),
         "window_size": int(config["data"]["window_size"]),
+        "trainable_parameters": trainable_parameters,
         "epoch": epoch,
         "selection_metric": selection_metric,
         "selection_value": selection_value,
@@ -499,6 +502,8 @@ def train(args: argparse.Namespace) -> Path:
         raise ValueError("Residual v2 requires data.include_hand_references=true")
     if args.epochs is not None:
         config["training"]["epochs"] = args.epochs
+    if getattr(args, "seed", None) is not None:
+        config["training"]["seed"] = args.seed
     seed = int(config["training"]["seed"])
     set_seed(seed)
     device = choose_device(args.device)
@@ -522,6 +527,13 @@ def train(args: argparse.Namespace) -> Path:
         f"test={len(bundle.test)}"
     )
     print(f"Participant split: {bundle.split_metadata['participants']}")
+    dataset_filter = bundle.split_metadata["dataset_filter"]
+    print(
+        "Dataset filter: "
+        f"selected={dataset_filter['selected_sequences']}, "
+        f"excluded_master_files={dataset_filter.get('excluded_master_files', 0)}, "
+        f"fingerprint={dataset_filter['sequence_fingerprint']}"
+    )
     print(
         "Receiving-hand windows: "
         f"train={bundle.train.receiving_hand_counts()}, "
@@ -551,6 +563,10 @@ def train(args: argparse.Namespace) -> Path:
         window_size=int(config["data"]["window_size"]),
         **config["model"],
     ).to(device)
+    trainable_parameters = sum(
+        parameter.numel() for parameter in model.parameters() if parameter.requires_grad
+    )
+    print(f"Trainable parameters: {trainable_parameters:,}")
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=float(training_config["learning_rate"]),
@@ -609,6 +625,7 @@ def train(args: argparse.Namespace) -> Path:
                     model,
                     config,
                     bundle,
+                    trainable_parameters,
                     epoch,
                     "validation_intention_macro_f1",
                     intention_score,
@@ -623,6 +640,7 @@ def train(args: argparse.Namespace) -> Path:
                     model,
                     config,
                     bundle,
+                    trainable_parameters,
                     epoch,
                     "validation_pose_oracle_position_mae_cm",
                     pose_score,
@@ -672,6 +690,8 @@ def train(args: argparse.Namespace) -> Path:
         }
 
     report = {
+        "model_type": "hierarchical_residual_pose_transformer_v2",
+        "trainable_parameters": trainable_parameters,
         "checkpoints": checkpoint_metadata,
         "test": test_results,
         "history": history,

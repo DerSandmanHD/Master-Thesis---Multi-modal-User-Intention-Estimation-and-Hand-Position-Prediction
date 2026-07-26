@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
 from datetime import datetime
 from pathlib import Path
@@ -42,6 +43,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--run-dir", type=Path, default=None)
     parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--seed", type=int, default=None)
     parser.add_argument(
         "--device", choices=("auto", "cpu", "cuda", "mps"), default="auto"
     )
@@ -309,6 +311,8 @@ def train(args: argparse.Namespace) -> Path:
     )
     if args.epochs is not None:
         config["training"]["epochs"] = args.epochs
+    if getattr(args, "seed", None) is not None:
+        config["training"]["seed"] = args.seed
     seed = int(config["training"]["seed"])
     set_seed(seed)
     device = choose_device(args.device)
@@ -332,6 +336,13 @@ def train(args: argparse.Namespace) -> Path:
         f"test={len(bundle.test)}"
     )
     print(f"Participant split: {bundle.split_metadata['participants']}")
+    dataset_filter = bundle.split_metadata["dataset_filter"]
+    print(
+        "Dataset filter: "
+        f"selected={dataset_filter['selected_sequences']}, "
+        f"excluded_master_files={dataset_filter.get('excluded_master_files', 0)}, "
+        f"fingerprint={dataset_filter['sequence_fingerprint']}"
+    )
     print(
         "Discarded gap windows: "
         f"train={bundle.train.discarded_gap_windows}, "
@@ -382,10 +393,12 @@ def train(args: argparse.Namespace) -> Path:
         weight=class_weights(intention_counts[1:3], device)
     )
 
-    best_score = -1.0
+    best_score = -math.inf
+    best_pose = math.inf
     epochs_without_improvement = 0
     history = []
     checkpoint_path = run_dir / "best_model.pt"
+    pose_checkpoint_path = run_dir / "best_pose_model.pt"
     for epoch in range(1, int(training_config["epochs"]) + 1):
         train_metrics = run_epoch(
             model,
@@ -411,6 +424,8 @@ def train(args: argparse.Namespace) -> Path:
         }
         history.append(record)
         score = float(validation_metrics["intention"]["macro_f1"])
+        pose_value = validation_metrics["pose"]["position_mae_cm"]
+        pose_score = float(pose_value) if pose_value is not None else math.inf
         print(
             f"Epoch {epoch:03d} | loss={train_metrics['loss']['total']:.4f} | "
             f"val intent F1={score:.4f} | "
@@ -418,9 +433,9 @@ def train(args: argparse.Namespace) -> Path:
             f"val fetch/handover F1={validation_metrics['assistance_type']['macro_f1']:.4f} | "
             f"val pose cm={validation_metrics['pose']['position_mae_cm']}"
         )
+        improved = False
         if score > best_score:
             best_score = score
-            epochs_without_improvement = 0
             torch.save(
                 {
                     "model_state_dict": model.state_dict(),
@@ -430,12 +445,31 @@ def train(args: argparse.Namespace) -> Path:
                     "window_size": int(config["data"]["window_size"]),
                     "trainable_parameters": trainable_parameters,
                     "epoch": epoch,
+                    "selection_metric": "validation_intention_macro_f1",
+                    "selection_value": score,
                     "validation_intention_macro_f1": score,
                 },
                 checkpoint_path,
             )
-        else:
-            epochs_without_improvement += 1
+            improved = True
+        if pose_score < best_pose:
+            best_pose = pose_score
+            torch.save(
+                {
+                    "model_state_dict": model.state_dict(),
+                    "model_config": config["model"],
+                    "model_type": model_type,
+                    "input_dim": len(bundle.normalizer.output_feature_names),
+                    "window_size": int(config["data"]["window_size"]),
+                    "trainable_parameters": trainable_parameters,
+                    "epoch": epoch,
+                    "selection_metric": "validation_pose_position_mae_cm",
+                    "selection_value": pose_score,
+                },
+                pose_checkpoint_path,
+            )
+            improved = True
+        epochs_without_improvement = 0 if improved else epochs_without_improvement + 1
         if epochs_without_improvement >= int(
             training_config["early_stopping_patience"]
         ):
@@ -452,12 +486,43 @@ def train(args: argparse.Namespace) -> Path:
         assistance_type_criterion,
         training_config,
     )
+    pose_checkpoint = torch.load(
+        pose_checkpoint_path, map_location=device, weights_only=True
+    )
+    model.load_state_dict(pose_checkpoint["model_state_dict"])
+    pose_checkpoint_test_metrics = run_epoch(
+        model,
+        test_loader,
+        device,
+        assistance_criterion,
+        assistance_type_criterion,
+        training_config,
+    )
     report = {
         "model_type": model_type,
         "trainable_parameters": trainable_parameters,
         "best_epoch": checkpoint["epoch"],
         "best_validation_intention_macro_f1": best_score,
+        "best_validation_pose_position_mae_cm": best_pose,
         "test": test_metrics,
+        "checkpoints": {
+            "best_intention": {
+                "path": str(checkpoint_path),
+                "epoch": int(checkpoint["epoch"]),
+                "selection_metric": checkpoint["selection_metric"],
+                "selection_value": float(checkpoint["selection_value"]),
+            },
+            "best_pose": {
+                "path": str(pose_checkpoint_path),
+                "epoch": int(pose_checkpoint["epoch"]),
+                "selection_metric": pose_checkpoint["selection_metric"],
+                "selection_value": float(pose_checkpoint["selection_value"]),
+            },
+        },
+        "test_by_checkpoint": {
+            "best_intention": test_metrics,
+            "best_pose": pose_checkpoint_test_metrics,
+        },
         "history": history,
     }
     (run_dir / "metrics.json").write_text(
@@ -468,6 +533,10 @@ def train(args: argparse.Namespace) -> Path:
     print(
         "Test fetch/handover macro F1: "
         f"{test_metrics['assistance_type']['macro_f1']:.4f}"
+    )
+    print(
+        "Best-pose checkpoint test position MAE: "
+        f"{pose_checkpoint_test_metrics['pose']['position_mae_cm']} cm"
     )
     print(f"Metrics: {run_dir / 'metrics.json'}")
     return run_dir

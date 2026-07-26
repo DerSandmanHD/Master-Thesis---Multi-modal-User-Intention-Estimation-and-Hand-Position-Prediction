@@ -127,6 +127,15 @@ sbatch Training/hierarchical_gru.sbatch
 sbatch Training/hierarchical_residual_v2.sbatch
 ```
 
+Finaler, manifestgefilterter Vergleich mit vier Modellen und drei Seeds:
+
+```bash
+sbatch --export=ALL,FINAL_TAG=final_clean_v1 \
+  Training/final_comparison.sbatch
+
+python3 Training/compare_final_runs.py --tag final_clean_v1
+```
+
 ## Dokumentation
 
 - Neue VRS- und MPS-Aufnahmen verarbeiten:

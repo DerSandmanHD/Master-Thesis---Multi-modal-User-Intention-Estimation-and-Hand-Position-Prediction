@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import csv
 import tempfile
 from pathlib import Path
 
@@ -106,14 +107,54 @@ def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> No
 
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="aria_training_smoke_") as directory:
-        master_dir = Path(directory)
-        for index in range(6):
-            participant = f"P{index + 1}"
+        data_root = Path(directory)
+        master_dir = data_root / "master_datasets"
+        master_dir.mkdir()
+        participants = ("David", "david", "Test", "P4", "P5", "P6", "Warn")
+        sequence_ids = []
+        for index, participant in enumerate(participants):
+            sequence_id = f"{participant}_{index}"
             synthetic_sequence(
-                master_dir / f"{participant}_1_master.csv", participant, index
+                master_dir / f"{sequence_id}_master.csv", participant, index
             )
+            sequence_ids.append(sequence_id)
+        manifest_path = data_root / "dataset_manifest.csv"
+        with manifest_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=(
+                    "sequence_id",
+                    "include_in_training",
+                    "status",
+                    "next_action",
+                    "master_csv_exists",
+                ),
+            )
+            writer.writeheader()
+            for sequence_id, participant in zip(sequence_ids, participants):
+                writer.writerow(
+                    {
+                        "sequence_id": sequence_id,
+                        "include_in_training": True,
+                        "status": (
+                            "valid_with_warnings" if participant == "Warn" else "valid"
+                        ),
+                        "next_action": (
+                            "manual_review"
+                            if participant == "Warn"
+                            else "ready_for_master_merge"
+                        ),
+                        "master_csv_exists": True,
+                    }
+                )
         data_config = {
             "master_dir": str(master_dir),
+            "manifest_filter": {
+                "path": manifest_path.name,
+                "allowed_statuses": ["valid"],
+                "allowed_next_actions": ["ready_for_master_merge"],
+                "strict": True,
+            },
             "feature_profile": "multimodal_robot_frame_v1",
             "window_size": 20,
             "stride": 10,
@@ -123,10 +164,22 @@ def main() -> int:
             "max_timestamp_gap_seconds": 0.2,
             "validation_fraction": 0.2,
             "test_fraction": 0.2,
-            "validation_participants": [],
-            "test_participants": [],
+            "validation_participants": ["p4"],
+            "test_participants": ["P6"],
         }
         bundle = prepare_data(data_config, seed=42)
+        assert bundle.split_metadata["dataset_filter"]["selected_sequences"] == 6
+        assert bundle.split_metadata["dataset_filter"]["excluded_master_files"] == 1
+        assert bundle.split_metadata["participants"]["validation"] == ["P4"]
+        assert bundle.split_metadata["participants"]["test"] == ["P6"]
+        assert "David" in bundle.split_metadata["participants"]["train"]
+        assert "david" not in bundle.split_metadata["participants"]["train"]
+        assert "Test" in bundle.split_metadata["participants"]["train"]
+        assert {
+            sequence_id
+            for sequence_id in bundle.split_metadata["sequences"]["train"]
+            if sequence_id.casefold().startswith("david_")
+        } == {"David_0", "david_1"}
         batch = next(iter(DataLoader(bundle.train, batch_size=4, shuffle=False)))
         assistance_criterion = nn.CrossEntropyLoss()
         assistance_type_criterion = nn.CrossEntropyLoss()

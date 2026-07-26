@@ -18,6 +18,9 @@ ARGS=(--config "$CONFIG")
 if [[ -n "${EPOCHS:-}" ]]; then
     ARGS+=(--epochs "$EPOCHS")
 fi
+if [[ -n "${SEED:-}" ]]; then
+    ARGS+=(--seed "$SEED")
+fi
 if [[ -n "${RUN_DIR:-}" ]]; then
     ARGS+=(--run-dir "$RUN_DIR")
 fi

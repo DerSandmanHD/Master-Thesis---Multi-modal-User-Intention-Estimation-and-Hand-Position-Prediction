@@ -13,7 +13,18 @@ set -euo pipefail
 REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
 IMAGE="$HOME/singularity/aria_master.simg"
 CONFIG="${CONFIG:-Training/configs/hierarchical_baseline_v1.json}"
+ARGS=(--config "$CONFIG")
+
+if [[ -n "${EPOCHS:-}" ]]; then
+    ARGS+=(--epochs "$EPOCHS")
+fi
+if [[ -n "${SEED:-}" ]]; then
+    ARGS+=(--seed "$SEED")
+fi
+if [[ -n "${RUN_DIR:-}" ]]; then
+    ARGS+=(--run-dir "$RUN_DIR")
+fi
 
 cd "$REPO_DIR"
 singularity exec --nv "$IMAGE" \
-    python3 Training/train.py --config "$CONFIG"
+    python3 Training/train.py "${ARGS[@]}"

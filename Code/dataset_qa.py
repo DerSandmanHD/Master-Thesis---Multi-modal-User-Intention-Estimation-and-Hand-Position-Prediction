@@ -99,7 +99,7 @@ def parse_args():
 def sequence_id_from_mps_dir(path: Path) -> str | None:
     name = path.name
     if name.startswith(MPS_PREFIX) and name.endswith(MPS_SUFFIX):
-        return name[len(MPS_PREFIX):-len(MPS_SUFFIX)]
+        return name[len(MPS_PREFIX) : -len(MPS_SUFFIX)]
     return None
 
 
@@ -108,7 +108,8 @@ def sequence_id_from_timestamp_key(key: str) -> str:
 
 
 def participant_from_sequence(sequence_id: str) -> str:
-    return sequence_id.split("_", 1)[0] if "_" in sequence_id else sequence_id
+    participant = sequence_id.split("_", 1)[0] if "_" in sequence_id else sequence_id
+    return participant.strip().casefold().capitalize()
 
 
 def training_exclusion_reason(sequence_id: str) -> str:
@@ -200,7 +201,9 @@ def collect_sequences(
     if backup_dir.exists():
         sequence_ids.update(path.stem for path in backup_dir.glob("*.vrs"))
 
-    sequence_ids.update(sequence_id_from_timestamp_key(key) for key in timestamps.keys())
+    sequence_ids.update(
+        sequence_id_from_timestamp_key(key) for key in timestamps.keys()
+    )
     sequence_ids.update(annotations.keys())
     return sequence_ids
 
@@ -222,12 +225,16 @@ def extract_command_seconds(timestamp_entry: dict) -> dict[str, float | None]:
 
 def command_timestamp_ns(timestamp_entry: dict, command: str) -> int | None:
     value = timestamp_entry.get(command)
-    if not isinstance(value, dict) or not isinstance(value.get("timestamp_ns"), (int, float)):
+    if not isinstance(value, dict) or not isinstance(
+        value.get("timestamp_ns"), (int, float)
+    ):
         return None
     return int(value["timestamp_ns"])
 
 
-def hand_tracking_phase_stats(path: Path, start_ns: int | None, end_ns: int | None = None) -> dict:
+def hand_tracking_phase_stats(
+    path: Path, start_ns: int | None, end_ns: int | None = None
+) -> dict:
     stats = {
         "rows": 0,
         "left_valid_rows": 0,
@@ -237,7 +244,11 @@ def hand_tracking_phase_stats(path: Path, start_ns: int | None, end_ns: int | No
         "right_valid_ratio": None,
         "either_valid_ratio": None,
     }
-    if not path.exists() or start_ns is None or (end_ns is not None and end_ns <= start_ns):
+    if (
+        not path.exists()
+        or start_ns is None
+        or (end_ns is not None and end_ns <= start_ns)
+    ):
         return stats
 
     try:
@@ -252,7 +263,9 @@ def hand_tracking_phase_stats(path: Path, start_ns: int | None, end_ns: int | No
                 return stats
             for row in reader:
                 timestamp_ns = int(row["tracking_timestamp_us"]) * 1000
-                if timestamp_ns < start_ns or (end_ns is not None and timestamp_ns > end_ns):
+                if timestamp_ns < start_ns or (
+                    end_ns is not None and timestamp_ns > end_ns
+                ):
                     continue
                 left_valid = float(row["left_tracking_confidence"]) > 0.0
                 right_valid = float(row["right_tracking_confidence"]) > 0.0
@@ -266,7 +279,9 @@ def hand_tracking_phase_stats(path: Path, start_ns: int | None, end_ns: int | No
     if stats["rows"]:
         stats["left_valid_ratio"] = round(stats["left_valid_rows"] / stats["rows"], 4)
         stats["right_valid_ratio"] = round(stats["right_valid_rows"] / stats["rows"], 4)
-        stats["either_valid_ratio"] = round(stats["either_valid_rows"] / stats["rows"], 4)
+        stats["either_valid_ratio"] = round(
+            stats["either_valid_rows"] / stats["rows"], 4
+        )
     return stats
 
 
@@ -278,7 +293,9 @@ def check_timestamps(
 ):
     issues = []
     warnings = []
-    missing = [command for command in EXPECTED_COMMANDS if command_seconds.get(command) is None]
+    missing = [
+        command for command in EXPECTED_COMMANDS if command_seconds.get(command) is None
+    ]
 
     if len(missing) == len(EXPECTED_COMMANDS):
         issues.append("missing_timestamps")
@@ -331,7 +348,9 @@ def check_timestamps(
     )
 
 
-def manual_review_application_issues(annotation: dict, timestamp_entry: dict) -> list[str]:
+def manual_review_application_issues(
+    annotation: dict, timestamp_entry: dict
+) -> list[str]:
     if annotation.get("decision") != "manual_fix":
         return []
     issues = []
@@ -390,15 +409,27 @@ def classify_status(issues: list[str], warnings: list[str]) -> str:
 def choose_next_action(issues: list[str], warnings: list[str]) -> str:
     if "missing_vrs" in issues:
         return "download_vrs"
-    if any(issue in issues for issue in ("missing_mps", "missing_hand_tracking", "missing_slam")):
+    if any(
+        issue in issues
+        for issue in ("missing_mps", "missing_hand_tracking", "missing_slam")
+    ):
         return "download_or_process_mps"
-    if any(issue in issues for issue in ("missing_timestamps", "partial_timestamps", "bad_timestamp_order")):
+    if any(
+        issue in issues
+        for issue in ("missing_timestamps", "partial_timestamps", "bad_timestamp_order")
+    ):
         return "fix_timestamps"
     if "timestamp_review_uncertain" in issues or "manual_review_not_applied" in issues:
         return "fix_timestamps"
-    if "missing_handover_hand_tracking" in issues or "low_handover_hand_tracking" in warnings:
+    if (
+        "missing_handover_hand_tracking" in issues
+        or "low_handover_hand_tracking" in warnings
+    ):
         return "review_or_exclude_sequence"
-    if any(warning in warnings for warning in ("missing_aruco_csv", "aruco_timestamp_mismatch")):
+    if any(
+        warning in warnings
+        for warning in ("missing_aruco_csv", "aruco_timestamp_mismatch")
+    ):
         return "run_aruco_extraction"
     if "missing_mp4" in warnings or "invalid_mp4" in warnings:
         return "convert_mp4"
@@ -417,7 +448,10 @@ def choose_next_action(issues: list[str], warnings: list[str]) -> str:
         return "annotate_sequence"
     if "missing_master_dataset" in warnings:
         return "build_master_dataset"
-    if any(warning.startswith("short_") or warning == "long_sequence" for warning in warnings):
+    if any(
+        warning.startswith("short_") or warning == "long_sequence"
+        for warning in warnings
+    ):
         return "manual_review"
     return "ready_for_master_merge"
 
@@ -426,7 +460,8 @@ def timestamp_ns_range(timestamp_entry: dict) -> tuple[int, int] | None:
     values = [
         value.get("timestamp_ns")
         for value in timestamp_entry.values()
-        if isinstance(value, dict) and isinstance(value.get("timestamp_ns"), (int, float))
+        if isinstance(value, dict)
+        and isinstance(value.get("timestamp_ns"), (int, float))
     ]
     if not values:
         return None
@@ -446,8 +481,12 @@ def csv_timestamp_ns_range(path: Path) -> tuple[int, int] | None:
                 if not value:
                     continue
                 timestamp_ns = int(value)
-                minimum = timestamp_ns if minimum is None else min(minimum, timestamp_ns)
-                maximum = timestamp_ns if maximum is None else max(maximum, timestamp_ns)
+                minimum = (
+                    timestamp_ns if minimum is None else min(minimum, timestamp_ns)
+                )
+                maximum = (
+                    timestamp_ns if maximum is None else max(maximum, timestamp_ns)
+                )
     except (OSError, TypeError, ValueError):
         return None
     if minimum is None or maximum is None:
@@ -462,7 +501,9 @@ def csv_object_marker_ids(path: Path | None) -> list[int]:
     try:
         with path.open("r", encoding="utf-8", errors="replace", newline="") as handle:
             reader = csv.DictReader(handle)
-            if not reader.fieldnames or not {"marker_family", "marker_id"}.issubset(reader.fieldnames):
+            if not reader.fieldnames or not {"marker_family", "marker_id"}.issubset(
+                reader.fieldnames
+            ):
                 return []
             for row in reader:
                 if row.get("marker_family") != "aruco_4x4_50":
@@ -558,7 +599,15 @@ def build_row(
     aruco_object_ids = csv_object_marker_ids(aruco_path)
     command_seconds = extract_command_seconds(timestamp_entry)
     wav_duration = wav_duration_seconds(wav_path)
-    timestamp_issues, timestamp_warnings, missing_commands, continue_s, fetch_s, transition_s, handover_s = check_timestamps(
+    (
+        timestamp_issues,
+        timestamp_warnings,
+        missing_commands,
+        continue_s,
+        fetch_s,
+        transition_s,
+        handover_s,
+    ) = check_timestamps(
         command_seconds,
         args.min_phase_seconds,
         args.max_sequence_seconds,
@@ -567,7 +616,9 @@ def build_row(
 
     issues = []
     warnings = list(timestamp_warnings)
-    review_application_issues = manual_review_application_issues(annotation, timestamp_entry)
+    review_application_issues = manual_review_application_issues(
+        annotation, timestamp_entry
+    )
     review_decision = annotation.get("decision", "")
     target_object_id = parse_target_object_id(annotation.get("target_object_id"))
     receiving_hand = annotation.get("receiving_hand", "")
@@ -601,9 +652,15 @@ def build_row(
     if not hand_tracking_path.exists():
         issues.append("missing_hand_tracking")
     elif third_timestamp_ns is not None:
-        if handover_hand_stats["rows"] == 0 or handover_hand_stats["either_valid_rows"] == 0:
+        if (
+            handover_hand_stats["rows"] == 0
+            or handover_hand_stats["either_valid_rows"] == 0
+        ):
             issues.append("missing_handover_hand_tracking")
-        elif handover_hand_stats["either_valid_ratio"] < args.min_handover_hand_valid_ratio:
+        elif (
+            handover_hand_stats["either_valid_ratio"]
+            < args.min_handover_hand_valid_ratio
+        ):
             warnings.append("low_handover_hand_tracking")
     if not slam_path.exists():
         issues.append("missing_slam")
@@ -640,12 +697,14 @@ def build_row(
             warnings.append("target_object_not_detected")
         if receiving_hand == "left" and (
             handover_hand_stats["left_valid_ratio"] is None
-            or handover_hand_stats["left_valid_ratio"] < args.min_handover_hand_valid_ratio
+            or handover_hand_stats["left_valid_ratio"]
+            < args.min_handover_hand_valid_ratio
         ):
             warnings.append("receiving_hand_tracking_low")
         if receiving_hand == "right" and (
             handover_hand_stats["right_valid_ratio"] is None
-            or handover_hand_stats["right_valid_ratio"] < args.min_handover_hand_valid_ratio
+            or handover_hand_stats["right_valid_ratio"]
+            < args.min_handover_hand_valid_ratio
         ):
             warnings.append("receiving_hand_tracking_low")
     if not master_path.exists() or not master_report_path.exists():
@@ -694,8 +753,12 @@ def build_row(
         "aruco_csv_path": str(aruco_path) if aruco_path else "",
         "aruco_rows": count_csv_rows(aruco_path) if aruco_path else None,
         "aruco_object_ids": ";".join(str(marker_id) for marker_id in aruco_object_ids),
-        "aruco_timestamp_start_ns": aruco_timestamp_range[0] if aruco_timestamp_range else None,
-        "aruco_timestamp_end_ns": aruco_timestamp_range[1] if aruco_timestamp_range else None,
+        "aruco_timestamp_start_ns": aruco_timestamp_range[0]
+        if aruco_timestamp_range
+        else None,
+        "aruco_timestamp_end_ns": aruco_timestamp_range[1]
+        if aruco_timestamp_range
+        else None,
         "aruco_rejected_paths": ";".join(str(path) for path in rejected_aruco_paths),
         "timestamps_exists": bool(timestamp_entry),
         "timestamp_sources": ";".join(
@@ -799,8 +862,16 @@ def write_manifest(path: Path, rows: list[dict]) -> None:
 
 
 def build_backup_sync_report(rows: list[dict]) -> dict:
-    missing_in_data = [row["sequence_id"] for row in rows if row["backup_vrs_exists"] and not row["vrs_exists"]]
-    missing_in_backup = [row["sequence_id"] for row in rows if row["vrs_exists"] and not row["backup_vrs_exists"]]
+    missing_in_data = [
+        row["sequence_id"]
+        for row in rows
+        if row["backup_vrs_exists"] and not row["vrs_exists"]
+    ]
+    missing_in_backup = [
+        row["sequence_id"]
+        for row in rows
+        if row["vrs_exists"] and not row["backup_vrs_exists"]
+    ]
     size_mismatches = [
         {
             "sequence_id": row["sequence_id"],
@@ -820,11 +891,14 @@ def build_backup_sync_report(rows: list[dict]) -> dict:
 
 
 def build_mps_report(rows: list[dict]) -> dict:
-    missing_mps = [row["sequence_id"] for row in rows if "missing_mps" in row["issues"].split(";")]
+    missing_mps = [
+        row["sequence_id"] for row in rows if "missing_mps" in row["issues"].split(";")
+    ]
     incomplete_mps = [
         row["sequence_id"]
         for row in rows
-        if row["mps_exists"] and (not row["hand_tracking_exists"] or not row["slam_exists"])
+        if row["mps_exists"]
+        and (not row["hand_tracking_exists"] or not row["slam_exists"])
     ]
     return {
         "missing_mps_count": len(missing_mps),
@@ -844,22 +918,18 @@ def build_report(
     status_counts = Counter(row["status"] for row in rows)
     action_counts = Counter(row["next_action"] for row in rows)
     issue_counts = Counter(
-        issue
-        for row in rows
-        for issue in row["issues"].split(";")
-        if issue
+        issue for row in rows for issue in row["issues"].split(";") if issue
     )
     warning_counts = Counter(
-        warning
-        for row in rows
-        for warning in row["warnings"].split(";")
-        if warning
+        warning for row in rows for warning in row["warnings"].split(";") if warning
     )
     participant_counts = defaultdict(lambda: Counter())
     for row in rows:
         participant_counts[row["participant"]][row["status"]] += 1
 
-    valid_rows = [row for row in rows if row["status"] in {"valid", "valid_with_warnings"}]
+    valid_rows = [
+        row for row in rows if row["status"] in {"valid", "valid_with_warnings"}
+    ]
     included_rows = [row for row in rows if row["include_in_training"]]
     excluded_rows = [row for row in rows if not row["include_in_training"]]
     return {
@@ -880,16 +950,25 @@ def build_report(
         "mps": build_mps_report(rows),
         "annotations": {
             "source": str(annotations_path),
-            "review_decision_counts": dict(Counter(row["review_decision"] or "not_reviewed" for row in rows)),
-            "target_object_labeled": sum(row["target_object_id"] is not None for row in rows),
-            "receiving_hand_labeled": sum(row["receiving_hand"] in {"left", "right"} for row in rows),
-            "uncertain": sum(row["annotation_confidence"] == "uncertain" for row in rows),
+            "review_decision_counts": dict(
+                Counter(row["review_decision"] or "not_reviewed" for row in rows)
+            ),
+            "target_object_labeled": sum(
+                row["target_object_id"] is not None for row in rows
+            ),
+            "receiving_hand_labeled": sum(
+                row["receiving_hand"] in {"left", "right"} for row in rows
+            ),
+            "uncertain": sum(
+                row["annotation_confidence"] == "uncertain" for row in rows
+            ),
         },
         "media": {
             "wav_available": sum(row["wav_exists"] for row in rows),
             "mp4_available": sum(row["mp4_exists"] for row in rows),
             "duration_mismatches": sum(
-                "mp4_wav_duration_mismatch" in row["warnings"].split(";") for row in rows
+                "mp4_wav_duration_mismatch" in row["warnings"].split(";")
+                for row in rows
             ),
         },
         "master_datasets": {
@@ -913,7 +992,9 @@ def main():
     args = parse_args()
     data_root = args.data_root.expanduser().resolve()
     backup_dir = args.backup_dir.expanduser().resolve()
-    timestamps_path = args.timestamps or data_root / "Data_vrs" / "timestamps_summary.json"
+    timestamps_path = (
+        args.timestamps or data_root / "Data_vrs" / "timestamps_summary.json"
+    )
     annotations_path = args.annotations or data_root / "manual_timestamp_review.csv"
     wav_dir = args.wav_dir or data_root / "Data_vrs" / "debug_audio"
     master_dir = args.master_dir or data_root / "master_datasets"
@@ -922,7 +1003,9 @@ def main():
 
     timestamps = read_json(timestamps_path)
     annotations = read_review_rows(annotations_path)
-    sequence_ids = sorted(collect_sequences(data_root, backup_dir, timestamps, annotations))
+    sequence_ids = sorted(
+        collect_sequences(data_root, backup_dir, timestamps, annotations)
+    )
     rows = [
         build_row(
             sequence_id,
@@ -938,7 +1021,9 @@ def main():
     ]
 
     write_manifest(manifest_path, rows)
-    report = build_report(rows, timestamps_path, annotations_path, manifest_path, backup_dir)
+    report = build_report(
+        rows, timestamps_path, annotations_path, manifest_path, backup_dir
+    )
     write_report(report_path, report)
 
     print(f"Manifest written: {manifest_path}")

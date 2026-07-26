@@ -1,6 +1,6 @@
 {
-  "run_name": "hierarchical_baseline",
-  "model_type": "hierarchical_gated_multimodal_transformer",
+  "run_name": "hierarchical_gru_v1",
+  "model_type": "hierarchical_gru",
   "data": {
     "master_dir": "Data_collection/master_datasets",
     "feature_profile": "multimodal_robot_frame_v1",
@@ -16,10 +16,8 @@
     "test_participants": ["Edu", "Jona", "Mona"]
   },
   "model": {
-    "d_model": 64,
-    "nhead": 4,
+    "hidden_size": 112,
     "num_layers": 2,
-    "dim_feedforward": 128,
     "dropout": 0.15
   },
   "training": {

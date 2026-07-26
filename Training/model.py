@@ -8,6 +8,36 @@ from torch import nn
 from torch.nn import functional as F
 
 
+def _validate_window_input(
+    x: torch.Tensor,
+    *,
+    input_dim: int,
+    window_size: int,
+) -> None:
+    if x.ndim != 3:
+        raise ValueError(f"Expected [batch, window, features], got {tuple(x.shape)}")
+    if x.shape[1] != window_size or x.shape[2] != input_dim:
+        raise ValueError(
+            f"Expected window/features {window_size}/{input_dim}, "
+            f"got {x.shape[1]}/{x.shape[2]}"
+        )
+
+
+def _absolute_pose_outputs(
+    representation: torch.Tensor,
+    assistance_head: nn.Module,
+    assistance_type_head: nn.Module,
+    pose_head: nn.Module,
+) -> dict[str, torch.Tensor]:
+    raw_pose = pose_head(representation)
+    quaternion = F.normalize(raw_pose[:, 3:7], dim=-1, eps=1e-8)
+    return {
+        "assistance_logits": assistance_head(representation),
+        "assistance_type_logits": assistance_type_head(representation),
+        "pose": torch.cat((raw_pose[:, :3], quaternion), dim=-1),
+    }
+
+
 def quaternion_multiply(left: torch.Tensor, right: torch.Tensor) -> torch.Tensor:
     """Hamilton product for quaternions stored as x, y, z, w."""
     lx, ly, lz, lw = left.unbind(dim=-1)
@@ -49,7 +79,9 @@ class HierarchicalGatedMultimodalTransformer(nn.Module):
         if d_model % nhead:
             raise ValueError("d_model must be divisible by nhead")
         if input_dim <= 0 or window_size <= 1:
-            raise ValueError("input_dim must be positive and window_size must exceed one")
+            raise ValueError(
+                "input_dim must be positive and window_size must exceed one"
+            )
 
         self.input_dim = input_dim
         self.window_size = window_size
@@ -112,13 +144,11 @@ class HierarchicalGatedMultimodalTransformer(nn.Module):
         nn.init.normal_(self.channel_identity, std=0.02)
 
     def _encode(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        if x.ndim != 3:
-            raise ValueError(f"Expected [batch, window, features], got {tuple(x.shape)}")
-        if x.shape[1] != self.window_size or x.shape[2] != self.input_dim:
-            raise ValueError(
-                f"Expected window/features {self.window_size}/{self.input_dim}, "
-                f"got {x.shape[1]}/{x.shape[2]}"
-            )
+        _validate_window_input(
+            x,
+            input_dim=self.input_dim,
+            window_size=self.window_size,
+        )
 
         batch_size = x.shape[0]
 
@@ -147,15 +177,136 @@ class HierarchicalGatedMultimodalTransformer(nn.Module):
         hand_reference_pose: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor]:
         fused, gate = self._encode(x)
-        raw_pose = self.pose_head(fused)
-        quaternion = F.normalize(raw_pose[:, 3:7], dim=-1, eps=1e-8)
-        pose = torch.cat((raw_pose[:, :3], quaternion), dim=-1)
-        return {
-            "assistance_logits": self.assistance_head(fused),
-            "assistance_type_logits": self.assistance_type_head(fused),
-            "pose": pose,
-            "gate": gate,
-        }
+        outputs = _absolute_pose_outputs(
+            fused,
+            self.assistance_head,
+            self.assistance_type_head,
+            self.pose_head,
+        )
+        outputs["gate"] = gate
+        return outputs
+
+
+class HierarchicalWindowMLP(nn.Module):
+    """Feed-forward baseline over the same flattened observation window."""
+
+    def __init__(
+        self,
+        *,
+        input_dim: int,
+        window_size: int,
+        hidden_dims: list[int] | tuple[int, ...] = (128, 128),
+        dropout: float = 0.15,
+    ) -> None:
+        super().__init__()
+        if input_dim <= 0 or window_size <= 1:
+            raise ValueError(
+                "input_dim must be positive and window_size must exceed one"
+            )
+        if not hidden_dims or any(int(value) <= 0 for value in hidden_dims):
+            raise ValueError("hidden_dims must contain at least one positive value")
+
+        self.input_dim = input_dim
+        self.window_size = window_size
+        dimensions = [input_dim * window_size, *(int(value) for value in hidden_dims)]
+        layers: list[nn.Module] = []
+        for source_dim, target_dim in zip(dimensions, dimensions[1:]):
+            layers.extend(
+                (
+                    nn.Linear(source_dim, target_dim),
+                    nn.LayerNorm(target_dim),
+                    nn.GELU(),
+                    nn.Dropout(dropout),
+                )
+            )
+        self.encoder = nn.Sequential(*layers)
+        representation_dim = dimensions[-1]
+        self.assistance_head = nn.Linear(representation_dim, 2)
+        self.assistance_type_head = nn.Linear(representation_dim, 2)
+        self.pose_head = nn.Sequential(
+            nn.Linear(representation_dim, representation_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(representation_dim, 7),
+        )
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        hand_reference_pose: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor]:
+        _validate_window_input(
+            x,
+            input_dim=self.input_dim,
+            window_size=self.window_size,
+        )
+        representation = self.encoder(x.flatten(start_dim=1))
+        return _absolute_pose_outputs(
+            representation,
+            self.assistance_head,
+            self.assistance_type_head,
+            self.pose_head,
+        )
+
+
+class HierarchicalGRU(nn.Module):
+    """Unidirectional recurrent baseline for online window prediction."""
+
+    def __init__(
+        self,
+        *,
+        input_dim: int,
+        window_size: int,
+        hidden_size: int = 128,
+        num_layers: int = 2,
+        dropout: float = 0.15,
+    ) -> None:
+        super().__init__()
+        if input_dim <= 0 or window_size <= 1:
+            raise ValueError(
+                "input_dim must be positive and window_size must exceed one"
+            )
+        if hidden_size <= 0 or num_layers <= 0:
+            raise ValueError("hidden_size and num_layers must be positive")
+
+        self.input_dim = input_dim
+        self.window_size = window_size
+        self.gru = nn.GRU(
+            input_size=input_dim,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            dropout=dropout if num_layers > 1 else 0.0,
+            batch_first=True,
+            bidirectional=False,
+        )
+        self.output_norm = nn.LayerNorm(hidden_size)
+        self.assistance_head = nn.Linear(hidden_size, 2)
+        self.assistance_type_head = nn.Linear(hidden_size, 2)
+        self.pose_head = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_size, 7),
+        )
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        hand_reference_pose: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor]:
+        _validate_window_input(
+            x,
+            input_dim=self.input_dim,
+            window_size=self.window_size,
+        )
+        _, hidden = self.gru(x)
+        representation = self.output_norm(hidden[-1])
+        return _absolute_pose_outputs(
+            representation,
+            self.assistance_head,
+            self.assistance_type_head,
+            self.pose_head,
+        )
 
 
 class HierarchicalResidualPoseTransformer(HierarchicalGatedMultimodalTransformer):
@@ -224,7 +375,9 @@ class HierarchicalResidualPoseTransformer(HierarchicalGatedMultimodalTransformer
             quaternion_delta[:, None, :].expand(-1, 2, -1),
         )
         candidate_quaternions = F.normalize(candidate_quaternions, dim=-1, eps=1e-8)
-        pose_candidates = torch.cat((candidate_positions, candidate_quaternions), dim=-1)
+        pose_candidates = torch.cat(
+            (candidate_positions, candidate_quaternions), dim=-1
+        )
         return {
             "assistance_logits": self.assistance_head(fused),
             "assistance_type_logits": self.assistance_type_head(fused),

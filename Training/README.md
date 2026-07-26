@@ -33,6 +33,30 @@ Sensorkanaelen. Ein lernbares Gate fusioniert beide Repraesentationen. Die
 Klassifikationskoepfe bilden die Assistenzhierarchie explizit ab; der Pose-Kopf
 wird nur mit gueltigen Handover-Targets trainiert.
 
+### Vergleichsbackbones
+
+`train.py` unterstuetzt neben dem Transformer zwei neuronale
+Vergleichsbackbones. Alle drei verwenden dieselben normalisierten Fenster,
+Missing-Data-Masken, Teilnehmer-Splits, hierarchischen Klassifikationskoepfe,
+Pose-Targets, Losses und Metriken:
+
+- `HierarchicalWindowMLP` flacht das vollstaendige Beobachtungsfenster ab und
+  verarbeitet es mit einem Feed-forward-Netz. Es dient als Baseline ohne
+  zeitliche Gewichtsteilung.
+- `HierarchicalGRU` verarbeitet das Fenster mit einer unidirektionalen GRU.
+  Die Unidirektionalitaet verhindert, dass ein Online-Modell Informationen
+  ausserhalb des Beobachtungsfensters oder aus zukuenftigen Frames verwendet.
+- `HierarchicalGatedMultimodalTransformer` bleibt die GTN-inspirierte
+  Transformer-Baseline.
+
+Die Modellwahl steht als `model_type` in der jeweiligen JSON-Konfiguration.
+Die v1-Groessen von MLP und GRU sind so gewaehlt, dass ihre Parameterzahl bei
+dem aktuellen Featureprofil in derselben Groessenordnung wie die des
+Transformers liegt. Dadurch wird der Architekturvergleich nicht allein durch
+eine stark unterschiedliche Modellkapazitaet bestimmt.
+Jeder Lauf schreibt Modelltyp und Anzahl trainierbarer Parameter in
+`metrics.json` und den Checkpoint.
+
 `data.py` stellt Missing-Data-Masken, ausschliesslich auf dem Trainingssplit
 angepasste Normalisierung und participant-wise Splits bereit. Die Sensorzeilen
 aus `DONE -> THIRD` bleiben als kontinuierlicher Kontext mit dem internen Label
@@ -93,6 +117,34 @@ Interaktiver Ein-Epochen-Test:
 python3 Training/train.py \
   --config Training/configs/hierarchical_baseline_v1.json \
   --epochs 1
+```
+
+MLP- und GRU-Vergleich:
+
+```bash
+python3 Training/train.py \
+  --config Training/configs/hierarchical_mlp_v1.json
+
+python3 Training/train.py \
+  --config Training/configs/hierarchical_gru_v1.json
+```
+
+Separate GPU-Jobs:
+
+```bash
+sbatch Training/hierarchical_mlp.sbatch
+sbatch Training/hierarchical_gru.sbatch
+```
+
+Ein-Epochen-Cluster-Smoke-Tests koennen ohne Aenderung der Konfiguration
+gestartet werden:
+
+```bash
+sbatch --export=ALL,EPOCHS=1,RUN_DIR=Training/runs/mlp_cluster_smoke \
+  Training/hierarchical_mlp.sbatch
+
+sbatch --export=ALL,EPOCHS=1,RUN_DIR=Training/runs/gru_cluster_smoke \
+  Training/hierarchical_gru.sbatch
 ```
 
 Residual-v2-Smoke-Test und interaktiver Ein-Epochen-Lauf:

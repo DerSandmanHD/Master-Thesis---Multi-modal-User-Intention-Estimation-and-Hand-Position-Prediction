@@ -98,11 +98,17 @@ python3 Training/pose_baselines_smoke_test.py
 python3 Training/export_predictions_smoke_test.py
 ```
 
-Hierarchische Baseline:
+Hierarchische Backbone-Vergleiche:
 
 ```bash
 python3 Training/train.py \
   --config Training/configs/hierarchical_baseline_v1.json
+
+python3 Training/train.py \
+  --config Training/configs/hierarchical_mlp_v1.json
+
+python3 Training/train.py \
+  --config Training/configs/hierarchical_gru_v1.json
 ```
 
 Residual-v2-Modell:
@@ -116,11 +122,15 @@ Cluster-Training:
 
 ```bash
 sbatch Training/hierarchical_baseline.sbatch
+sbatch Training/hierarchical_mlp.sbatch
+sbatch Training/hierarchical_gru.sbatch
 sbatch Training/hierarchical_residual_v2.sbatch
 ```
 
 ## Dokumentation
 
+- Neue VRS- und MPS-Aufnahmen verarbeiten:
+  [`NEW_RECORDINGS_PIPELINE.md`](NEW_RECORDINGS_PIPELINE.md)
 - Rohdaten, Einheiten und Transformationen:
   [`Thesis/raw_data_and_processing.md`](Thesis/raw_data_and_processing.md)
 - Aktueller technischer Projektstand: [`Thesis/status.md`](Thesis/status.md)

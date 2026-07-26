@@ -71,7 +71,7 @@ scp -P 443 -r * eker@134.2.17.202:~/Master-Thesis---Multi-modal-User-Intention-E
 
   rsync -avhn --ignore-existing --progress \
     Data_collection/Data_vrs/Tarik_downloads/ \
-    eker@134.2.17.202:/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/
+    eker@134.2.17.202:/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_mp4/
 
   Das -n bedeutet: nur anzeigen, nichts wirklich kopieren.
 

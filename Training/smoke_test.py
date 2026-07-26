@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise CSV loading, participant split, model forward pass and all losses."""
+"""Exercise data loading, all absolute-pose backbones, losses and metrics."""
 
 from __future__ import annotations
 
@@ -13,8 +13,33 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from data import prepare_data
-from model import HierarchicalGatedMultimodalTransformer
-from train import multitask_loss, run_epoch
+from train import build_model, multitask_loss, run_epoch
+
+
+MODEL_CONFIGS = (
+    {
+        "model_type": "hierarchical_gated_multimodal_transformer",
+        "model": {
+            "d_model": 16,
+            "nhead": 4,
+            "num_layers": 1,
+            "dim_feedforward": 32,
+            "dropout": 0.0,
+        },
+    },
+    {
+        "model_type": "hierarchical_window_mlp",
+        "model": {"hidden_dims": [32, 16], "dropout": 0.0},
+    },
+    {
+        "model_type": "hierarchical_gru",
+        "model": {
+            "hidden_size": 16,
+            "num_layers": 1,
+            "dropout": 0.0,
+        },
+    },
+)
 
 
 def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> None:
@@ -73,7 +98,9 @@ def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> No
     for axis in "xyz":
         frame[f"future_1s_receiving_wrist_robot_{axis}_m"] = rng.normal(size=rows)
     for index, component in enumerate("xyzw"):
-        frame[f"future_1s_receiving_wrist_robot_q{component}"] = target_quaternion[:, index]
+        frame[f"future_1s_receiving_wrist_robot_q{component}"] = target_quaternion[
+            :, index
+        ]
     frame.to_csv(path, index=False)
 
 
@@ -82,7 +109,9 @@ def main() -> int:
         master_dir = Path(directory)
         for index in range(6):
             participant = f"P{index + 1}"
-            synthetic_sequence(master_dir / f"{participant}_1_master.csv", participant, index)
+            synthetic_sequence(
+                master_dir / f"{participant}_1_master.csv", participant, index
+            )
         data_config = {
             "master_dir": str(master_dir),
             "feature_profile": "multimodal_robot_frame_v1",
@@ -98,45 +127,23 @@ def main() -> int:
             "test_participants": [],
         }
         bundle = prepare_data(data_config, seed=42)
-        model = HierarchicalGatedMultimodalTransformer(
-            input_dim=len(bundle.normalizer.output_feature_names),
-            window_size=20,
-            d_model=16,
-            nhead=4,
-            num_layers=1,
-            dim_feedforward=32,
-            dropout=0.0,
-        )
         batch = next(iter(DataLoader(bundle.train, batch_size=4, shuffle=False)))
-        outputs = model(batch["features"])
         assistance_criterion = nn.CrossEntropyLoss()
         assistance_type_criterion = nn.CrossEntropyLoss()
-        loss, components = multitask_loss(
-            outputs,
-            batch,
-            assistance_criterion,
-            assistance_type_criterion,
-            {
-                "assistance_loss_weight": 1.0,
-                "assistance_type_loss_weight": 1.0,
-                "pose_loss_weight": 1.0,
-                "orientation_loss_weight": 0.25,
-            },
+        assert (
+            sum(
+                dataset.discarded_gap_windows
+                for dataset in (bundle.train, bundle.validation, bundle.test)
+            )
+            > 0
         )
-        loss.backward()
-        assert outputs["assistance_logits"].shape == (4, 2)
-        assert outputs["assistance_type_logits"].shape == (4, 2)
-        assert outputs["pose"].shape == (4, 7)
-        assert torch.isfinite(loss)
-        assert all(np.isfinite(value) for value in components.values())
-        assert sum(
-            dataset.discarded_gap_windows
-            for dataset in (bundle.train, bundle.validation, bundle.test)
-        ) > 0
-        assert sum(
-            dataset.discarded_unlabeled_windows
-            for dataset in (bundle.train, bundle.validation, bundle.test)
-        ) > 0
+        assert (
+            sum(
+                dataset.discarded_unlabeled_windows
+                for dataset in (bundle.train, bundle.validation, bundle.test)
+            )
+            > 0
+        )
         training_config = {
             "assistance_loss_weight": 1.0,
             "assistance_type_loss_weight": 1.0,
@@ -144,23 +151,52 @@ def main() -> int:
             "orientation_loss_weight": 0.25,
             "gradient_clip_norm": 1.0,
         }
-        optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
-        epoch_metrics = run_epoch(
-            model,
-            DataLoader(bundle.train, batch_size=8, shuffle=False),
-            torch.device("cpu"),
-            assistance_criterion,
-            assistance_type_criterion,
-            training_config,
-            optimizer,
+        for model_config in MODEL_CONFIGS:
+            model, model_type = build_model(
+                model_config,
+                input_dim=len(bundle.normalizer.output_feature_names),
+                window_size=20,
+            )
+            outputs = model(batch["features"])
+            loss, components = multitask_loss(
+                outputs,
+                batch,
+                assistance_criterion,
+                assistance_type_criterion,
+                training_config,
+            )
+            loss.backward()
+            assert outputs["assistance_logits"].shape == (4, 2)
+            assert outputs["assistance_type_logits"].shape == (4, 2)
+            assert outputs["pose"].shape == (4, 7)
+            assert torch.isfinite(loss)
+            assert all(np.isfinite(value) for value in components.values())
+
+            optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+            epoch_metrics = run_epoch(
+                model,
+                DataLoader(bundle.train, batch_size=8, shuffle=False),
+                torch.device("cpu"),
+                assistance_criterion,
+                assistance_type_criterion,
+                training_config,
+                optimizer,
+            )
+            assert epoch_metrics["intention"]["samples"] == len(bundle.train)
+            assert epoch_metrics["assistance"]["samples"] == len(bundle.train)
+            assert epoch_metrics["assistance_type"]["samples"] > 0
+            assert epoch_metrics["pose"]["samples"] > 0
+            if model_type == "hierarchical_gated_multimodal_transformer":
+                assert epoch_metrics["mean_gate"] is not None
+            else:
+                assert epoch_metrics["mean_gate"] is None
+            print(f"{model_type} smoke test passed")
+        print(
+            f"Input features including masks: {len(bundle.normalizer.output_feature_names)}"
         )
-        assert epoch_metrics["intention"]["samples"] == len(bundle.train)
-        assert epoch_metrics["assistance"]["samples"] == len(bundle.train)
-        assert epoch_metrics["assistance_type"]["samples"] > 0
-        assert epoch_metrics["pose"]["samples"] > 0
-        print("Training smoke test passed")
-        print(f"Input features including masks: {len(bundle.normalizer.output_feature_names)}")
-        print(f"Windows: {len(bundle.train)}/{len(bundle.validation)}/{len(bundle.test)}")
+        print(
+            f"Windows: {len(bundle.train)}/{len(bundle.validation)}/{len(bundle.test)}"
+        )
     return 0
 
 

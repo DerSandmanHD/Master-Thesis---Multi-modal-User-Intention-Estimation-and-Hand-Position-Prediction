@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Train and evaluate the hierarchical GTN-inspired intention model."""
+"""Train and evaluate hierarchical absolute-pose backbone comparisons."""
 
 from __future__ import annotations
 
@@ -17,10 +17,20 @@ from torch.utils.data import DataLoader
 
 from data import INTENTION_NAMES, DataBundle, prepare_data, save_data_metadata
 from metrics import classification_metrics, pose_metrics
-from model import HierarchicalGatedMultimodalTransformer
+from model import (
+    HierarchicalGRU,
+    HierarchicalGatedMultimodalTransformer,
+    HierarchicalWindowMLP,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_MODEL_TYPE = "hierarchical_gated_multimodal_transformer"
+MODEL_TYPES = {
+    DEFAULT_MODEL_TYPE: HierarchicalGatedMultimodalTransformer,
+    "hierarchical_window_mlp": HierarchicalWindowMLP,
+    "hierarchical_gru": HierarchicalGRU,
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -32,7 +42,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--run-dir", type=Path, default=None)
     parser.add_argument("--epochs", type=int, default=None)
-    parser.add_argument("--device", choices=("auto", "cpu", "cuda", "mps"), default="auto")
+    parser.add_argument(
+        "--device", choices=("auto", "cpu", "cuda", "mps"), default="auto"
+    )
     parser.add_argument("--limit-sequences", type=int, default=None)
     return parser.parse_args()
 
@@ -68,6 +80,26 @@ def class_weights(counts: list[int], device: torch.device) -> torch.Tensor:
     return inverse / inverse.mean()
 
 
+def build_model(
+    config: dict,
+    *,
+    input_dim: int,
+    window_size: int,
+) -> tuple[nn.Module, str]:
+    model_type = str(config.get("model_type", DEFAULT_MODEL_TYPE))
+    model_class = MODEL_TYPES.get(model_type)
+    if model_class is None:
+        raise ValueError(
+            f"Unknown model_type {model_type!r}; expected one of {sorted(MODEL_TYPES)}"
+        )
+    model = model_class(
+        input_dim=input_dim,
+        window_size=window_size,
+        **config["model"],
+    )
+    return model, model_type
+
+
 def multitask_loss(
     outputs: dict[str, torch.Tensor],
     batch: dict,
@@ -100,7 +132,9 @@ def multitask_loss(
             predicted_pose[:, 3:7] * target_pose[:, 3:7], dim=-1
         ).abs()
         orientation_loss = (1.0 - quaternion_similarity).mean()
-        pose_loss = position_loss + float(config["orientation_loss_weight"]) * orientation_loss
+        pose_loss = (
+            position_loss + float(config["orientation_loss_weight"]) * orientation_loss
+        )
     else:
         position_loss = outputs["pose"].sum() * 0.0
         orientation_loss = outputs["pose"].sum() * 0.0
@@ -175,7 +209,9 @@ def run_epoch(
             intentions = batch["intention"]
             assistance_target = (intentions != 0).long()
             assistance_prediction = outputs["assistance_logits"].argmax(dim=-1)
-            assistance_type_prediction = outputs["assistance_type_logits"].argmax(dim=-1)
+            assistance_type_prediction = outputs["assistance_type_logits"].argmax(
+                dim=-1
+            )
             intention_prediction = torch.zeros_like(intentions)
             predicted_assistance = assistance_prediction.bool()
             intention_prediction[predicted_assistance] = (
@@ -197,16 +233,18 @@ def run_epoch(
             if bool(pose_valid.any()):
                 pose_predictions.append(outputs["pose"][pose_valid].detach().cpu())
                 pose_targets.append(batch["pose_target"][pose_valid].cpu())
-            gate_values.append(outputs["gate"].detach().cpu())
+            if "gate" in outputs:
+                gate_values.append(outputs["gate"].detach().cpu())
 
     if not losses:
         raise RuntimeError("DataLoader produced no batches")
     averaged_losses = {
-        key: sum(item[key] for item in losses) / len(losses)
-        for key in losses[0]
+        key: sum(item[key] for item in losses) / len(losses) for key in losses[0]
     }
     intention = classification_metrics(
-        torch.cat(intention_predictions), torch.cat(intention_targets), len(INTENTION_NAMES)
+        torch.cat(intention_predictions),
+        torch.cat(intention_targets),
+        len(INTENTION_NAMES),
     )
     intention["class_names"] = INTENTION_NAMES
     assistance = classification_metrics(
@@ -235,18 +273,23 @@ def run_epoch(
         poses = pose_metrics(torch.cat(pose_predictions), torch.cat(pose_targets))
     else:
         poses = pose_metrics(torch.empty((0, 7)), torch.empty((0, 7)))
-    mean_gate = torch.cat(gate_values).mean(dim=0).tolist()
+    mean_gate = None
+    if gate_values:
+        gate = torch.cat(gate_values).mean(dim=0).tolist()
+        mean_gate = {"temporal": gate[0], "channel": gate[1]}
     return {
         "loss": averaged_losses,
         "intention": intention,
         "assistance": assistance,
         "assistance_type": assistance_type,
         "pose": poses,
-        "mean_gate": {"temporal": mean_gate[0], "channel": mean_gate[1]},
+        "mean_gate": mean_gate,
     }
 
 
-def make_loader(dataset, config: dict, *, shuffle: bool, device: torch.device) -> DataLoader:
+def make_loader(
+    dataset, config: dict, *, shuffle: bool, device: torch.device
+) -> DataLoader:
     worker_count = int(config["num_workers"])
     return DataLoader(
         dataset,
@@ -261,7 +304,9 @@ def make_loader(dataset, config: dict, *, shuffle: bool, device: torch.device) -
 def train(args: argparse.Namespace) -> Path:
     config_path = resolve_project_path(args.config)
     config = json.loads(config_path.read_text(encoding="utf-8"))
-    config["data"]["master_dir"] = str(resolve_project_path(config["data"]["master_dir"]))
+    config["data"]["master_dir"] = str(
+        resolve_project_path(config["data"]["master_dir"])
+    )
     if args.epochs is not None:
         config["training"]["epochs"] = args.epochs
     seed = int(config["training"]["seed"])
@@ -269,8 +314,9 @@ def train(args: argparse.Namespace) -> Path:
     device = choose_device(args.device)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_name = str(config.get("run_name", "hierarchical_baseline"))
     run_dir = resolve_project_path(
-        args.run_dir or f"Training/runs/hierarchical_baseline_{timestamp}"
+        args.run_dir or f"Training/runs/{run_name}_{timestamp}"
     )
     run_dir.mkdir(parents=True, exist_ok=False)
     (run_dir / "config.json").write_text(
@@ -300,15 +346,27 @@ def train(args: argparse.Namespace) -> Path:
     )
 
     training_config = config["training"]
-    train_loader = make_loader(bundle.train, training_config, shuffle=True, device=device)
-    validation_loader = make_loader(bundle.validation, training_config, shuffle=False, device=device)
-    test_loader = make_loader(bundle.test, training_config, shuffle=False, device=device)
+    train_loader = make_loader(
+        bundle.train, training_config, shuffle=True, device=device
+    )
+    validation_loader = make_loader(
+        bundle.validation, training_config, shuffle=False, device=device
+    )
+    test_loader = make_loader(
+        bundle.test, training_config, shuffle=False, device=device
+    )
 
-    model = HierarchicalGatedMultimodalTransformer(
+    model, model_type = build_model(
+        config,
         input_dim=len(bundle.normalizer.output_feature_names),
         window_size=int(config["data"]["window_size"]),
-        **config["model"],
-    ).to(device)
+    )
+    model = model.to(device)
+    trainable_parameters = sum(
+        parameter.numel() for parameter in model.parameters() if parameter.requires_grad
+    )
+    print(f"Model: {model_type}")
+    print(f"Trainable parameters: {trainable_parameters:,}")
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=float(training_config["learning_rate"]),
@@ -346,7 +404,11 @@ def train(args: argparse.Namespace) -> Path:
             assistance_type_criterion,
             training_config,
         )
-        record = {"epoch": epoch, "train": train_metrics, "validation": validation_metrics}
+        record = {
+            "epoch": epoch,
+            "train": train_metrics,
+            "validation": validation_metrics,
+        }
         history.append(record)
         score = float(validation_metrics["intention"]["macro_f1"])
         print(
@@ -363,9 +425,10 @@ def train(args: argparse.Namespace) -> Path:
                 {
                     "model_state_dict": model.state_dict(),
                     "model_config": config["model"],
-                    "model_type": "hierarchical_gated_multimodal_transformer",
+                    "model_type": model_type,
                     "input_dim": len(bundle.normalizer.output_feature_names),
                     "window_size": int(config["data"]["window_size"]),
+                    "trainable_parameters": trainable_parameters,
                     "epoch": epoch,
                     "validation_intention_macro_f1": score,
                 },
@@ -373,7 +436,9 @@ def train(args: argparse.Namespace) -> Path:
             )
         else:
             epochs_without_improvement += 1
-        if epochs_without_improvement >= int(training_config["early_stopping_patience"]):
+        if epochs_without_improvement >= int(
+            training_config["early_stopping_patience"]
+        ):
             print("Early stopping")
             break
 
@@ -388,6 +453,8 @@ def train(args: argparse.Namespace) -> Path:
         training_config,
     )
     report = {
+        "model_type": model_type,
+        "trainable_parameters": trainable_parameters,
         "best_epoch": checkpoint["epoch"],
         "best_validation_intention_macro_f1": best_score,
         "test": test_metrics,

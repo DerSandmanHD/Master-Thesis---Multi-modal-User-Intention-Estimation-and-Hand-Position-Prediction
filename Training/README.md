@@ -217,6 +217,83 @@ F1 und `best_pose_model.pt` nach Validation-Oracle-Position-MAE. Early Stopping
 wird nur ausgeloest, wenn sich keines der beiden Validation-Ziele innerhalb der
 konfigurierten Patience verbessert.
 
+## Offline-Streaming-Replay
+
+Vor der Anbindung eines echten Aria-Streams kann eine Master-CSV kausal, also
+Frame fuer Frame, durch die finalen Residual-v2-Checkpoints abgespielt werden.
+Der Replay verwendet nur die letzten 60 Eingabeframes fuer die Vorhersage.
+Labels und zukuenftige Pose-Targets werden ausschliesslich fuer die
+Offline-Kontrolle ausgegeben und niemals als Modelleingabe verwendet.
+
+Vom Repository-Hauptordner:
+
+```bash
+python3 Training/replay_stream_inference.py \
+  --artifacts-dir Training/final_clean_v1_residual_v2_seed44 \
+  --master-csv Data_collection/replay_inputs/Jona_6_final_master.csv \
+  --output-csv Training/Outputs/Jona_6_replay_predictions.csv
+```
+
+Mit `--realtime` folgt der Replay den Zeitstempeln der Aufnahme. Ohne diese
+Option wird die Sequenz so schnell wie moeglich ausgewertet. Das Skript gibt
+geglättete Intentionen, Konfidenzen, Inferenzzeiten und bei stabilem
+`handover` die vorhergesagte Empfangshand sowie Pose im AprilTag-0-Frame aus.
+Es besitzt bewusst keine Schnittstelle zur Robotersteuerung.
+
+Die Replay-Eingabe muss mit dem finalen Master-Builder erzeugt worden sein und
+alle im Deployment-Metadatenfile gespeicherten Modellfeatures enthalten.
+`--allow-missing-features` ist nur fuer technische Diagnosen vorgesehen; damit
+erzeugte Vorhersagen sind keine gueltigen Modellergebnisse.
+
+## Aria-Gen2-Live-Inferenz
+
+`aria_live_inference.py` verbindet den finalen Residual-v2-Checkpoint mit einem
+Aria-Gen2-Livestream. Eye Gaze gibt den kausalen 30-Hz-Modelltakt vor. RGB wird
+mit `profile9` ungefaehr bei 5 Hz verarbeitet; erkannte Markerposen werden bis
+zu 250 ms im AprilTag-0-Koordinatensystem gehalten. Handtracking und
+hochfrequentes VIO werden mit denselben Toleranzen wie beim Master-Builder
+synchronisiert. Das Modell erhaelt dadurch weiterhin ein 60-Frame-Fenster von
+ungefaehr zwei Sekunden.
+
+Voraussetzungen pruefen, ohne einen Stream zu starten:
+
+```bash
+conda activate aria_conda
+python Training/aria_live_inference.py \
+  --artifacts-dir Training/final_clean_v1_residual_v2_seed44 \
+  --check-only
+```
+
+Live-Inferenz vom Repository-Hauptordner starten:
+
+```bash
+python Training/aria_live_inference.py \
+  --artifacts-dir Training/final_clean_v1_residual_v2_seed44 \
+  --profile-name profile9 \
+  --interface usb \
+  --print-mode changes \
+  --output-jsonl Training/Outputs/aria_live_predictions.jsonl
+```
+
+AprilTag 0 muss zu Beginn so lange im RGB-Bild sichtbar sein, bis der
+regelmaessige Status `anchor_ready: true` und mindestens acht
+`anchor_samples` meldet. Danach werden 60 gueltige 30-Hz-Frames gesammelt.
+`buffer_frames: 60` zeigt an, dass das Modellfenster bereit ist;
+`predictions` zaehlt die ausgegebenen Vorhersagen. Mit `Ctrl-C` werden Stream,
+Receiver und USB-Verbindung sauber beendet.
+
+Die JSONL-Datei wird absichtlich angehaengt. Fuer einen getrennten Versuch
+sollte daher ein neuer Dateiname verwendet werden. `profile9` ist der
+validierte Standard. `mp_streaming_demo` ist in der lokal getesteten
+SDK-Version wegen RGB-Decoderfehlern und einer niedrigeren Handtracking-Rate
+nicht fuer diesen Adapter geeignet.
+
+Der Adapter ist ausschliesslich Inferenz und besitzt keine
+Robotersteuerung. Insbesondere werden keine Befehle an einen Franka-Arm
+gesendet. Vor einer spaeteren Handover-Ausfuehrung sind mindestens
+Robot-Base-Kalibrierung, Workspace-/Kollisionspruefung, Confidence-Gating,
+Watchdog und ein separater sicherer Controller erforderlich.
+
 Pose-Target-Verfuegbarkeit mit denselben Splits und Fensterregeln auditieren:
 
 ```bash

@@ -14,6 +14,9 @@ __pycache__/
 # /Training/reports/
 # *.out
 # *.err
+/Training/final_clean_v1_residual_v2_seed*/
+/Training/Outputs/*_replay_predictions.csv
+/Training/Outputs/aria_live_predictions*.jsonl
 
 # OS and editor metadata
 .DS_Store

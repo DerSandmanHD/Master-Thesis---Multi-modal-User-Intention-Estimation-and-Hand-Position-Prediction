@@ -21,6 +21,11 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from data import RECEIVING_HAND_NAMES
+from live_decision import (
+    GazeTargetSelector,
+    InputQualityGate,
+    PerceptionWorkflow,
+)
 from online_inference import OnlineInferenceEngine
 
 
@@ -97,6 +102,64 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--smoothing-window", type=int, default=3)
     parser.add_argument("--minimum-confidence", type=float, default=0.65)
     parser.add_argument("--minimum-stable-predictions", type=int, default=2)
+    parser.add_argument(
+        "--minimum-gaze-coverage",
+        type=float,
+        default=0.80,
+        help=(
+            "Minimum valid-gaze fraction in the complete model window. "
+            "Otherwise decision_intention is insufficient_input."
+        ),
+    )
+    parser.add_argument(
+        "--maximum-gaze-gap-ms",
+        type=float,
+        default=500.0,
+        help=(
+            "Maximum continuous invalid-gaze interval in the model window."
+        ),
+    )
+    parser.add_argument(
+        "--minimum-handover-hand-coverage",
+        type=float,
+        default=0.50,
+        help=(
+            "Minimum per-side hand coverage required to release handover."
+        ),
+    )
+    parser.add_argument(
+        "--target-fixation-ms",
+        type=float,
+        default=1000.0,
+        help="Required continuous gaze fixation before selecting an object.",
+    )
+    parser.add_argument(
+        "--target-maximum-angle-rad",
+        type=float,
+        default=0.35,
+        help="Maximum gaze-to-object angle for target selection.",
+    )
+    parser.add_argument(
+        "--target-minimum-margin-rad",
+        type=float,
+        default=0.05,
+        help="Minimum angular margin between the best two target objects.",
+    )
+    parser.add_argument(
+        "--workflow-confirmation-predictions",
+        type=int,
+        default=2,
+        help=(
+            "Consecutive validated predictions required for workflow "
+            "confirmation."
+        ),
+    )
+    parser.add_argument(
+        "--fetch-context-timeout-seconds",
+        type=float,
+        default=30.0,
+        help="Maximum age of a confirmed fetch context before handover.",
+    )
 
     parser.add_argument(
         "--print-mode",
@@ -295,6 +358,9 @@ class LiveFeatureAssembler:
         marker_tolerance_ms: float,
         minimum_anchor_samples: int,
         anchor_history: int,
+        quality_gate: InputQualityGate,
+        target_selector: GazeTargetSelector,
+        perception_workflow: PerceptionWorkflow,
         on_prediction: Callable[[dict], None],
         debug_features_jsonl: Path | None,
         debug_every_frames: int,
@@ -332,6 +398,9 @@ class LiveFeatureAssembler:
             marker_tolerance_ms * 1e6
         )
         self.minimum_anchor_samples = minimum_anchor_samples
+        self.quality_gate = quality_gate
+        self.target_selector = target_selector
+        self.perception_workflow = perception_workflow
         self.on_prediction = on_prediction
         self.debug_every_frames = debug_every_frames
 
@@ -387,6 +456,10 @@ class LiveFeatureAssembler:
 
         self.stats = Counter()
         self.last_error: str | None = None
+        self.latest_quality: dict | None = None
+        self.latest_target_selection: dict | None = None
+        self.latest_workflow: dict | None = None
+        self.latest_anchor_diagnostics: dict | None = None
 
         self.april_detector = cv2.aruco.ArucoDetector(
             cv2.aruco.getPredefinedDictionary(
@@ -1251,6 +1324,17 @@ class LiveFeatureAssembler:
             tag_age_ns is not None
             and tag_age_ns <= int(20e6)
         )
+        anchor_diagnostics = {
+            "anchor_ready": True,
+            "apriltag_0_recent": tag_observation is not None,
+            "apriltag_0_frame_aligned": tag_is_frame_aligned,
+            "apriltag_0_age_ms": (
+                None
+                if tag_age_ns is None
+                else float(tag_age_ns / 1e6)
+            ),
+            "anchor_samples": anchor_samples,
+        }
 
         transform_odometry_device = transform_matrix(
             vio.transform_odometry_device
@@ -1379,6 +1463,19 @@ class LiveFeatureAssembler:
                         f"{prefix}_gaze_distance_m"
                     ] = distance
 
+        stream_reset = self.quality_gate.push_frame(
+            timestamp,
+            values,
+        )
+        if stream_reset:
+            self.target_selector.reset()
+            self.perception_workflow.reset()
+
+        target_selection = self.target_selector.update(
+            timestamp,
+            values,
+        )
+
         if (
             self.debug_every_frames > 0
             and assembled_frame_index
@@ -1427,6 +1524,32 @@ class LiveFeatureAssembler:
             values,
         )
 
+        if prediction is not None:
+            quality = self.quality_gate.assess(
+                prediction["stable_intention"]
+            )
+            decision_intention = (
+                prediction["stable_intention"]
+                if quality["ok"]
+                else "insufficient_input"
+            )
+            workflow = self.perception_workflow.update(
+                timestamp,
+                decision_intention,
+                target_selection,
+            )
+            prediction.update(
+                {
+                    "decision_intention": decision_intention,
+                    "input_quality_ok": quality["ok"],
+                    "input_quality": quality,
+                    "target_selection": target_selection,
+                    "perception_workflow": workflow,
+                    "anchor_diagnostics": anchor_diagnostics,
+                    "external_action_requested": False,
+                }
+            )
+
         with self.lock:
             self.stats["model_frames"] += 1
             self.stats[
@@ -1456,6 +1579,16 @@ class LiveFeatureAssembler:
 
             if prediction is not None:
                 self.stats["predictions"] += 1
+                if not prediction["input_quality_ok"]:
+                    self.stats[
+                        "predictions_blocked_by_input_quality"
+                    ] += 1
+
+            self.latest_target_selection = target_selection
+            self.latest_anchor_diagnostics = anchor_diagnostics
+            if prediction is not None:
+                self.latest_quality = prediction["input_quality"]
+                self.latest_workflow = prediction["perception_workflow"]
 
         if prediction is not None:
             self.on_prediction(prediction)
@@ -1471,6 +1604,10 @@ class LiveFeatureAssembler:
                     is not None
                 ),
                 "last_error": self.last_error,
+                "input_quality": self.latest_quality,
+                "target_selection": self.latest_target_selection,
+                "perception_workflow": self.latest_workflow,
+                "anchor_diagnostics": self.latest_anchor_diagnostics,
             }
 
             hand_matches = int(
@@ -1531,7 +1668,7 @@ def prediction_printer(
     Callable[[dict], None],
     Callable[[], None],
 ]:
-    previous_label = None
+    previous_signature = None
     handle = None
 
     if output_jsonl is not None:
@@ -1552,19 +1689,32 @@ def prediction_printer(
         )
 
     def emit(prediction: dict) -> None:
-        nonlocal previous_label
+        nonlocal previous_signature
 
-        label = prediction[
+        model_label = prediction[
             "stable_intention"
         ]
+        decision_label = prediction.get(
+            "decision_intention",
+            model_label,
+        )
+        workflow = prediction.get(
+            "perception_workflow",
+            {},
+        )
+        signature = (
+            decision_label,
+            workflow.get("state"),
+            workflow.get("selected_object_id"),
+        )
 
         should_print = (
             print_mode == "all"
             or (
                 print_mode == "changes"
                 and (
-                    label != previous_label
-                    or label == "handover"
+                    signature != previous_signature
+                    or decision_label == "handover"
                 )
             )
         )
@@ -1576,7 +1726,10 @@ def prediction_printer(
 
             pose_text = ""
 
-            if pose is not None:
+            if (
+                pose is not None
+                and decision_label == "handover"
+            ):
                 pose_text = (
                     f" | hand="
                     f"{prediction['predicted_receiving_hand']} | "
@@ -1586,10 +1739,38 @@ def prediction_printer(
                     f"{pose[2]:+.3f}"
                     f") m"
                 )
-            elif label == "handover":
+            elif decision_label == "handover":
                 pose_text = (
                     " | pose=no valid hand reference"
                 )
+
+            quality_text = ""
+            if not prediction.get(
+                "input_quality_ok",
+                True,
+            ):
+                reasons = prediction.get(
+                    "input_quality",
+                    {},
+                ).get("reasons", [])
+                quality_text = (
+                    " | blocked="
+                    + ",".join(reasons)
+                )
+
+            target_id = workflow.get(
+                "selected_object_id"
+            )
+            target_text = (
+                ""
+                if target_id is None
+                else f" | target=aruco_{target_id}"
+            )
+            workflow_text = (
+                ""
+                if workflow.get("state") is None
+                else f" | state={workflow['state']}"
+            )
 
             print(
                 f"[live {prediction['prediction_index']:05d}] "
@@ -1600,13 +1781,17 @@ def prediction_printer(
                 f"fetch={prediction['p_fetch']:.3f}, "
                 f"handover={prediction['p_handover']:.3f}"
                 f"] | "
-                f"stable={label} "
+                f"model={model_label} "
                 f"({prediction['stable_confidence']:.3f}) | "
+                f"decision={decision_label} | "
                 f"intent={prediction['intention_inference_ms']:.2f} ms"
+                f"{quality_text}"
+                f"{target_text}"
+                f"{workflow_text}"
                 f"{pose_text}"
             )
 
-            previous_label = label
+            previous_signature = signature
 
         if handle is not None:
             handle.write(
@@ -1731,6 +1916,40 @@ def run_live(
         output_path,
     )
 
+    quality_gate = InputQualityGate(
+        window_size=engine.required_frames,
+        max_timestamp_gap_ns=(
+            engine.artifacts.max_timestamp_gap_ns
+        ),
+        minimum_gaze_coverage=(
+            args.minimum_gaze_coverage
+        ),
+        maximum_gaze_gap_ms=(
+            args.maximum_gaze_gap_ms
+        ),
+        minimum_handover_hand_coverage=(
+            args.minimum_handover_hand_coverage
+        ),
+    )
+    target_selector = GazeTargetSelector(
+        object_ids=OBJECT_MARKER_IDS,
+        fixation_ms=args.target_fixation_ms,
+        maximum_angle_rad=(
+            args.target_maximum_angle_rad
+        ),
+        minimum_angle_margin_rad=(
+            args.target_minimum_margin_rad
+        ),
+    )
+    perception_workflow = PerceptionWorkflow(
+        confirmation_predictions=(
+            args.workflow_confirmation_predictions
+        ),
+        fetch_context_timeout_seconds=(
+            args.fetch_context_timeout_seconds
+        ),
+    )
+
     assembler = LiveFeatureAssembler(
         engine,
         hand_tolerance_ms=(
@@ -1747,6 +1966,11 @@ def run_live(
         ),
         anchor_history=(
             args.anchor_history
+        ),
+        quality_gate=quality_gate,
+        target_selector=target_selector,
+        perception_workflow=(
+            perception_workflow
         ),
         on_prediction=emit_prediction,
         debug_features_jsonl=(
@@ -1875,7 +2099,9 @@ def run_live(
             "are produced. Keep AprilTag 0 visible "
             f"until at least "
             f"{args.minimum_anchor_samples} "
-            "anchor samples."
+            "anchor samples. decision_intention is "
+            "released only when the complete input "
+            "quality window passes."
         )
 
         started = time.monotonic()

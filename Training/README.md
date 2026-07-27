@@ -250,7 +250,7 @@ erzeugte Vorhersagen sind keine gueltigen Modellergebnisse.
 `aria_live_inference.py` verbindet den finalen Residual-v2-Checkpoint mit einem
 Aria-Gen2-Livestream. Eye Gaze gibt den kausalen 30-Hz-Modelltakt vor. RGB wird
 mit `profile9` ungefaehr bei 5 Hz verarbeitet; erkannte Markerposen werden bis
-zu 250 ms im AprilTag-0-Koordinatensystem gehalten. Handtracking und
+zu 500 ms im AprilTag-0-Koordinatensystem gehalten. Handtracking und
 hochfrequentes VIO werden mit denselben Toleranzen wie beim Master-Builder
 synchronisiert. Das Modell erhaelt dadurch weiterhin ein 60-Frame-Fenster von
 ungefaehr zwei Sekunden.
@@ -281,6 +281,55 @@ regelmaessige Status `anchor_ready: true` und mindestens acht
 `buffer_frames: 60` zeigt an, dass das Modellfenster bereit ist;
 `predictions` zaehlt die ausgegebenen Vorhersagen. Mit `Ctrl-C` werden Stream,
 Receiver und USB-Verbindung sauber beendet.
+
+Die Live-Ausgabe trennt bewusst die reine Modellantwort von der validierten
+Entscheidung:
+
+- `stable_intention` bzw. `model=...` bleibt die zeitlich geglaettete
+  Modellvorhersage und wird auch fuer die Fehleranalyse protokolliert.
+- `decision_intention` bzw. `decision=...` ist die freigegebene
+  Wahrnehmungsausgabe. Sie wird zu `insufficient_input`, wenn im kompletten
+  60-Frame-Fenster weniger als 80 Prozent gueltige Gaze-Daten vorliegen oder
+  Gaze laenger als 500 ms am Stueck fehlt. Fuer `handover` muss zusaetzlich
+  mindestens eine Hand aktuell sichtbar sein und eine Handseite mindestens
+  50 Prozent Fensterabdeckung erreichen.
+- Kurze Blinks werden dadurch toleriert. Laenger geschlossene Augen oder ein
+  verlorenes Gaze-Signal werden nicht faelschlich als `continue` behandelt.
+  Die Grenzwerte sind Kommandozeilenoptionen und sollen nach weiteren
+  Live-Versuchen anhand der JSONL-Logs validiert werden.
+
+Parallel verfolgt eine roboterfreie Wahrnehmungs-Zustandsmaschine die Folge
+`continue -> fetch -> handover`. Sie meldet unter
+`perception_workflow.state` Kandidaten und bestaetigte Zustaende, fordert aber
+niemals eine externe Aktion an. Ein `handover` ohne vorher bestaetigten
+`fetch`-Kontext wird explizit als `handover_without_fetch_context`
+gekennzeichnet.
+
+Die separate Zielauswahl betrachtet die sichtbaren ArUco-IDs 6 bis 14. Ein
+Objekt wird erst nach standardmaessig einer Sekunde eindeutiger Fixation
+ausgegeben. Der kleinste Gaze-Winkel muss unter 0,35 rad liegen und mindestens
+0,05 rad Abstand zum zweitbesten Objekt haben. Das Ergebnis steht unter
+`target_selection`; bei bestaetigtem `fetch` wird die ID im
+`perception_workflow` festgehalten. `selection_score` ist ein geometrischer
+Heuristikwert und keine trainierte oder kalibrierte Wahrscheinlichkeit.
+
+Die AprilTag-Diagnose unterscheidet ausserdem:
+
+- `apriltag_0_recent`: Tag 0 liegt innerhalb der Marker-Toleranz im Cache,
+- `apriltag_0_frame_aligned`: Tagbeobachtung liegt innerhalb von 20 ms zum
+  aktuellen Modelltakt,
+- `apriltag_0_age_ms`: Alter der verwendbaren Beobachtung.
+
+Die Modellfeatures `apriltag_0_valid` und `robot_anchor_interpolated` behalten
+damit unveraendert ihre Trainingssemantik; die neue Diagnose erklaert lediglich
+den bei einem 5-Hz-RGB-Stream erwartbaren Unterschied zwischen einem
+verwendbaren statischen Anker und einem exakt frame-synchronen Tag.
+
+Die roboterfreie Entscheidungslogik kann ohne Aria-Hardware geprueft werden:
+
+```bash
+python3 Training/live_decision_smoke_test.py
+```
 
 Die JSONL-Datei wird absichtlich angehaengt. Fuer einen getrennten Versuch
 sollte daher ein neuer Dateiname verwendet werden. `profile9` ist der

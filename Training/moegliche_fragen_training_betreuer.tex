@@ -1,0 +1,248 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\geometry{left=2.5cm,right=2.5cm,top=2.3cm,bottom=2.3cm}
+\setlist[itemize]{leftmargin=1.6em}
+\setlist[enumerate]{leftmargin=1.8em}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
+\title{Mögliche Fragen zur Vorstellung des Modelltrainings}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+
+Sehr wahrscheinlich kommen Fragen aus den Bereichen \textbf{Daten, Architektur, Training, Evaluation und Live-Übertragbarkeit}. Bei diesem Projekt ist besonders mit den folgenden Fragen zu rechnen.
+
+\section{Fragen zu den Daten}
+
+\subsection*{Welche Daten bekommt das Modell genau?}
+Ein Eingabefenster besteht aus 60 zeitlich aufeinanderfolgenden Frames. Pro Frame werden Merkmale aus mehreren Modalitäten verwendet, beispielsweise Gaze, Handpositionen und -orientierungen, VIO- beziehungsweise Bewegungsinformationen, Objekt- und Markerinformationen sowie Validitäts- und Missing-Data-Masken.
+
+\subsection*{Wie viele Features hat ein Frame?}
+Beim aktuellen Live-Modell werden 92 Modellfeatures verwendet. Wichtig ist die Unterscheidung zwischen Rohdaten und den tatsächlich in das Modell eingespeisten Features.
+
+\subsection*{Wie wurden die Daten aufgeteilt?}
+Die Aufteilung erfolgt teilnehmerweise. Das bedeutet, dass ein Teilnehmer vollständig dem Training, der Validation oder dem Test zugeordnet wird.
+
+\subsection*{Warum ist ein teilnehmerweiser Split wichtig?}
+Ein zufälliger Fenstersplit könnte zu Data Leakage führen. Überlappende Fenster und personenspezifische Bewegungsmuster wären sonst gleichzeitig in Training und Test vorhanden und würden die Testleistung künstlich verbessern.
+
+\subsection*{Wie entstehen die 60-Frame-Fenster?}
+Hier sollte erklärt werden können, welche Fensterlänge und Schrittweite verwendet werden, wie das Label eines Fensters bestimmt wird und wie stark sich benachbarte Fenster überlappen. Gerade bei überlappenden Fenstern kann die Frage entstehen, wie unabhängig die Trainingsbeispiele tatsächlich sind.
+
+\subsection*{Wie wird mit fehlenden Gaze-, Hand- oder Markerwerten umgegangen?}
+Es sollte zwischen dem tatsächlichen Messwert, einem fehlenden beziehungsweise ersetzten Wert und einem zusätzlichen Validitätsfeature unterschieden werden.
+
+\subsection*{Wurden alle Splits gleich normalisiert?}
+Mittelwerte und Skalierungsparameter werden ausschließlich aus dem Trainingssplit bestimmt. Dieselben Parameter werden anschließend auf Validation und Test angewandt.
+
+\subsection*{Wie ausgeglichen sind die Klassen?}
+Die Klasse \texttt{continue} ist deutlich häufiger als \texttt{fetch} und \texttt{handover}. Daraus können Nachfragen zu Class Weights, Sampling, Loss-Gewichten und zur Verwendung von Macro-F1 statt reiner Accuracy entstehen.
+
+\section{Fragen zu den Modellarchitekturen}
+
+\subsection*{Warum wurden MLP, GRU und Transformer verglichen?}
+\begin{itemize}
+    \item \textbf{MLP}: einfache Baseline ohne explizite zeitliche Modellierung.
+    \item \textbf{GRU}: klassische sequenzielle und kausale Architektur.
+    \item \textbf{Transformer}: Attention-basierte Architektur für zeitliche und multimodale Beziehungen.
+    \item \textbf{Residual Transformer v2}: auf die konkrete Handover-Aufgabe zugeschnittenes Gesamtmodell.
+\end{itemize}
+
+\subsection*{Was ist der zentrale Unterschied zwischen MLP, GRU und Transformer?}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Modell & Verarbeitung des Fensters \\
+\midrule
+MLP & Das gesamte Fenster wird abgeflacht. \\
+GRU & Die Frames werden nacheinander verarbeitet. \\
+Transformer & Relevante Zeitpunkte und Features werden per Attention verknüpft. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Warum besitzt Transformer v1 zwei Türme?}
+Ein Turm modelliert zeitliche Beziehungen zwischen den Frames. Der zweite Turm modelliert Beziehungen zwischen Featurekanälen beziehungsweise Modalitäten. Ein lernbares Gate fusioniert anschließend beide Repräsentationen.
+
+\subsection*{Ist der Transformer kausal?}
+Die Live-Anwendung ist kausal, wenn nur aktuelle und vergangene Frames verwendet werden. Zusätzlich sollte im Code geprüft werden, ob innerhalb des Fensters eine Attention-Maske verwendet wird oder ob alle 60 bereits beobachteten Frames gegenseitig betrachtet werden. Beides kann für den Livebetrieb zulässig sein, solange keine zukünftigen Frames eingehen.
+
+\subsection*{Warum wird bei der GRU nur der letzte Hidden State verwendet?}
+Der letzte Hidden State enthält die zusammengefasste zeitliche Information des gesamten Fensters und wird für Klassifikation und Posevorhersage verwendet. Eine mögliche Alternative wäre Pooling oder Attention über alle Hidden States.
+
+\subsection*{Was bedeutet ``Residual'' bei Residual Transformer v2?}
+Das Modell sagt nicht direkt die vollständige zukünftige Handpose vorher, sondern eine Änderung relativ zur letzten beobachteten Pose:
+\[
+\text{Zielpose}=\text{letzte beobachtete Pose}+\text{vorhergesagte Änderung}
+\]
+
+\subsection*{Warum ist eine residuale Posevorhersage einfacher?}
+Die aktuelle Handposition liefert bereits einen starken Ausgangspunkt. Das Modell muss hauptsächlich die zukünftige Veränderung lernen und nicht die vollständige absolute Pose von Grund auf rekonstruieren.
+
+\section{Fragen zur hierarchischen Klassifikation}
+
+\subsection*{Warum wird keine direkte Drei-Klassen-Klassifikation verwendet?}
+Die Entscheidung erfolgt in zwei Stufen:
+\begin{enumerate}
+    \item \texttt{continue} gegen \texttt{assistance},
+    \item bei \texttt{assistance}: \texttt{fetch} gegen \texttt{handover}.
+\end{enumerate}
+Die Begründung ist, dass \texttt{fetch} und \texttt{handover} semantisch beide Formen von Assistenz sind.
+
+\subsection*{Wie entstehen die finalen Klassenwahrscheinlichkeiten?}
+\[
+P(\text{continue})=1-P(\text{assistance})
+\]
+\[
+P(\text{fetch})=P(\text{assistance})\cdot P(\text{fetch}\mid\text{assistance})
+\]
+\[
+P(\text{handover})=P(\text{assistance})\cdot P(\text{handover}\mid\text{assistance})
+\]
+
+\subsection*{Was passiert, wenn die erste Stufe falsch entscheidet?}
+Wenn die erste Stufe fälschlich \texttt{continue} vorhersagt, kann die zweite Stufe die Entscheidung nicht mehr korrigieren. Das ist ein möglicher Nachteil hierarchischer Klassifikation.
+
+\subsection*{Warum wird die Pose nur bei Handover bewertet?}
+Eine Empfangshandpose ist nur für die Übergabe semantisch sinnvoll definiert. Für \texttt{continue} oder \texttt{fetch} existiert kein entsprechendes Handover-Ziel.
+
+\section{Fragen zu Loss und Optimierung}
+
+\subsection*{Aus welchen Komponenten besteht der Gesamt-Loss?}
+Beim Residual-v2-Modell gehören dazu Assistance-Loss, Assistance-Type-Loss, Receiving-Hand-Loss, Positions-Loss und Orientierungs-Loss.
+
+\subsection*{Wie werden diese Loss-Komponenten gewichtet?}
+Die konkreten Gewichte sollten aus der Konfiguration genannt werden können. Eine typische Nachfrage ist, ob eine einzelne Komponente den Gesamt-Loss dominiert.
+
+\subsection*{Warum steigt der Validation-Loss, obwohl die Intentions-F1 stabil bleibt?}
+Der Gesamt-Loss umfasst mehrere Aufgaben. Eine Verschlechterung bei Pose oder Orientierung kann den Gesamt-Loss erhöhen, obwohl sich die Intentionsklassifikation kaum verändert.
+
+\subsection*{Welcher Optimizer wurde verwendet?}
+Verwendet wird AdamW. Mögliche Nachfragen betreffen Lernrate, Weight Decay, Scheduler, Batchgröße und Gradient Clipping.
+
+\subsection*{Wie wurde Early Stopping umgesetzt?}
+Es sollte erklärt werden können, welche Validation-Metrik überwacht wurde, wie groß die Patience war und warum nicht die letzte Epoche verwendet wird.
+
+\subsection*{Warum wurden zwei Checkpoints gespeichert?}
+Die beste Intentionsleistung und die beste Poseleistung können in unterschiedlichen Epochen auftreten. Beim aktuellen Live-Modell stammt der Intentions-Checkpoint aus Epoche 2 und der Pose-Checkpoint aus Epoche 8.
+
+\section{Fragen zu Overfitting}
+
+\subsection*{Ist das Modell overfitted?}
+Eine geeignete Antwort wäre:
+\begin{quote}
+Die Lernkurven zeigen nach wenigen Epochen eine Overfitting-Tendenz beim Gesamt-Loss. Deshalb wird nicht die letzte Epoche verwendet, sondern der jeweils beste Validation-Checkpoint.
+\end{quote}
+
+\subsection*{Warum konvergiert das Modell bereits nach zwei Epochen?}
+Mögliche Gründe sind viele Trainingsfenster, stark überlappende und damit ähnliche Fenster, der Informationsgehalt von 60 Frames, eine teilweise gut separierbare Aufgabe und viele Optimizer-Updates pro Epoche.
+
+\subsection*{Ist Epoche 2 zu früh?}
+Nicht automatisch. Bei ungefähr 10\,958 Trainingsfenstern und einer Batchgröße von 32 ergeben sich etwa 343 Optimizer-Schritte pro Epoche. Bis zum Ende von Epoche 2 wurden somit ungefähr 686 Updates durchgeführt.
+
+\subsection*{Was wurde gegen Overfitting getan?}
+Teilnehmerweiser Split, Validation-basierte Checkpoint-Auswahl, Early Stopping, Weight Decay, gegebenenfalls Dropout und mehrere Zufallsseeds.
+
+\section{Fragen zur Evaluation}
+
+\subsection*{Welche Hauptmetrik wurde für die Intention verwendet?}
+Macro-F1 ist sinnvoll, weil die Klassen ungleich verteilt sind und jede Klasse gleich stark in die Bewertung eingeht.
+
+\subsection*{Warum nicht nur Accuracy?}
+Ein Modell könnte durch die häufige Klasse \texttt{continue} eine hohe Accuracy erreichen und trotzdem \texttt{fetch} oder \texttt{handover} schlecht erkennen.
+
+\subsection*{Welche Posemetrik wurde verwendet?}
+Verwendet werden unter anderem Positions-MAE in Zentimetern und Orientierungsfehler.
+
+\subsection*{Was ist der Unterschied zwischen Oracle-Pose und End-to-End-Pose?}
+\begin{itemize}
+    \item \textbf{Oracle-Pose}: Intention und Empfangshand gelten als korrekt; bewertet wird hauptsächlich die Posevorhersage.
+    \item \textbf{End-to-End-Pose}: Fehler aus Intentions- und Handklassifikation wirken sich ebenfalls auf das Endergebnis aus.
+\end{itemize}
+
+\subsection*{Warum wurden drei Seeds verwendet?}
+Mehrere Seeds zeigen, dass die Ergebnisse nicht nur von einer einzelnen zufälligen Initialisierung oder einem einzelnen Split abhängen.
+
+\subsection*{Sind drei Seeds ausreichend?}
+Für eine Masterarbeit sind drei Seeds häufig eine praktikable Mindestzahl. Für starke statistische Aussagen wären mehr Seeds besser.
+
+\subsection*{Welches Modell war am besten?}
+Eine differenzierte Antwort wäre: Das MLP war teilweise stark bei der reinen Intentions-F1. Der Residual Transformer v2 erzielte deutlich bessere Poseergebnisse. Für die vollständige Live-Demo ist Residual Transformer v2 daher die passendere Wahl.
+
+\section{Fragen zur Live-Demo}
+
+\subsection*{Warum funktioniert das Modell offline und live nicht immer identisch?}
+Live-Daten können sich von den Trainingsdaten unterscheiden, beispielsweise durch anderes Sensortiming, fehlende Modalitäten, veränderte Markerorientierung, andere räumliche Positionen, zusätzliches Rauschen, Synchronisationsunterschiede oder reale Bewegungen außerhalb der Trainingsverteilung.
+
+\subsection*{Wie wird sichergestellt, dass keine zukünftigen Daten verwendet werden?}
+Das Live-Fenster enthält nur den aktuellen und vergangene Frames. Sensordaten werden kausal mit dem jeweils letzten verfügbaren Messwert synchronisiert.
+
+\subsection*{Wie hoch ist die Latenz?}
+Es sollte zwischen der reinen Modellinferenz von meist ungefähr 3--4\,ms und der Reaktionsverzögerung durch das 60-Frame-Fenster, Glättung und Stabilitätsfilter unterschieden werden.
+
+\subsection*{Warum braucht das System mehrere stabile Vorhersagen?}
+Damit einzelne schwankende oder fehlerhafte Vorhersagen nicht sofort eine Roboteraktion auslösen.
+
+\subsection*{Was passiert bei fehlendem Gaze?}
+Aktuell kann das Modell bei dauerhaft fehlendem Gaze fälschlich sehr sicher \texttt{handover} ausgeben. Eine geplante Verbesserung ist ein Sensor-Quality-Gate: \texttt{fetch} und \texttt{handover} werden nur freigegeben, wenn genügend gültige Gaze-Daten vorliegen.
+
+\subsection*{Warum hat die Markerorientierung einen so großen Einfluss?}
+Hand-, Gaze- und Objektpositionen werden in den durch den Marker definierten Roboterrahmen transformiert. Eine um 90 Grad veränderte Markerorientierung verändert daher die Bedeutung der Raumachsen.
+
+\section{Besonders kritische Fragen}
+
+\subsection*{Hat das Modell wirklich multimodale Zusammenhänge gelernt oder nur eine dominante Modalität?}
+Als erste qualitative Beobachtung kann genannt werden:
+\begin{itemize}
+    \item nur Objekt anschauen $\rightarrow$ meist \texttt{continue},
+    \item nur Hand ausstrecken und wegsehen $\rightarrow$ meist \texttt{continue},
+    \item Blick plus passende Handgeste $\rightarrow$ \texttt{fetch} oder \texttt{handover}.
+\end{itemize}
+Wissenschaftlich sauberer wäre zusätzlich eine Ablationsstudie, bei der einzelne Modalitäten gezielt entfernt werden.
+
+\subsection*{Ist das Modell personengeneralisierend?}
+Das hängt davon ab, ob Testpersonen vollständig unbekannt waren. Der teilnehmerweise Split ist hierfür zentral.
+
+\subsection*{Ist ein Posefehler von 7--9\,cm gut genug für eine echte Übergabe?}
+Für eine direkte Roboterbewegung zur menschlichen Hand ist das allein möglicherweise noch nicht ausreichend. Sinnvolle zusätzliche Maßnahmen wären Sicherheitsabstand, Zielpose vor der Hand, Online-Nachregelung, Geschwindigkeitsbegrenzung und Kollisionsprüfung.
+
+\subsection*{Warum ist das MLP bei der Intentions-F1 teilweise besser als der Transformer?}
+Möglicherweise benötigt die Aufgabe nicht zwingend eine sehr komplexe Architektur. Ein MLP kann stark sein, wenn statische oder fensterweite Muster bereits ausreichend diskriminativ sind.
+
+\subsection*{Rechtfertigt der Transformer seine zusätzliche Komplexität?}
+Für die reine Intentionsklassifikation möglicherweise nicht eindeutig. Beim Residual Transformer v2 liegt der Mehrwert vor allem in der Empfangshandklassifikation und der deutlich besseren Posevorhersage.
+
+\subsection*{Wie fair ist der Modellvergleich?}
+Alle Modelle verwenden dieselbe Datenpipeline, dieselben Splits, dieselben Fenster und dieselbe Normalisierung. Allerdings löst Residual Transformer v2 zusätzliche Aufgaben. Deshalb ist nicht jede Loss-Zahl direkt zwischen allen Modellen vergleichbar.
+
+\section{Die zehn wichtigsten Fragen}
+\begin{enumerate}
+    \item Warum werden 60 Frames verwendet?
+    \item Welche 92 Features werden verwendet?
+    \item Wie erfolgt der teilnehmerweise Split?
+    \item Wie werden fehlende Werte behandelt?
+    \item Warum wird eine hierarchische Klassifikation verwendet?
+    \item Was ist der Unterschied zwischen MLP, GRU und Transformer?
+    \item Was bedeutet residuale Posevorhersage?
+    \item Warum werden zwei verschiedene Checkpoints verwendet?
+    \item Warum wird Residual Transformer v2 für die Live-Demo gewählt?
+    \item Welche Grenzen besitzt das Live-System aktuell?
+\end{enumerate}
+
+\section{Grundprinzip für die Diskussion}
+Der Betreuer wird wahrscheinlich nicht nur fragen, \emph{was} gemacht wurde, sondern vor allem:
+\begin{quote}
+Warum wurde es genau so gemacht, und welche Alternative hätte es gegeben?
+\end{quote}
+Für jede Entscheidung zu Daten, Architektur, Loss, Metrik und Live-Pipeline sollte daher neben der technischen Beschreibung auch eine kurze Begründung vorbereitet werden.
+
+\end{document}

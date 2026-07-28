@@ -1,0 +1,13 @@
+run_name,model_type,model,seed,epochs_trained,best_intention_epoch,best_validation_intention_macro_f1,best_pose_epoch,best_validation_pose_position_mae_cm,test_intention_macro_f1,test_pose_position_mae_cm
+final_clean_v1_transformer_v1_seed42,hierarchical_gated_multimodal_transformer,Transformer v1,42,15,8,0.9191791349680534,5,14.37532901763916,0.8456050513550003,20.391616821289062
+final_clean_v1_transformer_v1_seed43,hierarchical_gated_multimodal_transformer,Transformer v1,43,20,2,0.9140580371297283,13,15.853662490844727,0.8495610298429871,17.97754669189453
+final_clean_v1_transformer_v1_seed44,hierarchical_gated_multimodal_transformer,Transformer v1,44,16,3,0.9171135172392694,9,11.544757843017578,0.8593128992602784,17.52260398864746
+final_clean_v1_gru_v1_seed42,hierarchical_gru,GRU,42,20,20,0.9281218774153331,12,13.797327995300293,0.8633050997742058,17.06773567199707
+final_clean_v1_gru_v1_seed43,hierarchical_gru,GRU,43,13,6,0.9245955753735814,5,13.706396102905273,0.8780792699668812,18.616004943847656
+final_clean_v1_gru_v1_seed44,hierarchical_gru,GRU,44,20,3,0.9224555264215248,14,13.90023422241211,0.8472014607806098,14.57793140411377
+final_clean_v1_residual_v2_seed42,hierarchical_residual_pose_transformer_v2,Residual Transformer v2,42,9,2,0.9196365033779726,2,7.598879814147949,0.8782493407156114,14.995458602905273
+final_clean_v1_residual_v2_seed43,hierarchical_residual_pose_transformer_v2,Residual Transformer v2,43,20,1,0.9171091453341128,17,8.478972434997559,0.8533548235511142,13.191082954406738
+final_clean_v1_residual_v2_seed44,hierarchical_residual_pose_transformer_v2,Residual Transformer v2,44,15,2,0.9304966149963558,8,7.396761417388916,0.8544219977553311,15.517618179321289
+final_clean_v1_mlp_v1_seed42,hierarchical_window_mlp,MLP,42,16,2,0.9265966139449674,9,13.693986892700195,0.8444420459119856,18.63216781616211
+final_clean_v1_mlp_v1_seed43,hierarchical_window_mlp,MLP,43,15,8,0.9266779177434424,4,13.07539176940918,0.8531690093346539,18.14203643798828
+final_clean_v1_mlp_v1_seed44,hierarchical_window_mlp,MLP,44,20,16,0.9318391085702128,6,13.898122787475586,0.7995867447612576,18.40923309326172

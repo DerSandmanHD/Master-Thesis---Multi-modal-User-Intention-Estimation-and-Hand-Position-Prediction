@@ -1,0 +1,42 @@
+{
+  "runs_dir": "Training/runs/run_cluster",
+  "run_count": 12,
+  "models": {
+    "Transformer v1": [
+      42,
+      43,
+      44
+    ],
+    "MLP": [
+      42,
+      43,
+      44
+    ],
+    "GRU": [
+      42,
+      43,
+      44
+    ],
+    "Residual Transformer v2": [
+      42,
+      43,
+      44
+    ]
+  },
+  "generated_data": [
+    "run_summary.csv",
+    "training_history_by_seed.csv",
+    "training_history_mean_std.csv"
+  ],
+  "generated_figures": [
+    "01_total_loss_train_validation_by_model.pdf",
+    "01_total_loss_train_validation_by_model.png",
+    "02_validation_intention_macro_f1_by_model.pdf",
+    "02_validation_intention_macro_f1_by_model.png",
+    "03_validation_pose_position_mae_by_model.pdf",
+    "03_validation_pose_position_mae_by_model.png",
+    "04_validation_intention_macro_f1_mean_std.pdf",
+    "04_validation_intention_macro_f1_mean_std.png"
+  ],
+  "aggregation_note": "Mean and standard deviation curves include only epochs available for all three seeds of the respective model."
+}

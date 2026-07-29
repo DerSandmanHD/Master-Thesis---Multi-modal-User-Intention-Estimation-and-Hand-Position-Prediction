@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate reproducible learning-curve diagrams from the twelve final runs."""
+"""Generate reproducible learning-curve diagrams from a seeded benchmark."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import sys
 import tempfile
 from pathlib import Path
 
@@ -29,9 +30,18 @@ import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_RUNS_DIR = PROJECT_ROOT / "Training" / "runs" / "run_cluster"
-DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "Training" / "evaluation" / "generated"
-RUN_PATTERN = re.compile(r"^final_clean_v1_(.+)_seed(\d+)$")
+TRAINING_ROOT = PROJECT_ROOT / "Training"
+if str(TRAINING_ROOT) not in sys.path:
+    sys.path.insert(0, str(TRAINING_ROOT))
+
+from run_layout import (
+    experiment_report_directory,
+    validate_run_context,
+    validate_tag,
+)
+
+
+DEFAULT_RUNS_DIR = PROJECT_ROOT / "Training" / "runs"
 EXPECTED_SEEDS = (42, 43, 44)
 MODEL_ORDER = (
     "hierarchical_gated_multimodal_transformer",
@@ -64,20 +74,25 @@ LOSS_NAMES = (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--tag", default="final_clean_v1")
+    parser.add_argument("--dataset-tag", default=None)
     parser.add_argument(
         "--runs-dir",
         type=Path,
         default=DEFAULT_RUNS_DIR,
         help=(
-            "Directory containing the final_clean_v1 run directories. "
-            "Nested directories such as 'Ohne Titel' are searched recursively."
+            "Directory containing the tagged benchmark run directories. "
+            "Nested directories are searched recursively."
         ),
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=DEFAULT_OUTPUT_DIR,
-        help="Directory for generated CSV, PNG and PDF files.",
+        default=None,
+        help=(
+            "Directory for generated CSV, PNG and PDF files. Future structured "
+            "runs default to Training/reports/<dataset>/<tag>/training_diagrams."
+        ),
     )
     return parser.parse_args()
 
@@ -99,18 +114,36 @@ def display_path(path: Path) -> str:
         return str(resolved)
 
 
-def discover_runs(runs_dir: Path) -> list[tuple[Path, int, dict]]:
+def discover_runs(
+    runs_dir: Path,
+    tag: str = "final_clean_v1",
+    dataset_tag: str | None = None,
+) -> list[tuple[Path, int, dict]]:
     runs_dir = runs_dir.expanduser().resolve()
     if not runs_dir.is_dir():
         raise FileNotFoundError(f"Runs directory not found: {runs_dir}")
 
     discovered: list[tuple[Path, int, dict]] = []
     seen: set[tuple[str, int]] = set()
-    for metrics_path in sorted(runs_dir.rglob("final_clean_v1_*_seed*/metrics.json")):
+    run_pattern = re.compile(rf"^{re.escape(tag)}_(.+)_seed(\d+)$")
+    for metrics_path in sorted(runs_dir.rglob(f"{tag}_*_seed*/metrics.json")):
         run_dir = metrics_path.parent
-        match = RUN_PATTERN.fullmatch(run_dir.name)
+        match = run_pattern.fullmatch(run_dir.name)
         if match is None:
             continue
+        config_path = run_dir / "config.json"
+        if config_path.is_file():
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            validate_run_context(
+                config,
+                dataset_tag=dataset_tag,
+                experiment_tag=tag,
+                source=str(run_dir),
+            )
+        elif dataset_tag is not None:
+            raise FileNotFoundError(
+                f"Structured run is missing config.json: {run_dir}"
+            )
         seed = int(match.group(2))
         metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
         model_type = str(metrics.get("model_type", ""))
@@ -466,7 +499,22 @@ def plot_mean_validation_f1(
 
 def main() -> int:
     args = parse_args()
-    output_dir = args.output_dir.expanduser().resolve()
+    tag = validate_tag(args.tag, "tag")
+    dataset_tag = (
+        validate_tag(args.dataset_tag, "dataset_tag")
+        if args.dataset_tag
+        else None
+    )
+    if args.output_dir is not None:
+        output_dir = args.output_dir.expanduser().resolve()
+    elif dataset_tag:
+        output_dir = (
+            PROJECT_ROOT
+            / experiment_report_directory(dataset_tag, tag)
+            / "training_diagrams"
+        )
+    else:
+        output_dir = PROJECT_ROOT / "Training" / "evaluation" / "generated"
     data_dir = output_dir / "data"
     figures_dir = output_dir / "figures"
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -474,7 +522,11 @@ def main() -> int:
 
     history_records: list[dict] = []
     summaries: list[dict] = []
-    for run_dir, seed, metrics in discover_runs(args.runs_dir):
+    for run_dir, seed, metrics in discover_runs(
+        args.runs_dir,
+        tag,
+        dataset_tag,
+    ):
         rows, summary = history_rows(run_dir, seed, metrics)
         history_records.extend(rows)
         summaries.append(summary)
@@ -496,6 +548,8 @@ def main() -> int:
     plot_mean_validation_f1(aggregate, figures_dir)
 
     manifest = {
+        "tag": tag,
+        "dataset_tag": dataset_tag,
         "runs_dir": display_path(args.runs_dir),
         "run_count": len(summary),
         "models": {

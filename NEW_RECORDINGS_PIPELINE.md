@@ -377,9 +377,14 @@ find Data_collection/master_datasets -maxdepth 1 -type f -name '*_master.csv' \
 Erst danach bei Bedarf die Trainingsjobs starten:
 
 ```bash
-sbatch Training/hierarchical_baseline.sbatch
-sbatch Training/hierarchical_residual_v2.sbatch
+DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
+
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG" \
+  Training/jobs/train_transformer_v1.sbatch
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG" \
+  Training/jobs/train_residual_v2.sbatch
 ```
 
-Die Trainingsjobs gehören nicht mehr zur Aufnahmeverarbeitung selbst.
-
+Der Beispieltag muss zuvor durch den tatsächlich eingefrorenen Descriptor unter
+`Training/datasets/` ersetzt werden. Die Trainingsjobs gehören nicht mehr zur
+Aufnahmeverarbeitung selbst.

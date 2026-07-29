@@ -107,44 +107,60 @@ python3 Training/residual_smoke_test.py
 python3 Training/ablation_smoke_test.py
 python3 Training/pose_baselines_smoke_test.py
 python3 Training/export_predictions_smoke_test.py
+python3 Training/run_layout_smoke_test.py
+python3 Training/run_registry_smoke_test.py
+python3 Training/run_discovery_smoke_test.py
 ```
 
 Hierarchische Backbone-Vergleiche:
 
 ```bash
 python3 Training/train.py \
-  --config Training/configs/hierarchical_baseline_v1.json
+  --config Training/configs/models/transformer_v1.json
 
 python3 Training/train.py \
-  --config Training/configs/hierarchical_mlp_v1.json
+  --config Training/configs/models/mlp_v1.json
 
 python3 Training/train.py \
-  --config Training/configs/hierarchical_gru_v1.json
+  --config Training/configs/models/gru_v1.json
 ```
 
 Residual-v2-Modell:
 
 ```bash
 python3 Training/train_residual.py \
-  --config Training/configs/hierarchical_residual_v2.json
+  --config Training/configs/models/residual_transformer_v2.json
 ```
 
-Cluster-Training:
+Cluster-Training für einen zuvor unter `Training/datasets/` eingefrorenen
+Datasetstand:
 
 ```bash
-sbatch Training/hierarchical_baseline.sbatch
-sbatch Training/hierarchical_mlp.sbatch
-sbatch Training/hierarchical_gru.sbatch
-sbatch Training/hierarchical_residual_v2.sbatch
+DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
+
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG" \
+  Training/jobs/train_transformer_v1.sbatch
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG" \
+  Training/jobs/train_mlp_v1.sbatch
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG" \
+  Training/jobs/train_gru_v1.sbatch
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG" \
+  Training/jobs/train_residual_v2.sbatch
 ```
 
 Finaler, manifestgefilterter Vergleich mit vier Modellen und drei Seeds:
 
 ```bash
-sbatch --export=ALL,FINAL_TAG=final_clean_v1 \
-  Training/final_comparison.sbatch
+DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
+EXPERIMENT_TAG=benchmark_v2
 
-python3 Training/compare_final_runs.py --tag final_clean_v1
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG",EXPERIMENT_TAG="$EXPERIMENT_TAG" \
+  Training/jobs/benchmark_models.sbatch
+
+python3 Training/compare_final_runs.py \
+  --dataset-tag "$DATASET_TAG" \
+  --tag "$EXPERIMENT_TAG" \
+  --runs-root "Training/runs/$DATASET_TAG/$EXPERIMENT_TAG"
 ```
 
 ## Dokumentation
@@ -165,4 +181,5 @@ Aktiver Quellcode bleibt jeweils einmal unter `Code/` beziehungsweise
 `Training/`. Experimente enthalten keine kopierten Source-Trees, sondern
 Konfiguration, Metriken, Split-Metadaten und den verwendeten Git-Commit.
 Checkpoints und vollständige Run-Verzeichnisse bleiben außerhalb der normalen
-Git-Historie.
+Git-Historie. `Training/run_registry.json` ordnet eingefrorene Datasetstände,
+Experimente, Reports und ausgewählte Deployment-Artefakte einander zu.

@@ -1,0 +1,19 @@
+{
+  "dataset_tag": "dataset_vX_YYYYMMDD_nNNN_fingerprint8",
+  "status": "draft",
+  "created_at": "YYYY-MM-DD",
+  "snapshot_path": "Data_collection/<snapshot_directory>",
+  "snapshot_validation_path": "Data_collection/<snapshot_directory>/snapshot_validation.json",
+  "snapshot_validation_sha256": null,
+  "selected_sequences": null,
+  "split_sequences": {
+    "train": null,
+    "validation": null,
+    "test": null
+  },
+  "manifest_sha256": null,
+  "sequence_fingerprint": null,
+  "dataset_content_fingerprint": null,
+  "builder_version": null,
+  "notes": []
+}

@@ -16,5 +16,5 @@ aktuellen Modell als Szenenkontext verwendet; die Modellziele sind Intention
 und die zukünftige Handover-Handpose.
 
 Die Ergebnisse bleiben in `Thesis/status_testing_baseline.md` dokumentiert.
-Für neue Läufe sind `Training/configs/hierarchical_baseline_v1.json` oder
-`Training/configs/hierarchical_residual_v2.json` zu verwenden.
+Für neue Läufe sind `Training/configs/models/transformer_v1.json` oder
+`Training/configs/models/residual_transformer_v2.json` zu verwenden.

@@ -1,3 +1,6 @@
 __pycache__/
 runs/
+live_runs/
+slurm_logs/*
+!slurm_logs/.gitkeep
 *.pyc

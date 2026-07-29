@@ -72,7 +72,7 @@ Im Training wird der zweite Kopf nur an Ground-Truth-Samples mit `fetch` oder `h
 ## 1. Transformer v1
 
 **Implementierung:** `HierarchicalGatedMultimodalTransformer` in `model.py`  
-**Konfiguration:** [hierarchical_baseline_v1.json](configs/hierarchical_baseline_v1.json)  
+**Konfiguration:** [transformer_v1.json](configs/models/transformer_v1.json)
 **Trainer:** `train.py`
 
 Transformer v1 klassifiziert die Intention und sagt für Handover eine absolute zukünftige Handpose voraus. Er verarbeitet dasselbe Fenster parallel entlang der Zeit- und Featureachse:
@@ -105,7 +105,7 @@ Der Pose-Kopf ist `Linear(128→64) → GELU → Dropout → Linear(64→7)`. Se
 ## 2. MLP
 
 **Implementierung:** `HierarchicalWindowMLP` in `model.py`  
-**Konfiguration:** [hierarchical_mlp_v1.json](configs/hierarchical_mlp_v1.json)  
+**Konfiguration:** [mlp_v1.json](configs/models/mlp_v1.json)
 **Trainer:** `train.py`
 
 Das MLP ist die nicht-rekurrente Vergleichsbasis. Es flacht das vollständige Fenster ab:
@@ -125,7 +125,7 @@ Missing-Data-Behandlung, Targets, Hierarchie und Loss sind identisch zu Transfor
 ## 3. GRU
 
 **Implementierung:** `HierarchicalGRU` in `model.py`  
-**Konfiguration:** [hierarchical_gru_v1.json](configs/hierarchical_gru_v1.json)  
+**Konfiguration:** [gru_v1.json](configs/models/gru_v1.json)
 **Trainer:** `train.py`
 
 Die GRU verarbeitet `[B,60,2F]` chronologisch mit einer unidirektionalen, zweilagigen `nn.GRU`. Die Konfiguration setzt `hidden_size=112`, `num_layers=2` und `dropout=0.15`; der Dropout der GRU liegt zwischen den beiden Schichten.
@@ -142,7 +142,7 @@ Die Quaternion des Outputs `[B,7]` wird wie bei Transformer v1 normalisiert. Dat
 ## 4. Residual Transformer v2
 
 **Implementierung:** `HierarchicalResidualPoseTransformer` in `model.py`  
-**Konfiguration:** [hierarchical_residual_v2.json](configs/hierarchical_residual_v2.json)  
+**Konfiguration:** [residual_transformer_v2.json](configs/models/residual_transformer_v2.json)
 **Trainer:** `train_residual.py`
 
 Residual Transformer v2 übernimmt den identischen dualen Transformer-Encoder, das Gate, die 128-dimensionale Fusion und die beiden Intentionsköpfe von Transformer v1. Der Unterschied liegt in der Hand- und Posevorhersage.

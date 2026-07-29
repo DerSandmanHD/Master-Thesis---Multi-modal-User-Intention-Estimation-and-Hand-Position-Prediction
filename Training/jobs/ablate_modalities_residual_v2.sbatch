@@ -6,14 +6,15 @@
 #SBATCH --gres=gpu:1
 #SBATCH --time=04:00:00
 #SBATCH --array=0-11%4
-#SBATCH --output=aria_v2_ablation.%A_%a.out
-#SBATCH --error=aria_v2_ablation.%A_%a.err
+#SBATCH --output=Training/slurm_logs/ablate_modalities_v2.%A_%a.out
+#SBATCH --error=Training/slurm_logs/ablate_modalities_v2.%A_%a.err
 
 set -euo pipefail
 
 REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
 IMAGE="$HOME/singularity/aria_master.simg"
-ABLATION_TAG="${ABLATION_TAG:-modality_ablation_v1}"
+: "${DATASET_TAG:?Set DATASET_TAG to an immutable dataset version}"
+EXPERIMENT_TAG="${EXPERIMENT_TAG:-modality_ablation_v1}"
 
 ABLATIONS=(no_gaze no_hands no_objects no_vio)
 CONFIGS=(
@@ -29,11 +30,14 @@ SEED_INDEX=$((SLURM_ARRAY_TASK_ID % 3))
 ABLATION="${ABLATIONS[$ABLATION_INDEX]}"
 CONFIG="${CONFIGS[$ABLATION_INDEX]}"
 SEED="${SEEDS[$SEED_INDEX]}"
-RUN_DIR="Training/runs/ablations/${ABLATION_TAG}/${ABLATION}/seed_${SEED}"
+RUN_ID="${EXPERIMENT_TAG}_${ABLATION}_seed${SEED}"
+RUN_DIR="Training/runs/${DATASET_TAG}/${EXPERIMENT_TAG}/${ABLATION}/${RUN_ID}"
 
 cd "$REPO_DIR"
 singularity exec --nv "$IMAGE" \
     python3 Training/train_residual.py \
     --config "$CONFIG" \
+    --dataset-tag "$DATASET_TAG" \
+    --experiment-tag "$EXPERIMENT_TAG" \
     --seed "$SEED" \
     --run-dir "$RUN_DIR"

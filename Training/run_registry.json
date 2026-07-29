@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "layout": {
+    "runs": "Training/runs/<dataset_tag>/<experiment_tag>/<model_tag>/<run_id>",
+    "reports": "Training/reports/<dataset_tag>/<experiment_tag>",
+    "live": "Training/live_runs/<dataset_tag>/<session_tag>",
+    "slurm_logs": "Training/slurm_logs",
+    "tag_pattern": "^[a-z0-9][a-z0-9_-]*$"
+  },
+  "datasets": [
+    {
+      "dataset_tag": "dataset_v1_20260729_n156_seq457a80f1",
+      "descriptor": "Training/datasets/dataset_v1_20260729_n156_seq457a80f1.json"
+    }
+  ],
+  "experiments": [
+    {
+      "experiment_tag": "final_clean_v1",
+      "dataset_tag": "dataset_v1_20260729_n156_seq457a80f1",
+      "kind": "four_model_benchmark",
+      "status": "frozen_legacy",
+      "models": [
+        "transformer_v1",
+        "mlp_v1",
+        "gru_v1",
+        "residual_v2"
+      ],
+      "seeds": [42, 43, 44],
+      "run_root": "Training/runs/run_cluster/Ohne Titel",
+      "comparison_report": "Training/reports/final_clean_v1_comparison.json",
+      "deployment_artifact": "Training/final_clean_v1_residual_v2_seed44"
+    }
+  ],
+  "legacy_roots": [
+    {
+      "path": "Training/runs",
+      "classification": "local exploratory and baseline runs",
+      "action": "keep in place; discover recursively"
+    },
+    {
+      "path": "Training/runs/run_cluster/Ohne Titel",
+      "classification": "copied cluster runs including final_clean_v1",
+      "action": "keep in place; do not rename without an external backup"
+    },
+    {
+      "path": "Training/final_clean_v1_residual_v2_seed44",
+      "classification": "deployment mirror of final_clean_v1 residual_v2 seed 44",
+      "action": "keep in place for backward-compatible live commands"
+    }
+  ]
+}

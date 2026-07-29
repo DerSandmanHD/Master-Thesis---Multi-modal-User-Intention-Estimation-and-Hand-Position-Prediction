@@ -112,6 +112,39 @@ Erforderlich sind Intentionslabels sowie das ausgewaehlte zukuenftige
 Empfangshand-Target. Labels und Zukunftswerte werden nicht als Eingabefeatures
 verwendet.
 
+## Ablagestruktur und Versionierung
+
+Aktive Vorlagen und Jobs sind nach Zweck getrennt:
+
+```text
+Training/
+├── configs/models/       # Transformer, MLP, GRU und Residual v2
+├── configs/ablations/    # Modalitaetsablationen
+├── jobs/                 # SLURM-Einstiegspunkte
+├── datasets/             # kleine, versionierte Dataset-Deskriptoren
+├── runs/                 # Checkpoints und Run-Artefakte; nicht in Git
+├── reports/              # aggregierte Auswertungen
+├── live_runs/            # neue Replay-/Live-Sitzungen; nicht in Git
+└── slurm_logs/           # neue .out/.err-Dateien; nicht in Git
+```
+
+Neue Trainingsläufe verwenden:
+
+```text
+Training/runs/<dataset_tag>/<experiment_tag>/<model_tag>/<run_id>/
+```
+
+`config.json` enthält zusätzlich `run_context` mit genau diesen drei Tags.
+`data_metadata.json`, `dataset_provenance.json` und der Manifest-Snapshot
+belegen den tatsächlich geladenen Dateninhalt. Vergleichsreports landen unter
+`Training/reports/<dataset_tag>/<experiment_tag>/`.
+
+`Training/run_registry.json` registriert Datasetstände und abgeschlossene
+Experimente. Der bisherige `final_clean_v1`-Stand, seine flachen Reports, der
+Deployment-Spiegel und die verschachtelten Cluster-Runs bleiben unverändert an
+ihren bisherigen Orten. Sie sind Legacy-Artefakte und werden nicht
+nachträglich umbenannt.
+
 ## Training
 
 Smoke-Test:
@@ -125,37 +158,52 @@ Interaktiver Ein-Epochen-Test:
 
 ```bash
 python3 Training/train.py \
-  --config Training/configs/hierarchical_baseline_v1.json \
+  --config Training/configs/models/transformer_v1.json \
+  --dataset-tag development \
+  --experiment-tag local_smoke \
   --epochs 1
 ```
 
-MLP- und GRU-Vergleich:
+MLP- und GRU-Vergleich mit demselben Laufkontext:
 
 ```bash
 python3 Training/train.py \
-  --config Training/configs/hierarchical_mlp_v1.json
+  --config Training/configs/models/mlp_v1.json \
+  --dataset-tag development \
+  --experiment-tag local_smoke
 
 python3 Training/train.py \
-  --config Training/configs/hierarchical_gru_v1.json
+  --config Training/configs/models/gru_v1.json \
+  --dataset-tag development \
+  --experiment-tag local_smoke
 ```
 
 Separate GPU-Jobs:
 
 ```bash
-sbatch Training/hierarchical_mlp.sbatch
-sbatch Training/hierarchical_gru.sbatch
+DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
+
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG" \
+  Training/jobs/train_mlp_v1.sbatch
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG" \
+  Training/jobs/train_gru_v1.sbatch
 ```
 
 ## Finaler Modellvergleich
 
 Vor dem finalen Lauf muss die QA nach dem letzten Master-Build erneut erzeugt
-worden sein. Der folgende Array-Job startet Transformer v1, MLP, GRU und
-Residual Transformer v2 jeweils mit den Seeds 42, 43 und 44. Maximal vier
-GPU-Jobs laufen gleichzeitig:
+und der Datasetstand unter `Training/datasets/` eingefroren und in
+`Training/run_registry.json` registriert worden sein. Der Beispieltag unten
+muss durch diesen tatsächlichen Tag ersetzt werden. Der Array-Job startet
+Transformer v1, MLP, GRU und Residual Transformer v2 jeweils mit den Seeds 42,
+43 und 44. Maximal vier GPU-Jobs laufen gleichzeitig:
 
 ```bash
-sbatch --export=ALL,FINAL_TAG=final_clean_v1 \
-  Training/final_comparison.sbatch
+DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
+EXPERIMENT_TAG=benchmark_v2
+
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG",EXPERIMENT_TAG="$EXPERIMENT_TAG" \
+  Training/jobs/benchmark_models.sbatch
 ```
 
 Nach Abschluss aller zwoelf Tasks werden Datensatz-Fingerprint, Sequenzsplits
@@ -163,15 +211,22 @@ und Fensterzahlen validiert und Mittelwert sowie Standardabweichung
 aggregiert:
 
 ```bash
-python3 Training/compare_final_runs.py --tag final_clean_v1
+python3 Training/compare_final_runs.py \
+  --dataset-tag "$DATASET_TAG" \
+  --tag "$EXPERIMENT_TAG" \
+  --runs-root "Training/runs/$DATASET_TAG/$EXPERIMENT_TAG"
 ```
 
 Erzeugt werden:
 
 ```text
-Training/reports/final_clean_v1_comparison.json
-Training/reports/final_clean_v1_comparison.csv
+Training/reports/<dataset_tag>/<experiment_tag>/<experiment_tag>_comparison.json
+Training/reports/<dataset_tag>/<experiment_tag>/<experiment_tag>_comparison.csv
 ```
+
+Der historische Vergleich bleibt weiterhin mit
+`python3 Training/compare_final_runs.py --tag final_clean_v1` auswertbar; seine
+bereits erzeugten Reports bleiben flach unter `Training/reports/`.
 
 Die Standardmodelle speichern `best_model.pt` als besten Intent-Checkpoint und
 zusaetzlich `best_pose_model.pt` nach Validation-Positions-MAE. Residual v2
@@ -182,11 +237,13 @@ Ein-Epochen-Cluster-Smoke-Tests koennen ohne Aenderung der Konfiguration
 gestartet werden:
 
 ```bash
-sbatch --export=ALL,EPOCHS=1,RUN_DIR=Training/runs/mlp_cluster_smoke \
-  Training/hierarchical_mlp.sbatch
+DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
 
-sbatch --export=ALL,EPOCHS=1,RUN_DIR=Training/runs/gru_cluster_smoke \
-  Training/hierarchical_gru.sbatch
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG",EXPERIMENT_TAG=cluster_smoke_v1,EPOCHS=1 \
+  Training/jobs/train_mlp_v1.sbatch
+
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG",EXPERIMENT_TAG=cluster_smoke_v1,EPOCHS=1 \
+  Training/jobs/train_gru_v1.sbatch
 ```
 
 Residual-v2-Smoke-Test und interaktiver Ein-Epochen-Lauf:
@@ -195,17 +252,22 @@ Residual-v2-Smoke-Test und interaktiver Ein-Epochen-Lauf:
 python3 Training/residual_smoke_test.py
 
 python3 Training/train_residual.py \
-  --config Training/configs/hierarchical_residual_v2.json \
+  --config Training/configs/models/residual_transformer_v2.json \
+  --dataset-tag development \
+  --experiment-tag local_smoke \
   --epochs 1
 ```
 
 Residual-v2-GPU-Job:
 
 ```bash
-sbatch --export=ALL,EPOCHS=1,RUN_DIR=Training/runs/residual_v2_cluster_smoke \
-  Training/hierarchical_residual_v2.sbatch
+DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
 
-sbatch Training/hierarchical_residual_v2.sbatch
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG",EXPERIMENT_TAG=cluster_smoke_v1,EPOCHS=1 \
+  Training/jobs/train_residual_v2.sbatch
+
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG",EXPERIMENT_TAG=residual_full_v1 \
+  Training/jobs/train_residual_v2.sbatch
 ```
 
 Der erste Befehl ist der einmalige echte Cluster-Smoke-Test. Erst wenn dieser
@@ -256,14 +318,18 @@ Der vorbereitete Array-Job wuerde spaeter vier Varianten mit jeweils drei
 Seeds starten. Er wird nicht automatisch ausgefuehrt:
 
 ```bash
-sbatch --export=ALL,ABLATION_TAG=modality_ablation_v1 \
-  Training/residual_v2_modalities.sbatch
+DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
+EXPERIMENT_TAG=modality_ablation_v1
+
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG",EXPERIMENT_TAG="$EXPERIMENT_TAG" \
+  Training/jobs/ablate_modalities_residual_v2.sbatch
 ```
 
 Die Ergebnisse landen getrennt unter:
 
 ```text
-Training/runs/ablations/<ABLATION_TAG>/<VARIANTE>/seed_<SEED>/
+Training/runs/<dataset_tag>/<experiment_tag>/<ablation>/
+  <experiment_tag>_<ablation>_seed<seed>/
 ```
 
 ## Offline-Streaming-Replay
@@ -280,7 +346,8 @@ Vom Repository-Hauptordner:
 python3 Training/replay_stream_inference.py \
   --artifacts-dir Training/final_clean_v1_residual_v2_seed44 \
   --master-csv Data_collection/replay_inputs/Jona_6_final_master.csv \
-  --output-csv Training/Outputs/Jona_6_replay_predictions.csv
+  --output-csv \
+    Training/live_runs/dataset_v1_20260729_n156_seq457a80f1/replay_jona_6/predictions.csv
 ```
 
 Mit `--realtime` folgt der Replay den Zeitstempeln der Aufnahme. Ohne diese
@@ -353,7 +420,8 @@ python Training/aria_live_inference.py \
   --profile-name profile9 \
   --interface usb \
   --print-mode changes \
-  --output-jsonl Training/Outputs/aria_live_predictions.jsonl
+  --output-jsonl \
+    Training/live_runs/dataset_v1_20260729_n156_seq457a80f1/live_validation_01/predictions.jsonl
 ```
 
 AprilTag 0 muss zu Beginn so lange im RGB-Bild sichtbar sein, bis der
@@ -435,7 +503,7 @@ Pose-Target-Verfuegbarkeit mit denselben Splits und Fensterregeln auditieren:
 
 ```bash
 python3 Training/audit_pose_targets.py \
-  --config Training/configs/hierarchical_baseline_v1.json
+  --config Training/configs/models/transformer_v1.json
 ```
 
 Der Audit schreibt eine Zusammenfassung nach
@@ -446,7 +514,7 @@ Naive Pose-Baselines auf exakt denselben gueltigen Zukunftstargets auswerten:
 
 ```bash
 python3 Training/evaluate_pose_baselines.py \
-  --config Training/configs/hierarchical_baseline_v1.json \
+  --config Training/configs/models/transformer_v1.json \
   --model-metrics Training/runs/hierarchical_baseline_20260712_101448/metrics.json
 ```
 
@@ -476,13 +544,16 @@ GPU-Export des aktuellen Baseline-Checkpoints auf dem Cluster:
 
 ```bash
 sbatch --export=ALL,RUN_DIR=Training/runs/hierarchical_baseline_20260712_101448 \
-  Training/export_checkpoint_predictions.sbatch
+  Training/jobs/export_predictions.sbatch
 ```
 
-GPU-Job auf dem Cluster:
+Neuer Transformer-GPU-Job auf dem Cluster:
 
 ```bash
-sbatch Training/hierarchical_baseline.sbatch
+DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
+
+sbatch --export=ALL,DATASET_TAG="$DATASET_TAG" \
+  Training/jobs/train_transformer_v1.sbatch
 ```
 
 Die historische Flat/Object-Baseline liegt unter
@@ -491,15 +562,24 @@ ersten Laufs erhalten, ist aber nicht die aktuelle Thesis-Baseline.
 
 ## Ergebnisse
 
-Jeder neue Lauf landet unter `Training/runs/hierarchical_baseline_*` und
-enthaelt:
+Jeder neue Lauf landet unter
+`Training/runs/<dataset_tag>/<experiment_tag>/<model_tag>/<run_id>/` und
+enthaelt mindestens:
 
 - `best_model.pt`: bester Checkpoint nach Validation-Intention-Macro-F1
 - `config.json`: tatsaechlich verwendete Konfiguration
 - `data_metadata.json`: Features, Normalisierung, Split sowie wegen echter
   Zeitluecken, geringer Beobachtung oder unlabeled Endpunkt verworfene Fenster
+- `dataset_provenance.json`: Dateihashes, Manifest, Builder-, Git- und
+  Laufzeitinformationen
+- `dataset_manifest_snapshot.csv`: das beim Lauf verwendete Manifest
 - `metrics.json`: Verlauf sowie einmalige Testauswertung
 
 Die Metriken werden getrennt fuer Drei-Klassen-Intention, Assistenzbedarf,
 Fetch/Handover und Handover-Pose berichtet. Der Testsplit wird erst nach der
 Auswahl des besten Validation-Checkpoints ausgewertet.
+
+Die schon vorhandenen Dateien unter `Training/Outputs/`,
+`Training/evaluation/generated/`, die flachen Reports und alten Run-Pfade sind
+historische Ergebnisse. Sie werden nicht verschoben; alle neuen Läufe folgen
+der oben beschriebenen Struktur.

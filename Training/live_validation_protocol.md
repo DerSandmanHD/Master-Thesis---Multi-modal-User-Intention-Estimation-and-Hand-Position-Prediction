@@ -9,7 +9,8 @@ keine externe Aktion an.
 Verwendet werden der finale Residual-v2-Intentionscheckpoint und der separate
 Posecheckpoint aus `Training/final_clean_v1_residual_v2_seed44`. Für jeden
 Versuch werden neue Dateinamen benutzt, weil die Live-Inferenz JSONL-Dateien
-absichtlich anhängt.
+absichtlich anhängt. Für das aktuelle Legacy-Modell lautet der registrierte
+Dataset-Tag `dataset_v1_20260729_n156_seq457a80f1`.
 
 Vor dem Versuch:
 
@@ -33,15 +34,18 @@ python Training/aria_live_inference.py \
   --vio-tolerance-ms 10 \
   --marker-tolerance-ms 500 \
   --print-mode all \
-  --output-jsonl Training/Outputs/live_validation_01_predictions.jsonl \
-  --debug-features-jsonl Training/Outputs/live_validation_01_features.jsonl
+  --output-jsonl \
+    Training/live_runs/dataset_v1_20260729_n156_seq457a80f1/live_validation_01/predictions.jsonl \
+  --debug-features-jsonl \
+    Training/live_runs/dataset_v1_20260729_n156_seq457a80f1/live_validation_01/features.jsonl
 ```
 
 Terminal B zeichnet Ereignisgrenzen auf derselben Maschine auf:
 
 ```bash
 python Training/live_event_marker.py \
-  --output-jsonl Training/Outputs/live_validation_01_events.jsonl
+  --output-jsonl \
+    Training/live_runs/dataset_v1_20260729_n156_seq457a80f1/live_validation_01/events.jsonl
 ```
 
 Erst annotieren, wenn `anchor_ready=true`, `buffer_frames=60` und mehrere
@@ -87,9 +91,12 @@ die Live-Inferenz mit `Ctrl-C` beenden. Anschließend:
 
 ```bash
 python Training/analyze_live_validation.py \
-  --predictions-jsonl Training/Outputs/live_validation_01_predictions.jsonl \
-  --events-jsonl Training/Outputs/live_validation_01_events.jsonl \
-  --output-json Training/evaluation/deployment_validation_runs/live_validation_01.json
+  --predictions-jsonl \
+    Training/live_runs/dataset_v1_20260729_n156_seq457a80f1/live_validation_01/predictions.jsonl \
+  --events-jsonl \
+    Training/live_runs/dataset_v1_20260729_n156_seq457a80f1/live_validation_01/events.jsonl \
+  --output-json \
+    Training/reports/dataset_v1_20260729_n156_seq457a80f1/live_validation_01/live_validation_report.json
 ```
 
 Der Bericht trennt Raw, Stable und Actionable, Quality-Ablehnungen,

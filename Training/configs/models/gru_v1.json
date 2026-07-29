@@ -1,5 +1,5 @@
 {
-  "run_name": "hierarchical_gru_v1",
+  "run_name": "gru_v1",
   "model_type": "hierarchical_gru",
   "data": {
     "master_dir": "Data_collection/master_datasets",

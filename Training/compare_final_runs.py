@@ -12,6 +12,11 @@ from pathlib import Path
 
 from metrics import position_mean_euclidean_error_cm
 from run_discovery import discover_run_directories
+from run_layout import (
+    experiment_report_directory,
+    validate_run_context,
+    validate_tag,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -42,11 +47,17 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tag", default="final_clean_v1")
     parser.add_argument(
+        "--dataset-tag",
+        default=None,
+        help="Expected dataset tag for structured future runs.",
+    )
+    parser.add_argument(
         "--runs-root",
         type=Path,
         default=Path("Training/runs"),
     )
     parser.add_argument("--expected-seeds", type=int, nargs="+", default=[42, 43, 44])
+    parser.add_argument("--report-dir", type=Path, default=None)
     parser.add_argument("--output-json", type=Path, default=None)
     parser.add_argument("--output-csv", type=Path, default=None)
     return parser.parse_args()
@@ -217,15 +228,21 @@ def mean_std(values: list[float]) -> dict:
 
 def main() -> int:
     args = parse_args()
+    tag = validate_tag(args.tag, "tag")
+    dataset_tag = (
+        validate_tag(args.dataset_tag, "dataset_tag")
+        if args.dataset_tag
+        else None
+    )
     runs_root = project_path(args.runs_root)
     run_dirs = discover_run_directories(
         runs_root,
-        name_prefix=f"{args.tag}_",
+        name_prefix=f"{tag}_",
     )
     if not run_dirs:
         raise FileNotFoundError(
             f"No run directories recursively match "
-            f"{runs_root / (args.tag + '_*')}"
+            f"{runs_root / (tag + '_*')}"
         )
 
     rows = []
@@ -238,6 +255,12 @@ def main() -> int:
         metadata = read_json(run_dir / "data_metadata.json")
         metrics = read_json(run_dir / "metrics.json")
         dataset_filter = metadata["split"]["dataset_filter"]
+        validate_run_context(
+            config,
+            dataset_tag=dataset_tag,
+            experiment_tag=tag,
+            source=str(run_dir),
+        )
         if not dataset_filter.get("enabled"):
             raise ValueError(f"Manifest filtering was disabled in {run_dir}")
 
@@ -302,7 +325,8 @@ def main() -> int:
         }
 
     report = {
-        "tag": args.tag,
+        "tag": tag,
+        "dataset_tag": dataset_tag,
         "expected_seeds": sorted(expected_seeds),
         "dataset_fingerprint": reference_fingerprint,
         "dataset_fingerprint_kind": reference_fingerprint_kind,
@@ -312,11 +336,19 @@ def main() -> int:
         "runs": rows,
         "summary": summary,
     }
+    if args.report_dir is not None:
+        report_dir = project_path(args.report_dir)
+    elif dataset_tag is not None:
+        report_dir = project_path(
+            experiment_report_directory(dataset_tag, tag)
+        )
+    else:
+        report_dir = project_path(Path("Training/reports"))
     output_json = project_path(
-        args.output_json or Path("Training/reports") / f"{args.tag}_comparison.json"
+        args.output_json or report_dir / f"{tag}_comparison.json"
     )
     output_csv = project_path(
-        args.output_csv or Path("Training/reports") / f"{args.tag}_comparison.csv"
+        args.output_csv or report_dir / f"{tag}_comparison.csv"
     )
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_json.write_text(

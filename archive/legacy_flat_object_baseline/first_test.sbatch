@@ -9,5 +9,5 @@
 #SBATCH --error=aria_gtn_test.%J.err
 
 echo "This job belongs to the archived flat/object baseline and is no longer runnable" >&2
-echo "with the current hierarchical model. Use Training/hierarchical_baseline.sbatch." >&2
+echo "with the current hierarchical model. Use Training/jobs/train_transformer_v1.sbatch." >&2
 exit 2

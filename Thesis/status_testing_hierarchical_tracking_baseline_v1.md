@@ -20,7 +20,7 @@ Objekt-ID ist keine Zielklasse des Transformers.
 ## Reproduzierbarkeit
 
 - Code-Commit des Trainingslaufs: `04c3156`
-- Config: `Training/configs/hierarchical_baseline_v1.json`
+- Aktuelle Config-Vorlage: `Training/configs/models/transformer_v1.json`
 - Cluster-Run:
   `Training/runs/hierarchical_baseline_20260712_101448`
 - Seed: 42

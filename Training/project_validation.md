@@ -396,7 +396,7 @@ Aus den finalen Trainingszählungen resultieren ungefähr folgende Cross-Entropy
 ### 5.3 Transformer v1
 
 Klasse: `Training/model.py::HierarchicalGatedMultimodalTransformer`  
-Konfiguration: `Training/configs/hierarchical_baseline_v1.json`
+Konfiguration: `Training/configs/models/transformer_v1.json`
 
 Der Transformer verwendet zwei parallele Repräsentationen:
 
@@ -415,7 +415,7 @@ Parameterzahl der finalen Läufe: 183.629.
 ### 5.4 MLP
 
 Klasse: `Training/model.py::HierarchicalWindowMLP`  
-Konfiguration: `Training/configs/hierarchical_mlp_v1.json`
+Konfiguration: `Training/configs/models/mlp_v1.json`
 
 Das MLP flacht `[B, 60, 184]` zu `[B, 11.040]` ab. Es verwendet die konfigurierten Hidden-Dimensionen `[16, 128]`; jede Stufe besteht aus Linear, LayerNorm, GELU und Dropout. Der abschließende State `[B, 128]` speist dieselben drei Köpfe wie Transformer v1.
 
@@ -427,7 +427,7 @@ Parameterzahl: 197.051.
 ### 5.5 GRU
 
 Klasse: `Training/model.py::HierarchicalGRU`  
-Konfiguration: `Training/configs/hierarchical_gru_v1.json`
+Konfiguration: `Training/configs/models/gru_v1.json`
 
 Die GRU ist unidirektional, besitzt zwei Lagen, `hidden_size=112` und Dropout `0.15` zwischen den Lagen. Der letzte Hidden State der obersten Lage `hidden[-1]` wird normalisiert und als `[B, 112]` an die Assistance-, Type- und absoluten Poseköpfe übergeben.
 
@@ -439,7 +439,7 @@ Parameterzahl: 190.187.
 ### 5.6 Residual Transformer v2
 
 Klasse: `Training/model.py::HierarchicalResidualPoseTransformer`  
-Konfiguration: `Training/configs/hierarchical_residual_v2.json`  
+Konfiguration: `Training/configs/models/residual_transformer_v2.json`
 Training: `Training/train_residual.py`
 
 Der Encoder und der `[B, 128]`-Fusionsstate entsprechen Transformer v1. Zusätzlich entstehen:

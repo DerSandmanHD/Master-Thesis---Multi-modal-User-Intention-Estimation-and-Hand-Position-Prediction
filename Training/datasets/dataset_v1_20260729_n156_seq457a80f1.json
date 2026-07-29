@@ -1,0 +1,24 @@
+{
+  "dataset_tag": "dataset_v1_20260729_n156_seq457a80f1",
+  "status": "frozen_legacy",
+  "created_at": "2026-07-29",
+  "snapshot_path": "Data_collection/final_dataset_snapshot_20260729",
+  "snapshot_validation_path": "Data_collection/final_dataset_snapshot_20260729/snapshot_validation.json",
+  "snapshot_validation_sha256": "c5610760c93b48ecd6d57edb6b39286d7aa079e9523768dd666a503cae0a0331",
+  "master_sequences_available": 183,
+  "selected_sequences": 156,
+  "split_sequences": {
+    "train": 116,
+    "validation": 19,
+    "test": 21
+  },
+  "manifest_sha256": "d4c0a4a7fe1866a43888ab966ec43d57c4e91d01fbb090e9d9e2d5596487ac7b",
+  "sequence_fingerprint": "457a80f15423fe3e3853081e3a0d863248ec337dd7412cde65bc8ee56ff3049d",
+  "dataset_content_fingerprint": null,
+  "builder_version": "historical_before_content_provenance",
+  "notes": [
+    "Dataset and split match the twelve final_clean_v1 runs.",
+    "No retrospective content fingerprint is claimed for the historical runs.",
+    "The frozen local snapshot is ignored by Git and validated through snapshot_validation.json."
+  ]
+}

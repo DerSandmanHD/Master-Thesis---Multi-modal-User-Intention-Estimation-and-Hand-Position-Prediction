@@ -23,9 +23,9 @@ last observed hand pose once motion becomes small.
 
 ## Files
 
-- active config: `Training/configs/hierarchical_residual_v2.json`
+- active config: `Training/configs/models/residual_transformer_v2.json`
 - training entry point: `Training/train_residual.py`
-- cluster job: `Training/hierarchical_residual_v2.sbatch`
+- cluster job: `Training/jobs/train_residual_v2.sbatch`
 
 ## First full cluster run
 

@@ -1,6 +1,6 @@
 {
-  "run_name": "hierarchical_mlp_v1",
-  "model_type": "hierarchical_window_mlp",
+  "run_name": "transformer_v1",
+  "model_type": "hierarchical_gated_multimodal_transformer",
   "data": {
     "master_dir": "Data_collection/master_datasets",
     "manifest_filter": {
@@ -22,7 +22,10 @@
     "test_participants": ["Edu", "Jona", "Mona"]
   },
   "model": {
-    "hidden_dims": [16, 128],
+    "d_model": 64,
+    "nhead": 4,
+    "num_layers": 2,
+    "dim_feedforward": 128,
     "dropout": 0.15
   },
   "training": {

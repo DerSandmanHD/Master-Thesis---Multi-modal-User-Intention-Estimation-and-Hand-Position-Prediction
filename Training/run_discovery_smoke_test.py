@@ -52,9 +52,17 @@ def main() -> int:
             / "run_cluster"
             / "final_clean_v1_residual_v2_seed44"
         )
+        structured = (
+            root
+            / "dataset_v2_20260815_n180_ab12cd34"
+            / "benchmark_v2"
+            / "gru_v1"
+            / "benchmark_v2_gru_v1_seed42"
+        )
         ignored = root / "run_cluster" / "incomplete"
         make_run(direct)
         make_run(nested)
+        make_run(structured)
         ignored.mkdir()
         (ignored / "config.json").write_text("{}\n", encoding="utf-8")
 
@@ -73,6 +81,14 @@ def main() -> int:
             direct,
             runs_root=root,
         ) == direct.resolve()
+        assert discover_run_directories(
+            root,
+            name_prefix="benchmark_v2_",
+        ) == [structured.resolve()]
+        assert resolve_run_directory(
+            Path(structured.name),
+            runs_root=root,
+        ) == structured.resolve()
 
         duplicate = root / "another" / nested.name
         make_run(duplicate)

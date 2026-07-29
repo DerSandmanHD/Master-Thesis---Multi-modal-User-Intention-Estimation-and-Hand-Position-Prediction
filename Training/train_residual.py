@@ -32,6 +32,7 @@ from metrics import (
     pose_metrics,
 )
 from model import HierarchicalResidualPoseTransformer
+from run_layout import build_run_context, training_run_directory
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -43,9 +44,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=Path("Training/configs/hierarchical_residual_v2.json"),
+        default=Path("Training/configs/models/residual_transformer_v2.json"),
     )
     parser.add_argument("--run-dir", type=Path, default=None)
+    parser.add_argument(
+        "--dataset-tag",
+        default=None,
+        help="Immutable dataset version used in the structured run path.",
+    )
+    parser.add_argument(
+        "--experiment-tag",
+        default=None,
+        help="Experiment group used in the structured run path.",
+    )
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument(
@@ -522,8 +533,21 @@ def train(args: argparse.Namespace) -> Path:
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = str(config.get("run_name", "hierarchical_residual_v2"))
+    run_context = build_run_context(
+        dataset_tag=getattr(args, "dataset_tag", None),
+        experiment_tag=getattr(args, "experiment_tag", None),
+        model_tag=run_name,
+    )
+    config["run_context"] = run_context
     run_dir = resolve_project_path(
-        args.run_dir or f"Training/runs/{run_name}_{timestamp}"
+        args.run_dir
+        or training_run_directory(
+            dataset_tag=run_context["dataset_tag"],
+            experiment_tag=run_context["experiment_tag"],
+            model_tag=run_context["model_tag"],
+            seed=seed,
+            timestamp=timestamp,
+        )
     )
     run_dir.mkdir(parents=True, exist_ok=False)
     (run_dir / "config.json").write_text(

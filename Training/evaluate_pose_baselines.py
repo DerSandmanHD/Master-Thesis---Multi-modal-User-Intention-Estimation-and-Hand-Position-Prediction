@@ -25,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=Path("Training/configs/hierarchical_baseline_v1.json"),
+        default=Path("Training/configs/models/transformer_v1.json"),
     )
     parser.add_argument(
         "--report-out",

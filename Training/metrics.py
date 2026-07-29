@@ -8,6 +8,22 @@ import math
 import torch
 
 
+POSITION_MEAN_EUCLIDEAN_ERROR_KEY = (
+    "position_mean_euclidean_error_cm"
+)
+POSITION_RMS_EUCLIDEAN_ERROR_KEY = (
+    "position_root_mean_square_euclidean_error_cm"
+)
+LEGACY_POSITION_ERROR_KEY = "position_mae_cm"
+POSITION_ERROR_DEFINITION = (
+    "mean Euclidean norm of the 3D position error, in centimetres"
+)
+POSITION_RMS_ERROR_DEFINITION = (
+    "root mean square of the Euclidean 3D position-error norm, "
+    "in centimetres"
+)
+
+
 def classification_metrics(
     predictions: torch.Tensor,
     targets: torch.Tensor,
@@ -45,18 +61,40 @@ def pose_metrics(predictions: torch.Tensor, targets: torch.Tensor) -> dict:
     if not len(predictions):
         return {
             "samples": 0,
+            POSITION_MEAN_EUCLIDEAN_ERROR_KEY: None,
+            POSITION_RMS_EUCLIDEAN_ERROR_KEY: None,
+            # Compatibility alias for existing artifacts and consumers.
             "position_mae_cm": None,
             "position_rmse_cm": None,
             "orientation_mean_deg": None,
+            "position_error_definition": POSITION_ERROR_DEFINITION,
+            "position_rmse_definition": POSITION_RMS_ERROR_DEFINITION,
         }
     position_error = torch.linalg.vector_norm(predictions[:, :3] - targets[:, :3], dim=-1)
     predicted_quaternion = torch.nn.functional.normalize(predictions[:, 3:7], dim=-1)
     target_quaternion = torch.nn.functional.normalize(targets[:, 3:7], dim=-1)
     cosine = torch.sum(predicted_quaternion * target_quaternion, dim=-1).abs().clamp(0.0, 1.0)
     orientation_radians = 2.0 * torch.acos(cosine)
+    mean_euclidean_error_cm = float(position_error.mean() * 100.0)
+    rms_euclidean_error_cm = float(
+        torch.sqrt(torch.mean(position_error.square())) * 100.0
+    )
     return {
         "samples": len(predictions),
-        "position_mae_cm": float(position_error.mean() * 100.0),
-        "position_rmse_cm": float(torch.sqrt(torch.mean(position_error.square())) * 100.0),
+        POSITION_MEAN_EUCLIDEAN_ERROR_KEY: mean_euclidean_error_cm,
+        # Do not reinterpret historical metrics.json files silently.
+        LEGACY_POSITION_ERROR_KEY: mean_euclidean_error_cm,
+        POSITION_RMS_EUCLIDEAN_ERROR_KEY: rms_euclidean_error_cm,
+        "position_rmse_cm": rms_euclidean_error_cm,
         "orientation_mean_deg": float(orientation_radians.mean() * 180.0 / math.pi),
+        "position_error_definition": POSITION_ERROR_DEFINITION,
+        "position_rmse_definition": POSITION_RMS_ERROR_DEFINITION,
     }
+
+
+def position_mean_euclidean_error_cm(metrics: dict) -> float | None:
+    """Read the canonical value while remaining compatible with old runs."""
+
+    if POSITION_MEAN_EUCLIDEAN_ERROR_KEY in metrics:
+        return metrics[POSITION_MEAN_EUCLIDEAN_ERROR_KEY]
+    return metrics.get(LEGACY_POSITION_ERROR_KEY)

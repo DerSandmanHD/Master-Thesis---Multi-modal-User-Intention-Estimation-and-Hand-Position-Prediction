@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import time
 from collections import deque
 from pathlib import Path
 from typing import Mapping
@@ -15,6 +16,7 @@ from replay_stream_inference import (
     DeploymentArtifacts,
     TemporalDecisionFilter,
     hierarchical_intention_id,
+    intention_id_from_probabilities,
     joint_intention_probabilities,
     load_artifacts,
     timed_forward,
@@ -33,6 +35,7 @@ class OnlineInferenceEngine:
         smoothing_window: int = 3,
         minimum_confidence: float = 0.65,
         minimum_stable_predictions: int = 2,
+        warm_up_models: bool = True,
     ) -> None:
         if smoothing_window <= 0 or minimum_stable_predictions <= 0:
             raise ValueError("Smoothing and stability window sizes must be positive")
@@ -54,6 +57,9 @@ class OnlineInferenceEngine:
         self.frames_since_prediction = 0
         self.last_timestamp_ns: int | None = None
         self.prediction_index = 0
+        self.warmup_latency_ms: dict[str, float] | None = None
+        if warm_up_models:
+            self.warmup_latency_ms = self._warm_up_models()
 
     @property
     def feature_columns(self) -> list[str]:
@@ -75,6 +81,41 @@ class OnlineInferenceEngine:
         self.filter.reset()
         self.frames_since_prediction = 0
         self.last_timestamp_ns = None
+
+    def _warm_up_models(self) -> dict[str, float]:
+        """Run one inference-only dummy forward per checkpoint at startup."""
+
+        features = torch.zeros(
+            (
+                1,
+                self.artifacts.window_size,
+                self.artifacts.intention_model.input_dim,
+            ),
+            dtype=torch.float32,
+            device=self.artifacts.device,
+        )
+        references = torch.zeros(
+            (1, len(RECEIVING_HAND_NAMES), 7),
+            dtype=torch.float32,
+            device=self.artifacts.device,
+        )
+        references[:, :, 6] = 1.0
+        _, intention_ms = timed_forward(
+            self.artifacts.intention_model,
+            features,
+            references,
+            self.artifacts.device,
+        )
+        _, pose_ms = timed_forward(
+            self.artifacts.pose_model,
+            features,
+            references,
+            self.artifacts.device,
+        )
+        return {
+            "intention": float(intention_ms),
+            "pose": float(pose_ms),
+        }
 
     def _feature_array(self, values: Mapping[str, float | int | None]) -> np.ndarray:
         missing = [name for name in self.feature_columns if name not in values]
@@ -141,7 +182,11 @@ class OnlineInferenceEngine:
         self,
         timestamp_ns: int,
         values: Mapping[str, float | int | None],
+        *,
+        pipeline_timestamps: Mapping[str, int] | None = None,
     ) -> dict | None:
+        phases = dict(pipeline_timestamps or {})
+        phases["engine_push_started_host_ns"] = time.monotonic_ns()
         timestamp_ns = int(timestamp_ns)
         if self.last_timestamp_ns is not None:
             if timestamp_ns <= self.last_timestamp_ns:
@@ -184,27 +229,34 @@ class OnlineInferenceEngine:
         reference_tensor = torch.from_numpy(references[None, ...]).to(
             self.artifacts.device
         )
+        phases["intention_inference_started_host_ns"] = time.monotonic_ns()
         intention_outputs, intention_ms = timed_forward(
             self.artifacts.intention_model,
             feature_tensor,
             reference_tensor,
             self.artifacts.device,
         )
+        phases["intention_inference_ended_host_ns"] = time.monotonic_ns()
         probabilities = joint_intention_probabilities(intention_outputs)
-        raw_id = hierarchical_intention_id(intention_outputs)
+        raw_id = intention_id_from_probabilities(probabilities)
+        hierarchical_raw_id = hierarchical_intention_id(intention_outputs)
+        phases["raw_decision_host_ns"] = time.monotonic_ns()
         stable_label, stable_confidence, smoothed = self.filter.update(probabilities)
+        phases["stable_decision_host_ns"] = time.monotonic_ns()
 
         predicted_hand = None
         predicted_pose = None
         pose_reference_valid = None
         pose_ms = None
         if stable_label == "handover":
+            phases["pose_inference_started_host_ns"] = time.monotonic_ns()
             pose_outputs, pose_ms = timed_forward(
                 self.artifacts.pose_model,
                 feature_tensor,
                 reference_tensor,
                 self.artifacts.device,
             )
+            phases["pose_inference_ended_host_ns"] = time.monotonic_ns()
             hand_id = int(
                 pose_outputs["receiving_hand_logits"].argmax(dim=-1).item()
             )
@@ -221,11 +273,15 @@ class OnlineInferenceEngine:
 
         self.frames_since_prediction = 0
         self.prediction_index += 1
+        phases["engine_prediction_ready_host_ns"] = time.monotonic_ns()
         return {
             "prediction_index": self.prediction_index,
             "timestamp_ns": timestamp_ns,
             "raw_intention": INTENTION_NAMES[raw_id],
             "raw_confidence": float(probabilities[raw_id]),
+            "hierarchical_raw_intention": INTENTION_NAMES[
+                hierarchical_raw_id
+            ],
 
             "raw_p_continue": float(probabilities[0]),
             "raw_p_fetch": float(probabilities[1]),
@@ -244,4 +300,5 @@ class OnlineInferenceEngine:
             "observed_fraction": observed_fraction,
             "intention_inference_ms": intention_ms,
             "pose_inference_ms": pose_ms,
+            "pipeline_timestamps": phases,
         }

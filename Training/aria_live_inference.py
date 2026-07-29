@@ -13,6 +13,7 @@ import json
 import threading
 import time
 from collections import Counter, deque
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
@@ -22,9 +23,15 @@ from scipy.spatial.transform import Rotation
 
 from data import RECEIVING_HAND_NAMES
 from live_decision import (
+    DEFAULT_MAXIMUM_ANCHOR_AGE_MS,
+    DEFAULT_MAXIMUM_GAZE_GAP_MS,
+    DEFAULT_MAXIMUM_MARKER_AGE_MS,
+    DEFAULT_MINIMUM_GAZE_COVERAGE,
+    DEFAULT_MINIMUM_HANDOVER_HAND_COVERAGE,
     GazeTargetSelector,
     InputQualityGate,
     PerceptionWorkflow,
+    evaluate_actionability,
 )
 from online_inference import OnlineInferenceEngine
 
@@ -99,22 +106,37 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument("--minimum-anchor-samples", type=int, default=8)
     parser.add_argument("--anchor-history", type=int, default=300)
+    parser.add_argument(
+        "--maximum-anchor-age-ms",
+        type=float,
+        default=DEFAULT_MAXIMUM_ANCHOR_AGE_MS,
+        help="Maximum age of the last actual AprilTag-0 observation.",
+    )
+    parser.add_argument(
+        "--maximum-quality-marker-age-ms",
+        type=float,
+        default=DEFAULT_MAXIMUM_MARKER_AGE_MS,
+        help=(
+            "Maximum marker age for Fetch quality and gaze target selection. "
+            "This may be stricter than --marker-tolerance-ms."
+        ),
+    )
     parser.add_argument("--smoothing-window", type=int, default=3)
     parser.add_argument("--minimum-confidence", type=float, default=0.65)
     parser.add_argument("--minimum-stable-predictions", type=int, default=2)
     parser.add_argument(
         "--minimum-gaze-coverage",
         type=float,
-        default=0.80,
+        default=DEFAULT_MINIMUM_GAZE_COVERAGE,
         help=(
             "Minimum valid-gaze fraction in the complete model window. "
-            "Otherwise decision_intention is insufficient_input."
+            "Otherwise actionable_intention is insufficient_input."
         ),
     )
     parser.add_argument(
         "--maximum-gaze-gap-ms",
         type=float,
-        default=500.0,
+        default=DEFAULT_MAXIMUM_GAZE_GAP_MS,
         help=(
             "Maximum continuous invalid-gaze interval in the model window."
         ),
@@ -122,7 +144,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--minimum-handover-hand-coverage",
         type=float,
-        default=0.50,
+        default=DEFAULT_MINIMUM_HANDOVER_HAND_COVERAGE,
         help=(
             "Minimum per-side hand coverage required to release handover."
         ),
@@ -321,27 +343,34 @@ def marker_pose(
     return matrix
 
 
+@dataclass(frozen=True)
+class TimedSample:
+    device_timestamp_ns: int
+    value: object
+    host_received_ns: int
+
+
 def latest_before_item(
-    queue: deque,
+    queue: deque[TimedSample],
     query_ns: int,
     max_age_ns: int,
-):
+) -> TimedSample | None:
     """Return the newest sample at or before query_ns.
 
     Future samples are never used. A sample is rejected when it is older than
     max_age_ns.
     """
 
-    for sample_timestamp, sample_value in reversed(queue):
-        if sample_timestamp > query_ns:
+    for sample in reversed(queue):
+        if sample.device_timestamp_ns > query_ns:
             continue
 
-        age_ns = query_ns - sample_timestamp
+        age_ns = query_ns - sample.device_timestamp_ns
 
         if age_ns > max_age_ns:
             return None
 
-        return sample_timestamp, sample_value
+        return sample
 
     return None
 
@@ -419,8 +448,8 @@ class LiveFeatureAssembler:
 
         self.lock = threading.Lock()
 
-        self.hand_pose: deque = deque(maxlen=200)
-        self.vio: deque = deque(maxlen=2000)
+        self.hand_pose: deque[TimedSample] = deque(maxlen=200)
+        self.vio: deque[TimedSample] = deque(maxlen=2000)
 
         marker_keys = [
             (APRILTAG_FAMILY, 0)
@@ -439,6 +468,8 @@ class LiveFeatureAssembler:
             maxlen=anchor_history
         )
         self.static_odometry_robot: np.ndarray | None = None
+        self.last_anchor_observation_ns: int | None = None
+        self.last_rgb_pipeline_timestamps: dict[str, int] = {}
 
         self.device_calibration = None
         self.source_rgb_calibration = None
@@ -514,6 +545,7 @@ class LiveFeatureAssembler:
 
     def eye_gaze_callback(self, value) -> None:
         try:
+            host_received_ns = time.monotonic_ns()
             timestamp = timestamp_ns(value)
 
             with self.lock:
@@ -522,6 +554,7 @@ class LiveFeatureAssembler:
             self.process_tick(
                 value,
                 timestamp,
+                host_received_ns,
             )
 
         except Exception as exc:
@@ -532,13 +565,15 @@ class LiveFeatureAssembler:
 
     def hand_pose_callback(self, value) -> None:
         try:
+            host_received_ns = time.monotonic_ns()
             timestamp = timestamp_ns(value)
 
             with self.lock:
                 self.hand_pose.append(
-                    (
-                        timestamp,
-                        value,
+                    TimedSample(
+                        device_timestamp_ns=timestamp,
+                        value=value,
+                        host_received_ns=host_received_ns,
                     )
                 )
                 self.stats["hand_pose"] += 1
@@ -551,6 +586,7 @@ class LiveFeatureAssembler:
 
     def vio_callback(self, value) -> None:
         try:
+            host_received_ns = time.monotonic_ns()
             values = (
                 value
                 if isinstance(value, (list, tuple))
@@ -560,9 +596,10 @@ class LiveFeatureAssembler:
             with self.lock:
                 for item in values:
                     self.vio.append(
-                        (
-                            timestamp_ns(item),
-                            item,
+                        TimedSample(
+                            device_timestamp_ns=timestamp_ns(item),
+                            value=item,
+                            host_received_ns=host_received_ns,
                         )
                     )
                     self.stats["vio"] += 1
@@ -579,6 +616,7 @@ class LiveFeatureAssembler:
         image_record,
     ) -> None:
         try:
+            host_received_ns = time.monotonic_ns()
             image = np.asarray(
                 image_data.to_numpy_array()
             )
@@ -590,6 +628,7 @@ class LiveFeatureAssembler:
             self.process_rgb(
                 image,
                 timestamp,
+                host_received_ns,
             )
 
         except Exception as exc:
@@ -762,6 +801,8 @@ class LiveFeatureAssembler:
         self,
         candidate: np.ndarray,
     ) -> None:
+        if self.static_odometry_robot is not None:
+            return
         self.anchor_candidates.append(candidate)
 
         if (
@@ -855,7 +896,7 @@ class LiveFeatureAssembler:
 
     def _empty_features(
         self,
-    ) -> dict[str, float]:
+    ) -> dict[str, float | None]:
         values = {
             name: float("nan")
             for name in self.engine.feature_columns
@@ -990,7 +1031,7 @@ class LiveFeatureAssembler:
             confidence = (
                 float(one_side.confidence)
                 if one_side is not None
-                else -1.0
+                else np.nan
             )
 
             values[
@@ -1003,6 +1044,7 @@ class LiveFeatureAssembler:
 
             if (
                 one_side is None
+                or not np.isfinite(confidence)
                 or confidence <= 0.0
             ):
                 continue
@@ -1099,7 +1141,9 @@ class LiveFeatureAssembler:
         self,
         image: np.ndarray,
         timestamp: int,
+        host_received_ns: int,
     ) -> None:
+        rgb_processing_started_host_ns = time.monotonic_ns()
         with self.lock:
             self.stats["rgb"] += 1
 
@@ -1123,6 +1167,17 @@ class LiveFeatureAssembler:
             return
 
         markers = self._detect_markers(image)
+        marker_detection_ended_host_ns = time.monotonic_ns()
+        rgb_pipeline_timestamps = {
+            "rgb_capture_device_ns": int(timestamp),
+            "rgb_callback_received_host_ns": int(host_received_ns),
+            "rgb_processing_started_host_ns": int(
+                rgb_processing_started_host_ns
+            ),
+            "marker_detection_ended_host_ns": int(
+                marker_detection_ended_host_ns
+            ),
+        }
 
         if vio_item is None:
             with self.lock:
@@ -1131,7 +1186,8 @@ class LiveFeatureAssembler:
                 ] += 1
             return
 
-        vio_timestamp, vio = vio_item
+        vio_timestamp = vio_item.device_timestamp_ns
+        vio = vio_item.value
 
         transform_odometry_device = transform_matrix(
             vio.transform_odometry_device
@@ -1150,12 +1206,13 @@ class LiveFeatureAssembler:
                 self.marker_observations[
                     key
                 ].append(
-                    (
-                        timestamp,
-                        (
+                    TimedSample(
+                        device_timestamp_ns=timestamp,
+                        value=(
                             marker,
                             transform_odometry_device.copy(),
                         ),
+                        host_received_ns=host_received_ns,
                     )
                 )
 
@@ -1184,12 +1241,18 @@ class LiveFeatureAssembler:
 
             with self.lock:
                 self._update_anchor(candidate)
+                self.last_anchor_observation_ns = timestamp
                 self.stats["apriltag_0"] += 1
+        with self.lock:
+            self.last_rgb_pipeline_timestamps = {
+                **rgb_pipeline_timestamps,
+                "rgb_processing_ended_host_ns": time.monotonic_ns(),
+            }
 
     def _write_debug_features(
         self,
         timestamp: int,
-        values: dict[str, float],
+        values: dict[str, float | None],
     ) -> None:
         if self.debug_features_handle is None:
             return
@@ -1217,6 +1280,23 @@ class LiveFeatureAssembler:
                 if np.isfinite(numeric_value)
                 else None
             )
+        for name in sorted(
+            key for key in values if key.startswith("_quality_")
+        ):
+            raw_value = values[name]
+            try:
+                numeric_value = (
+                    float(raw_value)
+                    if raw_value is not None
+                    else np.nan
+                )
+            except (TypeError, ValueError):
+                numeric_value = np.nan
+            debug_row[name] = (
+                float(numeric_value)
+                if np.isfinite(numeric_value)
+                else None
+            )
 
         self.debug_features_handle.write(
             json.dumps(
@@ -1231,7 +1311,9 @@ class LiveFeatureAssembler:
         self,
         eye_gaze,
         timestamp: int,
+        gaze_host_received_ns: int,
     ) -> None:
+        feature_assembly_started_host_ns = time.monotonic_ns()
         with self.lock:
             hand_item = latest_before_item(
                 self.hand_pose,
@@ -1276,6 +1358,12 @@ class LiveFeatureAssembler:
             anchor_samples = len(
                 self.anchor_candidates
             )
+            last_anchor_observation_ns = (
+                self.last_anchor_observation_ns
+            )
+            rgb_pipeline_timestamps = dict(
+                self.last_rgb_pipeline_timestamps
+            )
 
             assembled_frame_index = int(
                 self.stats["model_frames"]
@@ -1302,10 +1390,11 @@ class LiveFeatureAssembler:
         hand_pose = (
             None
             if hand_item is None
-            else hand_item[1]
+            else hand_item.value
         )
 
-        vio_timestamp, vio = vio_item
+        vio_timestamp = vio_item.device_timestamp_ns
+        vio = vio_item.value
 
         tag_observation = marker_observations[
             (
@@ -1317,7 +1406,15 @@ class LiveFeatureAssembler:
         tag_age_ns = (
             None
             if tag_observation is None
-            else timestamp - tag_observation[0]
+            else timestamp - tag_observation.device_timestamp_ns
+        )
+        anchor_age_ns = (
+            None
+            if (
+                last_anchor_observation_ns is None
+                or last_anchor_observation_ns > timestamp
+            )
+            else timestamp - last_anchor_observation_ns
         )
 
         tag_is_frame_aligned = (
@@ -1334,6 +1431,17 @@ class LiveFeatureAssembler:
                 else float(tag_age_ns / 1e6)
             ),
             "anchor_samples": anchor_samples,
+            "anchor_frozen": anchor is not None,
+            "anchor_age_ms": (
+                None
+                if anchor_age_ns is None
+                else float(anchor_age_ns / 1e6)
+            ),
+            "anchor_fresh": (
+                anchor_age_ns is not None
+                and anchor_age_ns
+                <= int(self.quality_gate.maximum_anchor_age_ms * 1e6)
+            ),
         }
 
         transform_odometry_device = transform_matrix(
@@ -1373,6 +1481,22 @@ class LiveFeatureAssembler:
                 transform_robot_device,
             )
         )
+        hand_age_ms = (
+            None
+            if hand_item is None
+            else float(
+                (timestamp - hand_item.device_timestamp_ns) / 1e6
+            )
+        )
+        vio_age_ms = float((timestamp - vio_timestamp) / 1e6)
+        anchor_age_ms = (
+            None
+            if anchor_age_ns is None
+            else float(anchor_age_ns / 1e6)
+        )
+        values["_quality_hand_age_ms"] = hand_age_ms
+        values["_quality_vio_age_ms"] = vio_age_ms
+        values["_quality_anchor_age_ms"] = anchor_age_ms
 
         values["apriltag_0_valid"] = float(
             tag_is_frame_aligned
@@ -1382,6 +1506,7 @@ class LiveFeatureAssembler:
             not tag_is_frame_aligned
         )
 
+        visible_marker_ages_ms: list[float] = []
         for marker_id in OBJECT_MARKER_IDS:
             prefix = f"aruco_{marker_id}"
 
@@ -1401,10 +1526,22 @@ class LiveFeatureAssembler:
             if observation is None:
                 continue
 
-            _, (
+            marker_age_ms = float(
+                (
+                    timestamp
+                    - observation.device_timestamp_ns
+                )
+                / 1e6
+            )
+            values[
+                f"_quality_aruco_{marker_id}_age_ms"
+            ] = marker_age_ms
+            visible_marker_ages_ms.append(marker_age_ms)
+
+            (
                 marker,
                 marker_odometry_device,
-            ) = observation
+            ) = observation.value
 
             transform_robot_object = (
                 transform_robot_odometry
@@ -1463,6 +1600,24 @@ class LiveFeatureAssembler:
                         f"{prefix}_gaze_distance_m"
                     ] = distance
 
+        values["_quality_visible_marker_count"] = float(
+            len(visible_marker_ages_ms)
+        )
+        values[
+            "_quality_minimum_visible_marker_age_ms"
+        ] = (
+            min(visible_marker_ages_ms)
+            if visible_marker_ages_ms
+            else None
+        )
+        values[
+            "_quality_maximum_visible_marker_age_ms"
+        ] = (
+            max(visible_marker_ages_ms)
+            if visible_marker_ages_ms
+            else None
+        )
+
         stream_reset = self.quality_gate.push_frame(
             timestamp,
             values,
@@ -1475,6 +1630,7 @@ class LiveFeatureAssembler:
             timestamp,
             values,
         )
+        feature_assembled_host_ns = time.monotonic_ns()
 
         if (
             self.debug_every_frames > 0
@@ -1496,7 +1652,7 @@ class LiveFeatureAssembler:
                 None
                 if hand_item is None
                 else (
-                    timestamp - hand_item[0]
+                    timestamp - hand_item.device_timestamp_ns
                 )
                 / 1e6
             )
@@ -1522,33 +1678,121 @@ class LiveFeatureAssembler:
         prediction = self.engine.push_frame(
             timestamp,
             values,
+            pipeline_timestamps={
+                "capture_device_ns": int(timestamp),
+                "gaze_callback_received_host_ns": int(
+                    gaze_host_received_ns
+                ),
+                "feature_assembly_started_host_ns": int(
+                    feature_assembly_started_host_ns
+                ),
+                "feature_assembled_host_ns": int(
+                    feature_assembled_host_ns
+                ),
+                **rgb_pipeline_timestamps,
+            },
         )
 
         if prediction is not None:
-            quality = self.quality_gate.assess(
-                prediction["stable_intention"]
+            prediction["sensor_ages_ms"] = {
+                "hand": hand_age_ms,
+                "vio": vio_age_ms,
+                "anchor": anchor_age_ms,
+                "visible_marker_minimum": values.get(
+                    "_quality_minimum_visible_marker_age_ms"
+                ),
+                "visible_marker_maximum": values.get(
+                    "_quality_maximum_visible_marker_age_ms"
+                ),
+                "markers": {
+                    str(marker_id): values.get(
+                        f"_quality_aruco_{marker_id}_age_ms"
+                    )
+                    for marker_id in OBJECT_MARKER_IDS
+                    if values.get(
+                        f"_quality_aruco_{marker_id}_age_ms"
+                    )
+                    is not None
+                },
+            }
+            prediction["sensor_timestamps"] = {
+                "gaze_device_ns": int(timestamp),
+                "gaze_host_received_ns": int(gaze_host_received_ns),
+                "hand_device_ns": (
+                    None
+                    if hand_item is None
+                    else int(hand_item.device_timestamp_ns)
+                ),
+                "hand_host_received_ns": (
+                    None
+                    if hand_item is None
+                    else int(hand_item.host_received_ns)
+                ),
+                "vio_device_ns": int(vio_item.device_timestamp_ns),
+                "vio_host_received_ns": int(vio_item.host_received_ns),
+                "anchor_last_observation_device_ns": (
+                    None
+                    if last_anchor_observation_ns is None
+                    else int(last_anchor_observation_ns)
+                ),
+                "marker_device_ns": {
+                    str(marker_id): int(
+                        observation.device_timestamp_ns
+                    )
+                    for marker_id in OBJECT_MARKER_IDS
+                    if (
+                        observation := marker_observations[
+                            (ARUCO_FAMILY, marker_id)
+                        ]
+                    )
+                    is not None
+                },
+                "marker_host_received_ns": {
+                    str(marker_id): int(observation.host_received_ns)
+                    for marker_id in OBJECT_MARKER_IDS
+                    if (
+                        observation := marker_observations[
+                            (ARUCO_FAMILY, marker_id)
+                        ]
+                    )
+                    is not None
+                },
+            }
+            quality_decision = evaluate_actionability(
+                self.quality_gate,
+                stable_intention=prediction["stable_intention"],
+                predicted_receiving_hand=prediction[
+                    "predicted_receiving_hand"
+                ],
             )
-            decision_intention = (
-                prediction["stable_intention"]
-                if quality["ok"]
-                else "insufficient_input"
-            )
+            prediction["pipeline_timestamps"][
+                "quality_decision_host_ns"
+            ] = time.monotonic_ns()
+            actionable_intention = quality_decision[
+                "actionable_intention"
+            ]
             workflow = self.perception_workflow.update(
                 timestamp,
-                decision_intention,
+                actionable_intention,
                 target_selection,
             )
+            prediction["pipeline_timestamps"][
+                "workflow_decision_host_ns"
+            ] = time.monotonic_ns()
             prediction.update(
                 {
-                    "decision_intention": decision_intention,
-                    "input_quality_ok": quality["ok"],
-                    "input_quality": quality,
+                    **quality_decision,
+                    # Backward-compatible alias for existing live consumers.
+                    "decision_intention": actionable_intention,
                     "target_selection": target_selection,
                     "perception_workflow": workflow,
                     "anchor_diagnostics": anchor_diagnostics,
                     "external_action_requested": False,
                 }
             )
+            prediction["pipeline_timestamps"][
+                "output_ready_host_ns"
+            ] = time.monotonic_ns()
 
         with self.lock:
             self.stats["model_frames"] += 1
@@ -1563,7 +1807,7 @@ class LiveFeatureAssembler:
             else:
                 self.stats[
                     "hand_age_ns_sum"
-                ] += timestamp - hand_item[0]
+                ] += timestamp - hand_item.device_timestamp_ns
 
                 self.stats[
                     "hand_matches"
@@ -1691,12 +1935,19 @@ def prediction_printer(
     def emit(prediction: dict) -> None:
         nonlocal previous_signature
 
+        prediction.setdefault(
+            "pipeline_timestamps",
+            {},
+        )["output_emit_started_host_ns"] = time.monotonic_ns()
         model_label = prediction[
             "stable_intention"
         ]
         decision_label = prediction.get(
-            "decision_intention",
-            model_label,
+            "actionable_intention",
+            prediction.get(
+                "decision_intention",
+                model_label,
+            ),
         )
         workflow = prediction.get(
             "perception_workflow",
@@ -1750,9 +2001,12 @@ def prediction_printer(
                 True,
             ):
                 reasons = prediction.get(
-                    "input_quality",
-                    {},
-                ).get("reasons", [])
+                    "input_quality_reasons",
+                    prediction.get(
+                        "input_quality",
+                        {},
+                    ).get("reasons", []),
+                )
                 quality_text = (
                     " | blocked="
                     + ",".join(reasons)
@@ -1781,9 +2035,9 @@ def prediction_printer(
                 f"fetch={prediction['p_fetch']:.3f}, "
                 f"handover={prediction['p_handover']:.3f}"
                 f"] | "
-                f"model={model_label} "
+                f"stable={model_label} "
                 f"({prediction['stable_confidence']:.3f}) | "
-                f"decision={decision_label} | "
+                f"actionable={decision_label} | "
                 f"intent={prediction['intention_inference_ms']:.2f} ms"
                 f"{quality_text}"
                 f"{target_text}"
@@ -1875,7 +2129,8 @@ def run_live(
         f"SDK ready: "
         f"model_features={len(engine.feature_columns)}, "
         f"window={engine.required_frames}, "
-        f"connected_usb_devices={len(targets)}"
+        f"connected_usb_devices={len(targets)}, "
+        f"model_warmup_ms={engine.warmup_latency_ms}"
     )
 
     if discovery_error is not None:
@@ -1930,6 +2185,12 @@ def run_live(
         minimum_handover_hand_coverage=(
             args.minimum_handover_hand_coverage
         ),
+        maximum_hand_age_ms=args.hand_tolerance_ms,
+        maximum_vio_age_ms=args.vio_tolerance_ms,
+        maximum_anchor_age_ms=args.maximum_anchor_age_ms,
+        maximum_marker_age_ms=(
+            args.maximum_quality_marker_age_ms
+        ),
     )
     target_selector = GazeTargetSelector(
         object_ids=OBJECT_MARKER_IDS,
@@ -1939,6 +2200,9 @@ def run_live(
         ),
         minimum_angle_margin_rad=(
             args.target_minimum_margin_rad
+        ),
+        maximum_marker_age_ms=(
+            args.maximum_quality_marker_age_ms
         ),
     )
     perception_workflow = PerceptionWorkflow(
@@ -2099,7 +2363,7 @@ def run_live(
             "are produced. Keep AprilTag 0 visible "
             f"until at least "
             f"{args.minimum_anchor_samples} "
-            "anchor samples. decision_intention is "
+            "anchor samples. actionable_intention is "
             "released only when the complete input "
             "quality window passes."
         )

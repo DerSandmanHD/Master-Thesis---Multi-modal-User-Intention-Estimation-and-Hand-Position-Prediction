@@ -11,7 +11,7 @@ import csv
 import json
 import math
 import time
-from collections import deque
+from collections import Counter, deque
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -26,12 +26,38 @@ from data import (
     RECEIVING_HAND_NAMES,
     Normalizer,
 )
+from live_decision import (
+    DEFAULT_MAXIMUM_ANCHOR_AGE_MS,
+    DEFAULT_MAXIMUM_GAZE_GAP_MS,
+    DEFAULT_MAXIMUM_HAND_AGE_MS,
+    DEFAULT_MAXIMUM_MARKER_AGE_MS,
+    DEFAULT_MAXIMUM_VIO_AGE_MS,
+    DEFAULT_MINIMUM_GAZE_COVERAGE,
+    DEFAULT_MINIMUM_HANDOVER_HAND_COVERAGE,
+    InputQualityGate,
+    evaluate_actionability,
+)
 from model import HierarchicalResidualPoseTransformer
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 EXPECTED_MODEL_TYPE = "hierarchical_residual_pose_transformer_v2"
 POSE_COMPONENTS = ("x_m", "y_m", "z_m", "qx", "qy", "qz", "qw")
+REPLAY_OBJECT_MARKER_IDS = tuple(range(6, 15))
+
+
+def intention_id_from_probabilities(probabilities: np.ndarray) -> int:
+    """Return the shared raw/stable class decision for three joint probabilities."""
+
+    values = np.asarray(probabilities, dtype=np.float64)
+    if values.shape != (len(INTENTION_NAMES),):
+        raise ValueError(
+            "Expected one probability for each intention class, got "
+            f"shape {values.shape}"
+        )
+    if not np.isfinite(values).all():
+        raise ValueError("Intention probabilities must be finite")
+    return int(np.argmax(values))
 
 
 @dataclass
@@ -59,6 +85,7 @@ class ReplayRecord:
     pose_valid: np.ndarray
     hand_poses: np.ndarray
     hand_pose_valid: np.ndarray
+    quality_diagnostics: list[dict[str, float | None]]
     missing_features: list[str]
     pose_reference_schema_complete: bool
 
@@ -87,17 +114,18 @@ class TemporalDecisionFilter:
     def update(self, probabilities: np.ndarray) -> tuple[str, float, np.ndarray]:
         self.values.append(np.asarray(probabilities, dtype=np.float64))
         smoothed = np.mean(np.stack(self.values), axis=0)
-        candidate = int(np.argmax(smoothed))
+        candidate = intention_id_from_probabilities(smoothed)
+        confidence = float(smoothed[candidate])
+        if confidence < self.minimum_confidence:
+            self.candidate = None
+            self.candidate_count = 0
+            return "uncertain", confidence, smoothed
         if candidate == self.candidate:
             self.candidate_count += 1
         else:
             self.candidate = candidate
             self.candidate_count = 1
-        confidence = float(smoothed[candidate])
-        stable = (
-            confidence >= self.minimum_confidence
-            and self.candidate_count >= self.minimum_stable_predictions
-        )
+        stable = self.candidate_count >= self.minimum_stable_predictions
         return (
             INTENTION_NAMES[candidate] if stable else "uncertain",
             confidence,
@@ -116,6 +144,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--master-csv", type=Path, required=True)
     parser.add_argument("--output-csv", type=Path, default=None)
     parser.add_argument(
+        "--summary-json",
+        type=Path,
+        default=None,
+        help="Optional machine-readable Raw/Stable/Quality/Actionable summary.",
+    )
+    parser.add_argument(
         "--device", choices=("auto", "cpu", "cuda", "mps"), default="auto"
     )
     parser.add_argument(
@@ -127,6 +161,41 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--smoothing-window", type=int, default=3)
     parser.add_argument("--minimum-confidence", type=float, default=0.65)
     parser.add_argument("--minimum-stable-predictions", type=int, default=2)
+    parser.add_argument(
+        "--minimum-gaze-coverage",
+        type=float,
+        default=DEFAULT_MINIMUM_GAZE_COVERAGE,
+    )
+    parser.add_argument(
+        "--maximum-gaze-gap-ms",
+        type=float,
+        default=DEFAULT_MAXIMUM_GAZE_GAP_MS,
+    )
+    parser.add_argument(
+        "--minimum-handover-hand-coverage",
+        type=float,
+        default=DEFAULT_MINIMUM_HANDOVER_HAND_COVERAGE,
+    )
+    parser.add_argument(
+        "--maximum-hand-age-ms",
+        type=float,
+        default=DEFAULT_MAXIMUM_HAND_AGE_MS,
+    )
+    parser.add_argument(
+        "--maximum-vio-age-ms",
+        type=float,
+        default=DEFAULT_MAXIMUM_VIO_AGE_MS,
+    )
+    parser.add_argument(
+        "--maximum-anchor-age-ms",
+        type=float,
+        default=DEFAULT_MAXIMUM_ANCHOR_AGE_MS,
+    )
+    parser.add_argument(
+        "--maximum-marker-age-ms",
+        type=float,
+        default=DEFAULT_MAXIMUM_MARKER_AGE_MS,
+    )
     parser.add_argument(
         "--print-mode", choices=("changes", "all", "none"), default="changes"
     )
@@ -293,6 +362,125 @@ def replay_pose_columns(side: str) -> list[str]:
     ]
 
 
+def replay_freshness_columns() -> set[str]:
+    columns = {
+        "hand_time_offset_ms",
+        "slam_time_offset_ms",
+        "apriltag_0_timestamp_ns",
+        "apriltag_0_time_offset_ms",
+        "apriltag_0_valid",
+    }
+    for marker_id in REPLAY_OBJECT_MARKER_IDS:
+        columns.update(
+            {
+                f"aruco_{marker_id}_timestamp_ns",
+                f"aruco_{marker_id}_time_offset_ms",
+                f"aruco_{marker_id}_valid",
+            }
+        )
+    return columns
+
+
+def replay_quality_diagnostics(
+    frame: pd.DataFrame,
+    timestamps_ns: np.ndarray,
+) -> list[dict[str, float | None]]:
+    """Reconstruct causal sensor ages from optional master alignment columns.
+
+    Positive merge offsets point to future samples selected by the offline
+    nearest-neighbour merge. Such samples are deliberately reported as age
+    unavailable instead of being presented as causal live observations.
+    """
+
+    def numeric(name: str) -> np.ndarray:
+        if name not in frame:
+            return np.full(len(frame), np.nan, dtype=np.float64)
+        return pd.to_numeric(
+            frame[name],
+            errors="coerce",
+        ).to_numpy(np.float64)
+
+    hand_offsets = numeric("hand_time_offset_ms")
+    vio_offsets = numeric("slam_time_offset_ms")
+    anchor_timestamps = numeric("apriltag_0_timestamp_ns")
+    anchor_valid = numeric("apriltag_0_valid") > 0.5
+    marker_timestamps = {
+        marker_id: numeric(f"aruco_{marker_id}_timestamp_ns")
+        for marker_id in REPLAY_OBJECT_MARKER_IDS
+    }
+    marker_offsets = {
+        marker_id: numeric(f"aruco_{marker_id}_time_offset_ms")
+        for marker_id in REPLAY_OBJECT_MARKER_IDS
+    }
+    marker_valid = {
+        marker_id: numeric(f"aruco_{marker_id}_valid") > 0.5
+        for marker_id in REPLAY_OBJECT_MARKER_IDS
+    }
+
+    diagnostics: list[dict[str, float | None]] = []
+    last_causal_anchor_ns: int | None = None
+    for index, timestamp_ns in enumerate(timestamps_ns):
+        anchor_timestamp = anchor_timestamps[index]
+        if (
+            anchor_valid[index]
+            and np.isfinite(anchor_timestamp)
+            and anchor_timestamp <= timestamp_ns
+        ):
+            last_causal_anchor_ns = int(anchor_timestamp)
+
+        hand_offset = hand_offsets[index]
+        vio_offset = vio_offsets[index]
+        values: dict[str, float | None] = {
+            "_quality_hand_age_ms": (
+                float(-hand_offset)
+                if np.isfinite(hand_offset) and hand_offset <= 0.0
+                else None
+            ),
+            "_quality_vio_age_ms": (
+                float(-vio_offset)
+                if np.isfinite(vio_offset) and vio_offset <= 0.0
+                else None
+            ),
+            "_quality_anchor_age_ms": (
+                float((timestamp_ns - last_causal_anchor_ns) / 1e6)
+                if last_causal_anchor_ns is not None
+                else None
+            ),
+        }
+
+        visible_count = 0
+        visible_ages: list[float] = []
+        for marker_id in REPLAY_OBJECT_MARKER_IDS:
+            if not marker_valid[marker_id][index]:
+                continue
+            visible_count += 1
+            marker_timestamp = marker_timestamps[marker_id][index]
+            marker_offset = marker_offsets[marker_id][index]
+            marker_age: float | None = None
+            if (
+                np.isfinite(marker_timestamp)
+                and marker_timestamp <= timestamp_ns
+            ):
+                marker_age = float(
+                    (timestamp_ns - marker_timestamp) / 1e6
+                )
+            elif np.isfinite(marker_offset) and marker_offset <= 0.0:
+                marker_age = float(-marker_offset)
+            values[f"_quality_aruco_{marker_id}_age_ms"] = marker_age
+            if marker_age is not None:
+                visible_ages.append(marker_age)
+
+        values["_quality_visible_marker_count"] = float(visible_count)
+        values["_quality_minimum_visible_marker_age_ms"] = (
+            min(visible_ages) if visible_ages else None
+        )
+        values["_quality_maximum_visible_marker_age_ms"] = (
+            max(visible_ages) if visible_ages else None
+        )
+        diagnostics.append(values)
+    return diagnostics
+
+
 def load_replay_record(
     path: Path,
     feature_columns: list[str],
@@ -322,12 +510,14 @@ def load_replay_record(
         *(f"{prefix}receiving_wrist_robot_q{component}" for component in "xyzw"),
     ]
     target_schema = {f"{prefix}receiving_wrist_valid", *pose_columns}
+    freshness_schema = replay_freshness_columns()
     use_columns = sorted(
         {
             "timestamp_ns",
             *(optional_core & available),
             *(hand_schema & available),
             *(target_schema & available),
+            *(freshness_schema & available),
             *(set(feature_columns) & available),
         }
     )
@@ -346,6 +536,10 @@ def load_replay_record(
     timestamps = pd.to_numeric(frame["timestamp_ns"], errors="raise").to_numpy(np.int64)
     if np.any(np.diff(timestamps) < 0):
         raise ValueError(f"Timestamps are not sorted in {path.name}")
+    quality_diagnostics = replay_quality_diagnostics(
+        frame,
+        timestamps,
+    )
 
     if "sequence_id" in frame:
         sequence_values = frame["sequence_id"].dropna().astype(str).unique()
@@ -436,6 +630,7 @@ def load_replay_record(
         pose_valid=pose_valid,
         hand_poses=hand_poses,
         hand_pose_valid=hand_pose_valid,
+        quality_diagnostics=quality_diagnostics,
         missing_features=missing_features,
         pose_reference_schema_complete=pose_reference_schema_complete,
     )
@@ -456,6 +651,39 @@ def hand_references(
             references[side] = hand_poses[start + int(valid_rows[-1]), side]
             validity[side] = True
     return references, validity
+
+
+def push_replay_quality_frames(
+    quality_gate: InputQualityGate,
+    *,
+    timestamps_ns: np.ndarray,
+    features: np.ndarray,
+    feature_columns: list[str],
+    quality_diagnostics: list[dict[str, float | None]] | None = None,
+    start: int,
+    stop: int,
+) -> None:
+    """Feed every causal source frame to the same gate used by live inference."""
+
+    if features.ndim != 2 or features.shape[1] != len(feature_columns):
+        raise ValueError("Replay quality features do not match feature columns")
+    if len(timestamps_ns) != len(features):
+        raise ValueError("Replay quality timestamps and features differ in length")
+    if (
+        quality_diagnostics is not None
+        and len(quality_diagnostics) != len(features)
+    ):
+        raise ValueError(
+            "Replay quality diagnostics and features differ in length"
+        )
+    if not 0 <= start <= stop <= len(features):
+        raise ValueError("Invalid replay quality frame interval")
+
+    for index in range(start, stop):
+        values = dict(zip(feature_columns, features[index]))
+        if quality_diagnostics is not None:
+            values.update(quality_diagnostics[index])
+        quality_gate.push_frame(int(timestamps_ns[index]), values)
 
 
 def joint_intention_probabilities(outputs: dict[str, torch.Tensor]) -> np.ndarray:
@@ -558,9 +786,23 @@ def replay(args: argparse.Namespace) -> list[dict]:
         minimum_confidence=args.minimum_confidence,
         minimum_stable_predictions=args.minimum_stable_predictions,
     )
+    quality_gate = InputQualityGate(
+        window_size=artifacts.window_size,
+        max_timestamp_gap_ns=artifacts.max_timestamp_gap_ns,
+        minimum_gaze_coverage=args.minimum_gaze_coverage,
+        maximum_gaze_gap_ms=args.maximum_gaze_gap_ms,
+        minimum_handover_hand_coverage=(
+            args.minimum_handover_hand_coverage
+        ),
+        maximum_hand_age_ms=args.maximum_hand_age_ms,
+        maximum_vio_age_ms=args.maximum_vio_age_ms,
+        maximum_anchor_age_ms=args.maximum_anchor_age_ms,
+        maximum_marker_age_ms=args.maximum_marker_age_ms,
+    )
     first_timestamp_ns = int(record.timestamps_ns[artifacts.window_size - 1])
     wall_start = time.perf_counter()
     previous_printed_label: str | None = None
+    next_quality_frame = 0
     rows: list[dict] = []
 
     for endpoint in range(
@@ -568,6 +810,16 @@ def replay(args: argparse.Namespace) -> list[dict]:
         len(record.timestamps_ns),
         artifacts.step_size,
     ):
+        push_replay_quality_frames(
+            quality_gate,
+            timestamps_ns=record.timestamps_ns,
+            features=record.features,
+            feature_columns=artifacts.feature_columns,
+            quality_diagnostics=record.quality_diagnostics,
+            start=next_quality_frame,
+            stop=endpoint + 1,
+        )
+        next_quality_frame = endpoint + 1
         start = endpoint - artifacts.window_size + 1
         timestamps = record.timestamps_ns[start : endpoint + 1]
         if np.any(np.diff(timestamps) > artifacts.max_timestamp_gap_ns):
@@ -592,33 +844,57 @@ def replay(args: argparse.Namespace) -> list[dict]:
         references, reference_valid = hand_references(
             record.hand_poses, record.hand_pose_valid, start, endpoint
         )
+        pipeline_timestamps = {
+            "capture_device_ns": timestamp_ns,
+            "replay_window_started_host_ns": time.monotonic_ns(),
+        }
         feature_tensor = torch.from_numpy(
             normalized_features[start : endpoint + 1][None, ...]
         ).to(artifacts.device)
         reference_tensor = torch.from_numpy(references[None, ...]).to(artifacts.device)
+        pipeline_timestamps[
+            "replay_window_ready_host_ns"
+        ] = time.monotonic_ns()
+        pipeline_timestamps[
+            "intention_inference_started_host_ns"
+        ] = time.monotonic_ns()
         intention_outputs, intention_ms = timed_forward(
             artifacts.intention_model,
             feature_tensor,
             reference_tensor,
             artifacts.device,
         )
+        pipeline_timestamps[
+            "intention_inference_ended_host_ns"
+        ] = time.monotonic_ns()
         probabilities = joint_intention_probabilities(intention_outputs)
-        raw_intention_id = hierarchical_intention_id(intention_outputs)
+        raw_intention_id = intention_id_from_probabilities(probabilities)
+        hierarchical_raw_intention_id = hierarchical_intention_id(
+            intention_outputs
+        )
+        pipeline_timestamps["raw_decision_host_ns"] = time.monotonic_ns()
         stable_label, stable_confidence, smoothed = decision_filter.update(
             probabilities
         )
+        pipeline_timestamps["stable_decision_host_ns"] = time.monotonic_ns()
 
         predicted_hand: str | None = None
         predicted_pose: np.ndarray | None = None
         pose_ms: float | None = None
         pose_reference_valid: bool | None = None
         if stable_label == "handover":
+            pipeline_timestamps[
+                "pose_inference_started_host_ns"
+            ] = time.monotonic_ns()
             pose_outputs, pose_ms = timed_forward(
                 artifacts.pose_model,
                 feature_tensor,
                 reference_tensor,
                 artifacts.device,
             )
+            pipeline_timestamps[
+                "pose_inference_ended_host_ns"
+            ] = time.monotonic_ns()
             hand_id = int(pose_outputs["receiving_hand_logits"].argmax(dim=-1).item())
             predicted_hand = RECEIVING_HAND_NAMES[hand_id]
             pose_reference_valid = bool(reference_valid[hand_id])
@@ -626,6 +902,16 @@ def replay(args: argparse.Namespace) -> list[dict]:
                 predicted_pose = (
                     pose_outputs["pose_candidates"][0, hand_id].detach().cpu().numpy()
                 )
+
+        quality_decision = evaluate_actionability(
+            quality_gate,
+            stable_intention=stable_label,
+            predicted_receiving_hand=predicted_hand,
+        )
+        pipeline_timestamps[
+            "quality_decision_host_ns"
+        ] = time.monotonic_ns()
+        actionable_intention = quality_decision["actionable_intention"]
 
         target_id = int(record.intentions[endpoint])
         if target_id >= 0:
@@ -655,8 +941,16 @@ def replay(args: argparse.Namespace) -> list[dict]:
             "target_intention": target_label,
             "raw_intention": INTENTION_NAMES[raw_intention_id],
             "raw_confidence": float(probabilities[raw_intention_id]),
+            "hierarchical_raw_intention": INTENTION_NAMES[
+                hierarchical_raw_intention_id
+            ],
             "stable_intention": stable_label,
             "stable_confidence": stable_confidence,
+            **quality_decision,
+            "sensor_ages_ms": {
+                key.removeprefix("_quality_"): value
+                for key, value in record.quality_diagnostics[endpoint].items()
+            },
             "p_continue": float(smoothed[0]),
             "p_fetch": float(smoothed[1]),
             "p_handover": float(smoothed[2]),
@@ -667,38 +961,51 @@ def replay(args: argparse.Namespace) -> list[dict]:
             "target_pose_valid": target_pose_valid,
             "pose_position_error_cm": position_error_cm,
             "pose_orientation_error_deg": orientation_error_deg,
+            "pipeline_timestamps": pipeline_timestamps,
         }
         for index, component in enumerate(POSE_COMPONENTS):
             row[f"predicted_pose_{component}"] = (
                 float(predicted_pose[index]) if predicted_pose is not None else None
             )
         rows.append(row)
+        pipeline_timestamps["output_ready_host_ns"] = time.monotonic_ns()
 
         should_print = args.print_mode == "all" or (
             args.print_mode == "changes"
             and (
-                stable_label != previous_printed_label
-                or stable_label == "handover"
+                actionable_intention != previous_printed_label
+                or actionable_intention == "handover"
             )
         )
         if should_print:
             pose_text = ""
-            if predicted_pose is not None:
+            if (
+                predicted_pose is not None
+                and actionable_intention == "handover"
+            ):
                 pose_text = (
                     f" | hand={predicted_hand} | xyz="
                     f"({predicted_pose[0]:+.3f}, {predicted_pose[1]:+.3f}, "
                     f"{predicted_pose[2]:+.3f}) m"
                 )
-            elif stable_label == "handover":
+            elif actionable_intention == "handover":
                 pose_text = f" | hand={predicted_hand} | pose=no valid reference"
+            quality_text = ""
+            if not quality_decision["input_quality_ok"]:
+                quality_text = (
+                    " | blocked="
+                    + ",".join(quality_decision["input_quality_reasons"])
+                )
             print(
                 f"[{row['elapsed_seconds']:7.2f}s] "
                 f"raw={row['raw_intention']} ({row['raw_confidence']:.3f}) | "
                 f"stable={stable_label} ({stable_confidence:.3f}) | "
+                f"actionable={actionable_intention} | "
                 f"truth={target_label} | intent={intention_ms:.2f} ms"
+                f"{quality_text}"
                 f"{pose_text}"
             )
-            previous_printed_label = stable_label
+            previous_printed_label = actionable_intention
 
         if args.max_predictions is not None and len(rows) >= args.max_predictions:
             break
@@ -714,29 +1021,226 @@ def write_rows(rows: list[dict], output_path: Path) -> None:
     with output_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
         writer.writeheader()
-        writer.writerows(rows)
+        for row in rows:
+            writer.writerow(
+                {
+                    key: (
+                        json.dumps(value, separators=(",", ":"))
+                        if isinstance(value, (dict, list))
+                        else value
+                    )
+                    for key, value in row.items()
+                }
+            )
     print(f"CSV: {output_path}")
 
 
-def print_summary(rows: list[dict]) -> None:
+def _decision_level_summary(
+    rows: list[dict],
+    field: str,
+) -> dict:
     labeled = [
         row
         for row in rows
         if row["target_intention"] not in {"transition", "unavailable"}
     ]
-    correct = sum(
-        row["raw_intention"] == row["target_intention"] for row in labeled
+    eligible = [
+        row for row in labeled if row[field] in set(INTENTION_NAMES)
+    ]
+    correct_eligible = sum(
+        row[field] == row["target_intention"] for row in eligible
     )
+    confusion: dict[str, dict[str, int]] = {}
+    for row in labeled:
+        target = str(row["target_intention"])
+        prediction = str(row[field])
+        confusion.setdefault(target, {})
+        confusion[target][prediction] = (
+            confusion[target].get(prediction, 0) + 1
+        )
+
+    def class_metrics(source: list[dict]) -> tuple[dict[str, dict], float | None]:
+        per_class = {}
+        f1_values = []
+        for label in INTENTION_NAMES:
+            true_positive = sum(
+                row["target_intention"] == label and row[field] == label
+                for row in source
+            )
+            support = sum(
+                row["target_intention"] == label for row in source
+            )
+            predicted = sum(row[field] == label for row in source)
+            precision = (
+                true_positive / predicted if predicted else 0.0
+            )
+            recall = true_positive / support if support else None
+            f1 = (
+                2.0 * precision * recall / (precision + recall)
+                if recall is not None and precision + recall > 0.0
+                else (0.0 if support else None)
+            )
+            per_class[label] = {
+                "support": support,
+                "predicted": predicted,
+                "precision": precision,
+                "recall": recall,
+                "f1": f1,
+            }
+            if f1 is not None:
+                f1_values.append(float(f1))
+        return (
+            per_class,
+            float(np.mean(f1_values)) if f1_values else None,
+        )
+
+    per_class, macro_f1 = class_metrics(labeled)
+    conditional_per_class, conditional_macro_f1 = class_metrics(eligible)
+    return {
+        "labeled_windows": len(labeled),
+        "eligible_windows": len(eligible),
+        "abstained_or_blocked_windows": len(labeled) - len(eligible),
+        "coverage": (
+            len(eligible) / len(labeled) if labeled else None
+        ),
+        "conditional_accuracy": (
+            correct_eligible / len(eligible) if eligible else None
+        ),
+        "end_to_end_accuracy": (
+            correct_eligible / len(labeled) if labeled else None
+        ),
+        "macro_f1": macro_f1,
+        "conditional_macro_f1": conditional_macro_f1,
+        "per_class": per_class,
+        "conditional_per_class": conditional_per_class,
+        "confusion": confusion,
+    }
+
+
+def build_replay_summary(rows: list[dict]) -> dict:
     intention_times = [float(row["intention_inference_ms"]) for row in rows]
     pose_times = [
         float(row["pose_inference_ms"])
         for row in rows
         if row["pose_inference_ms"] is not None
     ]
-    accuracy = f"{correct / len(labeled):.4f}" if labeled else "n/a"
+    reason_counts = Counter(
+        reason
+        for row in rows
+        for reason in row.get("input_quality_reasons", [])
+    )
+    blocked = sum(not row.get("input_quality_ok", False) for row in rows)
+    pose_evaluations = [
+        row for row in rows if row["pose_position_error_cm"] is not None
+    ]
+    pose_summary = {
+        "samples": len(pose_evaluations),
+        "position_mean_euclidean_error_cm": None,
+        "orientation_mean_error_deg": None,
+    }
+    if pose_evaluations:
+        pose_summary.update(
+            {
+                "position_mean_euclidean_error_cm": float(
+                    np.mean(
+                        [
+                            float(row["pose_position_error_cm"])
+                            for row in pose_evaluations
+                        ]
+                    )
+                ),
+                "orientation_mean_error_deg": float(
+                    np.mean(
+                        [
+                            float(row["pose_orientation_error_deg"])
+                            for row in pose_evaluations
+                        ]
+                    )
+                ),
+            }
+        )
+    return {
+        "predictions": len(rows),
+        "decision_levels": {
+            "raw": _decision_level_summary(rows, "raw_intention"),
+            "stable": _decision_level_summary(rows, "stable_intention"),
+            "actionable": _decision_level_summary(
+                rows,
+                "actionable_intention",
+            ),
+        },
+        "input_quality": {
+            "accepted_windows": len(rows) - blocked,
+            "blocked_windows": blocked,
+            "accepted_fraction": (
+                (len(rows) - blocked) / len(rows) if rows else None
+            ),
+            "reason_counts": dict(sorted(reason_counts.items())),
+        },
+        "latency_ms": {
+            "intention_inference_mean": float(np.mean(intention_times)),
+            "intention_inference_p95": float(
+                np.percentile(intention_times, 95)
+            ),
+            "pose_inference_mean": (
+                float(np.mean(pose_times)) if pose_times else None
+            ),
+            "pose_inference_p95": (
+                float(np.percentile(pose_times, 95))
+                if pose_times
+                else None
+            ),
+        },
+        "pose": pose_summary,
+    }
+
+
+def write_summary(summary: dict, output_path: Path) -> None:
+    output_path = resolve_output_path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Summary: {output_path}")
+
+
+def print_summary(rows: list[dict], summary: dict | None = None) -> None:
+    summary = summary or build_replay_summary(rows)
+    raw = summary["decision_levels"]["raw"]
+    intention_times = [float(row["intention_inference_ms"]) for row in rows]
+    pose_times = [
+        float(row["pose_inference_ms"])
+        for row in rows
+        if row["pose_inference_ms"] is not None
+    ]
+    accuracy = (
+        f"{raw['end_to_end_accuracy']:.4f}"
+        if raw["end_to_end_accuracy"] is not None
+        else "n/a"
+    )
     print(
-        f"Replay complete: predictions={len(rows)}, labeled={len(labeled)}, "
+        f"Replay complete: predictions={len(rows)}, "
+        f"labeled={raw['labeled_windows']}, "
         f"raw accuracy={accuracy}"
+    )
+    for level in ("stable", "actionable"):
+        current = summary["decision_levels"][level]
+        coverage = current["coverage"]
+        conditional = current["conditional_accuracy"]
+        print(
+            f"{level.capitalize()}: coverage="
+            f"{coverage:.4f}, conditional accuracy="
+            f"{conditional:.4f}"
+            if coverage is not None and conditional is not None
+            else f"{level.capitalize()}: no eligible labeled windows"
+        )
+    quality = summary["input_quality"]
+    print(
+        "Input quality: "
+        f"accepted={quality['accepted_windows']}, "
+        f"blocked={quality['blocked_windows']}, "
+        f"reasons={quality['reason_counts']}"
     )
     print(
         "Intention inference: "
@@ -761,7 +1265,8 @@ def print_summary(rows: list[dict]) -> None:
         ]
         print(
             f"Pose replay evaluation: samples={len(pose_evaluations)}, "
-            f"position MAE={np.mean(position_errors):.2f} cm, "
+            "position mean Euclidean error="
+            f"{np.mean(position_errors):.2f} cm, "
             f"orientation mean={np.mean(orientation_errors):.2f} deg"
         )
 
@@ -770,9 +1275,12 @@ def main() -> int:
     args = parse_args()
     try:
         rows = replay(args)
-        print_summary(rows)
+        summary = build_replay_summary(rows)
+        print_summary(rows, summary)
         if args.output_csv is not None:
             write_rows(rows, args.output_csv)
+        if args.summary_json is not None:
+            write_summary(summary, args.summary_json)
     except (FileNotFoundError, KeyError, OSError, RuntimeError, ValueError) as exc:
         print(f"ERROR: {type(exc).__name__}: {exc}")
         return 2

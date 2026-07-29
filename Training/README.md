@@ -245,6 +245,38 @@ alle im Deployment-Metadatenfile gespeicherten Modellfeatures enthalten.
 `--allow-missing-features` ist nur fuer technische Diagnosen vorgesehen; damit
 erzeugte Vorhersagen sind keine gueltigen Modellergebnisse.
 
+### Vollstaendiger Testsplit-Replay
+
+Ein finaler Dataset-Snapshot kann gegen Manifest, Artefaktsplit und
+Feature-Schema geprueft und mit SHA-256 eingefroren werden:
+
+```bash
+python Training/validate_dataset_snapshot.py \
+  --snapshot-dir Data_collection/final_dataset_snapshot_20260729 \
+  --artifacts-dir Training/final_clean_v1_residual_v2_seed44
+```
+
+Der folgende Befehl liest die Testsequenzen direkt aus
+`data_metadata.json`, verlangt jede der 21 erwarteten Master-CSVs und wertet
+Raw, Stable und Actionable getrennt aus:
+
+```bash
+python Training/batch_replay_validation.py \
+  --artifacts-dir Training/final_clean_v1_residual_v2_seed44 \
+  --master-dir \
+    Data_collection/final_dataset_snapshot_20260729/master_datasets \
+  --split test \
+  --device cpu
+```
+
+Die erzeugten Einzel- und Gesamtberichte liegen standardmaessig unter
+`Training/evaluation/deployment_validation_runs/` und werden nicht von Git
+versioniert. Raw-/Stable-Ergebnisse sind mit den vorhandenen Masters
+auswertbar. Ein striktes Live-Frische-Gate kann offline dagegen blockieren,
+wenn ein historischer `nearest`-Merge einen minimal zukuenftigen Sensorwert
+ausgewaehlt hat. Ein solcher Wert wird bewusst nicht in eine kausale
+Altersangabe umgedeutet.
+
 ## Aria-Gen2-Live-Inferenz
 
 `aria_live_inference.py` verbindet den finalen Residual-v2-Checkpoint mit einem
@@ -287,12 +319,13 @@ Entscheidung:
 
 - `stable_intention` bzw. `model=...` bleibt die zeitlich geglaettete
   Modellvorhersage und wird auch fuer die Fehleranalyse protokolliert.
-- `decision_intention` bzw. `decision=...` ist die freigegebene
-  Wahrnehmungsausgabe. Sie wird zu `insufficient_input`, wenn im kompletten
-  60-Frame-Fenster weniger als 80 Prozent gueltige Gaze-Daten vorliegen oder
-  Gaze laenger als 500 ms am Stueck fehlt. Fuer `handover` muss zusaetzlich
-  mindestens eine Hand aktuell sichtbar sein und eine Handseite mindestens
-  50 Prozent Fensterabdeckung erreichen.
+- `actionable_intention` bzw. der rueckwaertskompatible Alias
+  `decision_intention` ist die freigegebene Wahrnehmungsausgabe. Sie wird zu
+  `insufficient_input`, wenn Gazeabdeckung, Robot-Frame-Abdeckung oder die
+  Frische von VIO und Anker nicht genuegen. Bei `handover` werden Abdeckung,
+  aktuelle Gueltigkeit und Alter ausschliesslich fuer die vom Modell
+  vorhergesagte Empfangshand geprueft. Bei `fetch` werden sichtbare, aber
+  veraltete Objektmarker nicht freigegeben.
 - Kurze Blinks werden dadurch toleriert. Laenger geschlossene Augen oder ein
   verlorenes Gaze-Signal werden nicht faelschlich als `continue` behandelt.
   Die Grenzwerte sind Kommandozeilenoptionen und sollen nach weiteren
@@ -330,6 +363,12 @@ Die roboterfreie Entscheidungslogik kann ohne Aria-Hardware geprueft werden:
 ```bash
 python3 Training/live_decision_smoke_test.py
 ```
+
+Ein kontrollierter, gelabelter Liveversuch inklusive monotonichem
+Ereignismarker und Latenzauswertung ist in
+`Training/live_validation_protocol.md` beschrieben. Die Auswertung trennt
+Raw, Stable, Input Quality und Actionable und berechnet die Zeit vom manuell
+markierten Ereignis-Onset bis zur jeweiligen Entscheidung.
 
 Die JSONL-Datei wird absichtlich angehaengt. Fuer einen getrennten Versuch
 sollte daher ein neuer Dateiname verwendet werden. `profile9` ist der

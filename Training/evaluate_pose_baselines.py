@@ -441,7 +441,8 @@ def main() -> int:
         for name, result in split["baselines"].items():
             metrics = result["metrics"]
             print(
-                f"  {name}: position MAE={metrics['position_mae_cm']:.2f} cm, "
+                f"  {name}: position mean Euclidean error="
+                f"{metrics['position_mae_cm']:.2f} cm, "
                 f"RMSE={metrics['position_rmse_cm']:.2f} cm, "
                 f"orientation={metrics['orientation_mean_deg']:.2f} deg, "
                 f"sources={result['prediction_sources']}"

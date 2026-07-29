@@ -13,7 +13,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
-from data import prepare_data
+from data import prepare_data, save_data_metadata, sha256_file
 from train import build_model, multitask_loss, run_epoch
 
 
@@ -168,6 +168,36 @@ def main() -> int:
             "test_participants": ["P6"],
         }
         bundle = prepare_data(data_config, seed=42)
+        provenance = bundle.provenance
+        assert len(provenance["master_files"]) == 6
+        assert len(provenance["dataset_content_fingerprint"]) == 64
+        assert bundle.split_metadata["dataset_filter"][
+            "dataset_content_fingerprint"
+        ] == provenance["dataset_content_fingerprint"]
+        assert len(provenance["schema"]["fingerprint"]) == 64
+        assert all(
+            len(item["sha256"]) == 64
+            for item in provenance["master_files"]
+        )
+        first_master = provenance["master_files"][0]
+        assert first_master["sha256"] == sha256_file(
+            master_dir / first_master["file_name"]
+        )
+        assert provenance["manifest"]["snapshot_file"] == (
+            "dataset_manifest_snapshot.csv"
+        )
+        metadata_dir = data_root / "metadata_artifacts"
+        save_data_metadata(
+            bundle,
+            metadata_dir / "data_metadata.json",
+        )
+        assert (metadata_dir / "dataset_provenance.json").is_file()
+        assert (
+            metadata_dir / "dataset_manifest_snapshot.csv"
+        ).read_text(encoding="utf-8") == bundle.manifest_snapshot
+        assert sha256_file(
+            metadata_dir / "dataset_manifest_snapshot.csv"
+        ) == provenance["manifest"]["sha256"]
         assert bundle.split_metadata["dataset_filter"]["selected_sequences"] == 6
         assert bundle.split_metadata["dataset_filter"]["excluded_master_files"] == 1
         assert bundle.split_metadata["participants"]["validation"] == ["P4"]
@@ -239,6 +269,21 @@ def main() -> int:
             assert epoch_metrics["assistance"]["samples"] == len(bundle.train)
             assert epoch_metrics["assistance_type"]["samples"] > 0
             assert epoch_metrics["pose"]["samples"] > 0
+            assert (
+                epoch_metrics["pose"][
+                    "position_mean_euclidean_error_cm"
+                ]
+                == epoch_metrics["pose"]["position_mae_cm"]
+            )
+            assert (
+                epoch_metrics["pose"][
+                    "position_root_mean_square_euclidean_error_cm"
+                ]
+                == epoch_metrics["pose"]["position_rmse_cm"]
+            )
+            assert "mean Euclidean norm" in epoch_metrics["pose"][
+                "position_error_definition"
+            ]
             if model_type == "hierarchical_gated_multimodal_transformer":
                 assert epoch_metrics["mean_gate"] is not None
             else:

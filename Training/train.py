@@ -16,8 +16,19 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
-from data import INTENTION_NAMES, DataBundle, prepare_data, save_data_metadata
-from metrics import classification_metrics, pose_metrics
+from data import (
+    INTENTION_NAMES,
+    DataBundle,
+    checkpoint_provenance,
+    prepare_data,
+    save_data_metadata,
+)
+from metrics import (
+    POSITION_ERROR_DEFINITION,
+    POSITION_RMS_ERROR_DEFINITION,
+    classification_metrics,
+    pose_metrics,
+)
 from model import (
     HierarchicalGRU,
     HierarchicalGatedMultimodalTransformer,
@@ -431,7 +442,8 @@ def train(args: argparse.Namespace) -> Path:
             f"val intent F1={score:.4f} | "
             f"val assistance F1={validation_metrics['assistance']['macro_f1']:.4f} | "
             f"val fetch/handover F1={validation_metrics['assistance_type']['macro_f1']:.4f} | "
-            f"val pose cm={validation_metrics['pose']['position_mae_cm']}"
+            "val pose mean Euclidean cm="
+            f"{validation_metrics['pose']['position_mae_cm']}"
         )
         improved = False
         if score > best_score:
@@ -448,6 +460,7 @@ def train(args: argparse.Namespace) -> Path:
                     "selection_metric": "validation_intention_macro_f1",
                     "selection_value": score,
                     "validation_intention_macro_f1": score,
+                    "dataset_provenance": checkpoint_provenance(bundle),
                 },
                 checkpoint_path,
             )
@@ -465,6 +478,10 @@ def train(args: argparse.Namespace) -> Path:
                     "epoch": epoch,
                     "selection_metric": "validation_pose_position_mae_cm",
                     "selection_value": pose_score,
+                    "selection_metric_definition": (
+                        POSITION_ERROR_DEFINITION
+                    ),
+                    "dataset_provenance": checkpoint_provenance(bundle),
                 },
                 pose_checkpoint_path,
             )
@@ -504,6 +521,11 @@ def train(args: argparse.Namespace) -> Path:
         "best_epoch": checkpoint["epoch"],
         "best_validation_intention_macro_f1": best_score,
         "best_validation_pose_position_mae_cm": best_pose,
+        "best_validation_pose_mean_euclidean_error_cm": best_pose,
+        "legacy_pose_metric_alias": {
+            "position_mae_cm": POSITION_ERROR_DEFINITION,
+            "position_rmse_cm": POSITION_RMS_ERROR_DEFINITION,
+        },
         "test": test_metrics,
         "checkpoints": {
             "best_intention": {
@@ -517,6 +539,9 @@ def train(args: argparse.Namespace) -> Path:
                 "epoch": int(pose_checkpoint["epoch"]),
                 "selection_metric": pose_checkpoint["selection_metric"],
                 "selection_value": float(pose_checkpoint["selection_value"]),
+                "selection_metric_definition": pose_checkpoint.get(
+                    "selection_metric_definition"
+                ),
             },
         },
         "test_by_checkpoint": {
@@ -535,7 +560,7 @@ def train(args: argparse.Namespace) -> Path:
         f"{test_metrics['assistance_type']['macro_f1']:.4f}"
     )
     print(
-        "Best-pose checkpoint test position MAE: "
+        "Best-pose checkpoint test mean Euclidean position error="
         f"{pose_checkpoint_test_metrics['pose']['position_mae_cm']} cm"
     )
     print(f"Metrics: {run_dir / 'metrics.json'}")

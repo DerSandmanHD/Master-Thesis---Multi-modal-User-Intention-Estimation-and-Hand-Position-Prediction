@@ -21,10 +21,16 @@ from data import (
     INTENTION_NAMES,
     RECEIVING_HAND_NAMES,
     DataBundle,
+    checkpoint_provenance,
     prepare_data,
     save_data_metadata,
 )
-from metrics import classification_metrics, pose_metrics
+from metrics import (
+    POSITION_ERROR_DEFINITION,
+    POSITION_RMS_ERROR_DEFINITION,
+    classification_metrics,
+    pose_metrics,
+)
 from model import HierarchicalResidualPoseTransformer
 
 
@@ -479,7 +485,7 @@ def checkpoint_payload(
     selection_metric: str,
     selection_value: float,
 ) -> dict:
-    return {
+    payload = {
         "model_state_dict": model.state_dict(),
         "model_config": config["model"],
         "model_type": "hierarchical_residual_pose_transformer_v2",
@@ -489,7 +495,13 @@ def checkpoint_payload(
         "epoch": epoch,
         "selection_metric": selection_metric,
         "selection_value": selection_value,
+        "dataset_provenance": checkpoint_provenance(bundle),
     }
+    if "position_mae_cm" in selection_metric:
+        payload["selection_metric_definition"] = (
+            POSITION_ERROR_DEFINITION
+        )
+    return payload
 
 
 def train(args: argparse.Namespace) -> Path:
@@ -654,9 +666,10 @@ def train(args: argparse.Namespace) -> Path:
             f"val intent F1={intention_score:.4f} | "
             "val hand supported F1="
             f"{validation_metrics['receiving_hand']['macro_f1_supported']:.4f} | "
-            f"val pose oracle={pose_value} cm | "
-            f"val pose end-to-end={validation_metrics['pose_end_to_end']['position_mae_cm']} cm | "
-            "val early pose="
+            f"val pose oracle mean Euclidean={pose_value} cm | "
+            "val pose end-to-end mean Euclidean="
+            f"{validation_metrics['pose_end_to_end']['position_mae_cm']} cm | "
+            "val early pose mean Euclidean="
             f"{validation_metrics['pose_by_handover_progress']['0-25%']['pose_oracle']['position_mae_cm']} cm"
         )
         if epochs_without_improvement >= int(
@@ -687,6 +700,9 @@ def train(args: argparse.Namespace) -> Path:
             "epoch": int(checkpoint["epoch"]),
             "selection_metric": checkpoint["selection_metric"],
             "selection_value": float(checkpoint["selection_value"]),
+            "selection_metric_definition": checkpoint.get(
+                "selection_metric_definition"
+            ),
         }
 
     report = {
@@ -695,6 +711,10 @@ def train(args: argparse.Namespace) -> Path:
         "checkpoints": checkpoint_metadata,
         "test": test_results,
         "history": history,
+        "legacy_pose_metric_alias": {
+            "position_mae_cm": POSITION_ERROR_DEFINITION,
+            "position_rmse_cm": POSITION_RMS_ERROR_DEFINITION,
+        },
     }
     metrics_path = run_dir / "metrics.json"
     metrics_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
@@ -702,8 +722,10 @@ def train(args: argparse.Namespace) -> Path:
         print(
             f"{name}: intent F1={metrics['intention']['macro_f1']:.4f}, "
             f"hand F1={metrics['receiving_hand']['macro_f1']:.4f}, "
-            f"pose oracle={metrics['pose_oracle']['position_mae_cm']} cm, "
-            f"pose end-to-end={metrics['pose_end_to_end']['position_mae_cm']} cm"
+            "pose oracle mean Euclidean="
+            f"{metrics['pose_oracle']['position_mae_cm']} cm, "
+            "pose end-to-end mean Euclidean="
+            f"{metrics['pose_end_to_end']['position_mae_cm']} cm"
         )
     print(f"Metrics: {metrics_path}")
     return run_dir

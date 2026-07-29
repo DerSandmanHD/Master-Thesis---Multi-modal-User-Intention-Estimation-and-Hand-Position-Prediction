@@ -164,10 +164,29 @@ def main() -> int:
         full_metrics = json.loads(
             (completed_run / "metrics.json").read_text(encoding="utf-8")
         )
+        data_metadata = json.loads(
+            (completed_run / "data_metadata.json").read_text(
+                encoding="utf-8"
+            )
+        )
         assert (completed_run / "best_intention_model.pt").exists()
         assert (completed_run / "best_pose_model.pt").exists()
+        assert (completed_run / "dataset_provenance.json").exists()
+        checkpoint = torch.load(
+            completed_run / "best_intention_model.pt",
+            map_location="cpu",
+            weights_only=True,
+        )
+        assert checkpoint["dataset_provenance"][
+            "dataset_content_fingerprint"
+        ] == data_metadata["provenance"][
+            "dataset_content_fingerprint"
+        ]
         assert set(full_metrics["test"]) == {"best_intention", "best_pose"}
         assert len(full_metrics["history"]) == 2
+        assert full_metrics["legacy_pose_metric_alias"][
+            "position_mae_cm"
+        ]
         print("Residual v2 smoke test passed")
     return 0
 

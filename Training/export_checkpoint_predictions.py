@@ -23,8 +23,13 @@ from evaluate_pose_baselines import (
     valid_targets,
     window_observations,
 )
-from metrics import classification_metrics, pose_metrics
+from metrics import (
+    classification_metrics,
+    pose_metrics,
+    position_mean_euclidean_error_cm,
+)
 from model import HierarchicalGatedMultimodalTransformer
+from run_discovery import resolve_run_directory
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -37,6 +42,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         required=True,
         help="Run directory containing config.json, metrics.json and best_model.pt.",
+    )
+    parser.add_argument(
+        "--runs-root",
+        type=Path,
+        default=Path("Training/runs"),
+        help="Recursive search root when --run-dir is only a run basename.",
     )
     parser.add_argument("--output-csv", type=Path, default=None)
     parser.add_argument("--report-out", type=Path, default=None)
@@ -416,9 +427,6 @@ def export_predictions(
 
 def main() -> int:
     args = parse_args()
-    run_dir = project_path(args.run_dir)
-    output_csv = project_path(args.output_csv) if args.output_csv else run_dir / "test_predictions.csv"
-    report_path = project_path(args.report_out) if args.report_out else run_dir / "test_prediction_analysis.json"
     if args.batch_size is not None and args.batch_size <= 0:
         print("ERROR: ValueError: batch-size must be greater than zero")
         return 2
@@ -427,6 +435,25 @@ def main() -> int:
         return 2
     device = choose_device(args.device)
     try:
+        run_dir = resolve_run_directory(
+            project_path(args.run_dir),
+            runs_root=project_path(args.runs_root),
+            required_artifacts=(
+                "config.json",
+                "metrics.json",
+                "best_model.pt",
+            ),
+        )
+        output_csv = (
+            project_path(args.output_csv)
+            if args.output_csv
+            else run_dir / "test_predictions.csv"
+        )
+        report_path = (
+            project_path(args.report_out)
+            if args.report_out
+            else run_dir / "test_prediction_analysis.json"
+        )
         summary = export_predictions(
             run_dir,
             output_csv=output_csv,
@@ -448,13 +475,15 @@ def main() -> int:
     print(f"Valid pose targets: {overall['valid_pose_targets']}")
     print(
         "Transformer: "
-        f"MAE={transformer['position_mae_cm']:.2f} cm, "
+        "mean Euclidean error="
+        f"{position_mean_euclidean_error_cm(transformer):.2f} cm, "
         f"RMSE={transformer['position_rmse_cm']:.2f} cm, "
         f"orientation={transformer['orientation_mean_deg']:.2f} deg"
     )
     print(
         "Last observation: "
-        f"MAE={last['position_mae_cm']:.2f} cm, "
+        "mean Euclidean error="
+        f"{position_mean_euclidean_error_cm(last):.2f} cm, "
         f"RMSE={last['position_rmse_cm']:.2f} cm, "
         f"orientation={last['orientation_mean_deg']:.2f} deg"
     )

@@ -6,9 +6,14 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import os
+import platform
 import random
+import subprocess
+import sys
 from collections import Counter
 from dataclasses import dataclass, replace
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -22,6 +27,187 @@ INTENTION_TO_ID = {"transition": -1, "continue": 0, "fetch": 1, "handover": 2}
 INTENTION_NAMES = ["continue", "fetch", "handover"]
 RECEIVING_HAND_TO_ID = {"left": 0, "right": 1}
 RECEIVING_HAND_NAMES = ["left", "right"]
+TRAINING_DATA_BUILDER_VERSION = "training_data_pipeline_v2_provenance"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _git_command(*arguments: str) -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(PROJECT_ROOT), *arguments],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (FileNotFoundError, subprocess.SubprocessError):
+        return None
+    return result.stdout.strip()
+
+
+def git_provenance() -> dict:
+    commit = _git_command("rev-parse", "HEAD")
+    status = _git_command("status", "--porcelain", "--untracked-files=all")
+    status_lines = [] if not status else status.splitlines()
+    return {
+        "commit": commit,
+        "dirty": bool(status_lines) if status is not None else None,
+        "changed_paths": [
+            line[3:] if len(line) > 3 else line
+            for line in status_lines
+        ],
+        "status_available": status is not None,
+    }
+
+
+def runtime_provenance() -> dict:
+    container_variables = (
+        "APPTAINER_CONTAINER",
+        "APPTAINER_NAME",
+        "CONTAINER_IMAGE_DIGEST",
+        "SINGULARITY_CONTAINER",
+        "SINGULARITY_NAME",
+        "SLURM_JOB_ID",
+        "SLURM_JOB_PARTITION",
+    )
+    container = {
+        name: os.environ[name]
+        for name in container_variables
+        if os.environ.get(name)
+    }
+    return {
+        "captured_at_utc": datetime.now(timezone.utc).isoformat(),
+        "python": sys.version,
+        "python_executable": sys.executable,
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "numpy": np.__version__,
+        "pandas": pd.__version__,
+        "torch": torch.__version__,
+        "torch_cuda_runtime": torch.version.cuda,
+        "cuda_available": torch.cuda.is_available(),
+        "container_environment": container,
+        "container_digest_available": bool(
+            container.get("CONTAINER_IMAGE_DIGEST")
+        ),
+    }
+
+
+def build_dataset_provenance(
+    files: list[Path],
+    *,
+    master_dir: Path,
+    feature_profile: str,
+    feature_columns: list[str],
+    future_horizon_seconds: float,
+    filter_metadata: dict,
+) -> tuple[dict, str | None]:
+    master_files = []
+    for path in files:
+        master_files.append(
+            {
+                "sequence_id": sequence_id_from_master_path(path),
+                "file_name": path.name,
+                "relative_path": str(path.relative_to(master_dir)),
+                "size_bytes": path.stat().st_size,
+                "sha256": sha256_file(path),
+            }
+        )
+
+    manifest_snapshot = None
+    manifest = None
+    manifest_path_value = filter_metadata.get("manifest_path")
+    if manifest_path_value:
+        manifest_path = Path(manifest_path_value)
+        manifest_snapshot = manifest_path.read_text(encoding="utf-8")
+        manifest = {
+            "source_path": str(manifest_path),
+            "sha256": hashlib.sha256(
+                manifest_snapshot.encode("utf-8")
+            ).hexdigest(),
+            "snapshot_file": "dataset_manifest_snapshot.csv",
+        }
+
+    builder_files = {}
+    for relative in (
+        Path("Code/build_master_dataset.py"),
+        Path("Code/dataset_qa.py"),
+        Path("Training/data.py"),
+        Path("singularity/aria.recipe"),
+    ):
+        path = PROJECT_ROOT / relative
+        if path.is_file():
+            builder_files[str(relative)] = sha256_file(path)
+
+    schema_payload = {
+        "feature_profile": feature_profile,
+        "feature_columns": feature_columns,
+        "future_horizon_seconds": float(future_horizon_seconds),
+        "builder_version": TRAINING_DATA_BUILDER_VERSION,
+    }
+    schema_fingerprint = hashlib.sha256(
+        json.dumps(
+            schema_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    content_payload = {
+        "master_files": [
+            {
+                "sequence_id": item["sequence_id"],
+                "sha256": item["sha256"],
+            }
+            for item in master_files
+        ],
+        "manifest_sha256": manifest["sha256"] if manifest else None,
+        "schema_fingerprint": schema_fingerprint,
+    }
+    content_fingerprint = hashlib.sha256(
+        json.dumps(
+            content_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return (
+        {
+            "builder_version": TRAINING_DATA_BUILDER_VERSION,
+            "dataset_content_fingerprint": content_fingerprint,
+            "schema": {
+                **schema_payload,
+                "fingerprint": schema_fingerprint,
+            },
+            "master_files": master_files,
+            "manifest": manifest,
+            "builder_file_sha256": builder_files,
+            "git": git_provenance(),
+            "runtime": runtime_provenance(),
+        },
+        manifest_snapshot,
+    )
+
+
+def checkpoint_provenance(bundle: "DataBundle") -> dict:
+    schema = bundle.provenance.get("schema", {})
+    git = bundle.provenance.get("git", {})
+    return {
+        "dataset_content_fingerprint": bundle.provenance.get(
+            "dataset_content_fingerprint"
+        ),
+        "schema_fingerprint": schema.get("fingerprint"),
+        "builder_version": bundle.provenance.get("builder_version"),
+        "git_commit": git.get("commit"),
+        "git_dirty": git.get("dirty"),
+    }
 
 
 def canonical_participant(value: str) -> str:
@@ -585,6 +771,8 @@ class DataBundle:
     normalizer: Normalizer
     feature_columns: list[str]
     split_metadata: dict
+    provenance: dict
+    manifest_snapshot: str | None
 
 
 def sequence_id_from_master_path(path: Path) -> str:
@@ -738,6 +926,22 @@ def prepare_data(
     feature_columns = select_feature_columns(
         first_header, data_config["feature_profile"]
     )
+    provenance, manifest_snapshot = build_dataset_provenance(
+        files,
+        master_dir=master_dir,
+        feature_profile=str(data_config["feature_profile"]),
+        feature_columns=feature_columns,
+        future_horizon_seconds=float(
+            data_config["future_horizon_seconds"]
+        ),
+        filter_metadata=filter_metadata,
+    )
+    filter_metadata = {
+        **filter_metadata,
+        "dataset_content_fingerprint": provenance[
+            "dataset_content_fingerprint"
+        ],
+    }
     include_hand_references = bool(data_config.get("include_hand_references", False))
     records = [
         load_record(
@@ -784,6 +988,8 @@ def prepare_data(
         normalizer=normalizer,
         feature_columns=feature_columns,
         split_metadata=split_metadata,
+        provenance=provenance,
+        manifest_snapshot=manifest_snapshot,
     )
 
 
@@ -795,6 +1001,7 @@ def save_data_metadata(bundle: DataBundle, path: Path) -> None:
         "model_feature_columns": bundle.normalizer.output_feature_names,
         "normalizer": bundle.normalizer.to_dict(),
         "split": bundle.split_metadata,
+        "provenance": bundle.provenance,
         "windows": {
             "train": len(bundle.train),
             "validation": len(bundle.validation),
@@ -838,4 +1045,16 @@ def save_data_metadata(bundle: DataBundle, path: Path) -> None:
         },
     }
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    (path.parent / "dataset_provenance.json").write_text(
+        json.dumps(bundle.provenance, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    if bundle.manifest_snapshot is not None:
+        (path.parent / "dataset_manifest_snapshot.csv").write_text(
+            bundle.manifest_snapshot,
+            encoding="utf-8",
+        )

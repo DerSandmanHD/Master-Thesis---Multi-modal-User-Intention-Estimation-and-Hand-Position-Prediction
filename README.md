@@ -68,7 +68,9 @@ Das Handover-Pose-Target ist eine tatsächlich gemessene Handgelenkpose bei
 
 Rohdaten, Master-CSVs, Checkpoints und normale Cluster-Logs werden nicht in
 Git gespeichert. Die entsprechenden lokalen Verzeichnisse sind über
-`.gitignore` ausgeschlossen.
+`.gitignore` ausgeschlossen. Nur
+`Data_collection/manual_timestamp_review.csv` wird als kompakte,
+reproduktionsrelevante Annotationstabelle versioniert.
 
 ## Zentrale Befehle
 
@@ -78,8 +80,15 @@ Dataset-QA:
 singularity exec ~/singularity/aria_master.simg \
   python3 Code/dataset_qa.py \
   --data-root Data_collection \
-  --timestamps Data_collection/Data_vrs/timestamps_summary.reviewed.json
+  --timestamps Data_collection/Data_vrs/timestamps_summary.reviewed.json \
+  --min-handover-hand-valid-ratio 0.70
 ```
+
+Der Hand-Tracking-Grenzwert von 70 % wird sowohl für die allgemeine
+Handover-Handabdeckung als auch für die annotierte Empfangshand verwendet.
+Der tatsächlich verwendete Grenzwert wird im QA-JSON unter
+`quality_thresholds` gespeichert. Der bisherige finale 80-%-Snapshot bleibt
+damit als unveränderte Vergleichsbasis erhalten.
 
 Master-Datasets auf dem Cluster bauen:
 
@@ -91,9 +100,11 @@ sbatch --export=ALL,OVERWRITE=1 \
 Aktive Smoke-Tests:
 
 ```bash
+python3 Code/dataset_qa_smoke_test.py
 python3 tests/integration/static_robot_anchor_smoke.py
 python3 Training/smoke_test.py
 python3 Training/residual_smoke_test.py
+python3 Training/ablation_smoke_test.py
 python3 Training/pose_baselines_smoke_test.py
 python3 Training/export_predictions_smoke_test.py
 ```

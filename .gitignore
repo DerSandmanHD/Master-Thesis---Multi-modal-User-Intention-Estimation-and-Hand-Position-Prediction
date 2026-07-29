@@ -1,5 +1,7 @@
-# Local datasets and raw recordings
-/Data_collection/
+# Local datasets and raw recordings. The compact manual annotation table is
+# versioned because it is required to reproduce labels and timestamp fixes.
+/Data_collection/*
+!/Data_collection/manual_timestamp_review.csv
 /BackUp_Videos/
 /Test_recordings/
 /audio_batch_backups/

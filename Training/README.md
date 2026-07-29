@@ -217,6 +217,55 @@ F1 und `best_pose_model.pt` nach Validation-Oracle-Position-MAE. Early Stopping
 wird nur ausgeloest, wenn sich keines der beiden Validation-Ziele innerhalb der
 konfigurierten Patience verbessert.
 
+## Modalitaetsablationen
+
+Vier vorbereitete Residual-v2-Konfigurationen entfernen jeweils eine
+Featuregruppe vor Normalisierung und Missing-Data-Maskierung:
+
+| Konfiguration | Entfernte Encoderfeatures | Roh-/Modellfeatures |
+|---|---|---:|
+| `configs/ablations/residual_v2_no_gaze.json` | direkte Gazefeatures sowie gaze-abgeleitete Objektwinkel und -distanzen | 64 / 128 |
+| `configs/ablations/residual_v2_no_hands.json` | Handgueltigkeit, Trackingkonfidenz und beide Wrist-Posen | 74 / 148 |
+| `configs/ablations/residual_v2_no_objects.json` | alle ArUco-6-bis-14-Positionen, Gaze-Beziehungen und Gueltigkeitsflags | 38 / 76 |
+| `configs/ablations/residual_v2_no_vio.json` | direkte SLAM-Bewegungs-/Qualitaetsfeatures sowie Robot-Frame-Gueltigkeitsflags | 83 / 166 |
+
+Alle Varianten behalten Architektur, Split, Fenster, Losses und Hyperparameter
+der Residual-v2-Vollvariante. `data_metadata.json` und
+`dataset_provenance.json` speichern entfernte Modalitaeten, konkrete Spalten
+und die veraenderte Eingabedimension.
+
+Zwei Interpretationsgrenzen sind wichtig:
+
+- `no_hands` ist eine Ablation der Encoder- und damit der
+  Intentions-/Handklassifikationsfeatures. Die letzte Handpose bleibt als
+  geometrische Referenz fuer den Residual-Pose-Output erforderlich; die
+  Posemetrik beschreibt daher kein vollstaendig handloses System.
+- `no_vio` entfernt die direkten VIO-Kanaele. Hand- und Objektpositionen
+  bleiben im vorab berechneten AprilTag-0-Frame und sind daher nicht
+  unabhaengig von der Offline-Koordinatenaufbereitung. Eine vollstaendig
+  VIO-freie Variante benoetigt ein neues Featureprofil in einem anderen
+  Koordinatensystem.
+
+Kurzer lokaler Konfigurations- und Formtest:
+
+```bash
+python3 Training/ablation_smoke_test.py
+```
+
+Der vorbereitete Array-Job wuerde spaeter vier Varianten mit jeweils drei
+Seeds starten. Er wird nicht automatisch ausgefuehrt:
+
+```bash
+sbatch --export=ALL,ABLATION_TAG=modality_ablation_v1 \
+  Training/residual_v2_modalities.sbatch
+```
+
+Die Ergebnisse landen getrennt unter:
+
+```text
+Training/runs/ablations/<ABLATION_TAG>/<VARIANTE>/seed_<SEED>/
+```
+
 ## Offline-Streaming-Replay
 
 Vor der Anbindung eines echten Aria-Streams kann eine Master-CSV kausal, also

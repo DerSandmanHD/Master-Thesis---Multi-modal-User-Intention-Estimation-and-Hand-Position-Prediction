@@ -27,7 +27,8 @@ INTENTION_TO_ID = {"transition": -1, "continue": 0, "fetch": 1, "handover": 2}
 INTENTION_NAMES = ["continue", "fetch", "handover"]
 RECEIVING_HAND_TO_ID = {"left": 0, "right": 1}
 RECEIVING_HAND_NAMES = ["left", "right"]
-TRAINING_DATA_BUILDER_VERSION = "training_data_pipeline_v2_provenance"
+SUPPORTED_MODALITY_ABLATIONS = ("gaze", "hands", "objects", "vio")
+TRAINING_DATA_BUILDER_VERSION = "training_data_pipeline_v3_modality_ablation"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -107,6 +108,7 @@ def build_dataset_provenance(
     master_dir: Path,
     feature_profile: str,
     feature_columns: list[str],
+    feature_ablation: dict,
     future_horizon_seconds: float,
     filter_metadata: dict,
 ) -> tuple[dict, str | None]:
@@ -150,6 +152,7 @@ def build_dataset_provenance(
     schema_payload = {
         "feature_profile": feature_profile,
         "feature_columns": feature_columns,
+        "feature_ablation": feature_ablation,
         "future_horizon_seconds": float(future_horizon_seconds),
         "builder_version": TRAINING_DATA_BUILDER_VERSION,
     }
@@ -268,11 +271,59 @@ def _candidate_features() -> list[str]:
     return columns
 
 
-def select_feature_columns(columns: Iterable[str], profile: str) -> list[str]:
+def normalize_excluded_modalities(values: object) -> list[str]:
+    if values is None:
+        return []
+    if isinstance(values, str) or not isinstance(values, Iterable):
+        raise ValueError(
+            "data.ablation_exclude_modalities must be a list containing "
+            "gaze, hands, objects, or vio"
+        )
+    normalized: list[str] = []
+    for value in values:
+        modality = str(value).strip().casefold()
+        if modality not in SUPPORTED_MODALITY_ABLATIONS:
+            raise ValueError(
+                f"Unknown ablation modality {value!r}; expected one of "
+                f"{', '.join(SUPPORTED_MODALITY_ABLATIONS)}"
+            )
+        if modality not in normalized:
+            normalized.append(modality)
+    return normalized
+
+
+def feature_modalities(column: str) -> set[str]:
+    modalities: set[str] = set()
+    if column.startswith("gaze_"):
+        modalities.add("gaze")
+    if column.startswith(("hand_", "left_wrist_", "right_wrist_")):
+        modalities.add("hands")
+    if column.startswith("aruco_"):
+        modalities.add("objects")
+        if "_gaze_" in column:
+            modalities.add("gaze")
+    if column.startswith("slam_") or column in {
+        "robot_frame_valid",
+        "robot_anchor_interpolated",
+    }:
+        modalities.add("vio")
+    return modalities
+
+
+def select_feature_columns(
+    columns: Iterable[str],
+    profile: str,
+    excluded_modalities: object = None,
+) -> list[str]:
     if profile != "multimodal_robot_frame_v1":
         raise ValueError(f"Unknown feature profile: {profile}")
+    excluded = set(normalize_excluded_modalities(excluded_modalities))
     available = set(columns)
-    selected = [column for column in _candidate_features() if column in available]
+    selected = [
+        column
+        for column in _candidate_features()
+        if column in available and not (feature_modalities(column) & excluded)
+    ]
     if len(selected) < 20:
         raise ValueError(
             "Master CSV exposes too few v1 input features. Rebuild it with the current "
@@ -923,14 +974,32 @@ def prepare_data(
         raise FileNotFoundError(f"No *_master.csv files found in {master_dir}")
 
     first_header = pd.read_csv(files[0], nrows=0).columns.tolist()
-    feature_columns = select_feature_columns(
+    excluded_modalities = normalize_excluded_modalities(
+        data_config.get("ablation_exclude_modalities")
+    )
+    full_feature_columns = select_feature_columns(
         first_header, data_config["feature_profile"]
     )
+    feature_columns = select_feature_columns(
+        first_header,
+        data_config["feature_profile"],
+        excluded_modalities,
+    )
+    feature_ablation = {
+        "excluded_modalities": excluded_modalities,
+        "excluded_feature_columns": [
+            column for column in full_feature_columns if column not in feature_columns
+        ],
+        "full_raw_feature_count": len(full_feature_columns),
+        "retained_raw_feature_count": len(feature_columns),
+        "retained_model_feature_count_with_masks": len(feature_columns) * 2,
+    }
     provenance, manifest_snapshot = build_dataset_provenance(
         files,
         master_dir=master_dir,
         feature_profile=str(data_config["feature_profile"]),
         feature_columns=feature_columns,
+        feature_ablation=feature_ablation,
         future_horizon_seconds=float(
             data_config["future_horizon_seconds"]
         ),
@@ -960,6 +1029,7 @@ def prepare_data(
         validation_participants=list(data_config.get("validation_participants", [])),
         test_participants=list(data_config.get("test_participants", [])),
     )
+    split_metadata["feature_ablation"] = feature_ablation
     split_metadata["dataset_filter"] = filter_metadata
     normalizer = fit_normalizer(split["train"], feature_columns)
     normalized_split = {
@@ -997,6 +1067,7 @@ def save_data_metadata(bundle: DataBundle, path: Path) -> None:
     data = {
         "label_mapping": INTENTION_TO_ID,
         "transition_policy": "context_only_never_window_target",
+        "feature_ablation": bundle.split_metadata.get("feature_ablation", {}),
         "feature_columns": bundle.feature_columns,
         "model_feature_columns": bundle.normalizer.output_feature_names,
         "normalizer": bundle.normalizer.to_dict(),

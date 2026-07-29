@@ -17,6 +17,20 @@ MPS_PREFIX = "mps_"
 MPS_SUFFIX = "_vrs"
 
 
+def unit_interval(value: str) -> float:
+    try:
+        parsed = float(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            f"expected a number between 0 and 1, got {value!r}"
+        ) from exc
+    if not 0.0 <= parsed <= 1.0:
+        raise argparse.ArgumentTypeError(
+            f"expected a number between 0 and 1, got {parsed}"
+        )
+    return parsed
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Check VRS, MP4, MPS and trigger-label availability per recording."
@@ -83,9 +97,12 @@ def parse_args():
     )
     parser.add_argument(
         "--min-handover-hand-valid-ratio",
-        type=float,
-        default=0.8,
-        help="Warn when neither hand is valid in at least this fraction of THIRD->recording-end rows. Default: 0.8.",
+        type=unit_interval,
+        default=0.7,
+        help=(
+            "Warn when the general hand coverage or the annotated receiving-hand "
+            "coverage is below this fraction during handover. Default: 0.7."
+        ),
     )
     parser.add_argument(
         "--max-media-duration-delta-seconds",
@@ -914,6 +931,8 @@ def build_report(
     annotations_path: Path,
     manifest_path: Path,
     backup_dir: Path,
+    min_phase_seconds: float,
+    min_handover_hand_valid_ratio: float,
 ) -> dict:
     status_counts = Counter(row["status"] for row in rows)
     action_counts = Counter(row["next_action"] for row in rows)
@@ -979,6 +998,10 @@ def build_report(
         "manifest_csv": str(manifest_path),
         "backup_dir": str(backup_dir),
         "expected_command_order": list(EXPECTED_COMMANDS),
+        "quality_thresholds": {
+            "min_phase_seconds": min_phase_seconds,
+            "min_handover_hand_valid_ratio": min_handover_hand_valid_ratio,
+        },
     }
 
 
@@ -1022,7 +1045,13 @@ def main():
 
     write_manifest(manifest_path, rows)
     report = build_report(
-        rows, timestamps_path, annotations_path, manifest_path, backup_dir
+        rows,
+        timestamps_path,
+        annotations_path,
+        manifest_path,
+        backup_dir,
+        args.min_phase_seconds,
+        args.min_handover_hand_valid_ratio,
     )
     write_report(report_path, report)
 

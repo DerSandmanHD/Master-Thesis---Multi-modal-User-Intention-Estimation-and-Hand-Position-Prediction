@@ -42,6 +42,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--min-command-gap-seconds", type=float, default=0.4)
     parser.add_argument("--duration-tolerance-seconds", type=float, default=0.1)
+    parser.add_argument(
+        "--start-at-video-beginning-participant",
+        action="append",
+        default=[],
+        metavar="PARTICIPANT",
+        help=(
+            "For this explicitly named participant, fill a missing START command "
+            "with relative time 0.0 seconds. Repeat the option for multiple "
+            "participants. Existing START timestamps are never replaced."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -124,6 +135,93 @@ def derive_audio_start_ns(entry: dict, debug_entry: dict) -> int | None:
         if isinstance(timestamp_ns, (int, float)) and isinstance(relative_seconds, (int, float)):
             return int(round(float(timestamp_ns) - float(relative_seconds) * 1e9))
     return None
+
+
+def participant_from_sequence(sequence_id: str) -> str:
+    participant = (
+        sequence_id.split("_", 1)[0] if "_" in sequence_id else sequence_id
+    )
+    return participant.strip().casefold()
+
+
+def apply_video_beginning_start_defaults(
+    timestamps: dict,
+    debug: dict,
+    existing_overrides: dict,
+    participants: set[str],
+) -> tuple[dict, dict, dict]:
+    """Fill missing START at 0.0 s for explicitly selected participants only."""
+    merged = deepcopy(timestamps)
+    overrides = deepcopy(existing_overrides)
+    selected_participants = {
+        str(participant).strip().casefold()
+        for participant in participants
+        if str(participant).strip()
+    }
+    records = []
+
+    if not selected_participants:
+        return merged, overrides, {
+            "participants": [],
+            "applied": 0,
+            "already_present": 0,
+            "rejected": 0,
+            "records": records,
+        }
+
+    for key, original_entry in sorted(merged.items()):
+        sequence_id = Path(key).stem
+        if participant_from_sequence(sequence_id) not in selected_participants:
+            continue
+
+        record = {
+            "sequence_id": sequence_id,
+            "timestamp_key": key,
+            "status": "not_applied",
+            "issues": [],
+        }
+        entry = deepcopy(original_entry) if isinstance(original_entry, dict) else {}
+        if isinstance(entry.get("START"), dict):
+            record["status"] = "already_present"
+            records.append(record)
+            continue
+
+        debug_entry = debug.get(key, debug.get(sequence_id, {}))
+        if not isinstance(debug_entry, dict):
+            debug_entry = {}
+        audio_start_ns = derive_audio_start_ns(entry, debug_entry)
+        if audio_start_ns is None:
+            record["status"] = "rejected"
+            record["issues"].append("missing_audio_start_timestamp_ns")
+            records.append(record)
+            continue
+
+        entry["START"] = {
+            "timestamp_ns": int(audio_start_ns),
+            "relative_seconds": 0.0,
+            "raw_word": "video_beginning_protocol_default",
+            "match_score": 1.0,
+            "avg_logprob": None,
+            "speech_end_seconds": None,
+            "timestamp_source": "video_beginning_protocol_default",
+            "timestamp_uncertainty_ms": None,
+        }
+        merged[key] = entry
+        sequence_overrides = dict(overrides.get(key, {}))
+        sequence_overrides["START"] = {"relative_seconds": 0.0}
+        overrides[key] = sequence_overrides
+        record["status"] = "applied"
+        records.append(record)
+
+    return merged, overrides, {
+        "participants": sorted(selected_participants),
+        "applied": sum(record["status"] == "applied" for record in records),
+        "already_present": sum(
+            record["status"] == "already_present" for record in records
+        ),
+        "rejected": sum(record["status"] == "rejected" for record in records),
+        "records": records,
+    }
 
 
 def wav_duration(path: Path) -> float | None:
@@ -318,15 +416,24 @@ def main() -> int:
         timestamps = read_json(timestamps_path)
         debug = read_json(debug_path, required=False)
         existing_overrides = read_json(overrides_out, required=False)
+        timestamps_with_defaults, overrides_with_defaults, defaults_report = (
+            apply_video_beginning_start_defaults(
+                timestamps,
+                debug,
+                existing_overrides,
+                set(args.start_at_video_beginning_participant),
+            )
+        )
         merged, overrides, report = apply_reviews(
             reviews,
-            timestamps,
+            timestamps_with_defaults,
             debug,
-            existing_overrides,
+            overrides_with_defaults,
             wav_dir,
             args.min_command_gap_seconds,
             args.duration_tolerance_seconds,
         )
+        report["video_beginning_start_defaults"] = defaults_report
     except (FileNotFoundError, OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"Error: {exc}")
         return 2
@@ -348,8 +455,15 @@ def main() -> int:
     print(f"Reviewed summary: {summary_out}")
     print(f"Manual overrides: {overrides_out}")
     print(f"Import report:    {report_out}")
+    defaults = report["video_beginning_start_defaults"]
+    print(
+        "START-at-video-beginning defaults: "
+        f"applied={defaults['applied']}, "
+        f"already_present={defaults['already_present']}, "
+        f"rejected={defaults['rejected']}"
+    )
     print(f"Applied: {report['applied']}, rejected: {report['rejected']}")
-    return 1 if report["rejected"] else 0
+    return 1 if report["rejected"] or defaults["rejected"] else 0
 
 
 if __name__ == "__main__":

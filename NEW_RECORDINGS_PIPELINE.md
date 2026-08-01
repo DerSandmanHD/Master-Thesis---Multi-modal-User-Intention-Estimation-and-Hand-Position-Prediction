@@ -277,6 +277,26 @@ singularity exec ~/singularity/aria_master.simg \
   --data-root Data_collection
 ```
 
+Wenn ein dokumentiertes Aufnahmeprotokoll `START` explizit als Beginn der
+Aufnahme definiert und das Wort deshalb nicht gesprochen wurde, darf die
+Vorgabe nur fuer die betreffenden Teilnehmer explizit aktiviert werden. Fuer
+die Aufnahmen von Isa und Paul lautet der Aufruf:
+
+```bash
+singularity exec ~/singularity/aria_master.simg \
+  python3 Code/apply_manual_reviews.py \
+  --data-root Data_collection \
+  --start-at-video-beginning-participant Isa \
+  --start-at-video-beginning-participant Paul
+```
+
+Dabei werden nur fehlende `START`-Eintraege auf `0.0 s` gesetzt. Bereits
+vorhandene START-Zeitpunkte und alle anderen Teilnehmer bleiben unveraendert.
+Die Vorgaben werden zugleich in `timestamps_manual_overrides.json` gespeichert,
+damit ein spaeterer Audio-Lauf sie nicht wieder verliert. Ein solcher Default
+darf nicht verwendet werden, wenn die Zeit vor `SECOND` keine
+`continue`-Phase ist.
+
 Das erzeugt unter anderem:
 
 ```text

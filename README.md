@@ -101,6 +101,7 @@ Aktive Smoke-Tests:
 
 ```bash
 python3 Code/dataset_qa_smoke_test.py
+python3 Code/apply_manual_reviews_smoke_test.py
 python3 tests/integration/static_robot_anchor_smoke.py
 python3 Training/smoke_test.py
 python3 Training/residual_smoke_test.py

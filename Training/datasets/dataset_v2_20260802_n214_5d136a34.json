@@ -1,0 +1,23 @@
+{
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "status": "frozen_pre_training",
+  "created_at": "2026-08-02",
+  "snapshot_path": "Data_collection/final_dataset_snapshot_20260802_n214_5d136a34",
+  "snapshot_validation_path": "Data_collection/final_dataset_snapshot_20260802_n214_5d136a34/snapshot_validation.json",
+  "snapshot_validation_sha256": "8c6f692addd149d59e1cbeb50a38cffd741d8ec1c29c09ff859769c260b0d4d6",
+  "selected_sequences": 214,
+  "split_sequences": {
+    "train": null,
+    "validation": null,
+    "test": null
+  },
+  "manifest_sha256": "9426c0f15847fc3950d6b491ea363d842cb588072c2ee71e6683df054e6cca60",
+  "sequence_fingerprint": "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd",
+  "dataset_content_fingerprint": "58891ed20f4a9e6023c3bc2e97a4e167d12cf2cb640af2195241659a2dc73976",
+  "builder_version": "training_data_pipeline_v3_modality_ablation",
+  "notes": [
+    "Contains the 214 rows selected by include_in_training=true, status=valid, next_action=ready_for_master_merge and master_csv_exists=true.",
+    "The 17 included sequences with QA warnings remain outside this strict training snapshot.",
+    "Formal split and feature-schema validation follows against the one-epoch smoke-test artifact."
+  ]
+}

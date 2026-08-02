@@ -11,6 +11,10 @@
     {
       "dataset_tag": "dataset_v1_20260729_n156_seq457a80f1",
       "descriptor": "Training/datasets/dataset_v1_20260729_n156_seq457a80f1.json"
+    },
+    {
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "descriptor": "Training/datasets/dataset_v2_20260802_n214_5d136a34.json"
     }
   ],
   "experiments": [

@@ -49,6 +49,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-name", default="ViT-B-32")
     parser.add_argument("--pretrained", default="openai")
     parser.add_argument("--weights-cache-dir", type=Path, default=None)
+    parser.add_argument(
+        "--expected-weights-sha256",
+        required=True,
+        help="Pinned SHA-256 that must match before the checkpoint is loaded.",
+    )
     parser.add_argument("--sample-hz", type=float, default=5.0)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument(
@@ -358,6 +363,12 @@ def main() -> int:
             cache_dir=str(weights_cache) if weights_cache else None,
         )
     )
+    weights_sha256 = sha256_file(checkpoint_path)
+    if weights_sha256.lower() != args.expected_weights_sha256.lower():
+        raise RuntimeError(
+            "Pinned CLIP checkpoint hash mismatch: "
+            f"expected {args.expected_weights_sha256}, got {weights_sha256}"
+        )
     model, _, preprocess = open_clip.create_model_and_transforms(
         args.model_name,
         pretrained=str(checkpoint_path),
@@ -365,7 +376,6 @@ def main() -> int:
         cache_dir=str(weights_cache) if weights_cache else None,
     )
     model.eval()
-    weights_sha256 = sha256_file(checkpoint_path)
     encoder = {
         "library": "open_clip_torch",
         "library_version": getattr(open_clip, "__version__", "unknown"),
@@ -373,6 +383,8 @@ def main() -> int:
         "pretrained": args.pretrained,
         "weights_file": checkpoint_path.name,
         "weights_sha256": weights_sha256,
+        "expected_weights_sha256": args.expected_weights_sha256,
+        "hash_verified_before_deserialization": True,
         "preprocess": preprocessing_specification(preprocess),
         "output_normalization": "L2",
         "sampling_hz": float(args.sample_hz),

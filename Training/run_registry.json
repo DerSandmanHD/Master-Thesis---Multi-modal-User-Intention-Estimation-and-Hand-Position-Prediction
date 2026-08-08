@@ -62,7 +62,9 @@
       "experiment_tag": "modality_ablation_v1",
       "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
       "kind": "residual_v2_input_modality_ablation",
-      "status": "scheduled",
+      "status": "completed",
+      "completed_at": "2026-08-08T11:04:45+02:00",
+      "slurm_job_id": 2204078,
       "models": [
         "no_gaze",
         "no_hands",
@@ -70,9 +72,19 @@
         "no_vio"
       ],
       "seeds": [42, 43, 44],
+      "run_count": 12,
       "baseline_experiment": "benchmark_v2",
       "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/modality_ablation_v1",
-      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/modality_ablation_v1"
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/modality_ablation_v1",
+      "result": {
+        "full_test_intention_macro_f1_mean": 0.8579077420810391,
+        "largest_intention_drop_variant": "no_hands",
+        "largest_intention_drop": -0.10598862878042459,
+        "no_objects_test_intention_delta": 0.02658460632220838,
+        "no_objects_test_pose_mae_delta_cm": -0.36894798278808594,
+        "checkpoint_policy": "intention/hand from best_intention; pose from best_pose",
+        "selection_note": "descriptive preregistered ablation; test deltas are not used to alter the final architecture"
+      }
     },
     {
       "experiment_tag": "final_clean_v1",

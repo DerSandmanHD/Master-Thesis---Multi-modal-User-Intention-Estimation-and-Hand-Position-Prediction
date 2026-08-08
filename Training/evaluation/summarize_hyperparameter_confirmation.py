@@ -170,14 +170,15 @@ def main() -> int:
         "selection_split": "validation",
         "test_metrics_forbidden": True,
         "f1_tolerance": F1_TOLERANCE,
+        "pose_tiebreak_checkpoint": "best_intention",
         "stage_a_selected_trials": trials,
         "seeds": list(SEEDS),
         "complete": complete,
         "selected_trial": winner,
         "selection_rule": (
             "maximize mean validation intention macro-F1; retain trials within "
-            "0.005; minimize mean validation pose MAE; maximize mean hand F1; "
-            "minimize parameters"
+            "0.005; minimize mean validation pose MAE measured at the "
+            "best-intention checkpoint; maximize mean hand F1; minimize parameters"
         ),
         "selected_metrics": (
             None if aggregate.empty else aggregate.iloc[0].to_dict()

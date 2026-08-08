@@ -168,6 +168,7 @@ def main() -> int:
         "experiment_tag": args.experiment_tag,
         "selection_split": "validation",
         "test_metrics_used_for_selection": False,
+        "pose_tiebreak_checkpoint": "best_intention",
         "seeds": list(SEEDS),
         "complete": complete,
         "missing_or_invalid": missing,

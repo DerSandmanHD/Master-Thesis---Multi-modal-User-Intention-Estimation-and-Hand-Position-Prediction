@@ -281,11 +281,11 @@ Noch offen:
 
 - [x] Ablationsabschnitte verwandter Papers lesen und Vergleichsmatrix anlegen
 - [x] Ablationsprotokoll vor dem Start festschreiben
-- [ ] Vier vorhandene Varianten auf `n214` mit Seeds 42, 43, 44 ausführen
-- [ ] vollständige Residual-v2-Baseline aus `benchmark_v2` wiederverwenden
-- [ ] Mittelwert und Standardabweichung berechnen
-- [ ] Delta zur vollständigen Baseline berichten
-- [ ] Balkendiagramme für Intention-F1, Hand-F1 und Pose-MAE erstellen
+- [x] Vier vorhandene Varianten auf `n214` mit Seeds 42, 43, 44 ausführen
+- [x] vollständige Residual-v2-Baseline aus `benchmark_v2` wiederverwenden
+- [x] Mittelwert und Standardabweichung berechnen
+- [x] Delta zur vollständigen Baseline berichten
+- [x] Balkendiagramme für Intention-F1, Hand-F1 und Pose-MAE erstellen
 - [ ] Auswirkungen auf Parameterzahl und Latenz berichten
 - [ ] Nach CLIP-Integration `no_clip`/`with_clip` ergänzen
 
@@ -360,8 +360,8 @@ Noch offen:
 
 ### Phase C – Ablationen
 
-- [ ] vorhandene vier Modalitätsablationen ausführen
-- [ ] Ergebnisse aggregieren und visualisieren
+- [x] vorhandene vier Modalitätsablationen ausführen
+- [x] Ergebnisse aggregieren und visualisieren
 
 ### Phase D – CLIP
 

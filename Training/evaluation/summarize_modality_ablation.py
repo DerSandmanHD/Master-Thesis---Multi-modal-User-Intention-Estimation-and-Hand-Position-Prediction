@@ -35,19 +35,35 @@ def parse_args() -> argparse.Namespace:
 
 def test_row(variant: str, seed: int, run_dir: Path) -> dict:
     metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
-    test = metrics["test"]["best_intention"]
+    intention_test = metrics["test"]["best_intention"]
+    pose_test = metrics["test"]["best_pose"]
     return {
         "variant": variant,
         "seed": seed,
         "run_dir": str(run_dir),
-        "test_intention_macro_f1": float(test["intention"]["macro_f1"]),
-        "test_intention_accuracy": float(test["intention"]["accuracy"]),
-        "test_receiving_hand_macro_f1": float(
-            test["receiving_hand"]["macro_f1_supported"]
+        "test_intention_macro_f1": float(
+            intention_test["intention"]["macro_f1"]
         ),
-        "test_pose_mae_cm": float(test["pose_oracle"]["position_mae_cm"]),
+        "test_intention_accuracy": float(
+            intention_test["intention"]["accuracy"]
+        ),
+        "test_receiving_hand_macro_f1": float(
+            intention_test["receiving_hand"]["macro_f1_supported"]
+        ),
+        "test_pose_mae_cm": float(
+            pose_test["pose_oracle"]["position_mae_cm"]
+        ),
         "test_pose_end_to_end_mae_cm": float(
-            test["pose_end_to_end"]["position_mae_cm"]
+            pose_test["pose_end_to_end"]["position_mae_cm"]
+        ),
+        "test_pose_at_intention_checkpoint_mae_cm": float(
+            intention_test["pose_oracle"]["position_mae_cm"]
+        ),
+        "test_pose_end_to_end_at_intention_checkpoint_mae_cm": float(
+            intention_test["pose_end_to_end"]["position_mae_cm"]
+        ),
+        "test_intention_macro_f1_at_pose_checkpoint": float(
+            pose_test["intention"]["macro_f1"]
         ),
         "trainable_parameters": int(metrics["trainable_parameters"]),
         "wall_seconds": float(metrics.get("runtime", {}).get("wall_seconds", np.nan)),
@@ -64,6 +80,9 @@ def aggregate_runs(frame: pd.DataFrame) -> pd.DataFrame:
             "test_receiving_hand_macro_f1",
             "test_pose_mae_cm",
             "test_pose_end_to_end_mae_cm",
+            "test_pose_at_intention_checkpoint_mae_cm",
+            "test_pose_end_to_end_at_intention_checkpoint_mae_cm",
+            "test_intention_macro_f1_at_pose_checkpoint",
             "trainable_parameters",
             "wall_seconds",
         ):
@@ -108,7 +127,11 @@ def save_plots(summary: pd.DataFrame, output_dir: Path) -> None:
     specs = (
         ("test_intention_macro_f1", "Test intention macro-F1", False),
         ("test_receiving_hand_macro_f1", "Test receiving-hand macro-F1", False),
-        ("test_pose_mae_cm", "Test pose MAE (cm; lower better)", True),
+        (
+            "test_pose_mae_cm",
+            "Test pose MAE (best-pose checkpoint; cm; lower better)",
+            True,
+        ),
     )
     for axis, (metric, title, _) in zip(axes, specs):
         axis.bar(
@@ -136,6 +159,20 @@ def save_plots(summary: pd.DataFrame, output_dir: Path) -> None:
     axes[1].set_title("Training wall time (s)")
     axes[1].tick_params(axis="x", rotation=28)
     axes[1].grid(axis="y", alpha=0.25)
+    finite_wall_times = summary["wall_seconds_mean"].dropna()
+    annotation_height = (
+        float(finite_wall_times.max()) * 0.04 if not finite_wall_times.empty else 1.0
+    )
+    for index, value in enumerate(summary["wall_seconds_mean"]):
+        if pd.isna(value):
+            axes[1].text(
+                index,
+                annotation_height,
+                "n/a\nlegacy run",
+                ha="center",
+                va="bottom",
+                fontsize=9,
+            )
     figure.suptitle("Ablation efficiency indicators")
     figure.tight_layout()
     figure.savefig(figures / "02_sensor_ablation_efficiency.png", dpi=300, bbox_inches="tight")
@@ -178,9 +215,18 @@ def main() -> int:
         "baseline_experiment": args.baseline_experiment,
         "seeds": list(SEEDS),
         "test_evaluation_preregistered": True,
+        "checkpoint_policy": {
+            "intention_and_hand": "best_intention checkpoint selected on validation",
+            "pose_mae": "best_pose checkpoint selected on validation",
+            "deployment_pose_also_reported": "pose at best_intention checkpoint",
+        },
         "complete": complete,
         "errors": errors,
-        "variants": summary_frame.to_dict(orient="records"),
+        "variants": (
+            summary_frame.astype(object)
+            .where(pd.notna(summary_frame), None)
+            .to_dict(orient="records")
+        ),
     }
     (output_dir / "summary.json").write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Ablation complete: {complete}; report: {output_dir}")

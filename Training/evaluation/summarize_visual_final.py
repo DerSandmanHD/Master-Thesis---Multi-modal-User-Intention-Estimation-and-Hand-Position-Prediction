@@ -38,19 +38,35 @@ def test_row(label: str, seed: int, run_dir: Path) -> dict:
     metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
     if metrics.get("test_evaluation_skipped") is not False:
         raise ValueError(f"final test evaluation not declared: {run_dir}")
-    test = metrics["test"]["best_intention"]
+    intention_test = metrics["test"]["best_intention"]
+    pose_test = metrics["test"]["best_pose"]
     return {
         "variant": label,
         "seed": seed,
         "run_dir": str(run_dir),
-        "test_intention_macro_f1": float(test["intention"]["macro_f1"]),
-        "test_intention_accuracy": float(test["intention"]["accuracy"]),
-        "test_receiving_hand_macro_f1": float(
-            test["receiving_hand"]["macro_f1_supported"]
+        "test_intention_macro_f1": float(
+            intention_test["intention"]["macro_f1"]
         ),
-        "test_pose_mae_cm": float(test["pose_oracle"]["position_mae_cm"]),
+        "test_intention_accuracy": float(
+            intention_test["intention"]["accuracy"]
+        ),
+        "test_receiving_hand_macro_f1": float(
+            intention_test["receiving_hand"]["macro_f1_supported"]
+        ),
+        "test_pose_mae_cm": float(
+            pose_test["pose_oracle"]["position_mae_cm"]
+        ),
         "test_pose_end_to_end_mae_cm": float(
-            test["pose_end_to_end"]["position_mae_cm"]
+            pose_test["pose_end_to_end"]["position_mae_cm"]
+        ),
+        "test_pose_at_intention_checkpoint_mae_cm": float(
+            intention_test["pose_oracle"]["position_mae_cm"]
+        ),
+        "test_pose_end_to_end_at_intention_checkpoint_mae_cm": float(
+            intention_test["pose_end_to_end"]["position_mae_cm"]
+        ),
+        "test_intention_macro_f1_at_pose_checkpoint": float(
+            pose_test["intention"]["macro_f1"]
         ),
         "trainable_parameters": int(metrics["trainable_parameters"]),
     }
@@ -66,6 +82,9 @@ def aggregate(frame: pd.DataFrame) -> pd.DataFrame:
             "test_receiving_hand_macro_f1",
             "test_pose_mae_cm",
             "test_pose_end_to_end_mae_cm",
+            "test_pose_at_intention_checkpoint_mae_cm",
+            "test_pose_end_to_end_at_intention_checkpoint_mae_cm",
+            "test_intention_macro_f1_at_pose_checkpoint",
             "trainable_parameters",
         ):
             row[f"{metric}_mean"] = float(group[metric].mean())
@@ -80,6 +99,8 @@ def aggregate(frame: pd.DataFrame) -> pd.DataFrame:
             "test_receiving_hand_macro_f1_mean",
             "test_pose_mae_cm_mean",
             "test_pose_end_to_end_mae_cm_mean",
+            "test_pose_at_intention_checkpoint_mae_cm_mean",
+            "test_pose_end_to_end_at_intention_checkpoint_mae_cm_mean",
             "trainable_parameters_mean",
         ):
             result[f"delta_{metric}_vs_sensor"] = result[metric] - baseline[metric]
@@ -95,7 +116,11 @@ def save_plot(summary: pd.DataFrame, output_dir: Path) -> None:
     for axis, metric, title in (
         (axes[0], "test_intention_macro_f1", "Test intention macro-F1"),
         (axes[1], "test_receiving_hand_macro_f1", "Test hand macro-F1"),
-        (axes[2], "test_pose_mae_cm", "Test pose MAE (cm; lower better)"),
+        (
+            axes[2],
+            "test_pose_mae_cm",
+            "Test pose MAE (best-pose checkpoint; cm; lower better)",
+        ),
     ):
         axis.bar(
             labels,
@@ -180,6 +205,11 @@ def main() -> int:
         "validation_selected_variant": selected,
         "selection_used_test_metrics": False,
         "test_access": "one final evaluation after the visual variant was frozen on validation",
+        "checkpoint_policy": {
+            "intention_and_hand": "best_intention checkpoint selected on validation",
+            "pose_mae": "best_pose checkpoint selected on validation",
+            "deployment_pose_also_reported": "pose at best_intention checkpoint",
+        },
         "new_visual_test_runs_required": selected != "sensor_baseline",
         "complete": complete,
         "errors": errors,

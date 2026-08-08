@@ -293,7 +293,9 @@ def plot_pareto(ranked: pd.DataFrame, figures_dir: Path) -> None:
         linewidth=1,
         label=f"best F1 - {F1_TOLERANCE:.3f}",
     )
-    axis.set_xlabel("Validation pose MAE (cm; lower is better)")
+    axis.set_xlabel(
+        "Validation pose MAE at best-intention checkpoint (cm; lower is better)"
+    )
     axis.set_ylabel("Validation intention macro-F1")
     axis.set_title("Residual-v2 hyperparameter search: validation Pareto view")
     axis.legend(loc="lower left")
@@ -418,6 +420,7 @@ def main() -> int:
         "selection_split": "validation",
         "test_metrics_forbidden": True,
         "f1_tolerance": F1_TOLERANCE,
+        "pose_tiebreak_checkpoint": "best_intention",
         "expected_trials": len(frame),
         "status_counts": status_counts,
         "complete": status_counts.get("completed", 0) == len(frame),

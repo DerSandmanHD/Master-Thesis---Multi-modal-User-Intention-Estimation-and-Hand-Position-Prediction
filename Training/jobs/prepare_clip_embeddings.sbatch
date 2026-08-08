@@ -13,7 +13,7 @@ set -euo pipefail
 REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
 IMAGE="$HOME/singularity/aria_master.simg"
 PYTHON_DEPS="$HOME/.cache/aria_python/open_clip_2_26_1"
-WEIGHTS_CACHE="$HOME/.cache/aria_torch/hub/checkpoints"
+WEIGHTS_CACHE="$HOME/.cache/clip"
 DATASET_TAG="${DATASET_TAG:-dataset_v2_20260802_n214_5d136a34}"
 SEQUENCE_FINGERPRINT="${SEQUENCE_FINGERPRINT:-5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd}"
 CACHE_DIR="Data_collection/visual_embeddings/clip_vit_b32_openai_5hz"

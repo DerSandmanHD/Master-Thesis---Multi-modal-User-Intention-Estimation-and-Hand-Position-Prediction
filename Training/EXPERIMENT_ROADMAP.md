@@ -365,13 +365,13 @@ Noch offen:
 
 ### Phase D – CLIP
 
-- [ ] Embeddingpipeline implementieren
+- [x] Embeddingpipeline implementieren
 - [ ] CLIP-only und multimodal+CLIP vergleichen
 - [ ] Entscheidung über finale Architektur treffen
 
 ### Phase E – qualitative und Laufzeitauswertung
 
-- [ ] Video-Overlay zunächst mit bestehendem Modell prototypisieren
+- [x] Video-Overlay zunächst mit bestehendem Modell prototypisieren
 - [ ] finales Video mit ausgewähltem Modell erzeugen
 - [ ] Latenzmessung auf Mac, Uni-Hardware und TCML durchführen
 

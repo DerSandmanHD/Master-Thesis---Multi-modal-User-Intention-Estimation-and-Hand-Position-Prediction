@@ -24,6 +24,7 @@ verschachtelte Run-Struktur automatisch. SLURM-Ausgaben landen gesammelt unter
 | `screen_visual_embeddings_residual_v2.sbatch` | CLIP-only, Sensor+CLIP und Random-Control auf Validation vergleichen |
 | `final_evaluate_visual_variant.sbatch` | nur die anhand Validation gewählte visuelle Variante testen |
 | `benchmark_latency_tcml.sbatch` | identisches Fenster auf TCML-CPU und -GPU messen |
+| `benchmark_ablation_latency_tcml.sbatch` | Full-Modell und vier Sensorablationen auf einem passenden realen Fenster auf TCML-CPU/GPU messen |
 | `export_predictions.sbatch` | Vorhersagen eines exakten Runs exportieren |
 
 Beispiel für den vollständigen Vergleich:

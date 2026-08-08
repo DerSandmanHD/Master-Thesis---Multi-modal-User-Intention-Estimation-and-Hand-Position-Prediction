@@ -97,8 +97,16 @@ Dateien und Abbildungen als PNG und PDF unter
   `no_objects`/`no_vio` inklusive Deltas und Effizienzindikatoren.
 - `summarize_visual_embedding_experiment.py`: Sensorbaseline, CLIP-only,
   Sensor+CLIP und dimensionsgleiche Random-Control, Auswahl nur auf Validation.
+- `summarize_visual_final.py`: einmaliger Testvergleich der auf Validation
+  eingefrorenen visuellen Variante mit dem getunten Sensormodell.
+- `summarize_tuned_residual.py`: gepaarter Drei-Seed-Testvergleich der
+  ursprünglichen und validation-ausgewählten Residual-v2-Konfiguration.
 - `summarize_latency.py`: identischer Checkpoint und identisches reales Fenster
   über Plattformen, mit Median, Mittelwert, SD, p95, p99, Durchsatz und CDF.
+- `summarize_ablation_latency.py`: TCML-CPU/GPU-Latenzwirkung der vier
+  Sensorablationen relativ zum Full-Modell.
+- `summarize_live_latency_logs.py`: explorative Host-Latenzverteilungen aus
+  vorhandenen Mac-Live-Sitzungen; ohne unzulässige Device-/Host-Uhrsubtraktion.
 
 Qualitative Vorhersagen werden mit `export_residual_predictions.py` exportiert.
 `render_prediction_overlay.py` erzeugt daraus synchronisierte MP4s und

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "platform": "Mac host used for recorded Aria live sessions",
+  "sessions": [
+    "Training/live_runs/dataset_v2_20260802_n214_5d136a34/live_test_seed43_01/predictions.jsonl",
+    "Training/live_runs/dataset_v2_20260802_n214_5d136a34/old_script_test/predictions.jsonl",
+    "Training/live_runs/dataset_v2_20260802_n214_5d136a34/original_live_script/predictions.jsonl"
+  ],
+  "records": 1116,
+  "scope": "exploratory_existing_sessions",
+  "final_tuned_model_claimed": false,
+  "capture_to_host_latency_available": false,
+  "capture_to_host_limitation": "Device and host clocks have no validated mapping; they are not subtracted.",
+  "summary_csv": "Training/reports/latency/existing_mac_live/live_latency_summary.csv"
+}

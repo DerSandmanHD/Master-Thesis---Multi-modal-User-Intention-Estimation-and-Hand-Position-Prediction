@@ -25,6 +25,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--checkpoint", default="best_intention_model.pt")
+    parser.add_argument(
+        "--master-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Override data.master_dir from the saved run config. This keeps "
+            "cluster-trained runs exportable after they are copied elsewhere."
+        ),
+    )
     parser.add_argument("--split", choices=("train", "validation", "test"), default="test")
     parser.add_argument("--sequence", action="append", default=[])
     parser.add_argument("--output-csv", type=Path, required=True)
@@ -75,7 +84,11 @@ def main() -> int:
     checkpoint_path = run_dir / args.checkpoint
     config = json.loads(config_path.read_text(encoding="utf-8"))
     data_config = dict(config["data"])
-    master_dir = Path(data_config["master_dir"]).expanduser()
+    master_dir = (
+        resolve(args.master_dir).resolve()
+        if args.master_dir is not None
+        else Path(data_config["master_dir"]).expanduser()
+    )
     if not master_dir.is_absolute():
         master_dir = PROJECT_ROOT / master_dir
     data_config["master_dir"] = str(master_dir)

@@ -26,7 +26,7 @@ verschachtelte Run-Struktur automatisch. SLURM-Ausgaben landen gesammelt unter
 | `benchmark_latency_tcml.sbatch` | identisches Fenster auf TCML-CPU und -GPU messen |
 | `benchmark_ablation_latency_tcml.sbatch` | Full-Modell und vier Sensorablationen auf einem passenden realen Fenster auf TCML-CPU/GPU messen |
 | `benchmark_clip_latency_tcml.sbatch` | RGB-Preprocessing und frozen CLIP ViT-B/32 auf TCML-CPU/GPU messen |
-| `export_predictions.sbatch` | Vorhersagen eines exakten Runs exportieren |
+| `export_predictions.sbatch` | Residual-v2-Vorhersagen eines exakten Runs und Checkpoints exportieren |
 
 Beispiel für den vollständigen Vergleich:
 
@@ -48,6 +48,15 @@ Die Jobs für Hyperparameter- und visuelle Variantensuche übergeben
 `--skip-test-evaluation`. Ihre Resume-Prüfung verwirft Runs, die Testmetriken
 enthalten. Erst die jeweiligen `final_evaluate_*.sbatch`-Jobs führen nach der
 Validation-Auswahl die Testauswertung aus.
+
+Der qualitative Exportjob verwendet standardmäßig den validation-ausgewählten
+`best_intention_model.pt` und schreibt `test_predictions.csv` sowie
+`test_predictions.json` direkt in das angegebene Run-Verzeichnis. Ein anderer
+Checkpoint, Split oder Zielpfad muss explizit über `CHECKPOINT`, `SPLIT`,
+`OUTPUT_CSV` beziehungsweise `REPORT_OUT` gesetzt werden.
+`MASTER_DIR` (standardmäßig `Data_collection/master_datasets`) überschreibt
+zusätzlich einen nicht portablen absoluten Pfad aus der gespeicherten
+Run-Konfiguration.
 
 ## CLIP-Abhängigkeiten
 

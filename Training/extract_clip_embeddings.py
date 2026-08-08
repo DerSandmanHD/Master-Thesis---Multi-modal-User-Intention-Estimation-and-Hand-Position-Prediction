@@ -10,6 +10,7 @@ import json
 import os
 import platform
 import sys
+import time
 import types
 from datetime import datetime, timezone
 from pathlib import Path
@@ -186,6 +187,7 @@ def extract_video(
     sample_hz: float,
     common_metadata: dict,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
+    processing_started = time.perf_counter()
     master_timestamps, master_elapsed = load_master_clock(master_path)
     capture = cv2.VideoCapture(str(video_path))
     if not capture.isOpened():
@@ -251,6 +253,7 @@ def extract_video(
     sync_error_ms = sync_error_ms[unique]
     if np.any(sync_error_ms < -1e-6):
         raise ValueError(f"Non-causal video/master alignment in {sequence_id}")
+    processing_wall_seconds = time.perf_counter() - processing_started
 
     metadata = {
         **common_metadata,
@@ -271,6 +274,13 @@ def extract_video(
         "alignment_error_ms_mean": float(sync_error_ms.mean()),
         "alignment_error_ms_max": float(sync_error_ms.max()),
         "future_frame_matches": int((sync_error_ms < -1e-6).sum()),
+        "decode_preprocess_encoder_wall_seconds": processing_wall_seconds,
+        "embeddings_per_processing_second": float(
+            len(embeddings) / processing_wall_seconds
+        ),
+        "source_duration_to_processing_wall_ratio": float(
+            master_elapsed[-1] / processing_wall_seconds
+        ),
     }
     return timestamps, frame_times, embeddings, metadata
 
@@ -367,6 +377,8 @@ def main() -> int:
         "output_normalization": "L2",
         "sampling_hz": float(args.sample_hz),
         "frozen": True,
+        "parameter_count": int(sum(parameter.numel() for parameter in model.parameters())),
+        "trainable_parameters": 0,
     }
     encoder_fingerprint = canonical_json_hash(encoder)
     common_metadata = {
@@ -449,9 +461,25 @@ def main() -> int:
                 "embedding_dim": int(embeddings.shape[1]),
                 "first_timestamp_ns": int(timestamps[0]),
                 "last_timestamp_ns": int(timestamps[-1]),
+                "decode_preprocess_encoder_wall_seconds": metadata.get(
+                    "decode_preprocess_encoder_wall_seconds"
+                ),
+                "embeddings_per_processing_second": metadata.get(
+                    "embeddings_per_processing_second"
+                ),
             }
         except Exception as exc:
             errors[sequence_id] = f"{type(exc).__name__}: {exc}"
+    timed_entries = [
+        entry
+        for entry in entries.values()
+        if entry.get("decode_preprocess_encoder_wall_seconds") is not None
+    ]
+    total_processing_seconds = sum(
+        float(entry["decode_preprocess_encoder_wall_seconds"])
+        for entry in timed_entries
+    )
+    total_timed_embeddings = sum(int(entry["samples"]) for entry in timed_entries)
     manifest = {
         "schema_version": VISUAL_CACHE_SCHEMA_VERSION,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -462,6 +490,17 @@ def main() -> int:
         "sequence_fingerprint": fingerprint,
         "entries": dict(sorted(entries.items())),
         "errors": dict(sorted(errors.items())),
+        "extraction_performance": {
+            "scope": "video_decode_plus_preprocess_plus_frozen_encoder; excludes NPZ write",
+            "timed_sequences": len(timed_entries),
+            "timed_embeddings": total_timed_embeddings,
+            "wall_seconds_sum": total_processing_seconds,
+            "embeddings_per_second": (
+                total_timed_embeddings / total_processing_seconds
+                if total_processing_seconds > 0
+                else None
+            ),
+        },
     }
     (output_dir / "cache_manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",

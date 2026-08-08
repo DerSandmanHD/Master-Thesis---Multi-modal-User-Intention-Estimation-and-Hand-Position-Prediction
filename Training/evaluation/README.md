@@ -105,6 +105,8 @@ Dateien und Abbildungen als PNG und PDF unter
   über Plattformen, mit Median, Mittelwert, SD, p95, p99, Durchsatz und CDF.
 - `summarize_ablation_latency.py`: TCML-CPU/GPU-Latenzwirkung der vier
   Sensorablationen relativ zum Full-Modell.
+- `summarize_clip_latency.py`: frozen CLIP-Encoder und vollständige
+  RGB-zu-Embedding-Pipeline, getrennt vom temporalen Residual-Transformer.
 - `summarize_live_latency_logs.py`: explorative Host-Latenzverteilungen aus
   vorhandenen Mac-Live-Sitzungen; ohne unzulässige Device-/Host-Uhrsubtraktion.
 

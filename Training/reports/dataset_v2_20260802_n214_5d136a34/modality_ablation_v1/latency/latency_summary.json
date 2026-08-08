@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "experiment_tag": "modality_ablation_v1",
+  "complete": true,
+  "variants": [
+    "full",
+    "no_gaze",
+    "no_hands",
+    "no_objects",
+    "no_vio"
+  ],
+  "platforms": [
+    "tcml_cpu",
+    "tcml_cuda"
+  ],
+  "same_source_window": true,
+  "source_window": {
+    "sequence_id": "Edu_10_20260616_150412",
+    "participant": "Edu",
+    "timestamp_ns": 3106145555000,
+    "source_index": 0
+  },
+  "dataset_content_fingerprints_by_variant": {
+    "full": "51f01625e3ae41b7b76abfc59ca5ddd8ef1146e32cef6c21643684cc639c9c97",
+    "no_gaze": "3ca07672120d35b44d8722d0b7b6daae092bdfb1150f9849ba2fdb01807eeea3",
+    "no_hands": "d08918379028e58896b3a33c224d853a7829d6b7a5ed5ced0ff1533c58d58769",
+    "no_objects": "01337e53b15ead7bd633770ae6cbbe44a38f18da04a423de7c788208efb6715f",
+    "no_vio": "76d13e35b8ca29b76458bc278f9f11fc0aadca5ba033dd68436ae1e337ddcb93"
+  },
+  "fingerprint_interpretation": "Fingerprints are expected to differ across ablations because the feature schema changes; CPU and CUDA must agree within each variant.",
+  "protocol": [
+    1,
+    100,
+    1000,
+    true,
+    33.333333333333336
+  ],
+  "errors": []
+}

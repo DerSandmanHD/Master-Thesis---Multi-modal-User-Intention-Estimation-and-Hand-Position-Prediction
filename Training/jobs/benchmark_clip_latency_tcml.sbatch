@@ -15,11 +15,15 @@ IMAGE="$HOME/singularity/aria_master.simg"
 PYTHON_DEPS="$HOME/.cache/aria_python/open_clip_2_26_1"
 WEIGHTS_CACHE="$HOME/.cache/clip"
 WEIGHTS_SHA256="40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af"
-VIDEO="${VIDEO:-Data_collection/Data_mp4/Angelina_10_20260715_153801.mp4}"
 OUTPUT_DIR="${OUTPUT_DIR:-Training/reports/latency/clip_vit_b32_openai_5hz}"
+RGB_FIXTURE="${RGB_FIXTURE:-${OUTPUT_DIR}/rgb_fixture.npz}"
 
 cd "$REPO_DIR"
 mkdir -p "$OUTPUT_DIR" Training/slurm_logs
+[[ -f "$RGB_FIXTURE" ]] || {
+    echo "Pinned RGB fixture is missing: $RGB_FIXTURE" >&2
+    exit 2
+}
 for DEVICE in cpu cuda; do
     NV_ARGS=()
     if [[ "$DEVICE" == "cuda" ]]; then
@@ -28,7 +32,7 @@ for DEVICE in cpu cuda; do
     singularity exec "${NV_ARGS[@]}" "$IMAGE" \
         env PYTHONPATH="$PYTHON_DEPS" \
         python3 Training/benchmark_clip_latency.py \
-        --video "$VIDEO" \
+        --rgb-fixture "$RGB_FIXTURE" \
         --output "$OUTPUT_DIR/tcml_${DEVICE}.json" \
         --model-name ViT-B-32 \
         --pretrained openai \

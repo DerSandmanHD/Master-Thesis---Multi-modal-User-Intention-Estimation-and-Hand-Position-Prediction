@@ -40,6 +40,8 @@ def main() -> int:
     rows = []
     errors = []
     weights_hashes = set()
+    fixture_hashes = set()
+    video_hashes = set()
     frame_hashes = set()
     protocols = set()
     for path in sorted(input_dir.glob("*.json")):
@@ -50,6 +52,8 @@ def main() -> int:
             if report.get("status") != "completed":
                 raise ValueError(report.get("reason", "benchmark incomplete"))
             weights_hashes.add(report["encoder"]["weights_sha256"])
+            fixture_hashes.add(report["source"]["rgb_fixture_sha256"])
+            video_hashes.add(report["source"]["source_video_sha256"])
             frame_hashes.add(report["source"]["decoded_rgb_sha256"])
             protocol = report["protocol"]
             protocols.add(
@@ -85,6 +89,10 @@ def main() -> int:
             errors.append(f"{path.name}: {type(exc).__name__}: {exc}")
     if len(weights_hashes) > 1:
         errors.append("Platforms used different CLIP weights")
+    if len(fixture_hashes) > 1:
+        errors.append("Platforms used different RGB fixture files")
+    if len(video_hashes) > 1:
+        errors.append("RGB fixtures refer to different source videos")
     if len(frame_hashes) > 1:
         errors.append("Platforms used different decoded RGB frames")
     if len(protocols) > 1:
@@ -125,6 +133,8 @@ def main() -> int:
         "complete": complete,
         "platforms": frame["platform"].tolist() if not frame.empty else [],
         "identical_weights_sha256": next(iter(weights_hashes), None),
+        "identical_rgb_fixture_sha256": next(iter(fixture_hashes), None),
+        "identical_source_video_sha256": next(iter(video_hashes), None),
         "identical_decoded_rgb_sha256": next(iter(frame_hashes), None),
         "protocol": list(next(iter(protocols))) if len(protocols) == 1 else None,
         "errors": errors,

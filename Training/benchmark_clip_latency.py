@@ -11,7 +11,6 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-import cv2
 import numpy as np
 import torch
 from PIL import Image
@@ -25,7 +24,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--video", type=Path, required=True)
+    parser.add_argument("--rgb-fixture", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model-name", default="ViT-B-32")
     parser.add_argument("--pretrained", default="openai")
@@ -56,15 +55,19 @@ def resolve(path: Path) -> Path:
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
-def first_rgb_frame(path: Path) -> np.ndarray:
-    capture = cv2.VideoCapture(str(path))
-    if not capture.isOpened():
-        raise RuntimeError(f"Could not open video: {path}")
-    ok, frame = capture.read()
-    capture.release()
-    if not ok:
-        raise RuntimeError(f"Could not decode first frame: {path}")
-    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+def load_rgb_fixture(path: Path) -> tuple[np.ndarray, dict]:
+    with np.load(path, allow_pickle=False) as archive:
+        rgb = archive["rgb"]
+        metadata = json.loads(str(archive["metadata_json"].item()))
+    if rgb.dtype != np.uint8 or rgb.ndim != 3 or rgb.shape[2] != 3:
+        raise ValueError(f"Invalid RGB fixture shape or dtype: {rgb.shape}/{rgb.dtype}")
+    rgb = np.ascontiguousarray(rgb)
+    actual_hash = hashlib.sha256(rgb.tobytes()).hexdigest()
+    if metadata.get("decoded_rgb_sha256") != actual_hash:
+        raise ValueError("RGB fixture pixel hash does not match its metadata")
+    if metadata.get("decoded_rgb_shape") != list(rgb.shape):
+        raise ValueError("RGB fixture shape does not match its metadata")
+    return rgb, metadata
 
 
 def timed_loop(callback, *, warmup: int, repeats: int, device: torch.device) -> list[float]:
@@ -129,7 +132,7 @@ def main() -> int:
     except ImportError as exc:
         raise RuntimeError("open_clip is required for the CLIP benchmark") from exc
 
-    video = resolve(args.video).resolve()
+    rgb_fixture = resolve(args.rgb_fixture).resolve()
     output = resolve(args.output).resolve()
     weights_cache = resolve(args.weights_cache_dir).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -158,7 +161,7 @@ def main() -> int:
     model.eval()
     synchronize(device)
     load_time_ms = (time.perf_counter_ns() - load_started) / 1e6
-    rgb = first_rgb_frame(video)
+    rgb, fixture_metadata = load_rgb_fixture(rgb_fixture)
     frame_sha256 = hashlib.sha256(rgb.tobytes()).hexdigest()
     preprocessed = preprocess(Image.fromarray(rgb)).unsqueeze(0).to(device)
 
@@ -225,10 +228,9 @@ def main() -> int:
             "load_time_ms": load_time_ms,
         },
         "source": {
-            "video": str(video),
-            "video_sha256": sha256_file(video),
-            "frame_index": 0,
-            "decoded_rgb_shape": list(rgb.shape),
+            "rgb_fixture": str(rgb_fixture),
+            "rgb_fixture_sha256": sha256_file(rgb_fixture),
+            **fixture_metadata,
             "decoded_rgb_sha256": frame_sha256,
         },
         "preprocessing_cpu": summarize(preprocessing_ms, args.visual_update_budget_ms),

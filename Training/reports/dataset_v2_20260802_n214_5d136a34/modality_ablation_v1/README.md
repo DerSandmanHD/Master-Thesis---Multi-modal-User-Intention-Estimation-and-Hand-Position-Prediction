@@ -1,8 +1,8 @@
 # Sensor-Modalitätsablation Residual v2 (`n214`)
 
-Status: vollständig, 12/12 Läufe erfolgreich
+Status: vollständig, 12/12 Trainingsläufe und 10/10 Latenzmessungen erfolgreich
 
-SLURM-Job: `2204078`
+SLURM-Jobs: Training `2204078`, Latenz `2204124`
 
 Seeds: 42, 43, 44
 
@@ -46,8 +46,29 @@ einen neuen Holdout oder ein verschachteltes Cross-Validation-Protokoll.
 
 Die Trainingslaufzeit der älteren Full-Baseline wurde im damaligen
 `metrics.json` noch nicht gespeichert und ist deshalb im Effizienzdiagramm als
-`n/a` markiert. Parameterzahlen sind vollständig; echte CPU-/GPU-Latenzen
-werden separat mit einem identischen 100/1000-Benchmarkprotokoll gemessen.
+`n/a` markiert. Parameterzahlen sind vollständig.
+
+## Parameter und Modelllatenz
+
+Alle Varianten wurden anschließend auf demselben realen Testfenster
+`Edu_10_20260616_150412`, Timestamp `3106145555000`, mit Batchgröße 1, 100
+Warm-ups und 1.000 synchronisierten Messungen geprüft. Die verschiedenen
+Dataset-Fingerprints sind beabsichtigt: Sie kodieren die jeweils entfernten
+Feature-Spalten; Sequenz, Timestamp und Split-Index stimmen überein.
+
+| Variante | Parameter | TCML CPU Median | TCML CUDA Median |
+|---|---:|---:|---:|
+| Full | 184.015 | 2,873 ms | 3,230 ms |
+| ohne Gaze | 176.847 | 2,826 ms | 3,750 ms |
+| ohne Hände | 179.407 | 2,858 ms | 3,723 ms |
+| ohne Objekte | 170.191 | 2,563 ms | 3,317 ms |
+| ohne VIO | 181.711 | 2,849 ms | 3,575 ms |
+
+Alle 10.000 Forward-Messungen blieben unter der vorab festgelegten
+33,33-ms-Grenze; das höchste P95 beträgt 4,292 ms. Dass CUDA bei diesen sehr
+kleinen Modellen und Batchgröße 1 nicht schneller ist, ist plausibel durch
+Kernel-Start- und Synchronisationskosten und keine allgemeine Aussage gegen
+GPU-Inferenz.
 
 Maschinenlesbare Quellen:
 
@@ -56,3 +77,6 @@ Maschinenlesbare Quellen:
 - `data/ablation_summary.csv`
 - `figures/01_sensor_ablation_metrics.{png,pdf}`
 - `figures/02_sensor_ablation_efficiency.{png,pdf}`
+- `latency/ablation_latency_summary.csv`
+- `latency/latency_summary.json`
+- `latency/figures/01_ablation_latency.{png,pdf}`

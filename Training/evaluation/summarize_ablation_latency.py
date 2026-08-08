@@ -44,6 +44,9 @@ def main() -> int:
     errors = []
     protocols = set()
     source_windows = set()
+    dataset_fingerprints: dict[str, set[str]] = {
+        variant: set() for variant in VARIANTS
+    }
     for variant in VARIANTS:
         for platform_name in PLATFORMS:
             path = output / variant / f"{platform_name}.json"
@@ -64,10 +67,14 @@ def main() -> int:
                 fixture = report["fixture_metadata"]
                 source_windows.add(
                     (
-                        fixture["dataset_content_fingerprint"],
                         fixture["sequence_id"],
+                        fixture["participant"],
                         int(fixture["timestamp_ns"]),
+                        int(fixture["source_index"]),
                     )
+                )
+                dataset_fingerprints[variant].add(
+                    fixture["dataset_content_fingerprint"]
                 )
                 row = {
                     "variant": variant,
@@ -97,6 +104,11 @@ def main() -> int:
         errors.append("Measurements do not share one timing protocol")
     if len(source_windows) > 1:
         errors.append("Fixtures do not represent the same dataset window")
+    for variant, fingerprints in dataset_fingerprints.items():
+        if len(fingerprints) != 1:
+            errors.append(
+                f"{variant} does not use one consistent dataset fingerprint"
+            )
     frame = pd.DataFrame(rows)
     if not frame.empty:
         for platform_name, group in frame.groupby("platform"):
@@ -144,7 +156,24 @@ def main() -> int:
         "variants": list(VARIANTS),
         "platforms": list(PLATFORMS),
         "same_source_window": len(source_windows) == 1,
-        "source_window": list(next(iter(source_windows))) if len(source_windows) == 1 else None,
+        "source_window": (
+            dict(
+                zip(
+                    ("sequence_id", "participant", "timestamp_ns", "source_index"),
+                    next(iter(source_windows)),
+                )
+            )
+            if len(source_windows) == 1
+            else None
+        ),
+        "dataset_content_fingerprints_by_variant": {
+            variant: next(iter(fingerprints), None)
+            for variant, fingerprints in dataset_fingerprints.items()
+        },
+        "fingerprint_interpretation": (
+            "Fingerprints are expected to differ across ablations because the "
+            "feature schema changes; CPU and CUDA must agree within each variant."
+        ),
         "protocol": list(next(iter(protocols))) if len(protocols) == 1 else None,
         "errors": errors,
     }

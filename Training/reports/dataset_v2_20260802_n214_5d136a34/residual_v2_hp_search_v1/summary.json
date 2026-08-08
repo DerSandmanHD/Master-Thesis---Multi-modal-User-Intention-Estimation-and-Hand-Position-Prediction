@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "experiment_tag": "residual_v2_hp_search_v1",
+  "manifest": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/configs/hyperparameter_search_v1/manifest.json",
+  "runs_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_hp_search_v1",
+  "selection_split": "validation",
+  "test_metrics_forbidden": true,
+  "f1_tolerance": 0.005,
+  "pose_tiebreak_checkpoint": "best_intention",
+  "expected_trials": 24,
+  "status_counts": {
+    "completed": 24
+  },
+  "complete": true,
+  "selected_for_confirmation": [
+    "trial_022",
+    "trial_001",
+    "trial_020"
+  ],
+  "winner_if_search_stopped_now": {
+    "rank": 1,
+    "trial_index": 22,
+    "trial_tag": "trial_022",
+    "status": "completed",
+    "error": "",
+    "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_hp_search_v1/trial_022/residual_v2_hp_search_v1_trial_022_seed42",
+    "config_sha256": "e677366cb41e06f7f3698f93b2b116560533198dc8aee7aa7d91669b2e336482",
+    "learning_rate": 0.000381605632501,
+    "weight_decay": 0.0001,
+    "dropout": 0.15,
+    "d_model": 32,
+    "nhead": 8,
+    "num_layers": 1,
+    "dim_feedforward": 256,
+    "batch_size": 64,
+    "orientation_loss_weight": 0.5,
+    "receiving_hand_loss_weight": 2.0,
+    "validation_intention_macro_f1": 0.9338260148819328,
+    "validation_intention_accuracy": 0.9539939165115356,
+    "validation_receiving_hand_macro_f1": 0.9984825493171472,
+    "validation_pose_mae_cm": 8.81955337524414,
+    "validation_pose_end_to_end_mae_cm": 8.853493690490723,
+    "best_intention_epoch": 10,
+    "trainable_parameters": 63023,
+    "wall_seconds": 561.9061286710203,
+    "git_commit": "7d168e7aecd3796b80de67475517bf721396bf87",
+    "git_dirty": true,
+    "dataset_content_fingerprint": "51f01625e3ae41b7b76abfc59ca5ddd8ef1146e32cef6c21643684cc639c9c97",
+    "within_f1_tolerance": true,
+    "selected_for_confirmation": true
+  }
+}

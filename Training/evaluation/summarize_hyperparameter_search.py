@@ -308,7 +308,17 @@ def plot_parameter_effects(ranked: pd.DataFrame, figures_dir: Path) -> None:
         return
     figure, axes = plt.subplots(2, 5, figsize=(18, 8))
     for axis, parameter in zip(axes.flat, PARAMETERS):
-        values = ranked[parameter].to_numpy(dtype=float)
+        raw_values = ranked[parameter].to_numpy(dtype=float)
+        if parameter == "weight_decay":
+            categories = sorted(set(raw_values))
+            category_index = {
+                value: index for index, value in enumerate(categories)
+            }
+            values = np.asarray(
+                [category_index[value] for value in raw_values], dtype=float
+            )
+        else:
+            values = raw_values
         axis.scatter(
             values,
             ranked["validation_intention_macro_f1"],
@@ -321,6 +331,11 @@ def plot_parameter_effects(ranked: pd.DataFrame, figures_dir: Path) -> None:
         axis.set_ylabel("val intent macro-F1")
         if parameter == "learning_rate":
             axis.set_xscale("log")
+        elif parameter == "weight_decay":
+            axis.set_xticks(
+                range(len(categories)),
+                ["0" if value == 0 else f"{value:.0e}" for value in categories],
+            )
         axis.grid(alpha=0.2)
     figure.suptitle(
         "Stage-A hyperparameters versus validation intention macro-F1\n"

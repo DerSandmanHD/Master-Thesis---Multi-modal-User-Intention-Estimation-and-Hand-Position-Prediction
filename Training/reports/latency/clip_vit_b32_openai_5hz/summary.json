@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "complete": true,
+  "platforms": [
+    "mac_cpu",
+    "mac_mps",
+    "tcml_cpu",
+    "tcml_cuda"
+  ],
+  "identical_weights_sha256": "40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af",
+  "identical_rgb_fixture_sha256": "aeb0c8a9e62ab36f494f02a1d248cb8e315643223948c3a27db3e6175ca995cd",
+  "identical_source_video_sha256": "8fd29091b022a530b4f8f185fd01339bc71e8ad6ea6cda79039f08874d85c722",
+  "identical_decoded_rgb_sha256": "758350289ecae269d84f1f618e9adbdfcc38afc7e86679e372958e3a78740a83",
+  "protocol": [
+    1,
+    100,
+    1000,
+    5.0,
+    200.0
+  ],
+  "errors": [],
+  "scope": "CLIP cost is separate from the temporal residual transformer; cached-embedding training does not include this live RGB cost."
+}

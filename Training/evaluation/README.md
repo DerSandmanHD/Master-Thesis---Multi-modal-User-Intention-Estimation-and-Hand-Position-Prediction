@@ -93,6 +93,9 @@ Dateien und Abbildungen als PNG und PDF unter
   Parametereffekte und Parallel Coordinates, ausschließlich Validation.
 - `summarize_hyperparameter_confirmation.py`: Mittelwert/Standardabweichung der
   Top-3-Konfigurationen über Seeds 42/43/44 und eingefrorene finale Config.
+- `freeze_visual_configs.py`: überträgt genau diese validation-ausgewählten
+  Sensorhyperparameter auf CLIP-only, Sensor+CLIP und Random-Control und hält
+  dabei die visuellen Datenblöcke sowie ihre Provenienz fest.
 - `summarize_modality_ablation.py`: Full-vs.-`no_gaze`/`no_hands`/
   `no_objects`/`no_vio` inklusive Deltas und Effizienzindikatoren.
 - `summarize_visual_embedding_experiment.py`: Sensorbaseline, CLIP-only,

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import hashlib
 import json
 import time
@@ -29,6 +30,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model-name", default="ViT-B-32")
     parser.add_argument("--pretrained", default="openai")
     parser.add_argument("--weights-cache-dir", type=Path, required=True)
+    parser.add_argument(
+        "--expected-weights-sha256",
+        required=True,
+        help=(
+            "Pinned SHA-256; the local checkpoint must match before it is "
+            "deserialized."
+        ),
+    )
     parser.add_argument("--device", choices=("cpu", "cuda", "mps"), required=True)
     parser.add_argument("--warmup", type=int, default=100)
     parser.add_argument("--repeats", type=int, default=1000)
@@ -72,6 +81,36 @@ def timed_loop(callback, *, warmup: int, repeats: int, device: torch.device) -> 
     return values
 
 
+@contextmanager
+def trusted_torchscript_checkpoint(checkpoint_path: Path):
+    """Allow one hash-checked TorchScript checkpoint on PyTorch >= 2.6.
+
+    OpenCLIP 2.26.1 calls ``torch.load`` without an explicit ``weights_only``
+    value. PyTorch 2.6 changed that default to ``True``, which rejects the
+    official OpenAI TorchScript archive before OpenCLIP can extract its state
+    dict. Limit the compatibility override to the exact resolved checkpoint;
+    all other ``torch.load`` calls keep PyTorch's default behavior.
+    """
+
+    original_torch_load = torch.load
+    trusted_path = checkpoint_path.resolve()
+
+    def load_trusted_path(path, *args, **kwargs):
+        try:
+            candidate = Path(path).expanduser().resolve()
+        except TypeError:
+            candidate = None
+        if candidate == trusted_path:
+            kwargs.setdefault("weights_only", False)
+        return original_torch_load(path, *args, **kwargs)
+
+    torch.load = load_trusted_path
+    try:
+        yield
+    finally:
+        torch.load = original_torch_load
+
+
 def main() -> int:
     args = parse_args()
     if (
@@ -102,13 +141,20 @@ def main() -> int:
     checkpoint_path = Path(
         open_clip.download_pretrained(pretrained_config, cache_dir=str(weights_cache))
     )
+    weights_sha256 = sha256_file(checkpoint_path)
+    if weights_sha256.lower() != args.expected_weights_sha256.lower():
+        raise RuntimeError(
+            "Pinned CLIP checkpoint hash mismatch: "
+            f"expected {args.expected_weights_sha256}, got {weights_sha256}"
+        )
     load_started = time.perf_counter_ns()
-    model, _, preprocess = open_clip.create_model_and_transforms(
-        args.model_name,
-        pretrained=str(checkpoint_path),
-        device=device,
-        cache_dir=str(weights_cache),
-    )
+    with trusted_torchscript_checkpoint(checkpoint_path):
+        model, _, preprocess = open_clip.create_model_and_transforms(
+            args.model_name,
+            pretrained=str(checkpoint_path),
+            device=device,
+            cache_dir=str(weights_cache),
+        )
     model.eval()
     synchronize(device)
     load_time_ms = (time.perf_counter_ns() - load_started) / 1e6
@@ -169,7 +215,10 @@ def main() -> int:
             "model_name": args.model_name,
             "pretrained": args.pretrained,
             "weights": str(checkpoint_path),
-            "weights_sha256": sha256_file(checkpoint_path),
+            "weights_sha256": weights_sha256,
+            "expected_weights_sha256": args.expected_weights_sha256,
+            "hash_verified_before_deserialization": True,
+            "torchscript_weights_only_compatibility_override": True,
             "frozen": True,
             "parameter_count": int(sum(parameter.numel() for parameter in model.parameters())),
             "trainable_parameters": 0,

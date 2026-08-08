@@ -14,6 +14,7 @@ REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-P
 IMAGE="$HOME/singularity/aria_master.simg"
 PYTHON_DEPS="$HOME/.cache/aria_python/open_clip_2_26_1"
 WEIGHTS_CACHE="$HOME/.cache/clip"
+WEIGHTS_SHA256="40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af"
 VIDEO="${VIDEO:-Data_collection/Data_mp4/Angelina_10_20260715_153801.mp4}"
 OUTPUT_DIR="${OUTPUT_DIR:-Training/reports/latency/clip_vit_b32_openai_5hz}"
 
@@ -32,6 +33,7 @@ for DEVICE in cpu cuda; do
         --model-name ViT-B-32 \
         --pretrained openai \
         --weights-cache-dir "$WEIGHTS_CACHE" \
+        --expected-weights-sha256 "$WEIGHTS_SHA256" \
         --device "$DEVICE" \
         --cpu-threads 4 \
         --warmup 100 \

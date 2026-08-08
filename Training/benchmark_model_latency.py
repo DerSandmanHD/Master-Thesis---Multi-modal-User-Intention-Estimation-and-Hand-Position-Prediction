@@ -33,6 +33,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warmup", type=int, default=100)
     parser.add_argument("--repeats", type=int, default=1000)
     parser.add_argument("--cpu-threads", type=int, default=1)
+    parser.add_argument(
+        "--realtime-threshold-ms",
+        type=float,
+        default=1000.0 / 30.0,
+        help="Predeclared real-time budget; default is one 30-Hz frame.",
+    )
     return parser.parse_args()
 
 
@@ -52,7 +58,7 @@ def percentile(values: list[float], quantile: float) -> float:
     return float(np.percentile(np.asarray(values, dtype=np.float64), quantile))
 
 
-def summarize(values: list[float]) -> dict:
+def summarize(values: list[float], realtime_threshold_ms: float) -> dict:
     return {
         "samples": len(values),
         "mean_ms": float(statistics.fmean(values)),
@@ -63,6 +69,10 @@ def summarize(values: list[float]) -> dict:
         "min_ms": float(min(values)),
         "max_ms": float(max(values)),
         "throughput_windows_per_second": 1000.0 / statistics.fmean(values),
+        "realtime_threshold_ms": realtime_threshold_ms,
+        "fraction_within_realtime_threshold": float(
+            np.mean(np.asarray(values, dtype=np.float64) <= realtime_threshold_ms)
+        ),
     }
 
 
@@ -172,8 +182,13 @@ def hardware_metadata(device: torch.device) -> dict:
 
 def main() -> int:
     args = parse_args()
-    if args.warmup < 0 or args.repeats <= 0 or args.cpu_threads <= 0:
-        raise ValueError("warmup, repeats, and cpu-threads are invalid")
+    if (
+        args.warmup < 0
+        or args.repeats <= 0
+        or args.cpu_threads <= 0
+        or args.realtime_threshold_ms <= 0
+    ):
+        raise ValueError("warmup, repeats, cpu-threads, or threshold are invalid")
     output = resolve(args.output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     available, reason = device_available(args.device)
@@ -252,6 +267,7 @@ def main() -> int:
             "repeats": args.repeats,
             "synchronize_before_and_after_each_measurement": True,
             "cpu_threads": args.cpu_threads,
+            "realtime_threshold_ms": args.realtime_threshold_ms,
         },
         "hardware": hardware_metadata(device),
         "artifacts_dir": str(artifacts),
@@ -267,8 +283,8 @@ def main() -> int:
             "trainable_parameters": sum(p.numel() for p in model.parameters() if p.requires_grad),
             "load_time_ms": load_time_ms,
         },
-        "model_forward": summarize(forward_values),
-        "offline_window": summarize(offline_values),
+        "model_forward": summarize(forward_values, args.realtime_threshold_ms),
+        "offline_window": summarize(offline_values, args.realtime_threshold_ms),
         "peak_memory": peak_memory,
         "raw_model_forward_ms": forward_values,
         "raw_offline_window_ms": offline_values,

@@ -58,6 +58,7 @@ def main() -> int:
                         int(protocol["warmup"]),
                         int(protocol["repeats"]),
                         bool(protocol["synchronize_before_and_after_each_measurement"]),
+                        float(protocol["realtime_threshold_ms"]),
                     )
                 )
                 fixture = report["fixture_metadata"]
@@ -78,7 +79,14 @@ def main() -> int:
                     "input_dim": int(report["model"]["input_dim"]),
                 }
                 for section in ("model_forward", "offline_window"):
-                    for metric in ("mean_ms", "median_ms", "std_ms", "p95_ms", "p99_ms"):
+                    for metric in (
+                        "mean_ms",
+                        "median_ms",
+                        "std_ms",
+                        "p95_ms",
+                        "p99_ms",
+                        "fraction_within_realtime_threshold",
+                    ):
                         row[f"{section}_{metric}"] = float(report[section][metric])
                 rows.append(row)
             except (FileNotFoundError, KeyError, TypeError, ValueError) as exc:

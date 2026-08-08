@@ -64,6 +64,7 @@ def main() -> int:
                 int(protocol["warmup"]),
                 int(protocol["repeats"]),
                 bool(protocol["synchronize_before_and_after_each_measurement"]),
+                float(protocol["realtime_threshold_ms"]),
             )
         )
         row = {
@@ -84,6 +85,7 @@ def main() -> int:
                 "p95_ms",
                 "p99_ms",
                 "throughput_windows_per_second",
+                "fraction_within_realtime_threshold",
             ):
                 row[f"{section}_{metric}"] = report[section][metric]
         rows.append(row)
@@ -168,6 +170,7 @@ def main() -> int:
                 "warmup": next(iter(protocols))[1],
                 "repeats": next(iter(protocols))[2],
                 "synchronized_per_measurement": next(iter(protocols))[3],
+                "realtime_threshold_ms": next(iter(protocols))[4],
             }
             if protocols
             else None

@@ -9,6 +9,8 @@
   "records": 1116,
   "scope": "exploratory_existing_sessions",
   "final_tuned_model_claimed": false,
+  "realtime_threshold_ms": 33.333333333333336,
+  "realtime_threshold_definition": "one 30-Hz frame interval",
   "capture_to_host_latency_available": false,
   "capture_to_host_limitation": "Device and host clocks have no validated mapping; they are not subtracted.",
   "summary_csv": "Training/reports/latency/existing_mac_live/live_latency_summary.csv"

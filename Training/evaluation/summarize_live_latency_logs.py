@@ -30,6 +30,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input", type=Path, action="append", default=[])
     parser.add_argument("--input-root", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--realtime-threshold-ms",
+        type=float,
+        default=1000.0 / 30.0,
+        help="Predeclared budget; default is one 30-Hz frame.",
+    )
     return parser.parse_args()
 
 
@@ -68,10 +74,22 @@ def phase_delta(record: dict, start: str, end: str) -> float | None:
     return value if value >= 0 else None
 
 
-def summary(values: list[float]) -> dict:
+def summary(values: list[float], realtime_threshold_ms: float) -> dict:
     values = [float(value) for value in values if math.isfinite(float(value))]
     if not values:
-        return {key: None for key in ("samples", "mean_ms", "median_ms", "std_ms", "p95_ms", "p99_ms", "max_ms")}
+        return {
+            key: None
+            for key in (
+                "samples",
+                "mean_ms",
+                "median_ms",
+                "std_ms",
+                "p95_ms",
+                "p99_ms",
+                "max_ms",
+                "fraction_within_realtime_threshold",
+            )
+        }
     array = np.asarray(values, dtype=float)
     return {
         "samples": len(values),
@@ -81,11 +99,16 @@ def summary(values: list[float]) -> dict:
         "p95_ms": float(np.percentile(array, 95)),
         "p99_ms": float(np.percentile(array, 99)),
         "max_ms": float(array.max()),
+        "fraction_within_realtime_threshold": float(
+            np.mean(array <= realtime_threshold_ms)
+        ),
     }
 
 
 def main() -> int:
     args = parse_args()
+    if args.realtime_threshold_ms <= 0:
+        raise ValueError("realtime-threshold-ms must be positive")
     paths = [resolve(path).resolve() for path in args.input]
     if args.input_root:
         paths.extend(sorted(resolve(args.input_root).resolve().glob("*/predictions*.jsonl")))
@@ -122,7 +145,7 @@ def main() -> int:
             ],
         }
         for measurement, values in measurements.items():
-            values_summary = summary(values)
+            values_summary = summary(values, args.realtime_threshold_ms)
             session_rows.append(
                 {
                     "session": session,
@@ -179,6 +202,8 @@ def main() -> int:
         "records": int(sum(len(read_jsonl(path)) for path in paths)),
         "scope": "exploratory_existing_sessions",
         "final_tuned_model_claimed": False,
+        "realtime_threshold_ms": args.realtime_threshold_ms,
+        "realtime_threshold_definition": "one 30-Hz frame interval",
         "capture_to_host_latency_available": False,
         "capture_to_host_limitation": (
             "Device and host clocks have no validated mapping; they are not subtracted."

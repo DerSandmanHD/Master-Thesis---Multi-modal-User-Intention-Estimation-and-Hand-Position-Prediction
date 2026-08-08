@@ -5,11 +5,36 @@
     "master_dir": "Data_collection/master_datasets",
     "manifest_filter": {
       "path": "dataset_manifest.csv",
-      "allowed_statuses": ["valid"],
-      "allowed_next_actions": ["ready_for_master_merge"],
+      "allowed_statuses": [
+        "valid"
+      ],
+      "allowed_next_actions": [
+        "ready_for_master_merge"
+      ],
       "strict": true
     },
     "feature_profile": "multimodal_robot_frame_v1",
+    "window_size": 60,
+    "stride": 10,
+    "future_horizon_seconds": 1.0,
+    "pose_intent_ids": [
+      2
+    ],
+    "include_hand_references": true,
+    "minimum_observed_fraction": 0.05,
+    "max_timestamp_gap_seconds": 0.2,
+    "validation_fraction": 0.2,
+    "test_fraction": 0.2,
+    "validation_participants": [
+      "Atilla",
+      "Ermal",
+      "Vanessa"
+    ],
+    "test_participants": [
+      "Edu",
+      "Jona",
+      "Mona"
+    ],
     "visual_embeddings": {
       "enabled": true,
       "mode": "random_control",
@@ -19,46 +44,52 @@
       "max_age_seconds": 0.25,
       "verify_cache_hashes": true,
       "random_seed": 20260808
-    },
-    "window_size": 60,
-    "stride": 10,
-    "future_horizon_seconds": 1.0,
-    "pose_intent_ids": [2],
-    "include_hand_references": true,
-    "minimum_observed_fraction": 0.05,
-    "max_timestamp_gap_seconds": 0.2,
-    "validation_fraction": 0.2,
-    "test_fraction": 0.2,
-    "validation_participants": ["Atilla", "Ermal", "Vanessa"],
-    "test_participants": ["Edu", "Jona", "Mona"]
+    }
   },
   "model": {
-    "d_model": 64,
-    "nhead": 4,
-    "num_layers": 2,
-    "dim_feedforward": 128,
+    "d_model": 32,
+    "nhead": 8,
+    "num_layers": 1,
+    "dim_feedforward": 256,
     "dropout": 0.15
   },
   "training": {
     "seed": 42,
     "epochs": 20,
-    "batch_size": 32,
-    "learning_rate": 0.0003,
+    "batch_size": 64,
+    "learning_rate": 0.000381605632501,
     "weight_decay": 0.0001,
     "assistance_loss_weight": 1.0,
     "assistance_type_loss_weight": 1.0,
-    "receiving_hand_loss_weight": 1.0,
+    "receiving_hand_loss_weight": 2.0,
     "pose_loss_weight": 1.0,
-    "orientation_loss_weight": 0.25,
+    "orientation_loss_weight": 0.5,
     "gradient_clip_norm": 1.0,
     "early_stopping_patience": 7,
     "num_workers": 2
+  },
+  "hyperparameter_selection": {
+    "source_trial": "trial_022",
+    "stage_a_experiment": "residual_v2_hp_search_v1",
+    "confirmation_experiment": "residual_v2_hp_confirm_v1",
+    "selection_split": "validation",
+    "confirmation_seeds": [
+      42,
+      43,
+      44
+    ],
+    "test_evaluation_used_for_selection": false,
+    "selection_rule": "maximize mean validation intention macro-F1; retain trials within 0.005; minimize mean validation pose MAE measured at the best-intention checkpoint; maximize mean hand F1; minimize parameters"
   },
   "visual_experiment": {
     "selection_split": "validation",
     "test_evaluation_policy": "disabled_during_variant_screening",
     "frozen_encoder": true,
     "pca_fit_split": "train_only",
-    "negative_control": "deterministic_gaussian_features_with_identical_timestamps_and_dimension"
+    "negative_control": "deterministic_gaussian_features_with_identical_timestamps_and_dimension",
+    "sensor_hyperparameters_frozen": true,
+    "sensor_hyperparameter_config": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_hp_confirm_v1/selected_config.json",
+    "sensor_hyperparameter_config_sha256": "709b60d8eefdc76576df09508ab4fda0e4af9079a9b1319fde2bb5e07dc306e0",
+    "sensor_hyperparameter_source_trial": "trial_022"
   }
 }

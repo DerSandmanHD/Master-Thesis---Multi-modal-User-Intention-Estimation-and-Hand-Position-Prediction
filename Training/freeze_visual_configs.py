@@ -5,11 +5,9 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 from pathlib import Path
-
-from data import sha256_file
-
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_NAMES = (
@@ -41,6 +39,14 @@ def relative_or_absolute(path: Path) -> str:
         return str(path.relative_to(PROJECT_ROOT))
     except ValueError:
         return str(path)
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def main() -> int:

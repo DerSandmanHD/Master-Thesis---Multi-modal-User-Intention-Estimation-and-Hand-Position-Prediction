@@ -1,5 +1,5 @@
 {
-  "run_name": "sensor_plus_clip",
+  "run_name": "residual_v2_tuned",
   "model_type": "hierarchical_residual_pose_transformer_v2",
   "data": {
     "master_dir": "Data_collection/master_datasets",
@@ -34,16 +34,7 @@
       "Edu",
       "Jona",
       "Mona"
-    ],
-    "visual_embeddings": {
-      "enabled": true,
-      "mode": "append",
-      "cache_dir": "Data_collection/visual_embeddings/clip_vit_b32_openai_5hz",
-      "projection_path": "Training/visual_projections/dataset_v2_20260802_n214_5d136a34/clip_vit_b32_openai_5hz_pca32.npz",
-      "expected_output_dim": 32,
-      "max_age_seconds": 0.25,
-      "verify_cache_hashes": true
-    }
+    ]
   },
   "model": {
     "d_model": 32,
@@ -67,6 +58,32 @@
     "early_stopping_patience": 7,
     "num_workers": 2
   },
+  "hyperparameter_search": {
+    "schema_version": 1,
+    "search_version": "residual_v2_random_search_v1",
+    "stage": "A",
+    "trial_index": 22,
+    "trial_tag": "trial_022",
+    "search_seed": 20260808,
+    "training_seed": 42,
+    "selection_split": "validation",
+    "test_evaluation": "disabled",
+    "selection_rule": "maximize validation intention macro-F1; retain trials within 0.005 of the best; then minimize validation pose MAE; then maximize validation receiving-hand macro-F1; then minimize trainable parameters",
+    "base_config": "Training/configs/models/residual_transformer_v2.json",
+    "base_config_sha256": "c3dcfbe33f11c0cbce3e569edd4be29ff4498929d6446e327b2bc9e1df074ab6",
+    "parameters": {
+      "learning_rate": 0.000381605632501,
+      "weight_decay": 0.0001,
+      "dropout": 0.15,
+      "d_model": 32,
+      "nhead": 8,
+      "num_layers": 1,
+      "dim_feedforward": 256,
+      "batch_size": 64,
+      "orientation_loss_weight": 0.5,
+      "receiving_hand_loss_weight": 2.0
+    }
+  },
   "hyperparameter_selection": {
     "source_trial": "trial_022",
     "stage_a_experiment": "residual_v2_hp_search_v1",
@@ -79,15 +96,5 @@
     ],
     "test_evaluation_used_for_selection": false,
     "selection_rule": "maximize mean validation intention macro-F1; retain trials within 0.005; minimize mean validation pose MAE measured at the best-intention checkpoint; maximize mean hand F1; minimize parameters"
-  },
-  "visual_experiment": {
-    "selection_split": "validation",
-    "test_evaluation_policy": "disabled_during_variant_screening",
-    "frozen_encoder": true,
-    "pca_fit_split": "train_only",
-    "sensor_hyperparameters_frozen": true,
-    "sensor_hyperparameter_config": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_hp_confirm_v1/selected_config.json",
-    "sensor_hyperparameter_config_sha256": "709b60d8eefdc76576df09508ab4fda0e4af9079a9b1319fde2bb5e07dc306e0",
-    "sensor_hyperparameter_source_trial": "trial_022"
   }
 }

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "experiment_tag": "residual_v2_hp_confirm_v1",
+  "selection_split": "validation",
+  "test_metrics_forbidden": true,
+  "f1_tolerance": 0.005,
+  "pose_tiebreak_checkpoint": "best_intention",
+  "stage_a_selected_trials": [
+    "trial_022",
+    "trial_001",
+    "trial_020"
+  ],
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "complete": true,
+  "selected_trial": "trial_022",
+  "selection_rule": "maximize mean validation intention macro-F1; retain trials within 0.005; minimize mean validation pose MAE measured at the best-intention checkpoint; maximize mean hand F1; minimize parameters",
+  "selected_metrics": {
+    "rank": 1,
+    "trial_tag": "trial_022",
+    "completed_seeds": 3,
+    "validation_intention_macro_f1_mean": 0.9311180773600837,
+    "validation_intention_macro_f1_std": 0.006406271364956336,
+    "validation_receiving_hand_macro_f1_mean": 0.996443836949345,
+    "validation_receiving_hand_macro_f1_std": 0.002883174680323707,
+    "validation_pose_mae_cm_mean": 8.793761571248373,
+    "validation_pose_mae_cm_std": 0.6946931810057578,
+    "trainable_parameters_mean": 63023.0,
+    "trainable_parameters_std": 0.0,
+    "wall_seconds_mean": 277.4040093783212,
+    "wall_seconds_std": 29.39552165699702,
+    "within_f1_tolerance": true
+  }
+}

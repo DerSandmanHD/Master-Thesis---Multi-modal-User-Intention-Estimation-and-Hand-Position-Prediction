@@ -1,0 +1,6 @@
+# Installed into an isolated PYTHONPATH next to the Singularity image.
+# Torch/torchvision are supplied by aria_master.simg and intentionally omitted.
+open_clip_torch==2.26.1
+timm==0.9.16
+ftfy==6.2.3
+safetensors==0.4.5

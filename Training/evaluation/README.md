@@ -82,3 +82,26 @@ Seed-Kurven bleiben separat sichtbar.
 Alle Abbildungen tragen Dataset-Tag, Experiment-Tag, Splitdefinition, Seeds und
 die Definition der Fehlerbalken. Die exakten Werte bleiben vollständig in den
 CSV-Dateien erhalten.
+
+## Weitere Experimentberichte
+
+Die zusätzlichen Auswertungen schreiben ebenfalls maschinenlesbare CSV-/JSON-
+Dateien und Abbildungen als PNG und PDF unter
+`Training/reports/<dataset_tag>/<experiment_tag>/`:
+
+- `summarize_hyperparameter_search.py`: Stage-A-Ranking, Pareto-Ansicht,
+  Parametereffekte und Parallel Coordinates, ausschließlich Validation.
+- `summarize_hyperparameter_confirmation.py`: Mittelwert/Standardabweichung der
+  Top-3-Konfigurationen über Seeds 42/43/44 und eingefrorene finale Config.
+- `summarize_modality_ablation.py`: Full-vs.-`no_gaze`/`no_hands`/
+  `no_objects`/`no_vio` inklusive Deltas und Effizienzindikatoren.
+- `summarize_visual_embedding_experiment.py`: Sensorbaseline, CLIP-only,
+  Sensor+CLIP und dimensionsgleiche Random-Control, Auswahl nur auf Validation.
+- `summarize_latency.py`: identischer Checkpoint und identisches reales Fenster
+  über Plattformen, mit Median, Mittelwert, SD, p95, p99, Durchsatz und CDF.
+
+Qualitative Vorhersagen werden mit `export_residual_predictions.py` exportiert.
+`render_prediction_overlay.py` erzeugt daraus synchronisierte MP4s und
+Thesis-PNGs. Da eine validierte zeitvariable 3D-zu-RGB-Projektion nicht für alle
+Aufnahmen garantiert ist, werden Ground Truth und Prediction ausdrücklich in
+einem separaten Robot-Frame-Inset gezeigt.

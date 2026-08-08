@@ -22,6 +22,8 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
+from visual_embeddings import VisualFeatureLoader
+
 
 INTENTION_TO_ID = {"transition": -1, "continue": 0, "fetch": 1, "handover": 2}
 INTENTION_NAMES = ["continue", "fetch", "handover"]
@@ -29,6 +31,7 @@ RECEIVING_HAND_TO_ID = {"left": 0, "right": 1}
 RECEIVING_HAND_NAMES = ["left", "right"]
 SUPPORTED_MODALITY_ABLATIONS = ("gaze", "hands", "objects", "vio")
 TRAINING_DATA_BUILDER_VERSION = "training_data_pipeline_v3_modality_ablation"
+VISUAL_DATA_BUILDER_VERSION = "training_data_pipeline_v4_visual_embeddings"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -111,6 +114,7 @@ def build_dataset_provenance(
     feature_ablation: dict,
     future_horizon_seconds: float,
     filter_metadata: dict,
+    visual_features: dict | None = None,
 ) -> tuple[dict, str | None]:
     master_files = []
     for path in files:
@@ -143,19 +147,27 @@ def build_dataset_provenance(
         Path("Code/build_master_dataset.py"),
         Path("Code/dataset_qa.py"),
         Path("Training/data.py"),
+        Path("Training/visual_embeddings.py"),
         Path("singularity/aria.recipe"),
     ):
         path = PROJECT_ROOT / relative
         if path.is_file():
             builder_files[str(relative)] = sha256_file(path)
 
+    builder_version = (
+        VISUAL_DATA_BUILDER_VERSION
+        if visual_features and visual_features.get("enabled")
+        else TRAINING_DATA_BUILDER_VERSION
+    )
     schema_payload = {
         "feature_profile": feature_profile,
         "feature_columns": feature_columns,
         "feature_ablation": feature_ablation,
         "future_horizon_seconds": float(future_horizon_seconds),
-        "builder_version": TRAINING_DATA_BUILDER_VERSION,
+        "builder_version": builder_version,
     }
+    if visual_features and visual_features.get("enabled"):
+        schema_payload["visual_features"] = visual_features
     schema_fingerprint = hashlib.sha256(
         json.dumps(
             schema_payload,
@@ -183,7 +195,7 @@ def build_dataset_provenance(
     ).hexdigest()
     return (
         {
-            "builder_version": TRAINING_DATA_BUILDER_VERSION,
+            "builder_version": builder_version,
             "dataset_content_fingerprint": content_fingerprint,
             "schema": {
                 **schema_payload,
@@ -980,20 +992,78 @@ def prepare_data(
     full_feature_columns = select_feature_columns(
         first_header, data_config["feature_profile"]
     )
-    feature_columns = select_feature_columns(
-        first_header,
-        data_config["feature_profile"],
-        excluded_modalities,
+    visual_config = data_config.get("visual_embeddings")
+    visual_loader = None
+    if visual_config and bool(visual_config.get("enabled", True)):
+        resolved_visual_config = dict(visual_config)
+        for key in ("cache_dir", "projection_path"):
+            value = Path(resolved_visual_config[key]).expanduser()
+            if not value.is_absolute():
+                value = PROJECT_ROOT / value
+            resolved_visual_config[key] = str(value)
+        visual_loader = VisualFeatureLoader.from_config(resolved_visual_config)
+
+    if visual_loader is not None and visual_loader.mode == "only":
+        sensor_feature_columns: list[str] = []
+    else:
+        sensor_feature_columns = select_feature_columns(
+            first_header,
+            data_config["feature_profile"],
+            excluded_modalities,
+        )
+    visual_feature_columns = (
+        visual_loader.feature_names if visual_loader is not None else []
     )
+    feature_columns = [*sensor_feature_columns, *visual_feature_columns]
     feature_ablation = {
         "excluded_modalities": excluded_modalities,
         "excluded_feature_columns": [
-            column for column in full_feature_columns if column not in feature_columns
+            column
+            for column in full_feature_columns
+            if column not in sensor_feature_columns
         ],
         "full_raw_feature_count": len(full_feature_columns),
         "retained_raw_feature_count": len(feature_columns),
         "retained_model_feature_count_with_masks": len(feature_columns) * 2,
     }
+    if visual_loader is not None:
+        feature_ablation.update(
+            {
+                "retained_sensor_raw_feature_count": len(
+                    sensor_feature_columns
+                ),
+                "visual_raw_feature_count": len(visual_feature_columns),
+            }
+        )
+    include_hand_references = bool(data_config.get("include_hand_references", False))
+    records = [
+        load_record(
+            path,
+            sensor_feature_columns,
+            future_horizon_seconds=float(data_config["future_horizon_seconds"]),
+            include_hand_references=include_hand_references,
+        )
+        for path in files
+    ]
+    if visual_loader is not None:
+        for record in records:
+            visual_features = visual_loader.features_for(
+                record.sequence_id,
+                record.timestamps_ns,
+            )
+            if visual_loader.mode == "only":
+                record.features = visual_features
+            else:
+                record.features = np.concatenate(
+                    (record.features, visual_features), axis=1
+                )
+    visual_provenance = (
+        visual_loader.provenance()
+        if visual_loader is not None
+        else {"enabled": False}
+    )
+    if visual_loader is not None:
+        feature_ablation["visual_features"] = visual_provenance
     provenance, manifest_snapshot = build_dataset_provenance(
         files,
         master_dir=master_dir,
@@ -1004,6 +1074,7 @@ def prepare_data(
             data_config["future_horizon_seconds"]
         ),
         filter_metadata=filter_metadata,
+        visual_features=visual_provenance,
     )
     filter_metadata = {
         **filter_metadata,
@@ -1011,16 +1082,6 @@ def prepare_data(
             "dataset_content_fingerprint"
         ],
     }
-    include_hand_references = bool(data_config.get("include_hand_references", False))
-    records = [
-        load_record(
-            path,
-            feature_columns,
-            future_horizon_seconds=float(data_config["future_horizon_seconds"]),
-            include_hand_references=include_hand_references,
-        )
-        for path in files
-    ]
     split, split_metadata = split_records(
         records,
         seed=seed,

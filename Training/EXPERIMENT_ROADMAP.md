@@ -126,11 +126,11 @@ später separat auf Validation-/Replay-Daten kalibriert.
   - Receiving-Hand-Macro-F1 als Nebenmetrik protokollieren
 - [x] Entscheiden, ob eine Pareto-Auswahl oder ein vorab definierter
   kombinierter Score verwendet wird
-- [ ] Reproduzierbares Suchskript erstellen (bevorzugt Random Search oder
+- [x] Reproduzierbares Suchskript erstellen (bevorzugt Random Search oder
   Optuna statt vollständigem Grid Search)
-- [ ] Jeden Trial mit Konfiguration, Seed, Git-Commit, Dataset-Tag und Laufzeit
+- [x] Jeden Trial mit Konfiguration, Seed, Git-Commit, Dataset-Tag und Laufzeit
   speichern
-- [ ] Resume-Funktion für unterbrochene Clusterläufe vorsehen
+- [x] Resume-Funktion für unterbrochene Clusterläufe vorsehen
 
 Vorgeschlagener erster Suchraum:
 
@@ -191,18 +191,18 @@ Geplantes Layout:
 Umsetzung:
 
 - [ ] 2–3 repräsentative Testsequenzen auswählen
-- [ ] Modellvorhersagen über `export_checkpoint_predictions.py` oder Replay
+- [x] Modellvorhersagen über `export_checkpoint_predictions.py` oder Replay
   exportieren
-- [ ] RGB-Frames und Modellfenster über Device-Timestamps synchronisieren
-- [ ] Prüfen, ob 3D-Handposen zuverlässig in das RGB-Bild projiziert werden
+- [x] RGB-Frames und Modellfenster über Device-Timestamps synchronisieren
+- [x] Prüfen, ob 3D-Handposen zuverlässig in das RGB-Bild projiziert werden
   können
 - [ ] Falls Projektion möglich: Kameraextrinsics/-intrinsics und VIO-Pose
   verwenden
-- [ ] Falls Projektion nicht belastbar ist: 3D-Ground-Truth und Prediction in
+- [x] Falls Projektion nicht belastbar ist: 3D-Ground-Truth und Prediction in
   einem separaten Robot-Frame-Inset darstellen
-- [ ] Overlay-Skript mit OpenCV implementieren
-- [ ] Wahrscheinlichkeiten als Balken statt nur als Text darstellen
-- [ ] Farblegende und klare Kennzeichnung von Ground Truth/Prediction ergänzen
+- [x] Overlay-Skript mit OpenCV implementieren
+- [x] Wahrscheinlichkeiten als Balken statt nur als Text darstellen
+- [x] Farblegende und klare Kennzeichnung von Ground Truth/Prediction ergänzen
 - [ ] Annotiertes MP4 sowie einzelne Thesis-Abbildungen exportieren
 - [ ] Erfolgs- und Fehlerbeispiel zeigen
 
@@ -232,15 +232,15 @@ multimodale Baseline verbessern.
 ### 5.2 Technische Umsetzung
 
 - [x] CLIP-Variante festlegen, zunächst kleiner frozen Encoder
-- [ ] RGB-Frames kausal und timestamp-synchron aus VRS/MP4 extrahieren
+- [x] RGB-Frames kausal und timestamp-synchron aus VRS/MP4 extrahieren
 - [x] Samplingrate festlegen, zunächst 2–5 Hz
 - [ ] Embeddings einmalig berechnen und pro Sequenz cachen
-- [ ] Hashes von Encoder, Gewichten, Preprocessing und Embeddingdateien sichern
-- [ ] Dimension reduzieren/projizieren, ohne Validation/Test-Leakage
-- [ ] Embeddings kausal auf den 30-Hz-Modelltakt übertragen
-- [ ] Missing-Embedding-Maske ergänzen
-- [ ] Datenloader und Featureprovenienz erweitern
-- [ ] Smoke-Test für Zeitabgleich, Shapes und Missing Frames erstellen
+- [x] Hashes von Encoder, Gewichten, Preprocessing und Embeddingdateien sichern
+- [x] Dimension reduzieren/projizieren, ohne Validation/Test-Leakage
+- [x] Embeddings kausal auf den 30-Hz-Modelltakt übertragen
+- [x] Missing-Embedding-Maske ergänzen
+- [x] Datenloader und Featureprovenienz erweitern
+- [x] Smoke-Test für Zeitabgleich, Shapes und Missing Frames erstellen
 
 ### 5.3 Vergleichsexperimente
 
@@ -303,13 +303,13 @@ Es müssen drei unterschiedliche Größen getrennt werden:
 
 ### 7.1 Messprotokoll
 
-- [ ] Ein gemeinsames Benchmarkskript für Batchgröße 1 erstellen
-- [ ] dasselbe Modell, denselben Checkpoint und dieselben Eingabefenster nutzen
-- [ ] mindestens 100 Warm-up- und 1.000 Messdurchläufe verwenden
-- [ ] CUDA/MPS vor und nach jeder Messung korrekt synchronisieren
-- [ ] Median, Mittelwert, Standardabweichung, p95 und p99 berichten
-- [ ] Durchsatz, Peak Memory und Modellladezeit ergänzen
-- [ ] Hardware, Betriebssystem, PyTorch-Version und Device protokollieren
+- [x] Ein gemeinsames Benchmarkskript für Batchgröße 1 erstellen
+- [x] dasselbe Modell, denselben Checkpoint und dieselben Eingabefenster nutzen
+- [x] mindestens 100 Warm-up- und 1.000 Messdurchläufe verwenden
+- [x] CUDA/MPS vor und nach jeder Messung korrekt synchronisieren
+- [x] Median, Mittelwert, Standardabweichung, p95 und p99 berichten
+- [x] Durchsatz, Peak Memory und Modellladezeit ergänzen
+- [x] Hardware, Betriebssystem, PyTorch-Version und Device protokollieren
 
 ### 7.2 Plattformen
 
@@ -353,7 +353,7 @@ Noch offen:
 
 ### Phase B – Hyperparametersuche
 
-- [ ] Suchskript und Clusterjob implementieren
+- [x] Suchskript und Clusterjob implementieren
 - [ ] 20–30 Suchtrials durchführen
 - [ ] Top-Konfigurationen mit drei Seeds bestätigen
 - [ ] getunte Baseline festschreiben
@@ -387,5 +387,5 @@ Noch offen:
 1. [x] Neue Benchmarkreports vom Cluster lokal spiegeln
 2. [x] `n214`-Graphen mit dem bestehenden Generator erzeugen
 3. [x] Hyperparameter-Suchprotokoll als reproduzierbaren Arbeitsstand festlegen
-4. [ ] Suchskript und SLURM-Arrayjob implementieren
+4. [x] Suchskript und SLURM-Arrayjob implementieren
 5. [x] Literaturmatrix für CLIP und Ablationen erstellen

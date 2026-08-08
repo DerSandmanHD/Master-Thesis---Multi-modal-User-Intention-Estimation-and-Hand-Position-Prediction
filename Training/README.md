@@ -314,11 +314,10 @@ Kurzer lokaler Konfigurations- und Formtest:
 python3 Training/ablation_smoke_test.py
 ```
 
-Der vorbereitete Array-Job wuerde spaeter vier Varianten mit jeweils drei
-Seeds starten. Er wird nicht automatisch ausgefuehrt:
+Der Array-Job startet vier Varianten mit jeweils drei Seeds:
 
 ```bash
-DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
+DATASET_TAG=dataset_v2_20260802_n214_5d136a34
 EXPERIMENT_TAG=modality_ablation_v1
 
 sbatch --export=ALL,DATASET_TAG="$DATASET_TAG",EXPERIMENT_TAG="$EXPERIMENT_TAG" \
@@ -331,6 +330,9 @@ Die Ergebnisse landen getrennt unter:
 Training/runs/<dataset_tag>/<experiment_tag>/<ablation>/
   <experiment_tag>_<ablation>_seed<seed>/
 ```
+
+Der abgeschlossene n214-Bericht mit Tabellen sowie PNG-/PDF-Abbildungen liegt
+unter `Training/reports/dataset_v2_20260802_n214_5d136a34/modality_ablation_v1/`.
 
 ## Offline-Streaming-Replay
 

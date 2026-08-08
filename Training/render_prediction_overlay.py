@@ -263,11 +263,17 @@ def annotate_frame(
     gt_hand = str(row.get("target_receiving_hand", "")).strip() or "n/a"
     pred_hand = str(row.get("predicted_receiving_hand", ""))
     hand_probability = float(row.get("predicted_receiving_hand_probability", 0.0))
+    hand_head_active = gt == "handover" or pred == "handover"
+    predicted_hand_text = (
+        f"{pred_hand} ({hand_probability:.2f})"
+        if hand_head_active
+        else "n/a (handover only)"
+    )
     pose_error = row.get("predicted_position_error_cm")
     pose_text = "pose n/a" if pd.isna(pose_error) else f"pose error {float(pose_error):.1f} cm"
     put_text(
         canvas,
-        f"GT hand: {gt_hand} | Pred hand: {pred_hand} ({hand_probability:.2f}) | {pose_text}",
+        f"GT hand: {gt_hand} | Pred hand: {predicted_hand_text} | {pose_text}",
         (25, int(139 * scale)),
         scale=0.52 * scale,
         thickness=max(1, int(1.5 * scale)),

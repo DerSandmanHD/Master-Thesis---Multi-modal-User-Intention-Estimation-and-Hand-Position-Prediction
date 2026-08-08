@@ -13,5 +13,47 @@
   "realtime_threshold_definition": "one 30-Hz frame interval",
   "capture_to_host_latency_available": false,
   "capture_to_host_limitation": "Device and host clocks have no validated mapping; they are not subtracted.",
+  "aggregate_by_measurement": {
+    "feature_to_output": {
+      "samples": 923,
+      "mean_ms": 4.906040118093175,
+      "median_ms": 3.179625,
+      "std_ms": 8.887460476860916,
+      "p95_ms": 7.0725204999999995,
+      "p99_ms": 68.56522652,
+      "max_ms": 79.82475,
+      "fraction_within_realtime_threshold": 0.9826652221018418
+    },
+    "gaze_callback_to_output": {
+      "samples": 923,
+      "mean_ms": 4.909070086673889,
+      "median_ms": 3.185,
+      "std_ms": 8.887719970162767,
+      "p95_ms": 7.0756119,
+      "p99_ms": 68.56787774,
+      "max_ms": 79.827209,
+      "fraction_within_realtime_threshold": 0.9826652221018418
+    },
+    "intention_inference": {
+      "samples": 1116,
+      "mean_ms": 3.667516971372248,
+      "median_ms": 2.2985209980106447,
+      "std_ms": 8.715759767820545,
+      "p95_ms": 3.749249749489536,
+      "p99_ms": 66.72280000038877,
+      "max_ms": 77.70945800075424,
+      "fraction_within_realtime_threshold": 0.9829749103942652
+    },
+    "pose_inference": {
+      "samples": 191,
+      "mean_ms": 2.34754100020689,
+      "median_ms": 1.9429999993008096,
+      "std_ms": 4.825631776592866,
+      "p95_ms": 2.715061998969759,
+      "p99_ms": 3.245004198470268,
+      "max_ms": 68.67583400162403,
+      "fraction_within_realtime_threshold": 0.9947643979057592
+    }
+  },
   "summary_csv": "Training/reports/latency/existing_mac_live/live_latency_summary.csv"
 }

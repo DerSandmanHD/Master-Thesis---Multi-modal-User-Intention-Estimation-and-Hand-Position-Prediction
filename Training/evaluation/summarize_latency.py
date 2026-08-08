@@ -47,11 +47,19 @@ def main() -> int:
         report = json.loads(path.read_text(encoding="utf-8"))
         platform_name = path.stem
         if report.get("status") != "completed":
+            requested_checkpoint = report.get("requested_checkpoint_sha256")
+            requested_fixture = report.get("requested_fixture_sha256")
+            if requested_checkpoint:
+                checkpoint_hashes.add(requested_checkpoint)
+            if requested_fixture:
+                fixture_hashes.add(requested_fixture)
             unavailable.append(
                 {
                     "platform": platform_name,
                     "status": report.get("status", "unknown"),
                     "reason": report.get("reason", ""),
+                    "requested_checkpoint_sha256": requested_checkpoint,
+                    "requested_fixture_sha256": requested_fixture,
                 }
             )
             continue

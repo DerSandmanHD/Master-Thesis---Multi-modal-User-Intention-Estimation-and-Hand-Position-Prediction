@@ -191,6 +191,10 @@ def main() -> int:
         raise ValueError("warmup, repeats, cpu-threads, or threshold are invalid")
     output = resolve(args.output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
+    artifacts = resolve(args.artifacts_dir).resolve()
+    fixture_path = resolve(args.fixture).resolve()
+    checkpoint_path = artifacts / args.checkpoint
+    config_path = artifacts / "config.json"
     available, reason = device_available(args.device)
     if not available:
         report = {
@@ -199,6 +203,15 @@ def main() -> int:
             "status": "unavailable",
             "requested_device": args.device,
             "reason": reason,
+            "requested_artifacts_dir": str(artifacts),
+            "requested_checkpoint": str(checkpoint_path),
+            "requested_checkpoint_sha256": (
+                sha256_file(checkpoint_path) if checkpoint_path.is_file() else None
+            ),
+            "requested_fixture": str(fixture_path),
+            "requested_fixture_sha256": (
+                sha256_file(fixture_path) if fixture_path.is_file() else None
+            ),
             "hardware": hardware_metadata(torch.device("cpu")),
         }
         output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
@@ -207,10 +220,6 @@ def main() -> int:
 
     device = torch.device(args.device)
     torch.set_num_threads(args.cpu_threads)
-    artifacts = resolve(args.artifacts_dir).resolve()
-    fixture_path = resolve(args.fixture).resolve()
-    checkpoint_path = artifacts / args.checkpoint
-    config_path = artifacts / "config.json"
     features_np, hand_np, fixture_metadata = load_fixture(fixture_path)
     load_started = time.perf_counter_ns()
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)

@@ -167,6 +167,13 @@ def main() -> int:
     samples_frame = pd.DataFrame(samples)
     summary_frame.to_csv(output_dir / "live_latency_summary.csv", index=False)
     samples_frame.to_csv(output_dir / "live_latency_samples.csv", index=False)
+    aggregate_by_measurement = {
+        str(measurement): summary(
+            group["latency_ms"].astype(float).tolist(),
+            args.realtime_threshold_ms,
+        )
+        for measurement, group in samples_frame.groupby("measurement")
+    }
 
     figures = output_dir / "figures"
     figures.mkdir(exist_ok=True)
@@ -208,6 +215,7 @@ def main() -> int:
         "capture_to_host_limitation": (
             "Device and host clocks have no validated mapping; they are not subtracted."
         ),
+        "aggregate_by_measurement": aggregate_by_measurement,
         "summary_csv": portable(output_dir / "live_latency_summary.csv"),
     }
     (output_dir / "summary.json").write_text(

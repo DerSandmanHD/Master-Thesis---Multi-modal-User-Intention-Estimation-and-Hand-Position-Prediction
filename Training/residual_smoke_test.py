@@ -159,6 +159,7 @@ def main() -> int:
                 epochs=None,
                 device="cpu",
                 limit_sequences=None,
+                skip_test_evaluation=False,
             )
         )
         full_metrics = json.loads(
@@ -183,10 +184,36 @@ def main() -> int:
             "dataset_content_fingerprint"
         ]
         assert set(full_metrics["test"]) == {"best_intention", "best_pose"}
+        assert set(full_metrics["validation_by_checkpoint"]) == {
+            "best_intention",
+            "best_pose",
+        }
+        assert full_metrics["test_evaluation_skipped"] is False
+        assert full_metrics["runtime"]["wall_seconds"] > 0
         assert len(full_metrics["history"]) == 2
         assert full_metrics["legacy_pose_metric_alias"][
             "position_mae_cm"
         ]
+
+        validation_only_run = train(
+            SimpleNamespace(
+                config=config_path,
+                run_dir=Path(directory) / "validation_only_run",
+                epochs=1,
+                device="cpu",
+                limit_sequences=None,
+                skip_test_evaluation=True,
+            )
+        )
+        validation_only_metrics = json.loads(
+            (validation_only_run / "metrics.json").read_text(encoding="utf-8")
+        )
+        assert validation_only_metrics["test_evaluation_skipped"] is True
+        assert "test" not in validation_only_metrics
+        assert set(validation_only_metrics["validation_by_checkpoint"]) == {
+            "best_intention",
+            "best_pose",
+        }
         print("Residual v2 smoke test passed")
     return 0
 

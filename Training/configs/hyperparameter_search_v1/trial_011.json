@@ -1,0 +1,87 @@
+{
+  "run_name": "trial_011",
+  "model_type": "hierarchical_residual_pose_transformer_v2",
+  "data": {
+    "master_dir": "Data_collection/master_datasets",
+    "manifest_filter": {
+      "path": "dataset_manifest.csv",
+      "allowed_statuses": [
+        "valid"
+      ],
+      "allowed_next_actions": [
+        "ready_for_master_merge"
+      ],
+      "strict": true
+    },
+    "feature_profile": "multimodal_robot_frame_v1",
+    "window_size": 60,
+    "stride": 10,
+    "future_horizon_seconds": 1.0,
+    "pose_intent_ids": [
+      2
+    ],
+    "include_hand_references": true,
+    "minimum_observed_fraction": 0.05,
+    "max_timestamp_gap_seconds": 0.2,
+    "validation_fraction": 0.2,
+    "test_fraction": 0.2,
+    "validation_participants": [
+      "Atilla",
+      "Ermal",
+      "Vanessa"
+    ],
+    "test_participants": [
+      "Edu",
+      "Jona",
+      "Mona"
+    ]
+  },
+  "model": {
+    "d_model": 32,
+    "nhead": 8,
+    "num_layers": 2,
+    "dim_feedforward": 256,
+    "dropout": 0.15
+  },
+  "training": {
+    "seed": 42,
+    "epochs": 20,
+    "batch_size": 16,
+    "learning_rate": 4.57086506202e-05,
+    "weight_decay": 0.001,
+    "assistance_loss_weight": 1.0,
+    "assistance_type_loss_weight": 1.0,
+    "receiving_hand_loss_weight": 1.0,
+    "pose_loss_weight": 1.0,
+    "orientation_loss_weight": 0.5,
+    "gradient_clip_norm": 1.0,
+    "early_stopping_patience": 7,
+    "num_workers": 2
+  },
+  "hyperparameter_search": {
+    "schema_version": 1,
+    "search_version": "residual_v2_random_search_v1",
+    "stage": "A",
+    "trial_index": 11,
+    "trial_tag": "trial_011",
+    "search_seed": 20260808,
+    "training_seed": 42,
+    "selection_split": "validation",
+    "test_evaluation": "disabled",
+    "selection_rule": "maximize validation intention macro-F1; retain trials within 0.005 of the best; then minimize validation pose MAE; then maximize validation receiving-hand macro-F1; then minimize trainable parameters",
+    "base_config": "Training/configs/models/residual_transformer_v2.json",
+    "base_config_sha256": "c3dcfbe33f11c0cbce3e569edd4be29ff4498929d6446e327b2bc9e1df074ab6",
+    "parameters": {
+      "learning_rate": 4.57086506202e-05,
+      "weight_decay": 0.001,
+      "dropout": 0.15,
+      "d_model": 32,
+      "nhead": 8,
+      "num_layers": 2,
+      "dim_feedforward": 256,
+      "batch_size": 16,
+      "orientation_loss_weight": 0.5,
+      "receiving_hand_loss_weight": 1.0
+    }
+  }
+}

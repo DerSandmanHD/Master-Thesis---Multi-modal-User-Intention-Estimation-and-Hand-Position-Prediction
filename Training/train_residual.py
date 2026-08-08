@@ -7,6 +7,7 @@ import argparse
 import json
 import math
 import random
+import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -63,6 +64,14 @@ def parse_args() -> argparse.Namespace:
         "--device", choices=("auto", "cpu", "cuda", "mps"), default="auto"
     )
     parser.add_argument("--limit-sequences", type=int, default=None)
+    parser.add_argument(
+        "--skip-test-evaluation",
+        action="store_true",
+        help=(
+            "Do not construct a test DataLoader or compute test metrics. "
+            "Validation metrics are still evaluated for both selected checkpoints."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -516,6 +525,8 @@ def checkpoint_payload(
 
 
 def train(args: argparse.Namespace) -> Path:
+    started_at = datetime.now().astimezone()
+    started_monotonic = time.perf_counter()
     config_path = resolve_project_path(args.config)
     config = json.loads(config_path.read_text(encoding="utf-8"))
     config["data"]["master_dir"] = str(
@@ -539,6 +550,14 @@ def train(args: argparse.Namespace) -> Path:
         model_tag=run_name,
     )
     config["run_context"] = run_context
+    skip_test_evaluation = bool(
+        getattr(args, "skip_test_evaluation", False)
+    )
+    config["evaluation"] = {
+        "validation_checkpoints": ["best_intention", "best_pose"],
+        "test_evaluation_enabled": not skip_test_evaluation,
+        "selection_split": "validation",
+    }
     run_dir = resolve_project_path(
         args.run_dir
         or training_run_directory(
@@ -590,8 +609,10 @@ def train(args: argparse.Namespace) -> Path:
     validation_loader = make_loader(
         bundle.validation, training_config, shuffle=False, device=device
     )
-    test_loader = make_loader(
-        bundle.test, training_config, shuffle=False, device=device
+    test_loader = (
+        None
+        if skip_test_evaluation
+        else make_loader(bundle.test, training_config, shuffle=False, device=device)
     )
 
     model = HierarchicalResidualPoseTransformer(
@@ -702,6 +723,7 @@ def train(args: argparse.Namespace) -> Path:
             print("Early stopping")
             break
 
+    validation_results = {}
     test_results = {}
     checkpoint_metadata = {}
     for name, path in (
@@ -710,15 +732,25 @@ def train(args: argparse.Namespace) -> Path:
     ):
         checkpoint = torch.load(path, map_location=device, weights_only=True)
         model.load_state_dict(checkpoint["model_state_dict"])
-        test_results[name] = run_epoch(
+        validation_results[name] = run_epoch(
             model,
-            test_loader,
+            validation_loader,
             device,
             assistance_criterion,
             assistance_type_criterion,
             receiving_hand_criterion,
             training_config,
         )
+        if test_loader is not None:
+            test_results[name] = run_epoch(
+                model,
+                test_loader,
+                device,
+                assistance_criterion,
+                assistance_type_criterion,
+                receiving_hand_criterion,
+                training_config,
+            )
         checkpoint_metadata[name] = {
             "path": str(path),
             "epoch": int(checkpoint["epoch"]),
@@ -733,24 +765,49 @@ def train(args: argparse.Namespace) -> Path:
         "model_type": "hierarchical_residual_pose_transformer_v2",
         "trainable_parameters": trainable_parameters,
         "checkpoints": checkpoint_metadata,
-        "test": test_results,
+        "validation_by_checkpoint": validation_results,
+        "test_evaluation_skipped": skip_test_evaluation,
         "history": history,
+        "run_context": run_context,
+        "code_provenance": bundle.provenance.get("git", {}),
+        "runtime": {
+            "started_at": started_at.isoformat(),
+            "completed_at": datetime.now().astimezone().isoformat(),
+            "wall_seconds": time.perf_counter() - started_monotonic,
+            "device": str(device),
+            "torch_version": torch.__version__,
+            "cuda_runtime": torch.version.cuda,
+        },
         "legacy_pose_metric_alias": {
             "position_mae_cm": POSITION_ERROR_DEFINITION,
             "position_rmse_cm": POSITION_RMS_ERROR_DEFINITION,
         },
     }
+    if test_loader is not None:
+        report["test"] = test_results
     metrics_path = run_dir / "metrics.json"
     metrics_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    for name, metrics in test_results.items():
+    for name, metrics in validation_results.items():
         print(
-            f"{name}: intent F1={metrics['intention']['macro_f1']:.4f}, "
+            f"{name} validation: "
+            f"intent F1={metrics['intention']['macro_f1']:.4f}, "
             f"hand F1={metrics['receiving_hand']['macro_f1']:.4f}, "
             "pose oracle mean Euclidean="
             f"{metrics['pose_oracle']['position_mae_cm']} cm, "
             "pose end-to-end mean Euclidean="
             f"{metrics['pose_end_to_end']['position_mae_cm']} cm"
         )
+    for name, metrics in test_results.items():
+        print(
+            f"{name} test: intent F1={metrics['intention']['macro_f1']:.4f}, "
+            f"hand F1={metrics['receiving_hand']['macro_f1']:.4f}, "
+            "pose oracle mean Euclidean="
+            f"{metrics['pose_oracle']['position_mae_cm']} cm, "
+            "pose end-to-end mean Euclidean="
+            f"{metrics['pose_end_to_end']['position_mae_cm']} cm"
+        )
+    if skip_test_evaluation:
+        print("Test evaluation skipped by request")
     print(f"Metrics: {metrics_path}")
     return run_dir
 

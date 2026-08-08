@@ -29,7 +29,8 @@ EXPERIMENT_TAG=benchmark_v2
 python3 Training/evaluation/generate_training_diagrams.py \
   --dataset-tag "$DATASET_TAG" \
   --tag "$EXPERIMENT_TAG" \
-  --runs-dir "Training/runs/$DATASET_TAG/$EXPERIMENT_TAG"
+  --runs-dir "Training/runs/$DATASET_TAG/$EXPERIMENT_TAG" \
+  --baseline-comparison-json Training/reports/final_clean_v1_comparison.json
 ```
 
 Die neue Standardausgabe liegt dann unter
@@ -46,6 +47,16 @@ Unter `<output-dir>/data/`:
 - `training_history_mean_std.csv`: Mittelwert und Standardabweichung pro Modell
   und gemeinsamer Epoche
 - `run_summary.csv`: Checkpoint-Epochen und finale Run-Metriken
+- `benchmark_test_summary_mean_std.csv`: Testmetriken als Mittelwert und
+  Populationsstandardabweichung über die drei Seeds
+- `test_intention_confusion_matrices.csv`: aggregierte Intention-
+  Konfusionsmatrizen
+- `test_intention_per_class_metrics.csv`: Precision, Recall, F1 und Support je
+  Klasse, Modell und Seed
+- `test_receiving_hand_confusion_matrix.csv`: Receiving-hand-Auswertung des
+  Residual-v2-Modells
+- `dataset_comparison.csv`: direkter Vergleich zum optional angegebenen
+  älteren Benchmark
 
 Unter `<output-dir>/figures/`, jeweils als PNG mit 300 dpi und als PDF:
 
@@ -53,6 +64,14 @@ Unter `<output-dir>/figures/`, jeweils als PNG mit 300 dpi und als PDF:
 2. `02_validation_intention_macro_f1_by_model`
 3. `03_validation_pose_position_mae_by_model`
 4. `04_validation_intention_macro_f1_mean_std`
+5. `05_test_intention_macro_f1_by_model`
+6. `06_test_pose_position_mae_by_model`
+7. `07_test_intention_accuracy_vs_macro_f1`
+8. `08_test_intention_confusion_matrices`
+9. `09_test_intention_per_class_f1` (Precision, Recall und F1; Support im Titel)
+10. `10_test_receiving_hand_confusion_matrix`
+11. `11_residual_v2_generalization_gap`
+12. `12_dataset_n156_vs_n214` (nur mit `--baseline-comparison-json`)
 
 Sterne markieren die anhand der Validation-Metrik ausgewaehlten Checkpoints.
 Da Early Stopping zu unterschiedlich langen Laeufen fuehrt, werden
@@ -60,6 +79,6 @@ Mittelwert-und-Standardabweichung-Kurven nur fuer Epochen berechnet, die bei
 allen drei Seeds des jeweiligen Modells vorhanden sind. Die einzelnen
 Seed-Kurven bleiben separat sichtbar.
 
-Die F1-Diagramme verwenden fuer bessere Lesbarkeit bewusst den dargestellten
-Wertebereich 0,85 bis 0,95; die exakten Werte bleiben vollstaendig in den
+Alle Abbildungen tragen Dataset-Tag, Experiment-Tag, Splitdefinition, Seeds und
+die Definition der Fehlerbalken. Die exakten Werte bleiben vollständig in den
 CSV-Dateien erhalten.

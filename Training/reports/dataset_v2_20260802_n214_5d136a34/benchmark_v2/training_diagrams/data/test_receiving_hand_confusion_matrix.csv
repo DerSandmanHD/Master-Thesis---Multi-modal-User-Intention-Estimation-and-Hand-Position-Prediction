@@ -1,0 +1,5 @@
+ground_truth,prediction,count_across_seeds,row_fraction
+left,left,241,0.8925925925925926
+left,right,29,0.10740740740740741
+right,left,3,0.004672897196261682
+right,right,639,0.9953271028037384

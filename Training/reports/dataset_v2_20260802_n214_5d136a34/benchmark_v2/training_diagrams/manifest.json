@@ -1,0 +1,67 @@
+{
+  "tag": "benchmark_v2",
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "runs_dir": "Training/runs/dataset_v2_20260802_n214_5d136a34/benchmark_v2",
+  "run_count": 12,
+  "models": {
+    "Transformer v1": [
+      42,
+      43,
+      44
+    ],
+    "MLP": [
+      42,
+      43,
+      44
+    ],
+    "GRU": [
+      42,
+      43,
+      44
+    ],
+    "Residual Transformer v2": [
+      42,
+      43,
+      44
+    ]
+  },
+  "generated_data": [
+    "benchmark_test_summary_mean_std.csv",
+    "dataset_comparison.csv",
+    "run_summary.csv",
+    "test_intention_confusion_matrices.csv",
+    "test_intention_per_class_f1.csv",
+    "test_intention_per_class_metrics.csv",
+    "test_receiving_hand_confusion_matrix.csv",
+    "training_history_by_seed.csv",
+    "training_history_mean_std.csv"
+  ],
+  "generated_figures": [
+    "01_total_loss_train_validation_by_model.pdf",
+    "01_total_loss_train_validation_by_model.png",
+    "02_validation_intention_macro_f1_by_model.pdf",
+    "02_validation_intention_macro_f1_by_model.png",
+    "03_validation_pose_position_mae_by_model.pdf",
+    "03_validation_pose_position_mae_by_model.png",
+    "04_validation_intention_macro_f1_mean_std.pdf",
+    "04_validation_intention_macro_f1_mean_std.png",
+    "05_test_intention_macro_f1_by_model.pdf",
+    "05_test_intention_macro_f1_by_model.png",
+    "06_test_pose_position_mae_by_model.pdf",
+    "06_test_pose_position_mae_by_model.png",
+    "07_test_intention_accuracy_vs_macro_f1.pdf",
+    "07_test_intention_accuracy_vs_macro_f1.png",
+    "08_test_intention_confusion_matrices.pdf",
+    "08_test_intention_confusion_matrices.png",
+    "09_test_intention_per_class_f1.pdf",
+    "09_test_intention_per_class_f1.png",
+    "10_test_receiving_hand_confusion_matrix.pdf",
+    "10_test_receiving_hand_confusion_matrix.png",
+    "11_residual_v2_generalization_gap.pdf",
+    "11_residual_v2_generalization_gap.png",
+    "12_dataset_n156_vs_n214.pdf",
+    "12_dataset_n156_vs_n214.png"
+  ],
+  "aggregation_note": "Mean and standard deviation curves include only epochs available for all three seeds of the respective model.",
+  "baseline_comparison_json": "Training/reports/final_clean_v1_comparison.json"
+}

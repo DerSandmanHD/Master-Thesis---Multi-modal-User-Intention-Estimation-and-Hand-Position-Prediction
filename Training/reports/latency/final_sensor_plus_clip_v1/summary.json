@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "completed_platforms": [
+    "mac_cpu",
+    "mac_mps",
+    "tcml_compute_cpu",
+    "tcml_compute_cuda",
+    "uni_login3_cpu"
+  ],
+  "unavailable_platforms": [
+    {
+      "platform": "uni_login3_cuda",
+      "status": "unavailable",
+      "reason": "torch.cuda.is_available() is false",
+      "requested_checkpoint_sha256": "c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b",
+      "requested_fixture_sha256": "70e9fbf36bf67182bc50b5d719e8e5325559b66ef60fe82e25ef9ad011ccdf6d"
+    }
+  ],
+  "identical_checkpoint_sha256": "c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b",
+  "identical_fixture_sha256": "70e9fbf36bf67182bc50b5d719e8e5325559b66ef60fe82e25ef9ad011ccdf6d",
+  "protocol": {
+    "batch_size": 1,
+    "warmup": 100,
+    "repeats": 1000,
+    "synchronized_per_measurement": true,
+    "realtime_threshold_ms": 33.333333333333336
+  }
+}

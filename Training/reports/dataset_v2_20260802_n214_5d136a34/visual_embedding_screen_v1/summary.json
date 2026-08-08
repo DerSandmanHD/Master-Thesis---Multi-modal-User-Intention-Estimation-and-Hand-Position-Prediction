@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "experiment_tag": "visual_embedding_screen_v1",
+  "selection_split": "validation",
+  "test_metrics_used_for_selection": false,
+  "pose_tiebreak_checkpoint": "best_intention",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "complete": true,
+  "missing_or_invalid": [],
+  "selected_variant_for_final_test": "sensor_plus_clip",
+  "selection_rule": "Highest mean validation intention F1 within 0.005 tolerance; then lowest pose MAE, highest hand F1, and lowest parameter count. The random-feature control is diagnostic and cannot be selected.",
+  "random_control_selectable": false
+}

@@ -1,0 +1,395 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-08-08T11:55:55.533451+00:00",
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "selection_policy": {
+    "split": "validation",
+    "test_metrics_used_for_selection": false,
+    "final_architecture": "sensor_plus_clip",
+    "final_seed": 42,
+    "final_checkpoint": "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed42/best_intention_model.pt",
+    "final_checkpoint_sha256": "c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b"
+  },
+  "hyperparameter_search": {
+    "stage_a_trials": 24,
+    "stage_b_configs": [
+      "trial_022",
+      "trial_001",
+      "trial_020"
+    ],
+    "stage_b_seeds": [
+      42,
+      43,
+      44
+    ],
+    "selected_trial": "trial_022",
+    "selected_metrics": {
+      "rank": 1,
+      "trial_tag": "trial_022",
+      "completed_seeds": 3,
+      "validation_intention_macro_f1_mean": 0.9311180773600837,
+      "validation_intention_macro_f1_std": 0.006406271364956336,
+      "validation_receiving_hand_macro_f1_mean": 0.996443836949345,
+      "validation_receiving_hand_macro_f1_std": 0.002883174680323707,
+      "validation_pose_mae_cm_mean": 8.793761571248373,
+      "validation_pose_mae_cm_std": 0.6946931810057578,
+      "trainable_parameters_mean": 63023.0,
+      "trainable_parameters_std": 0.0,
+      "wall_seconds_mean": 277.4040093783212,
+      "wall_seconds_std": 29.39552165699702,
+      "within_f1_tolerance": true
+    }
+  },
+  "test_metrics": [
+    {
+      "model": "Residual v2 (ursprünglich)",
+      "family": "main",
+      "seeds": "42;43;44",
+      "test_intention_macro_f1_mean": 0.8579077420810391,
+      "test_intention_macro_f1_std": 0.0011874044747724884,
+      "test_intention_accuracy_mean": 0.9031378030776978,
+      "test_intention_accuracy_std": 0.003236960113997177,
+      "test_receiving_hand_macro_f1_mean": 0.9566792589822027,
+      "test_receiving_hand_macro_f1_std": 0.003526272500987017,
+      "test_pose_mae_cm_mean": 14.624356905619303,
+      "test_pose_mae_cm_std": 0.10551911091588694,
+      "test_pose_at_intention_checkpoint_mae_cm_mean": 15.95073127746582,
+      "test_pose_at_intention_checkpoint_mae_cm_std": 0.798667013324109,
+      "trainable_parameters": 184015
+    },
+    {
+      "model": "Residual v2 (getunt)",
+      "family": "main",
+      "seeds": "42;43;44",
+      "test_intention_macro_f1_mean": 0.8630733040662276,
+      "test_intention_macro_f1_std": 0.0038858542690205873,
+      "test_intention_accuracy_mean": 0.906472643216451,
+      "test_intention_accuracy_std": 0.004429783783535428,
+      "test_receiving_hand_macro_f1_mean": 0.9348846046935909,
+      "test_receiving_hand_macro_f1_std": 0.03736795109219714,
+      "test_pose_mae_cm_mean": 15.206881841023764,
+      "test_pose_mae_cm_std": 0.437860530768227,
+      "test_pose_at_intention_checkpoint_mae_cm_mean": 15.552241325378418,
+      "test_pose_at_intention_checkpoint_mae_cm_std": 0.23428636979659412,
+      "trainable_parameters": 63023
+    },
+    {
+      "model": "Sensor + CLIP",
+      "family": "main",
+      "seeds": "42;43;44",
+      "test_intention_macro_f1_mean": 0.8404814699663613,
+      "test_intention_macro_f1_std": 0.00822442505881678,
+      "test_intention_accuracy_mean": 0.8891920646031698,
+      "test_intention_accuracy_std": 0.0030240882476933197,
+      "test_receiving_hand_macro_f1_mean": 0.921640691766255,
+      "test_receiving_hand_macro_f1_std": 0.03492813840469039,
+      "test_pose_mae_cm_mean": 14.881158828735352,
+      "test_pose_mae_cm_std": 0.18475150354769465,
+      "test_pose_at_intention_checkpoint_mae_cm_mean": 14.637516975402832,
+      "test_pose_at_intention_checkpoint_mae_cm_std": 0.06095946820017263,
+      "trainable_parameters": 67119
+    },
+    {
+      "model": "Ablation ohne Gaze",
+      "family": "ablation",
+      "seeds": "42;43;44",
+      "test_intention_macro_f1_mean": 0.7946430421325643,
+      "test_intention_macro_f1_std": 0.03408926855365656,
+      "test_intention_accuracy_mean": 0.8455358544985453,
+      "test_intention_accuracy_std": 0.028358776190231944,
+      "test_receiving_hand_macro_f1_mean": 0.9637677948672593,
+      "test_receiving_hand_macro_f1_std": 0.008892654407525763,
+      "test_pose_mae_cm_mean": 14.287616729736328,
+      "test_pose_mae_cm_std": 0.3611254064673966,
+      "test_pose_at_intention_checkpoint_mae_cm_mean": 14.774072329203287,
+      "test_pose_at_intention_checkpoint_mae_cm_std": 0.15427986151852918,
+      "trainable_parameters": 176847
+    },
+    {
+      "model": "Ablation ohne Handfeatures",
+      "family": "ablation",
+      "seeds": "42;43;44",
+      "test_intention_macro_f1_mean": 0.7519191133006146,
+      "test_intention_macro_f1_std": 0.028232887925500567,
+      "test_intention_accuracy_mean": 0.830377439657847,
+      "test_intention_accuracy_std": 0.02080957652704348,
+      "test_receiving_hand_macro_f1_mean": 0.4193086546949929,
+      "test_receiving_hand_macro_f1_std": 0.0048295787782872066,
+      "test_pose_mae_cm_mean": 16.526939392089844,
+      "test_pose_mae_cm_std": 0.5453873509156194,
+      "test_pose_at_intention_checkpoint_mae_cm_mean": 17.358518600463867,
+      "test_pose_at_intention_checkpoint_mae_cm_std": 1.1666257783033938,
+      "trainable_parameters": 179407
+    },
+    {
+      "model": "Ablation ohne Objektfeatures",
+      "family": "ablation",
+      "seeds": "42;43;44",
+      "test_intention_macro_f1_mean": 0.8844923484032475,
+      "test_intention_macro_f1_std": 0.0019259677325368077,
+      "test_intention_accuracy_mean": 0.9199636181195577,
+      "test_intention_accuracy_std": 0.0031724181246111957,
+      "test_receiving_hand_macro_f1_mean": 0.9813879497763621,
+      "test_receiving_hand_macro_f1_std": 0.00835558011461555,
+      "test_pose_mae_cm_mean": 14.255408922831217,
+      "test_pose_mae_cm_std": 0.22838898441386687,
+      "test_pose_at_intention_checkpoint_mae_cm_mean": 14.491851170857748,
+      "test_pose_at_intention_checkpoint_mae_cm_std": 0.5231229231678741,
+      "trainable_parameters": 170191
+    },
+    {
+      "model": "Ablation ohne VIO",
+      "family": "ablation",
+      "seeds": "42;43;44",
+      "test_intention_macro_f1_mean": 0.8222405079655579,
+      "test_intention_macro_f1_std": 0.015890429221461284,
+      "test_intention_accuracy_mean": 0.8776716788609823,
+      "test_intention_accuracy_std": 0.0071614396859667456,
+      "test_receiving_hand_macro_f1_mean": 0.9033901959077678,
+      "test_receiving_hand_macro_f1_std": 0.052169049465150774,
+      "test_pose_mae_cm_mean": 15.0986909866333,
+      "test_pose_mae_cm_std": 0.9525957004658047,
+      "test_pose_at_intention_checkpoint_mae_cm_mean": 15.319199879964193,
+      "test_pose_at_intention_checkpoint_mae_cm_std": 0.5441526779448652,
+      "trainable_parameters": 181711
+    }
+  ],
+  "visual_validation_screen": {
+    "selected_variant": "sensor_plus_clip",
+    "variants": [
+      {
+        "variant": "sensor_baseline",
+        "completed_seeds": 3,
+        "validation_intention_macro_f1_mean": 0.9311180773600837,
+        "validation_intention_macro_f1_std": 0.006406271364956336,
+        "validation_receiving_hand_macro_f1_mean": 0.996443836949345,
+        "validation_pose_mae_cm_mean": 8.793761571248373,
+        "trainable_parameters": 63023
+      },
+      {
+        "variant": "clip_only",
+        "completed_seeds": 3,
+        "validation_intention_macro_f1_mean": 0.6154910476484944,
+        "validation_intention_macro_f1_std": 0.011895015072921051,
+        "validation_receiving_hand_macro_f1_mean": 0.9892755116377089,
+        "validation_pose_mae_cm_mean": 11.312995910644531,
+        "trainable_parameters": 55343
+      },
+      {
+        "variant": "sensor_plus_clip",
+        "completed_seeds": 3,
+        "validation_intention_macro_f1_mean": 0.9390696872558003,
+        "validation_intention_macro_f1_std": 0.005396141859577874,
+        "validation_receiving_hand_macro_f1_mean": 0.9969558458862281,
+        "validation_pose_mae_cm_mean": 8.846218744913736,
+        "trainable_parameters": 67119
+      },
+      {
+        "variant": "sensor_plus_random",
+        "completed_seeds": 3,
+        "validation_intention_macro_f1_mean": 0.9178130722318838,
+        "validation_intention_macro_f1_std": 0.009850984873331217,
+        "validation_receiving_hand_macro_f1_mean": 0.995920931446706,
+        "validation_pose_mae_cm_mean": 8.464850425720215,
+        "trainable_parameters": 67119
+      }
+    ]
+  },
+  "visual_cache": {
+    "encoder": {
+      "library": "open_clip_torch",
+      "library_version": "2.26.1",
+      "model_name": "ViT-B-32",
+      "pretrained": "openai",
+      "weights_file": "ViT-B-32.pt",
+      "weights_sha256": "40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af",
+      "expected_weights_sha256": "40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af",
+      "hash_verified_before_deserialization": true,
+      "preprocess": [
+        {
+          "type": "Resize",
+          "size": 224,
+          "interpolation": "InterpolationMode.BICUBIC",
+          "max_size": null,
+          "antialias": true
+        },
+        {
+          "type": "CenterCrop",
+          "size": [
+            224.0,
+            224.0
+          ]
+        },
+        {
+          "type": "callable",
+          "name": "open_clip.transform._convert_to_rgb"
+        },
+        {
+          "type": "ToTensor"
+        },
+        {
+          "type": "Normalize",
+          "mean": [
+            0.48145466,
+            0.4578275,
+            0.40821073
+          ],
+          "std": [
+            0.26862954,
+            0.26130258,
+            0.27577711
+          ]
+        }
+      ],
+      "output_normalization": "L2",
+      "sampling_hz": 5.0,
+      "frozen": true,
+      "parameter_count": 151277313,
+      "trainable_parameters": 0
+    },
+    "encoder_fingerprint": "19cce9aeb3ff9e60a82b1cd864258e3c27f4e9dc9a87e9965f62013dab1bab20",
+    "sequences": 214,
+    "embeddings": 36874,
+    "extraction_performance": {
+      "scope": "video_decode_plus_preprocess_plus_frozen_encoder; excludes NPZ write",
+      "timed_sequences": 214,
+      "timed_embeddings": 36874,
+      "wall_seconds_sum": 2733.9390260835644,
+      "embeddings_per_second": 13.48749904375992
+    },
+    "projection": {
+      "fit_split": "train_only",
+      "input_dim": 512,
+      "output_dim": 32,
+      "fit_samples": 28996,
+      "train_sequences": 170,
+      "explained_variance_ratio_sum": 0.7871130108833313,
+      "projection_sha256": "2c1b4b1824d9f956c6e1a0bbf10f98cc4015c986e44605e0a783316147eef3a2"
+    }
+  },
+  "latency": {
+    "temporal_model": [
+      {
+        "platform": "mac_cpu",
+        "device": "cpu",
+        "model_forward_median_ms": 1.1115,
+        "model_forward_p95_ms": 1.22307085,
+        "offline_window_median_ms": 1.117625,
+        "offline_window_p95_ms": 1.20817325,
+        "fraction_within_33_3_ms": 1.0
+      },
+      {
+        "platform": "mac_mps",
+        "device": "mps",
+        "model_forward_median_ms": 2.6020630000000002,
+        "model_forward_p95_ms": 2.8506833,
+        "offline_window_median_ms": 2.754771,
+        "offline_window_p95_ms": 2.9366892499999997,
+        "fraction_within_33_3_ms": 1.0
+      },
+      {
+        "platform": "tcml_compute_cpu",
+        "device": "cpu",
+        "model_forward_median_ms": 1.730147,
+        "model_forward_p95_ms": 1.89275375,
+        "offline_window_median_ms": 1.7798910000000001,
+        "offline_window_p95_ms": 1.9738332,
+        "fraction_within_33_3_ms": 1.0
+      },
+      {
+        "platform": "tcml_compute_cuda",
+        "device": "cuda",
+        "model_forward_median_ms": 1.5851475,
+        "model_forward_p95_ms": 1.6110761999999998,
+        "offline_window_median_ms": 1.7320069999999999,
+        "offline_window_p95_ms": 1.759472,
+        "fraction_within_33_3_ms": 1.0
+      },
+      {
+        "platform": "uni_login3_cpu",
+        "device": "cpu",
+        "model_forward_median_ms": 2.39526,
+        "model_forward_p95_ms": 2.7922297,
+        "offline_window_median_ms": 2.463533,
+        "offline_window_p95_ms": 2.56194205,
+        "fraction_within_33_3_ms": 1.0
+      }
+    ],
+    "clip_frontend": [
+      {
+        "platform": "mac_cpu",
+        "device": "cpu",
+        "rgb_to_embedding_median_ms": 50.521354,
+        "rgb_to_embedding_p95_ms": 53.308950349999996,
+        "fraction_within_200_ms": 1.0
+      },
+      {
+        "platform": "mac_mps",
+        "device": "mps",
+        "rgb_to_embedding_median_ms": 40.783937,
+        "rgb_to_embedding_p95_ms": 45.1935646,
+        "fraction_within_200_ms": 1.0
+      },
+      {
+        "platform": "tcml_cpu",
+        "device": "cpu",
+        "rgb_to_embedding_median_ms": 74.3931895,
+        "rgb_to_embedding_p95_ms": 76.10585055,
+        "fraction_within_200_ms": 1.0
+      },
+      {
+        "platform": "tcml_cuda",
+        "device": "cuda",
+        "rgb_to_embedding_median_ms": 25.9425965,
+        "rgb_to_embedding_p95_ms": 26.476507549999997,
+        "fraction_within_200_ms": 1.0
+      }
+    ],
+    "unavailable": [
+      {
+        "platform": "uni_login3_cuda",
+        "status": "unavailable",
+        "reason": "torch.cuda.is_available() is false",
+        "requested_checkpoint_sha256": "c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b",
+        "requested_fixture_sha256": "70e9fbf36bf67182bc50b5d719e8e5325559b66ef60fe82e25ef9ad011ccdf6d"
+      }
+    ],
+    "model_fixture_sha256": "70e9fbf36bf67182bc50b5d719e8e5325559b66ef60fe82e25ef9ad011ccdf6d"
+  },
+  "qualitative_overlay": {
+    "sequences": [
+      "Edu_5_20260604_170944",
+      "Jona_7_20260616_182214",
+      "Mona_3_20260624_123548"
+    ],
+    "synchronization_valid": true,
+    "future_prediction_matches": 0,
+    "pose_visualization": "Separate robot-frame XY inset; no 3D-to-RGB projection is claimed because a validated time-varying camera projection was not available."
+  },
+  "evidence_checks": {
+    "hyperparameter_stage_a_complete": true,
+    "hyperparameter_stage_b_complete": true,
+    "hyperparameter_selection_validation_only": true,
+    "ablation_complete": true,
+    "clip_cache_complete": true,
+    "clip_projection_train_only": true,
+    "visual_screen_complete": true,
+    "visual_final_complete": true,
+    "final_checkpoint_validation_selected": true,
+    "overlay_synchronization_valid": true,
+    "model_latency_same_checkpoint": true,
+    "model_latency_five_platforms": true,
+    "clip_latency_complete": true
+  },
+  "limitations": [
+    "Sensor+CLIP was selected on validation but reduced test intention macro-F1.",
+    "The qualitative pose overlay is in a separate robot-frame XY inset, not projected into RGB.",
+    "CLIP frontend and temporal-model latency are measured separately because RGB updates at 5 Hz while the sensor model runs at 30 Hz.",
+    "A new final-checkpoint live headset capture requires physical Aria hardware and is not represented by the offline cross-platform benchmark."
+  ]
+}

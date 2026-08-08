@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "predictions": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed42/test_predictions.csv",
+  "selected_sequences": [
+    "Edu_5_20260604_170944",
+    "Jona_7_20260616_182214",
+    "Mona_3_20260624_123548"
+  ],
+  "selection_reasons": {
+    "Edu_5_20260604_170944": "success_example_high_accuracy_low_pose_error",
+    "Jona_7_20260616_182214": "failure_example_low_accuracy_or_high_pose_error",
+    "Mona_3_20260624_123548": "representative_example_near_median_metrics"
+  },
+  "videos": [
+    {
+      "sequence_id": "Edu_5_20260604_170944",
+      "source_video": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_mp4/Edu_5_20260604_170944.mp4",
+      "output_video": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Edu_5_20260604_170944_prediction_overlay.mp4",
+      "codec": "h264_yuv420p_with_optional_source_audio",
+      "source_fps": 30.0,
+      "source_reported_frames": 1038,
+      "rendered_frames": 1038,
+      "duration_s": 34.6,
+      "prediction_windows": 93,
+      "prediction_first_s": 1.993491589,
+      "prediction_last_s": 33.660154589,
+      "prediction_times_strictly_increasing": true,
+      "alignment_policy": "latest prediction with video_time_s <= frame_time",
+      "max_allowed_prediction_age_ms": 500.0,
+      "matched_video_frames": 940,
+      "mean_prediction_age_ms": 159.17009717021318,
+      "max_prediction_age_ms": 473.17874433333174,
+      "future_prediction_matches": 0,
+      "robot_frame_pose_inset": true,
+      "rgb_projection_claimed": false,
+      "stills": {
+        "success": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Edu_5_20260604_170944_success.png",
+        "error": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Edu_5_20260604_170944_error.png",
+        "handover": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Edu_5_20260604_170944_handover.png"
+      },
+      "selection_reason": "success_example_high_accuracy_low_pose_error"
+    },
+    {
+      "sequence_id": "Jona_7_20260616_182214",
+      "source_video": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_mp4/Jona_7_20260616_182214.mp4",
+      "output_video": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Jona_7_20260616_182214_prediction_overlay.mp4",
+      "codec": "h264_yuv420p_with_optional_source_audio",
+      "source_fps": 30.0,
+      "source_reported_frames": 1165,
+      "rendered_frames": 1165,
+      "duration_s": 38.833333333333336,
+      "prediction_windows": 95,
+      "prediction_first_s": 1.975061013,
+      "prediction_last_s": 36.975058013,
+      "prediction_times_strictly_increasing": true,
+      "alignment_policy": "latest prediction with video_time_s <= frame_time",
+      "max_allowed_prediction_age_ms": 500.0,
+      "matched_video_frames": 960,
+      "mean_prediction_age_ms": 177.54450783333365,
+      "max_prediction_age_ms": 491.60865366666684,
+      "future_prediction_matches": 0,
+      "robot_frame_pose_inset": true,
+      "rgb_projection_claimed": false,
+      "stills": {
+        "error": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Jona_7_20260616_182214_error.png",
+        "success": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Jona_7_20260616_182214_success.png",
+        "handover": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Jona_7_20260616_182214_handover.png"
+      },
+      "selection_reason": "failure_example_low_accuracy_or_high_pose_error"
+    },
+    {
+      "sequence_id": "Mona_3_20260624_123548",
+      "source_video": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_mp4/Mona_3_20260624_123548.mp4",
+      "output_video": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Mona_3_20260624_123548_prediction_overlay.mp4",
+      "codec": "h264_yuv420p_with_optional_source_audio",
+      "source_fps": 30.0,
+      "source_reported_frames": 1149,
+      "rendered_frames": 1149,
+      "duration_s": 38.3,
+      "prediction_windows": 105,
+      "prediction_first_s": 1.994299179,
+      "prediction_last_s": 37.994299179,
+      "prediction_times_strictly_increasing": true,
+      "alignment_policy": "latest prediction with video_time_s <= frame_time",
+      "max_allowed_prediction_age_ms": 500.0,
+      "matched_video_frames": 1054,
+      "mean_prediction_age_ms": 156.74413219544613,
+      "max_prediction_age_ms": 472.3668209999943,
+      "future_prediction_matches": 0,
+      "robot_frame_pose_inset": true,
+      "rgb_projection_claimed": false,
+      "stills": {
+        "success": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Mona_3_20260624_123548_success.png",
+        "error": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Mona_3_20260624_123548_error.png",
+        "handover": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final/Mona_3_20260624_123548_handover.png"
+      },
+      "selection_reason": "representative_example_near_median_metrics"
+    }
+  ],
+  "synchronization_valid": true,
+  "pose_visualization": "Separate robot-frame XY inset; no 3D-to-RGB projection is claimed because a validated time-varying camera projection was not available."
+}

@@ -47,16 +47,77 @@
       "experiment_tag": "residual_v2_hp_search_v1",
       "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
       "kind": "validation_only_random_search",
-      "status": "scheduled",
+      "status": "completed",
+      "slurm_job_id": 2204077,
       "models": [
         "residual_v2"
       ],
       "seeds": [42],
       "trial_count": 24,
+      "run_count": 24,
       "search_seed": 20260808,
       "test_evaluation": "disabled",
       "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_hp_search_v1",
-      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_hp_search_v1"
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_hp_search_v1",
+      "result": {
+        "complete_trials": 24,
+        "selected_for_confirmation": [
+          "trial_022",
+          "trial_001",
+          "trial_020"
+        ],
+        "stage_a_winner": "trial_022",
+        "selection_split": "validation",
+        "test_metrics_forbidden": true
+      }
+    },
+    {
+      "experiment_tag": "residual_v2_hp_confirm_v1",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "validation_only_hyperparameter_confirmation",
+      "status": "completed",
+      "slurm_job_id": 2204122,
+      "models": [
+        "residual_v2"
+      ],
+      "seeds": [42, 43, 44],
+      "run_count": 9,
+      "test_evaluation": "disabled",
+      "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_hp_confirm_v1",
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_hp_confirm_v1",
+      "result": {
+        "selected_trial": "trial_022",
+        "validation_intention_macro_f1_mean": 0.9311180773600837,
+        "validation_intention_macro_f1_population_std": 0.006406271364956336,
+        "validation_receiving_hand_macro_f1_mean": 0.996443836949345,
+        "validation_pose_mae_cm_mean": 8.793761571248373,
+        "trainable_parameters": 63023,
+        "selection_split": "validation",
+        "test_metrics_forbidden": true
+      }
+    },
+    {
+      "experiment_tag": "residual_v2_tuned_v1",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "validation_selected_final_sensor_test",
+      "status": "completed",
+      "slurm_job_id": 2204164,
+      "models": [
+        "residual_v2"
+      ],
+      "seeds": [42, 43, 44],
+      "run_count": 3,
+      "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_tuned_v1",
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_tuned_v1",
+      "result": {
+        "test_intention_macro_f1_mean": 0.8630733040662276,
+        "test_intention_macro_f1_population_std": 0.0038858542690205873,
+        "test_intention_accuracy_mean": 0.906472643216451,
+        "test_receiving_hand_macro_f1_mean": 0.9348846046935909,
+        "test_pose_position_mae_cm_mean": 15.206881841023764,
+        "trainable_parameters": 63023,
+        "selection_used_test_metrics": false
+      }
     },
     {
       "experiment_tag": "modality_ablation_v1",
@@ -73,6 +134,7 @@
       ],
       "seeds": [42, 43, 44],
       "run_count": 12,
+      "latency_slurm_job_id": 2204124,
       "baseline_experiment": "benchmark_v2",
       "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/modality_ablation_v1",
       "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/modality_ablation_v1",
@@ -84,6 +146,125 @@
         "no_objects_test_pose_mae_delta_cm": -0.36894798278808594,
         "checkpoint_policy": "intention/hand from best_intention; pose from best_pose",
         "selection_note": "descriptive preregistered ablation; test deltas are not used to alter the final architecture"
+      }
+    },
+    {
+      "experiment_tag": "visual_embedding_cache_v1",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "frozen_clip_embedding_cache",
+      "status": "completed",
+      "slurm_job_id": 2204123,
+      "models": [
+        "clip_vit_b32"
+      ],
+      "seeds": [20260808],
+      "run_root": "Training/reports/dataset_v2_20260802_n214_5d136a34/visual_embedding_cache_v1",
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/visual_embedding_cache_v1",
+      "result": {
+        "sequences": 214,
+        "embeddings": 36874,
+        "sampling_hz": 5.0,
+        "source_dimensions": 512,
+        "projected_dimensions": 32,
+        "pca_fit_split": "train",
+        "pca_explained_variance_ratio": 0.787113,
+        "errors": 0
+      }
+    },
+    {
+      "experiment_tag": "visual_embedding_screen_v1",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "validation_only_visual_feature_screen",
+      "status": "completed",
+      "slurm_job_ids": [2204147, 2204160],
+      "models": [
+        "clip_only",
+        "sensor_plus_clip",
+        "sensor_plus_random"
+      ],
+      "seeds": [42, 43, 44],
+      "run_count": 9,
+      "test_evaluation": "disabled",
+      "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_screen_v1",
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/visual_embedding_screen_v1",
+      "result": {
+        "sensor_validation_intention_macro_f1_mean": 0.9311180773600837,
+        "clip_only_validation_intention_macro_f1_mean": 0.6154910476484944,
+        "sensor_plus_clip_validation_intention_macro_f1_mean": 0.9390696872558003,
+        "sensor_plus_random_validation_intention_macro_f1_mean": 0.9178130722318838,
+        "selected_variant": "sensor_plus_clip",
+        "selection_split": "validation",
+        "test_metrics_used_for_selection": false
+      }
+    },
+    {
+      "experiment_tag": "visual_embedding_final_v1",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "validation_selected_visual_final_test",
+      "status": "completed",
+      "slurm_job_id": 2204167,
+      "models": [
+        "sensor_plus_clip"
+      ],
+      "seeds": [42, 43, 44],
+      "run_count": 3,
+      "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1",
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1",
+      "result": {
+        "test_intention_macro_f1_mean": 0.8404814699663613,
+        "test_intention_macro_f1_population_std": 0.00822442505881678,
+        "test_intention_accuracy_mean": 0.8891920646031698,
+        "test_receiving_hand_macro_f1_mean": 0.921640691766255,
+        "test_pose_position_mae_cm_mean": 14.881158828735352,
+        "trainable_parameters": 67119,
+        "selected_seed": 42,
+        "selected_checkpoint_sha256": "c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b",
+        "selection_used_test_metrics": false
+      }
+    },
+    {
+      "experiment_tag": "clip_vit_b32_latency_v1",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "clip_frontend_latency",
+      "status": "completed",
+      "slurm_job_id": 2204145,
+      "models": [
+        "clip_vit_b32"
+      ],
+      "seeds": [20260808],
+      "comparison_report": "Training/reports/latency/clip_vit_b32_openai_5hz",
+      "result": {
+        "platform_count": 4,
+        "warmup": 100,
+        "repeats": 1000,
+        "full_pipeline_median_ms_min": 25.943,
+        "full_pipeline_median_ms_max": 74.393,
+        "fraction_within_200_ms": 1.0
+      }
+    },
+    {
+      "experiment_tag": "final_sensor_plus_clip_latency_v1",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "final_temporal_model_latency",
+      "status": "completed",
+      "slurm_job_id": 2204173,
+      "models": [
+        "sensor_plus_clip"
+      ],
+      "seeds": [42],
+      "comparison_report": "Training/reports/latency/final_sensor_plus_clip_v1",
+      "result": {
+        "completed_platform_devices": 5,
+        "unavailable_platform_devices": [
+          "uni_login3_cuda"
+        ],
+        "warmup": 100,
+        "repeats": 1000,
+        "forward_median_ms_min": 1.1115,
+        "forward_median_ms_max": 2.6021,
+        "fraction_within_33_3_ms": 1.0,
+        "checkpoint_sha256": "c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b",
+        "fixture_sha256": "70e9fbf36bf67182bc50b5d719e8e5325559b66ef60fe82e25ef9ad011ccdf6d"
       }
     },
     {

@@ -118,3 +118,26 @@ Qualitative Vorhersagen werden mit `export_residual_predictions.py` exportiert.
 Thesis-PNGs. Da eine validierte zeitvariable 3D-zu-RGB-Projektion nicht für alle
 Aufnahmen garantiert ist, werden Ground Truth und Prediction ausdrücklich in
 einem separaten Robot-Frame-Inset gezeigt.
+
+## Zentrale Abschlussauswertung
+
+Nach Abschluss aller Experimente erzeugt folgender Befehl die gemeinsame
+Thesis-Tabelle und prüft gleichzeitig Vollständigkeit, testfreie Auswahl,
+CLIP-PCA-Split, Checkpoint-/Fixture-Hashes, Overlay-Synchronisation und
+Plattformabdeckung:
+
+```bash
+python3 Training/evaluation/build_final_experiment_summary.py \
+  --dataset-tag dataset_v2_20260802_n214_5d136a34
+```
+
+Die Ausgabe liegt unter `Training/reports/<dataset_tag>/`:
+
+- `FINAL_EXPERIMENT_SUMMARY.md`: kompakte, lesbare Ergebnisübersicht;
+- `FINAL_EXPERIMENT_SUMMARY.json`: maschinenlesbare Werte und Evidenzchecks;
+- `final_test_metrics.csv`: gemeinsame Tabelle aller finalen Modell- und
+  Ablationsergebnisse.
+
+Das Skript bricht mit einer Assertion ab, sobald ein erforderlicher Report
+unvollständig ist oder eine Provenienzbedingung verletzt wird. Es ersetzt
+damit keine Einzelreports, sondern validiert und verknüpft sie.

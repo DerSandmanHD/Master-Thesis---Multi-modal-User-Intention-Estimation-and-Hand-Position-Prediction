@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-08-08T11:23:47.392007+00:00",
+  "status": "unavailable",
+  "requested_device": "cuda",
+  "reason": "torch.cuda.is_available() is false",
+  "requested_artifacts_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed42",
+  "requested_checkpoint": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed42/best_intention_model.pt",
+  "requested_checkpoint_sha256": "c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b",
+  "requested_fixture": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/latency/final_sensor_plus_clip_v1/fixture.npz",
+  "requested_fixture_sha256": "70e9fbf36bf67182bc50b5d719e8e5325559b66ef60fe82e25ef9ad011ccdf6d",
+  "hardware": {
+    "hostname": "login3",
+    "platform": "Linux-5.15.0-186-generic-x86_64-with-glibc2.35",
+    "machine": "x86_64",
+    "processor": "x86_64",
+    "logical_cpu_count": 24,
+    "torch_version": "2.4.1+cu124",
+    "numpy_version": "2.2.6",
+    "device": "cpu",
+    "torch_num_threads": 24,
+    "cuda_runtime": "12.4"
+  }
+}

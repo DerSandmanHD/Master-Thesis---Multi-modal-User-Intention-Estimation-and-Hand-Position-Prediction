@@ -17,9 +17,9 @@ noch auszuführenden Experimenten und neu zu entwickelnden Werkzeugen.
   15.189 Training / 1.978 Validation / 2.199 Test
 - [x] Vier Modellfamilien mit Seeds 42, 43 und 44 trainiert
 - [x] Alle zwölf Benchmark-Läufe erfolgreich abgeschlossen
-- [x] Residual v2 ist die aktuelle Hauptmethode:
-  - Intention Macro-F1: `0,8579 ± 0,0015`
-  - Posefehler: `14,62 ± 0,13 cm`
+- [x] Residual v2 ist die sensorbasierte Ausgangs-Hauptmethode:
+  - Intention Macro-F1: `0,8579 ± 0,0012`
+  - Posefehler: `14,62 ± 0,11 cm`
 - [x] Alter `n156`-Benchmark ist weiterhin vollständig archiviert
 - [x] Neue `n214`-Runs und Vergleichsberichte vollständig vom Cluster lokal
   spiegeln
@@ -47,7 +47,7 @@ Das Skript liegt unter:
 Training/evaluation/generate_training_diagrams.py
 ```
 
-Noch offen:
+Abgeschlossen:
 
 - [x] Generator auf die verschachtelte `n214`-Runstruktur anwenden/anpassen
 - [x] Alle bestehenden vier Graphen für `n214` neu erzeugen
@@ -73,9 +73,9 @@ Hyperparameter sind Einstellungen, die nicht vom Modell gelernt werden,
 sondern vor dem Training festgelegt werden. Eine Hyperparametersuche trainiert
 mehrere Varianten und vergleicht sie ausschließlich auf dem Validation-Split.
 
-### 3.2 Momentane Hyperparameter
+### 3.2 Ausgangs- und ausgewählte Hyperparameter
 
-Quelle: `Training/configs/models/residual_transformer_v2.json`
+Ausgangsquelle: `Training/configs/models/residual_transformer_v2.json`
 
 #### Daten und zeitliches Fenster
 
@@ -117,6 +117,22 @@ Die Live-Parameter `smoothing_window=3`, `minimum_confidence=0.65` und
 `minimum_stable_predictions=2` sind keine Trainingshyperparameter. Sie werden
 später separat auf Validation-/Replay-Daten kalibriert.
 
+Die ausschließlich auf Validation ausgewählte Konfiguration `trial_022`
+ändert die wichtigsten Werte wie folgt:
+
+| Hyperparameter | Ausgewählter Wert |
+|---|---:|
+| `d_model` | 32 |
+| Attention Heads | 8 |
+| Transformer-Layer | 1 |
+| Feedforward-Dimension | 256 |
+| Dropout | 0,15 |
+| Batchgröße | 64 |
+| Learning Rate | 0,0003816056 |
+| Weight Decay | 0,0001 |
+| Receiving-Hand-Lossgewicht | 2,0 |
+| Orientierungs-Lossgewicht | 0,5 |
+
 ### 3.3 Suchprotokoll
 
 - [x] Literatur und vergleichbare Arbeiten nach verwendeten Suchräumen prüfen
@@ -149,13 +165,18 @@ Vorgeschlagener erster Suchraum:
 
 Empfohlenes Vorgehen:
 
-- [ ] Stufe A: 20–30 Trials mit einem festen Such-Seed auf identischem Split
-- [ ] Stufe B: beste 3–5 Konfigurationen mit Seeds 42, 43 und 44 bestätigen
-- [ ] Stufe C: Konfiguration anhand Validation auswählen
-- [ ] Stufe D: genau eine finale Testauswertung durchführen
-- [ ] Suchergebnisse als Parallel-Coordinates-Plot und
+- [x] Stufe A: 24 Trials mit Such-Seed `20260808` auf identischem Split
+- [x] Stufe B: beste drei Konfigurationen mit Seeds 42, 43 und 44 bestätigen
+- [x] Stufe C: `trial_022` ausschließlich anhand Validation auswählen
+- [x] Stufe D: genau eine finale Testauswertung durchführen
+- [x] Suchergebnisse als Parallel-Coordinates-Plot und
   Hyperparameter-vs.-Metrik-Graphen darstellen
-- [ ] Alte Baseline gegen das getunte Modell mit identischen Seeds vergleichen
+- [x] Alte Baseline gegen das getunte Modell mit identischen Seeds vergleichen
+
+Ergebnis: Die getunte Konfiguration erreicht auf Test einen Intentions-
+Macro-F1 von `0,8631 ± 0,0039` statt `0,8579 ± 0,0012` und benötigt
+`63.023` statt `184.015` trainierbare Parameter. Hand-F1 und Pose-MAE werden
+dagegen schlechter; deshalb werden alle drei Zielgrößen getrennt berichtet.
 
 Abnahmekriterium: Keine Auswahlentscheidung darf auf Testmetriken basieren.
 
@@ -190,21 +211,22 @@ Geplantes Layout:
 
 Umsetzung:
 
-- [ ] 2–3 repräsentative Testsequenzen auswählen
+- [x] Drei repräsentative Testsequenzen auswählen: Erfolgs-, Median- und
+  Fehlerbeispiel
 - [x] Modellvorhersagen über `export_checkpoint_predictions.py` oder Replay
   exportieren
 - [x] RGB-Frames und Modellfenster über Device-Timestamps synchronisieren
 - [x] Prüfen, ob 3D-Handposen zuverlässig in das RGB-Bild projiziert werden
   können
-- [ ] Falls Projektion möglich: Kameraextrinsics/-intrinsics und VIO-Pose
-  verwenden
+- [x] Kameraprojektion als nicht ausreichend belastbar verwerfen; keine
+  scheinpräzise 3D-in-RGB-Darstellung erzeugen
 - [x] Falls Projektion nicht belastbar ist: 3D-Ground-Truth und Prediction in
   einem separaten Robot-Frame-Inset darstellen
 - [x] Overlay-Skript mit OpenCV implementieren
 - [x] Wahrscheinlichkeiten als Balken statt nur als Text darstellen
 - [x] Farblegende und klare Kennzeichnung von Ground Truth/Prediction ergänzen
-- [ ] Annotiertes MP4 sowie einzelne Thesis-Abbildungen exportieren
-- [ ] Erfolgs- und Fehlerbeispiel zeigen
+- [x] Drei annotierte H.264/AAC-MP4s sowie neun Thesis-Abbildungen exportieren
+- [x] Erfolgs- und Fehlerbeispiel zeigen
 
 Abnahmekriterium: Die Synchronisation muss durch Timestamp-Prüfungen belegt
 werden; eine visuell plausible, aber zeitlich ungesicherte Überlagerung reicht
@@ -234,7 +256,8 @@ multimodale Baseline verbessern.
 - [x] CLIP-Variante festlegen, zunächst kleiner frozen Encoder
 - [x] RGB-Frames kausal und timestamp-synchron aus VRS/MP4 extrahieren
 - [x] Samplingrate festlegen, zunächst 2–5 Hz
-- [ ] Embeddings einmalig berechnen und pro Sequenz cachen
+- [x] 36.874 Embeddings aus 214 Sequenzen einmalig berechnen und pro Sequenz
+  cachen
 - [x] Hashes von Encoder, Gewichten, Preprocessing und Embeddingdateien sichern
 - [x] Dimension reduzieren/projizieren, ohne Validation/Test-Leakage
 - [x] Embeddings kausal auf den 30-Hz-Modelltakt übertragen
@@ -244,14 +267,19 @@ multimodale Baseline verbessern.
 
 ### 5.3 Vergleichsexperimente
 
-- [ ] Bestehende multimodale Residual-v2-Baseline
-- [ ] CLIP-only Baseline
-- [ ] bestehende Features + CLIP
-- [ ] bestehende Features + zufällige/frozen Kontrollfeatures als Sanity Check
-- [ ] jede finale Variante mit Seeds 42, 43 und 44 trainieren
-- [ ] Intention-F1, Receiving-Hand-F1, Pose-MAE, Parameterzahl und Latenz
+- [x] Bestehende multimodale Residual-v2-Baseline
+- [x] CLIP-only Baseline
+- [x] bestehende Features + CLIP
+- [x] bestehende Features + zufällige/frozen Kontrollfeatures als Sanity Check
+- [x] jede Screening- und finale Variante mit Seeds 42, 43 und 44 trainieren
+- [x] Intention-F1, Receiving-Hand-F1, Pose-MAE, Parameterzahl und Latenz
   vergleichen
-- [ ] CLIP-spezifische Ablation (`with CLIP` vs. `without CLIP`) ergänzen
+- [x] CLIP-spezifische Ablation (`with CLIP` vs. `without CLIP`) ergänzen
+
+Ergebnis: Sensor+CLIP wird auf Validation ausgewählt (`0,9391` gegenüber
+`0,9311`), verbessert den Test-Intentions-F1 aber nicht (`0,8405` gegenüber
+`0,8631`). Dieser negative Generalisierungsbefund bleibt unverändert
+dokumentiert; der Testsplit wurde nicht zum Nachjustieren benutzt.
 
 Abnahmekriterium: Testverbesserungen werden erst berichtet, nachdem Architektur
 und Hyperparameter anhand Validation festgelegt wurden.
@@ -277,7 +305,7 @@ Bereits umgesetzt:
 - [x] Ablations-Smoke-Test
 - [x] identische Architektur, Splits und Trainingshyperparameter vorgesehen
 
-Noch offen:
+Abgeschlossen:
 
 - [x] Ablationsabschnitte verwandter Papers lesen und Vergleichsmatrix anlegen
 - [x] Ablationsprotokoll vor dem Start festschreiben
@@ -286,8 +314,8 @@ Noch offen:
 - [x] Mittelwert und Standardabweichung berechnen
 - [x] Delta zur vollständigen Baseline berichten
 - [x] Balkendiagramme für Intention-F1, Hand-F1 und Pose-MAE erstellen
-- [ ] Auswirkungen auf Parameterzahl und Latenz berichten
-- [ ] Nach CLIP-Integration `no_clip`/`with_clip` ergänzen
+- [x] Auswirkungen auf Parameterzahl und Latenz berichten
+- [x] Nach CLIP-Integration `without CLIP`/`with CLIP` ergänzen
 
 Wichtige Interpretation: `no_hands` entfernt Handfeatures aus dem Encoder, aber
 Ground-Truth-Handreferenzen für die Pose-Loss-Berechnung bleiben als
@@ -313,12 +341,12 @@ Es müssen drei unterschiedliche Größen getrennt werden:
 
 ### 7.2 Plattformen
 
-- [ ] Mac CPU
-- [ ] Mac MPS/Apple GPU
-- [ ] verfügbarer Uni-Rechner CPU
-- [ ] verfügbarer Uni-Rechner GPU, falls vorhanden
-- [ ] TCML-Compute-Node CPU
-- [ ] TCML-Compute-Node GPU über SLURM
+- [x] Mac CPU
+- [x] Mac MPS/Apple GPU
+- [x] verfügbarer Uni-Rechner CPU (`login3`)
+- [x] verfügbarer Uni-Rechner GPU geprüft: auf `login3` nicht verfügbar
+- [x] TCML-Compute-Node CPU
+- [x] TCML-Compute-Node GPU über SLURM
 
 Der TCML-Cluster ist für Offline-Inferenz- und Modelllatenz geeignet. Ein echter
 Aria-USB-Livestream ist dort voraussichtlich nicht sinnvoll, weil die Brille am
@@ -333,16 +361,21 @@ Vorhandene Grundlage:
 - `analyze_live_validation.py` aggregiert Latenzen
 - Replay und Batch-Replay besitzen bereits Latenzfelder
 
-Noch offen:
+Abgeschlossen und abgegrenzt:
 
-- [ ] neue Live-Sitzung mit Eventmarkern aufnehmen
-- [ ] Capture-/Callback-, Feature-, Inferenz-, Quality- und Outputzeiten trennen
-- [ ] mindestens drei Sitzungen pro relevanter Plattform durchführen
-- [ ] Latenzverteilung als Box-/Violinplot und CDF darstellen
-- [ ] Anteil unter einer vorab definierten Echtzeitgrenze berichten
-- [ ] Einschränkung der Device-/Host-Uhrsynchronisation dokumentieren
+- [x] Drei vorhandene Mac-Live-Sitzungen mit insgesamt 1.116 Vorhersagen
+  explorativ aggregieren
+- [x] Capture-/Callback- und Device-/Host-Anteile nicht aus inkompatiblen Uhren
+  subtrahieren; nicht trennbare Stufen explizit als Limitation ausweisen
+- [x] Latenzverteilung und CDF für reproduzierbare Offline- und vorhandene
+  Live-Messungen darstellen
+- [x] Anteil unter vorab definierten Echtzeitgrenzen berichten
+- [x] Einschränkung der Device-/Host-Uhrsynchronisation dokumentieren
+- [x] Neue Live-Sitzung mit finalem Checkpoint als externe Hardware-Aufgabe
+  kennzeichnen: ohne physisch angeschlossene Aria-Brille in dieser Umgebung
+  nicht autonom ausführbar und daher nicht durch synthetische Daten ersetzen
 
-## 8. Empfohlene Reihenfolge
+## 8. Abgearbeitete Reihenfolge
 
 ### Phase A – Ergebnisse sichern und Baseline vervollständigen
 
@@ -354,9 +387,9 @@ Noch offen:
 ### Phase B – Hyperparametersuche
 
 - [x] Suchskript und Clusterjob implementieren
-- [ ] 20–30 Suchtrials durchführen
-- [ ] Top-Konfigurationen mit drei Seeds bestätigen
-- [ ] getunte Baseline festschreiben
+- [x] 24 Suchtrials durchführen
+- [x] Top-Konfigurationen mit drei Seeds bestätigen
+- [x] getunte Baseline festschreiben
 
 ### Phase C – Ablationen
 
@@ -366,21 +399,22 @@ Noch offen:
 ### Phase D – CLIP
 
 - [x] Embeddingpipeline implementieren
-- [ ] CLIP-only und multimodal+CLIP vergleichen
-- [ ] Entscheidung über finale Architektur treffen
+- [x] CLIP-only und multimodal+CLIP vergleichen
+- [x] Entscheidung über finale Studienarchitektur ausschließlich auf Validation
+  treffen
 
 ### Phase E – qualitative und Laufzeitauswertung
 
 - [x] Video-Overlay zunächst mit bestehendem Modell prototypisieren
-- [ ] finales Video mit ausgewähltem Modell erzeugen
-- [ ] Latenzmessung auf Mac, Uni-Hardware und TCML durchführen
+- [x] finale Videos mit ausgewähltem Modell erzeugen
+- [x] Latenzmessung auf Mac, Uni-Hardware und TCML durchführen
 
 ### Phase F – Thesis-Artefakte
 
-- [ ] finale Tabellen und Graphen versionieren
-- [ ] Methoden- und Ergebnisteil aktualisieren
-- [ ] Limitationen dokumentieren
-- [ ] alle finalen Zahlen gegen maschinenlesbare Reports prüfen
+- [x] finale Tabellen und Graphen versionieren
+- [x] Methoden- und Ergebnisentwurf aktualisieren
+- [x] Limitationen dokumentieren
+- [x] alle finalen Zahlen gegen maschinenlesbare Reports prüfen
 
 ## 9. Unmittelbar nächste Aufgaben
 

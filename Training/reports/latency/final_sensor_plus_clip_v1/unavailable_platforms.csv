@@ -1,0 +1,2 @@
+platform,status,reason,requested_checkpoint_sha256,requested_fixture_sha256
+uni_login3_cuda,unavailable,torch.cuda.is_available() is false,c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b,70e9fbf36bf67182bc50b5d719e8e5325559b66ef60fe82e25ef9ad011ccdf6d

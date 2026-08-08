@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-08-08T11:21:15.805961+00:00",
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "architecture_source": "Training/reports/dataset_v2_20260802_n214_5d136a34/visual_embedding_screen_v1/summary.json",
+  "selected_architecture": "sensor_plus_clip",
+  "selected_experiment": "visual_embedding_final_v1",
+  "selected_model": "sensor_plus_clip",
+  "selected_seed": 42,
+  "selected_checkpoint": "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed42/best_intention_model.pt",
+  "selected_checkpoint_sha256": "c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b",
+  "selection_split": "validation",
+  "test_metrics_read_for_selection": false,
+  "selection_rule": "retain seeds within 0.005 of best validation intention macro-F1; then minimize validation pose MAE; maximize validation hand F1; use lower seed only as deterministic final tie-break",
+  "candidates": [
+    {
+      "seed": 42,
+      "run_dir": "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed42",
+      "validation_intention_macro_f1": 0.9466006312915806,
+      "validation_receiving_hand_macro_f1": 0.9984825493171472,
+      "validation_pose_mae_cm": 8.070886611938477,
+      "checkpoint": "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed42/best_intention_model.pt",
+      "checkpoint_sha256": "c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b",
+      "config_sha256": "bfefb00ad3b057e7cd7b8c5f67eda82634560ed289d5c6fc5b05e54e2713faf1"
+    },
+    {
+      "seed": 43,
+      "run_dir": "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed43",
+      "validation_intention_macro_f1": 0.9318802798496084,
+      "validation_receiving_hand_macro_f1": 0.9939024390243902,
+      "validation_pose_mae_cm": 7.875470161437988,
+      "checkpoint": "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed43/best_intention_model.pt",
+      "checkpoint_sha256": "e5fec38099b9f7c879a8c410fc6d549682ee12b19d78531511225f37865967e3",
+      "config_sha256": "c708b170aa95cd948e09c4276d6b92410b351fdb1e5edd2c39ee6d79ac1bf434"
+    },
+    {
+      "seed": 44,
+      "run_dir": "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed44",
+      "validation_intention_macro_f1": 0.933154244016606,
+      "validation_receiving_hand_macro_f1": 0.9984825493171472,
+      "validation_pose_mae_cm": 7.922566890716553,
+      "checkpoint": "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1/sensor_plus_clip/visual_embedding_final_v1_sensor_plus_clip_seed44/best_intention_model.pt",
+      "checkpoint_sha256": "90228ed5e919ee14858699bc8e9f94b09af510da896401ff6e6cc6deed7f978e",
+      "config_sha256": "f041c4b6a76a106eea62a5f592199d3d574857f4aa8da169451757327dce3d0c"
+    }
+  ]
+}

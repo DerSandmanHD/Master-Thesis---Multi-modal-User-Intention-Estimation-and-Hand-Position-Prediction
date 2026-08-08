@@ -4,6 +4,25 @@ Dieser Ordner enthaelt die reproduzierbare Trainingspipeline fuer die
 hierarchische Assistenzintention und die handover-spezifische Vorhersage der
 zukuenftigen Empfangshand.
 
+## Finaler n214-Experimentstand
+
+Die vollständige Experimentreihe für
+`dataset_v2_20260802_n214_5d136a34` ist abgeschlossen. Einstiegspunkte sind:
+
+- `Training/EXPERIMENT_ROADMAP.md`: abgearbeitete Aufgaben und Grenzen;
+- `Training/reports/dataset_v2_20260802_n214_5d136a34/FINAL_EXPERIMENT_SUMMARY.md`:
+  zentrale, automatisch geprüfte Ergebnisübersicht;
+- `Thesis/experiment_results_n214.md`: Methoden- und Ergebnisentwurf;
+- `Training/run_registry.json`: Jobs, Seeds, Reports und finaler
+  Checkpoint-Hash.
+
+Der eingefrorene Studiencheckpoint ist Sensor+CLIP, Seed 42, ausgewählt nur
+auf Validation. Sein Checkpoint-SHA-256 lautet
+`c9de5f091b1230bd0117a99a3fbbd69ae2c28ac67353fc5e644bec56bf73967b`.
+Das getunte reine Sensormodell erzielt auf Test den höheren beobachteten
+Intent-Macro-F1 (`0,8631` gegenüber `0,8405`); dieser nachgelagerte Testbefund
+wurde nicht zur rückwirkenden Modellwahl benutzt.
+
 ## Aufgaben
 
 Das Modell loest zwei hierarchische Klassifikationsstufen und eine bedingte

@@ -119,8 +119,9 @@ Nach Implementierung werden ohne Testblick festgelegt und verglichen:
 - `sensor_plus_random_frozen`: dimensionsgleiche, deterministische frozen
   Zufallsfeatures als Sanity Check.
 
-Zuerst wird je Variante ein Validation-Smoke-/Designlauf ausgeführt. Die
-Architektur wird danach eingefroren; finale Varianten laufen mit drei Seeds.
+Alle drei visuellen Varianten werden im Screening mit Seeds 42, 43 und 44
+ausschließlich auf Validation verglichen. Danach wird genau eine Architektur
+eingefroren und einmalig mit denselben drei Seeds auf Test ausgewertet.
 
 ## 5. Festgelegtes CLIP-Protokoll
 
@@ -132,10 +133,11 @@ Architektur wird danach eingefroren; finale Varianten laufen mit drei Seeds.
   `float16`, Validitätsmaske und Provenienz-JSON.
 - Zuordnung zum 30-Hz-Takt: letztes verfügbares Embedding (`timestamp <= t`),
   maximale erlaubte Alterung explizit protokollieren; sonst Missing-Maske.
-- Projektion: lernbare lineare Projektion auf 32 oder 64 Dimensionen; Auswahl
-  nur auf Validation.
-- Keine PCA über den Gesamtdatensatz. Falls später PCA verwendet wird, wird sie
-  ausschließlich auf Trainingsteilnehmern angepasst.
+- Projektion: feste PCA von 512 auf 32 Dimensionen, ausschließlich auf
+  Trainingsteilnehmern angepasst; die nachfolgende Modellprojektion bleibt
+  lernbar.
+- Keine PCA über den Gesamtdatensatz; Validation- und Testteilnehmer sind beim
+  Fit explizit ausgeschlossen und werden in der Projektionsmetadatei gelistet.
 - Cache-Fingerprint umfasst Sequenzliste, Video-Hash, Encodername,
   Gewichts-Hash, Paketversion, Preprocessing und Samplingrate.
 

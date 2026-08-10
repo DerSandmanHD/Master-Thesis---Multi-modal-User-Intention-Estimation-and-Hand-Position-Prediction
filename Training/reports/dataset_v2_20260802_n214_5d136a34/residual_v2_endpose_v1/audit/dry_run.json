@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-08-10T15:34:00.676378+00:00",
+  "status": "passed",
+  "training_started": false,
+  "test_metrics_computed": false,
+  "config": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction-endpose-c95fb14/Training/configs/models/residual_transformer_endpose_v1.json",
+  "config_sha256": "e9357e93d34a73833949f25606b01516e223cce5749412612159bc68ac889863",
+  "audit_report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/audit/endpose_target_audit.json",
+  "audit_report_sha256": "7d2f47cb6495d803d66c52474c6a95119873cf118285138360d31bfcf918b7cf",
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "experiment_tag": "residual_v2_endpose_v1",
+  "source_content_fingerprint": "d97c840904d01f687feba713cc98c72b226f388a6d3636c4ce9546194938444a",
+  "dataset_content_fingerprint": "35d4899cd152cc0be6b982690606ac7cbb687683d7028fd6235dfa15fc1bb975",
+  "selected_sequences": 214,
+  "split_participants": {
+    "train": [
+      "Angelina",
+      "Berat",
+      "David",
+      "Felix",
+      "Florian",
+      "Isa",
+      "Jan",
+      "Jola",
+      "Julienco",
+      "Leys",
+      "Maria",
+      "Melih",
+      "Miro",
+      "Paul",
+      "Suthan",
+      "Tarik",
+      "Test",
+      "Urim",
+      "Yuzhi"
+    ],
+    "validation": [
+      "Atilla",
+      "Ermal",
+      "Vanessa"
+    ],
+    "test": [
+      "Edu",
+      "Jona",
+      "Mona"
+    ]
+  },
+  "windows": {
+    "train": 15189,
+    "validation": 1978,
+    "test": 2199
+  },
+  "terminal_target_windows": {
+    "train": 3300,
+    "validation": 330,
+    "test": 282
+  },
+  "pose_target_definition": {
+    "mode": "terminal_endpose",
+    "aggregation_window_seconds": 0.5,
+    "minimum_valid_samples": 8,
+    "minimum_valid_ratio": 0.7,
+    "minimum_valid_span_seconds": 0.35,
+    "maximum_position_p90_deviation_m": 0.05,
+    "maximum_orientation_p90_deviation_deg": 25.0,
+    "maximum_stable_window_lag_seconds": 1.0
+  },
+  "trainable_parameters": 63023,
+  "model_forward_checked": true,
+  "planned_runs": [
+    {
+      "seed": 42,
+      "path": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/residual_v2_endpose/residual_v2_endpose_v1_residual_v2_endpose_seed42",
+      "already_exists": false
+    },
+    {
+      "seed": 43,
+      "path": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/residual_v2_endpose/residual_v2_endpose_v1_residual_v2_endpose_seed43",
+      "already_exists": false
+    },
+    {
+      "seed": 44,
+      "path": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/residual_v2_endpose/residual_v2_endpose_v1_residual_v2_endpose_seed44",
+      "already_exists": false
+    }
+  ],
+  "selection_split": "validation",
+  "checkpoint_selection": [
+    "validation_intention_macro_f1",
+    "validation_pose_oracle_position_mae_cm"
+  ],
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "errors": []
+}

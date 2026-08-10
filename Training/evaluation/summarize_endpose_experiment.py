@@ -58,6 +58,13 @@ def endpose_run_path(root: Path, experiment: str, seed: int) -> Path:
     )
 
 
+def portable_artifact_path(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(PROJECT_ROOT.resolve()).as_posix()
+    except ValueError:
+        return str(path)
+
+
 def result_row(model: str, seed: int, report: dict, run_or_report: Path) -> dict:
     test = report["test"]
     intention = test["best_intention"]
@@ -69,7 +76,7 @@ def result_row(model: str, seed: int, report: dict, run_or_report: Path) -> dict
         "model": model,
         "model_label": MODEL_LABELS[model].replace("\n", " "),
         "seed": seed,
-        "artifact": str(run_or_report),
+        "artifact": portable_artifact_path(run_or_report),
         "test_intention_macro_f1": float(intention["intention"]["macro_f1"]),
         "test_receiving_hand_macro_f1": float(
             intention["receiving_hand"]["macro_f1_supported"]
@@ -362,12 +369,20 @@ def fmt(value: float, digits: int = 3) -> str:
 def write_markdown(
     path: Path,
     summary: pd.DataFrame,
+    time_summary: pd.DataFrame,
     audit: dict,
     latency: pd.DataFrame,
     native_summary: dict,
     complete: bool,
 ) -> None:
     indexed = summary.set_index("model")
+    baseline = indexed.loc["t_plus_1_as_terminal"]
+    terminal = indexed.loc["terminal_endpose"]
+    oracle_time = time_summary.loc[
+        time_summary["evaluation"] == "pose_oracle"
+    ].set_index(["model", "time_to_sequence_end_bin"])
+    baseline_far = oracle_time.loc[("t_plus_1_as_terminal", ">=3s")]
+    terminal_far = oracle_time.loc[("terminal_endpose", ">=3s")]
     lines = [
         "# Terminal end-pose experiment (n214)",
         "",
@@ -386,8 +401,8 @@ def write_markdown(
         "",
         "## Test comparison on the same terminal target",
         "",
-        "| Model | Intent macro-F1 | Hand macro-F1 | Position error (cm) | Orientation error (deg) | Parameters |",
-        "|---|---:|---:|---:|---:|---:|",
+        "| Model | Intent macro-F1 | Hand macro-F1 | Position error (cm) | Orientation error (deg) | Target coverage | Parameters |",
+        "|---|---:|---:|---:|---:|---:|---:|",
     ]
     for model in MODEL_ORDER:
         row = indexed.loc[model]
@@ -397,6 +412,7 @@ def write_markdown(
             f"{fmt(row['test_receiving_hand_macro_f1_mean'])} ± {fmt(row['test_receiving_hand_macro_f1_std'])} | "
             f"{fmt(row['test_terminal_position_error_cm_mean'], 2)} ± {fmt(row['test_terminal_position_error_cm_std'], 2)} | "
             f"{fmt(row['test_terminal_orientation_error_deg_mean'], 2)} ± {fmt(row['test_terminal_orientation_error_deg_std'], 2)} | "
+            f"{row['test_target_window_coverage_mean']:.1%} | "
             f"{int(round(row['trainable_parameters_mean'])):,} |"
         )
     lines.extend(
@@ -405,6 +421,26 @@ def write_markdown(
             "Values are mean ± population standard deviation across seeds 42, 43 and 44. "
             "Intent and hand use the best-intention checkpoint; pose uses the best-pose "
             "checkpoint. Both checkpoints were selected exclusively on validation.",
+            "",
+            "## Result",
+            "",
+            "The dedicated terminal model did **not** improve the aggregate terminal-pose "
+            "result. Relative to the existing t+1 checkpoint evaluated against the same "
+            f"terminal target, its position error is "
+            f"{terminal['test_terminal_position_error_cm_mean'] - baseline['test_terminal_position_error_cm_mean']:.2f} cm higher and its "
+            f"orientation error is {terminal['test_terminal_orientation_error_deg_mean'] - baseline['test_terminal_orientation_error_deg_mean']:.2f}° higher. "
+            f"Intent macro-F1 changes by {terminal['test_intention_macro_f1_mean'] - baseline['test_intention_macro_f1_mean']:+.3f} and "
+            f"receiving-hand macro-F1 by {terminal['test_receiving_hand_macro_f1_mean'] - baseline['test_receiving_hand_macro_f1_mean']:+.3f}.",
+            "",
+            "The remaining-time analysis reveals a narrower benefit: at **>=3 seconds** "
+            "before sequence end, the terminal model reaches "
+            f"{terminal_far['position_error_cm_mean']:.2f} cm / "
+            f"{terminal_far['orientation_error_deg_mean']:.2f}° versus "
+            f"{baseline_far['position_error_cm_mean']:.2f} cm / "
+            f"{baseline_far['orientation_error_deg_mean']:.2f}° for the t+1 baseline. "
+            "The t+1 baseline is better in every bin from 0 to 3 seconds. Thus the terminal "
+            "objective shows some long-horizon anticipation, but the overall hypothesis is "
+            "not supported by this experiment.",
             "",
             "For context only, the original model's native t+1 position error was "
             f"{native_summary['native_t_plus_1_position_error_cm_mean']:.2f} ± "
@@ -526,6 +562,7 @@ def main() -> int:
         write_markdown(
             report_dir / "README.md",
             summary,
+            time_summary,
             audit,
             latency,
             native_summary,

@@ -1,0 +1,4 @@
+seed,target_definition,test_intention_macro_f1,test_receiving_hand_macro_f1,native_t_plus_1_position_error_cm,native_t_plus_1_orientation_error_deg
+42,receiving-hand pose at t+1 second,0.8685405080122851,0.9591727101799623,15.422879219055176,41.264217376708984
+43,receiving-hand pose at t+1 second,0.8598579803278009,0.8820943762120232,15.601468086242676,43.212215423583984
+44,receiving-hand pose at t+1 second,0.8608214238585967,0.9633867276887871,14.596298217773438,40.69208908081055

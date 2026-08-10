@@ -268,6 +268,39 @@
       }
     },
     {
+      "experiment_tag": "residual_v2_endpose_v1",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "robust_terminal_handover_pose_comparison",
+      "status": "completed",
+      "audit_slurm_job_id": 2207446,
+      "training_slurm_job_id": 2207456,
+      "finalizer_slurm_job_id": 2207459,
+      "models": [
+        "t_plus_1_as_terminal",
+        "terminal_endpose"
+      ],
+      "seeds": [42, 43, 44],
+      "run_count": 3,
+      "baseline_experiment": "residual_v2_tuned_v1",
+      "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1",
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1",
+      "result": {
+        "accepted_terminal_targets": 208,
+        "handover_sequences": 214,
+        "target_sequence_coverage": 0.9719626168224299,
+        "test_target_window_coverage": 0.9276315789473685,
+        "terminal_test_intention_macro_f1_mean": 0.8467018444029945,
+        "terminal_test_receiving_hand_macro_f1_mean": 0.9051330387655114,
+        "terminal_test_position_error_cm_mean": 19.108163833618164,
+        "terminal_test_orientation_error_deg_mean": 53.964619954427086,
+        "t_plus_1_as_terminal_position_error_cm_mean": 16.004145622253418,
+        "t_plus_1_as_terminal_orientation_error_deg_mean": 49.11860783894857,
+        "trainable_parameters": 63023,
+        "checkpoint_selection_split": "validation",
+        "selection_used_test_metrics": false
+      }
+    },
+    {
       "experiment_tag": "final_clean_v1",
       "dataset_tag": "dataset_v1_20260729_n156_seq457a80f1",
       "kind": "four_model_benchmark",

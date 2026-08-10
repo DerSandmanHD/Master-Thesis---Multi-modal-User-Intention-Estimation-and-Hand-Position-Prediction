@@ -1,0 +1,423 @@
+{
+  "schema_version": 1,
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "experiment_tag": "residual_v2_endpose_v1",
+  "complete": true,
+  "errors": [],
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "target_audit": {
+    "schema_version": 1,
+    "created_at_utc": "2026-08-10T15:33:06.984353+00:00",
+    "status": "sufficient",
+    "training_authorized_by_audit": true,
+    "config": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction-endpose-c95fb14/Training/configs/models/residual_transformer_endpose_v1.json",
+    "config_sha256": "e9357e93d34a73833949f25606b01516e223cce5749412612159bc68ac889863",
+    "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+    "dataset_contract": {
+      "configured": true,
+      "expected": {
+        "expected_selected_sequences": 214,
+        "expected_sequence_fingerprint": "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd",
+        "expected_source_content_fingerprint": "d97c840904d01f687feba713cc98c72b226f388a6d3636c4ce9546194938444a"
+      },
+      "verified": {
+        "selected_sequences": 214,
+        "sequence_fingerprint": "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd",
+        "source_content_fingerprint": "d97c840904d01f687feba713cc98c72b226f388a6d3636c4ce9546194938444a"
+      },
+      "passed": true
+    },
+    "dataset_content_fingerprint": "35d4899cd152cc0be6b982690606ac7cbb687683d7028fd6235dfa15fc1bb975",
+    "source_content_fingerprint": "d97c840904d01f687feba713cc98c72b226f388a6d3636c4ce9546194938444a",
+    "sequence_fingerprint": "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd",
+    "pose_target_definition": {
+      "mode": "terminal_endpose",
+      "aggregation_window_seconds": 0.5,
+      "minimum_valid_samples": 8,
+      "minimum_valid_ratio": 0.7,
+      "minimum_valid_span_seconds": 0.35,
+      "maximum_position_p90_deviation_m": 0.05,
+      "maximum_orientation_p90_deviation_deg": 25.0,
+      "maximum_stable_window_lag_seconds": 1.0
+    },
+    "split_participants": {
+      "train": [
+        "Angelina",
+        "Berat",
+        "David",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Yuzhi"
+      ],
+      "validation": [
+        "Atilla",
+        "Ermal",
+        "Vanessa"
+      ],
+      "test": [
+        "Edu",
+        "Jona",
+        "Mona"
+      ]
+    },
+    "selected_sequences": 214,
+    "handover_sequences": 214,
+    "accepted_handover_sequences": 208,
+    "rejected_handover_sequences": 6,
+    "target_sequence_coverage": 0.9719626168224299,
+    "rejection_reason_counts": {
+      "insufficient_valid_samples": 5,
+      "insufficient_valid_span": 5,
+      "low_valid_ratio": 5,
+      "unstable_orientation": 1,
+      "unstable_position": 1
+    },
+    "splits": {
+      "train": {
+        "sequences": 170,
+        "handover_sequences": 170,
+        "accepted_handover_sequences": 165,
+        "rejected_handover_sequences": 5,
+        "target_sequence_coverage": 0.9705882352941176,
+        "status_counts": {
+          "accepted": 165,
+          "rejected": 5
+        },
+        "handover_windows": 3404,
+        "target_windows": 3324,
+        "target_window_coverage": 0.9764982373678026,
+        "residual_pose_windows": 3300,
+        "residual_reference_coverage": 0.9927797833935018
+      },
+      "validation": {
+        "sequences": 21,
+        "handover_sequences": 21,
+        "accepted_handover_sequences": 21,
+        "rejected_handover_sequences": 0,
+        "target_sequence_coverage": 1.0,
+        "status_counts": {
+          "accepted": 21
+        },
+        "handover_windows": 330,
+        "target_windows": 330,
+        "target_window_coverage": 1.0,
+        "residual_pose_windows": 330,
+        "residual_reference_coverage": 1.0
+      },
+      "test": {
+        "sequences": 23,
+        "handover_sequences": 23,
+        "accepted_handover_sequences": 22,
+        "rejected_handover_sequences": 1,
+        "target_sequence_coverage": 0.9565217391304348,
+        "status_counts": {
+          "accepted": 22,
+          "rejected": 1
+        },
+        "handover_windows": 304,
+        "target_windows": 282,
+        "target_window_coverage": 0.9276315789473685,
+        "residual_pose_windows": 282,
+        "residual_reference_coverage": 1.0
+      }
+    },
+    "requirements": {
+      "minimum_overall_target_sequence_coverage": 0.7,
+      "minimum_accepted_train_sequences": 50,
+      "minimum_accepted_validation_sequences": 5,
+      "minimum_accepted_test_sequences": 5
+    },
+    "requirement_checks": {
+      "overall_target_sequence_coverage": {
+        "actual": 0.9719626168224299,
+        "minimum": 0.7,
+        "passed": true
+      },
+      "accepted_train_sequences": {
+        "actual": 165,
+        "minimum": 50,
+        "passed": true
+      },
+      "accepted_validation_sequences": {
+        "actual": 21,
+        "minimum": 5,
+        "passed": true
+      },
+      "accepted_test_sequences": {
+        "actual": 22,
+        "minimum": 5,
+        "passed": true
+      }
+    },
+    "test_labels_used_for_threshold_tuning": false,
+    "notes": [
+      "Quality thresholds were fixed in the config before this audit.",
+      "Rejected sequences remain available for intention and receiving-hand classification but contribute no pose loss or pose metric.",
+      "No model training or checkpoint selection is performed by this audit."
+    ]
+  },
+  "checkpoint_policy": {
+    "intention_and_hand": "best-intention checkpoint selected on validation",
+    "pose": "best-pose checkpoint selected on validation",
+    "test_used_for_selection": false
+  },
+  "target_definitions": {
+    "existing_t_plus_1": "receiving-hand pose at t+1 second",
+    "new_terminal_endpose": "one robust pose from the latest stable 0.5-second receiving-hand segment after THIRD",
+    "common_comparison_target": "robust terminal receiving-hand pose"
+  },
+  "run_results": [
+    {
+      "model": "terminal_endpose",
+      "model_label": "Terminal endpose model",
+      "seed": 42,
+      "artifact": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/residual_v2_endpose/residual_v2_endpose_v1_residual_v2_endpose_seed42",
+      "test_intention_macro_f1": 0.8456349122114806,
+      "test_receiving_hand_macro_f1": 0.924265072247135,
+      "test_terminal_position_error_cm": 16.843658447265625,
+      "test_terminal_orientation_error_deg": 48.810508728027344,
+      "test_terminal_end_to_end_position_error_cm": 16.698745727539062,
+      "test_terminal_end_to_end_orientation_error_deg": 49.38581085205078,
+      "test_last_observation_position_error_cm": 14.57834243774414,
+      "test_target_windows": 282,
+      "test_handover_windows": 304,
+      "test_target_window_coverage": 0.9276315789473685,
+      "trainable_parameters": 63023,
+      "best_intention_epoch": 17,
+      "best_pose_epoch": 1
+    },
+    {
+      "model": "t_plus_1_as_terminal",
+      "model_label": "t+1 model (as terminal baseline)",
+      "seed": 42,
+      "artifact": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/baseline_terminal_eval/seed42.json",
+      "test_intention_macro_f1": 0.8685405080122851,
+      "test_receiving_hand_macro_f1": 0.9591727101799623,
+      "test_terminal_position_error_cm": 16.261974334716797,
+      "test_terminal_orientation_error_deg": 50.60551452636719,
+      "test_terminal_end_to_end_position_error_cm": 16.254138946533203,
+      "test_terminal_end_to_end_orientation_error_deg": 53.61326599121094,
+      "test_last_observation_position_error_cm": 14.57834243774414,
+      "test_target_windows": 282,
+      "test_handover_windows": 304,
+      "test_target_window_coverage": 0.9276315789473685,
+      "trainable_parameters": 63023,
+      "best_intention_epoch": 10,
+      "best_pose_epoch": 9
+    },
+    {
+      "model": "terminal_endpose",
+      "model_label": "Terminal endpose model",
+      "seed": 43,
+      "artifact": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/residual_v2_endpose/residual_v2_endpose_v1_residual_v2_endpose_seed43",
+      "test_intention_macro_f1": 0.8390486554860105,
+      "test_receiving_hand_macro_f1": 0.8362068965517242,
+      "test_terminal_position_error_cm": 22.26923370361328,
+      "test_terminal_orientation_error_deg": 60.4105224609375,
+      "test_terminal_end_to_end_position_error_cm": 21.943992614746094,
+      "test_terminal_end_to_end_orientation_error_deg": 63.603782653808594,
+      "test_last_observation_position_error_cm": 14.57834243774414,
+      "test_target_windows": 282,
+      "test_handover_windows": 304,
+      "test_target_window_coverage": 0.9276315789473685,
+      "trainable_parameters": 63023,
+      "best_intention_epoch": 17,
+      "best_pose_epoch": 20
+    },
+    {
+      "model": "t_plus_1_as_terminal",
+      "model_label": "t+1 model (as terminal baseline)",
+      "seed": 43,
+      "artifact": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/baseline_terminal_eval/seed43.json",
+      "test_intention_macro_f1": 0.8598579803278009,
+      "test_receiving_hand_macro_f1": 0.8820943762120232,
+      "test_terminal_position_error_cm": 16.75113868713379,
+      "test_terminal_orientation_error_deg": 52.27524185180664,
+      "test_terminal_end_to_end_position_error_cm": 16.890769958496094,
+      "test_terminal_end_to_end_orientation_error_deg": 56.033409118652344,
+      "test_last_observation_position_error_cm": 14.57834243774414,
+      "test_target_windows": 282,
+      "test_handover_windows": 304,
+      "test_target_window_coverage": 0.9276315789473685,
+      "trainable_parameters": 63023,
+      "best_intention_epoch": 16,
+      "best_pose_epoch": 13
+    },
+    {
+      "model": "terminal_endpose",
+      "model_label": "Terminal endpose model",
+      "seed": 44,
+      "artifact": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/residual_v2_endpose/residual_v2_endpose_v1_residual_v2_endpose_seed44",
+      "test_intention_macro_f1": 0.8554219655114922,
+      "test_receiving_hand_macro_f1": 0.9549271474976749,
+      "test_terminal_position_error_cm": 18.211599349975586,
+      "test_terminal_orientation_error_deg": 52.672828674316406,
+      "test_terminal_end_to_end_position_error_cm": 18.257308959960938,
+      "test_terminal_end_to_end_orientation_error_deg": 54.47126007080078,
+      "test_last_observation_position_error_cm": 14.57834243774414,
+      "test_target_windows": 282,
+      "test_handover_windows": 304,
+      "test_target_window_coverage": 0.9276315789473685,
+      "trainable_parameters": 63023,
+      "best_intention_epoch": 2,
+      "best_pose_epoch": 1
+    },
+    {
+      "model": "t_plus_1_as_terminal",
+      "model_label": "t+1 model (as terminal baseline)",
+      "seed": 44,
+      "artifact": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/baseline_terminal_eval/seed44.json",
+      "test_intention_macro_f1": 0.8608214238585967,
+      "test_receiving_hand_macro_f1": 0.9633867276887871,
+      "test_terminal_position_error_cm": 14.999323844909668,
+      "test_terminal_orientation_error_deg": 44.475067138671875,
+      "test_terminal_end_to_end_position_error_cm": 14.825263977050781,
+      "test_terminal_end_to_end_orientation_error_deg": 46.75149917602539,
+      "test_last_observation_position_error_cm": 14.57834243774414,
+      "test_target_windows": 282,
+      "test_handover_windows": 304,
+      "test_target_window_coverage": 0.9276315789473685,
+      "trainable_parameters": 63023,
+      "best_intention_epoch": 15,
+      "best_pose_epoch": 2
+    }
+  ],
+  "aggregate_results": [
+    {
+      "model": "t_plus_1_as_terminal",
+      "model_label": "t+1 model (as terminal baseline)",
+      "completed_seeds": 3,
+      "test_intention_macro_f1_mean": 0.8630733040662276,
+      "test_intention_macro_f1_std": 0.0038858542690205873,
+      "test_receiving_hand_macro_f1_mean": 0.9348846046935909,
+      "test_receiving_hand_macro_f1_std": 0.03736795109219714,
+      "test_terminal_position_error_cm_mean": 16.004145622253418,
+      "test_terminal_position_error_cm_std": 0.7380472180409928,
+      "test_terminal_orientation_error_deg_mean": 49.11860783894857,
+      "test_terminal_orientation_error_deg_std": 3.353490719799735,
+      "test_terminal_end_to_end_position_error_cm_mean": 15.990057627360025,
+      "test_terminal_end_to_end_position_error_cm_std": 0.8636677398161768,
+      "test_terminal_end_to_end_orientation_error_deg_mean": 52.13272476196289,
+      "test_terminal_end_to_end_orientation_error_deg_std": 3.93128179218829,
+      "test_last_observation_position_error_cm_mean": 14.57834243774414,
+      "test_last_observation_position_error_cm_std": 0.0,
+      "test_target_window_coverage_mean": 0.9276315789473685,
+      "test_target_window_coverage_std": 0.0,
+      "trainable_parameters_mean": 63023.0,
+      "trainable_parameters_std": 0.0
+    },
+    {
+      "model": "terminal_endpose",
+      "model_label": "Terminal endpose model",
+      "completed_seeds": 3,
+      "test_intention_macro_f1_mean": 0.8467018444029945,
+      "test_intention_macro_f1_std": 0.006726815914611275,
+      "test_receiving_hand_macro_f1_mean": 0.9051330387655114,
+      "test_receiving_hand_macro_f1_std": 0.05031997963051956,
+      "test_terminal_position_error_cm_mean": 19.108163833618164,
+      "test_terminal_position_error_cm_std": 2.3039223975024195,
+      "test_terminal_orientation_error_deg_mean": 53.964619954427086,
+      "test_terminal_orientation_error_deg_std": 4.822974406211278,
+      "test_terminal_end_to_end_position_error_cm_mean": 18.96668243408203,
+      "test_terminal_end_to_end_position_error_cm_std": 2.1993274382984653,
+      "test_terminal_end_to_end_orientation_error_deg_mean": 55.82028452555338,
+      "test_terminal_end_to_end_orientation_error_deg_std": 5.8823227143442525,
+      "test_last_observation_position_error_cm_mean": 14.57834243774414,
+      "test_last_observation_position_error_cm_std": 0.0,
+      "test_target_window_coverage_mean": 0.9276315789473685,
+      "test_target_window_coverage_std": 0.0,
+      "trainable_parameters_mean": 63023.0,
+      "trainable_parameters_std": 0.0
+    }
+  ],
+  "native_t_plus_1_context": {
+    "test_intention_macro_f1_mean": 0.8630733040662276,
+    "test_intention_macro_f1_std": 0.0038858542690205873,
+    "test_receiving_hand_macro_f1_mean": 0.9348846046935909,
+    "test_receiving_hand_macro_f1_std": 0.03736795109219714,
+    "native_t_plus_1_position_error_cm_mean": 15.206881841023764,
+    "native_t_plus_1_position_error_cm_std": 0.437860530768227,
+    "native_t_plus_1_orientation_error_deg_mean": 41.72284062703451,
+    "native_t_plus_1_orientation_error_deg_std": 1.078737119719015
+  },
+  "latency": [
+    {
+      "model": "terminal_endpose",
+      "device": "cpu",
+      "report": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/latency/endpose/tcml_cpu.json",
+      "checkpoint_sha256": "341d258aa81a62c518661affd018575eac15773fdcbb6f84c646279a6542e613",
+      "trainable_parameters": 63023,
+      "model_forward_mean_ms": 1.820242339,
+      "model_forward_p95_ms": 2.0109315,
+      "offline_window_mean_ms": 1.868857153,
+      "offline_window_p95_ms": 2.07618445
+    },
+    {
+      "model": "terminal_endpose",
+      "device": "cuda",
+      "report": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/latency/endpose/tcml_cuda.json",
+      "checkpoint_sha256": "341d258aa81a62c518661affd018575eac15773fdcbb6f84c646279a6542e613",
+      "trainable_parameters": 63023,
+      "model_forward_mean_ms": 1.609197764,
+      "model_forward_p95_ms": 1.62646115,
+      "offline_window_mean_ms": 1.751823045,
+      "offline_window_p95_ms": 1.7796017
+    },
+    {
+      "model": "t_plus_1_as_terminal",
+      "device": "cpu",
+      "report": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/latency/t_plus_1/tcml_cpu.json",
+      "checkpoint_sha256": "1f057395730e56743cd75397e877ff33c9cd9059a242f58ac16d77e58fd9581e",
+      "trainable_parameters": 63023,
+      "model_forward_mean_ms": 1.856628722,
+      "model_forward_p95_ms": 2.0345786,
+      "offline_window_mean_ms": 1.900016232,
+      "offline_window_p95_ms": 2.08205625
+    },
+    {
+      "model": "t_plus_1_as_terminal",
+      "device": "cuda",
+      "report": "/Users/dersandmannhd/Desktop/Semester 3/Master Thesis/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1/latency/t_plus_1/tcml_cuda.json",
+      "checkpoint_sha256": "1f057395730e56743cd75397e877ff33c9cd9059a242f58ac16d77e58fd9581e",
+      "trainable_parameters": 63023,
+      "model_forward_mean_ms": 1.5822532009999999,
+      "model_forward_p95_ms": 1.59446545,
+      "offline_window_mean_ms": 1.724157656,
+      "offline_window_p95_ms": 1.7339045
+    }
+  ],
+  "generated_files": [
+    "data/model_runs.csv",
+    "data/model_summary.csv",
+    "data/error_vs_time_remaining_by_seed.csv",
+    "data/error_vs_time_remaining.csv",
+    "data/native_t_plus_1_context.csv",
+    "data/latency.csv",
+    "figures/01_terminal_model_comparison.png",
+    "figures/01_terminal_model_comparison.pdf",
+    "figures/02_error_vs_time_remaining.png",
+    "figures/02_error_vs_time_remaining.pdf",
+    "figures/03_latency_comparison.png",
+    "figures/03_latency_comparison.pdf",
+    "figures/04_target_audit.png",
+    "figures/04_target_audit.pdf",
+    "README.md"
+  ]
+}

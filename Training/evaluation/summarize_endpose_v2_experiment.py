@@ -51,6 +51,17 @@ def portable(path: Path) -> str:
         return str(path)
 
 
+def checkpoint_epoch(report: dict, checkpoint: str) -> int:
+    """Read native run epochs and epochs reused by the t+1 re-evaluation."""
+    metadata = report["checkpoints"][checkpoint]
+    value = metadata.get("epoch", metadata.get("source_epoch"))
+    if value is None:
+        raise KeyError(
+            f"checkpoint {checkpoint!r} has neither 'epoch' nor 'source_epoch'"
+        )
+    return int(value)
+
+
 def metric_row(model: str, seed: int, report: dict, artifact: Path) -> dict:
     intention = report["test"]["best_intention"]
     pose = report["test"]["best_pose"]
@@ -90,8 +101,8 @@ def metric_row(model: str, seed: int, report: dict, artifact: Path) -> dict:
             else None
         ),
         "trainable_parameters": int(report["trainable_parameters"]),
-        "best_intention_epoch": int(report["checkpoints"]["best_intention"]["epoch"]),
-        "best_pose_epoch": int(report["checkpoints"]["best_pose"]["epoch"]),
+        "best_intention_epoch": checkpoint_epoch(report, "best_intention"),
+        "best_pose_epoch": checkpoint_epoch(report, "best_pose"),
     }
 
 

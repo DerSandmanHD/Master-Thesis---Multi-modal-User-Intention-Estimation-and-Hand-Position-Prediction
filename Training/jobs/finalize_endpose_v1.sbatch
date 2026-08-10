@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
+REPO_DIR="${REPO_DIR:-$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction}"
 IMAGE="$HOME/singularity/aria_master.simg"
 DATASET_TAG="${DATASET_TAG:-dataset_v2_20260802_n214_5d136a34}"
 EXPERIMENT_TAG="${EXPERIMENT_TAG:-residual_v2_endpose_v1}"

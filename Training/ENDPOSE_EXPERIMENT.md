@@ -63,6 +63,9 @@ AUDIT_JOB=$(sbatch --parsable \
   Training/jobs/audit_endpose_v1.sbatch)
 ```
 
+`REPO_DIR` may be exported to run from a clean worktree while keeping large data
+and existing checkpoints mounted or symlinked from the primary cluster checkout.
+
 Inspect the audit and dry-run first. Training is allowed only when both report
 success:
 

@@ -1,0 +1,159 @@
+{
+  "run_name": "dual_horizon_endpose_v2",
+  "model_type": "hierarchical_dual_horizon_residual_pose_transformer_v3",
+  "experiment_definition": {
+    "name": "terminal_endpose_v2",
+    "primary_target": "One robust terminal receiving-hand pose shared by all eligible handover windows.",
+    "auxiliary_target": "Receiving-hand pose at t+1 second from the same observation window.",
+    "improvements": [
+      "train-split residual standardization for position loss",
+      "geodesic quaternion loss in radians",
+      "sequence-balanced training sampler",
+      "sequence-and-time-bin-balanced terminal pose loss",
+      "separate hand-specific residuals",
+      "separate auxiliary t+1 pose head"
+    ],
+    "selection_policy": "All hyperparameter and checkpoint selection uses validation only. Test is evaluated once after confirmation.",
+    "comparison_policy": "The terminal target definition and frozen n214 split remain identical to endpose-v1."
+  },
+  "data": {
+    "master_dir": "Data_collection/master_datasets",
+    "manifest_filter": {
+      "path": "dataset_manifest.csv",
+      "allowed_statuses": [
+        "valid"
+      ],
+      "allowed_next_actions": [
+        "ready_for_master_merge"
+      ],
+      "strict": true
+    },
+    "dataset_contract": {
+      "expected_selected_sequences": 214,
+      "expected_sequence_fingerprint": "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd",
+      "expected_source_content_fingerprint": "d97c840904d01f687feba713cc98c72b226f388a6d3636c4ce9546194938444a"
+    },
+    "feature_profile": "multimodal_robot_frame_v1",
+    "window_size": 60,
+    "stride": 10,
+    "future_horizon_seconds": 1.0,
+    "pose_target": {
+      "mode": "terminal_endpose",
+      "aggregation_window_seconds": 0.5,
+      "minimum_valid_samples": 8,
+      "minimum_valid_ratio": 0.7,
+      "minimum_valid_span_seconds": 0.35,
+      "maximum_position_p90_deviation_m": 0.05,
+      "maximum_orientation_p90_deviation_deg": 25.0,
+      "maximum_stable_window_lag_seconds": 1.0
+    },
+    "auxiliary_pose_target": {
+      "mode": "future_offset",
+      "future_horizon_seconds": 1.0,
+      "maximum_target_gap_seconds": 0.1
+    },
+    "pose_intent_ids": [
+      2
+    ],
+    "include_hand_references": true,
+    "minimum_observed_fraction": 0.05,
+    "max_timestamp_gap_seconds": 0.2,
+    "validation_fraction": 0.2,
+    "test_fraction": 0.2,
+    "validation_participants": [
+      "Atilla",
+      "Ermal",
+      "Vanessa"
+    ],
+    "test_participants": [
+      "Edu",
+      "Jona",
+      "Mona"
+    ]
+  },
+  "model": {
+    "d_model": 32,
+    "nhead": 8,
+    "num_layers": 1,
+    "dim_feedforward": 256,
+    "dropout": 0.3
+  },
+  "training": {
+    "seed": 42,
+    "epochs": 30,
+    "batch_size": 32,
+    "learning_rate": 0.000182289290736,
+    "weight_decay": 0.0001,
+    "assistance_loss_weight": 1.0,
+    "assistance_type_loss_weight": 1.0,
+    "receiving_hand_loss_weight": 2.0,
+    "pose_loss_weight": 4.0,
+    "orientation_loss_weight": 0.1,
+    "auxiliary_pose_loss_weight": 0.25,
+    "auxiliary_orientation_loss_weight": 0.25,
+    "position_loss": {
+      "type": "normalized_smooth_l1",
+      "beta": 1.0,
+      "minimum_scale_m": 0.02,
+      "scale_fit_split": "train"
+    },
+    "orientation_loss": {
+      "type": "geodesic_radians"
+    },
+    "sampling_mode": "sequence_balanced",
+    "pose_window_weighting": "sequence_time_bin_balanced",
+    "gradient_clip_norm": 1.0,
+    "early_stopping_patience": 10,
+    "num_workers": 2
+  },
+  "source_hyperparameters": {
+    "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+    "source_config": "Training/configs/models/residual_transformer_endpose_v1.json",
+    "selection_split": "validation",
+    "test_evaluation_used_for_selection": false
+  },
+  "audit_requirements": {
+    "minimum_overall_target_sequence_coverage": 0.7,
+    "minimum_accepted_train_sequences": 50,
+    "minimum_accepted_validation_sequences": 5,
+    "minimum_accepted_test_sequences": 5
+  },
+  "hyperparameter_search": {
+    "schema_version": 1,
+    "search_version": "terminal_endpose_v2_random_search_v1",
+    "stage": "A",
+    "trial_index": 3,
+    "trial_tag": "trial_003",
+    "search_seed": 20260810,
+    "training_seed": 42,
+    "selection_split": "validation",
+    "test_evaluation": "disabled",
+    "selection_rule": "minimize mean validation terminal position error across confirmation seeds; retain candidates within 0.5 cm; then minimize validation orientation error; then maximize validation intent and receiving-hand macro-F1; never use test",
+    "base_config": "Training/configs/models/residual_transformer_endpose_v2.json",
+    "base_config_sha256": "0253305a07057782e5dbfd8f61ea8593a4a84f65520da91e62d2bef0705f13f5",
+    "parameters": {
+      "learning_rate": 0.000182289290736,
+      "pose_loss_weight": 4.0,
+      "orientation_loss_weight": 0.1,
+      "auxiliary_pose_loss_weight": 0.25,
+      "dropout": 0.3,
+      "d_model": 32,
+      "nhead": 8,
+      "num_layers": 1,
+      "dim_feedforward": 256,
+      "batch_size": 32
+    }
+  },
+  "hyperparameter_confirmation": {
+    "selected_trial": "trial_003",
+    "selection_split": "validation",
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "test_metrics_used": false,
+    "selection_rule": "minimize mean validation terminal position error across confirmation seeds; retain candidates within 0.5 cm; then minimize validation orientation error; then maximize validation intent and receiving-hand macro-F1; never use test",
+    "source_summary": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v2_hp_search/summary.json"
+  }
+}

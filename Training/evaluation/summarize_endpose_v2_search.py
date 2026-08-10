@@ -57,6 +57,14 @@ def resolve(path: Path) -> Path:
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
+def portable(path: Path) -> str:
+    resolved = resolve(path)
+    try:
+        return resolved.relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        return str(resolved)
+
+
 def read(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -330,7 +338,7 @@ def main() -> int:
             "seeds": list(SEEDS),
             "test_metrics_used": False,
             "selection_rule": manifest["selection_rule"],
-            "source_summary": str(resolve(args.stage_a_summary)),
+            "source_summary": portable(args.stage_a_summary),
         }
         (output / "selected_config.json").write_text(
             json.dumps(selected_config, indent=2, ensure_ascii=False) + "\n"

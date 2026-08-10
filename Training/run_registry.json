@@ -301,6 +301,116 @@
       }
     },
     {
+      "experiment_tag": "residual_v2_endpose_v2_hp_search",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "validation_only_terminal_endpose_search",
+      "status": "completed",
+      "completed_at": "2026-08-10T18:59:22+02:00",
+      "slurm_job_id": 2207580,
+      "ranking_slurm_job_id": 2207581,
+      "models": [
+        "hierarchical_dual_horizon_residual_pose_transformer_v3"
+      ],
+      "seeds": [42],
+      "trial_count": 12,
+      "run_count": 12,
+      "search_seed": 20260810,
+      "test_evaluation": "disabled",
+      "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v2_hp_search",
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v2_hp_search",
+      "result": {
+        "complete_trials": 12,
+        "selected_for_confirmation": [
+          "trial_003",
+          "trial_000",
+          "trial_009"
+        ],
+        "stage_a_winner": "trial_003",
+        "validation_terminal_position_error_cm": 11.092903137207031,
+        "validation_terminal_orientation_error_deg": 33.15410614013672,
+        "selection_split": "validation",
+        "test_metrics_forbidden": true
+      }
+    },
+    {
+      "experiment_tag": "residual_v2_endpose_v2_hp_confirm",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "validation_only_terminal_endpose_confirmation",
+      "status": "completed",
+      "completed_at": "2026-08-10T19:21:26+02:00",
+      "slurm_job_id": 2207582,
+      "selection_slurm_job_id": 2207583,
+      "models": [
+        "hierarchical_dual_horizon_residual_pose_transformer_v3"
+      ],
+      "seeds": [42, 43, 44],
+      "run_count": 9,
+      "test_evaluation": "disabled",
+      "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v2_hp_confirm",
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v2_hp_confirm",
+      "result": {
+        "selected_trial": "trial_003",
+        "validation_terminal_position_error_cm_mean": 11.16693369547526,
+        "validation_terminal_position_error_cm_population_std": 0.21706159092171312,
+        "validation_terminal_orientation_error_deg_mean": 33.58113479614258,
+        "validation_terminal_orientation_error_deg_population_std": 0.49303737786030505,
+        "validation_intention_macro_f1_mean": 0.9209809496945326,
+        "validation_receiving_hand_macro_f1_mean": 0.9984825493171471,
+        "trainable_parameters": 65860,
+        "selection_split": "validation",
+        "test_metrics_forbidden": true
+      }
+    },
+    {
+      "experiment_tag": "residual_v2_endpose_v2",
+      "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+      "kind": "validation_selected_dual_horizon_terminal_endpose_test",
+      "status": "completed",
+      "completed_at": "2026-08-10T20:26:58+02:00",
+      "audit_slurm_job_id": 2207568,
+      "search_slurm_job_id": 2207580,
+      "confirmation_slurm_job_id": 2207582,
+      "training_slurm_job_id": 2207584,
+      "finalizer_slurm_job_id": 2208056,
+      "superseded_failed_finalizer_slurm_job_id": 2207585,
+      "models": [
+        "t_plus_1_as_terminal",
+        "terminal_endpose_v1",
+        "terminal_endpose_v2"
+      ],
+      "seeds": [42, 43, 44],
+      "run_count": 3,
+      "baseline_experiment": "residual_v2_endpose_v1",
+      "selected_trial": "trial_003",
+      "training_code_commit": "701295d",
+      "report_code_commit": "ef9985e",
+      "run_root": "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v2",
+      "comparison_report": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v2",
+      "result": {
+        "accepted_terminal_targets": 208,
+        "handover_sequences": 214,
+        "target_sequence_coverage": 0.9719626168224299,
+        "test_target_window_coverage": 0.9276315789473685,
+        "test_intention_macro_f1_mean": 0.842630061013481,
+        "test_intention_macro_f1_population_std": 0.011870296220157932,
+        "test_receiving_hand_macro_f1_mean": 0.9333139777921223,
+        "test_receiving_hand_macro_f1_population_std": 0.009346418243280068,
+        "test_terminal_position_error_cm_mean": 16.29528745015462,
+        "test_terminal_position_error_cm_population_std": 1.336415435550771,
+        "test_terminal_orientation_error_deg_mean": 42.79079945882162,
+        "test_terminal_orientation_error_deg_population_std": 1.6121627571012171,
+        "endpose_v1_position_delta_cm": -2.812876383463543,
+        "endpose_v1_orientation_delta_deg": -11.173820495605465,
+        "t_plus_1_as_terminal_position_delta_cm": 0.291141827901202,
+        "t_plus_1_as_terminal_orientation_delta_deg": -6.32780838012695,
+        "tcml_cpu_model_forward_mean_ms": 3.1812349,
+        "tcml_cuda_model_forward_mean_ms": 3.026328968,
+        "trainable_parameters": 65860,
+        "checkpoint_selection_split": "validation",
+        "selection_used_test_metrics": false
+      }
+    },
+    {
       "experiment_tag": "final_clean_v1",
       "dataset_tag": "dataset_v1_20260729_n156_seq457a80f1",
       "kind": "four_model_benchmark",

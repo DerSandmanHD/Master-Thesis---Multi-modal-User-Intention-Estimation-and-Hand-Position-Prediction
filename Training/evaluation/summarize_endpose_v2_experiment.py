@@ -46,9 +46,24 @@ def read(path: Path) -> dict:
 
 def portable(path: Path) -> str:
     try:
+        return path.relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        pass
+    try:
         return path.resolve().relative_to(PROJECT_ROOT.resolve()).as_posix()
     except ValueError:
         return str(path)
+
+
+def portable_stored_path(value) -> str:
+    """Normalize an absolute path stored by an earlier machine or worktree."""
+    path = Path(str(value))
+    if not path.is_absolute():
+        return path.as_posix()
+    parts = path.parts
+    if "Training" in parts:
+        return Path(*parts[parts.index("Training") :]).as_posix()
+    return str(path)
 
 
 def checkpoint_epoch(report: dict, checkpoint: str) -> int:
@@ -154,7 +169,9 @@ def load_latency(report_dir: Path, v1_report: Path) -> tuple[pd.DataFrame, list[
         model = str(row["model"])
         if model == "terminal_endpose":
             model = "terminal_endpose_v1"
-        rows.append({**row.to_dict(), "model": model})
+        payload = {**row.to_dict(), "model": model}
+        payload["report"] = portable_stored_path(payload["report"])
+        rows.append(payload)
     for device in ("cpu", "cuda"):
         path = report_dir / "latency/endpose_v2" / f"tcml_{device}.json"
         try:
@@ -283,8 +300,11 @@ def write_markdown(
     curves: pd.DataFrame,
     latency: pd.DataFrame,
     audit: dict,
+    confirmation: dict,
+    selected_config: dict,
 ) -> None:
     indexed = summary.set_index("model")
+    baseline = indexed.loc["t_plus_1_as_terminal"]
     v1 = indexed.loc["terminal_endpose_v1"]
     v2 = indexed.loc["terminal_endpose_v2"]
     position_delta = (
@@ -295,7 +315,29 @@ def write_markdown(
         v2["test_terminal_orientation_error_deg_mean"]
         - v1["test_terminal_orientation_error_deg_mean"]
     )
+    baseline_position_delta = (
+        v2["test_terminal_position_error_cm_mean"]
+        - baseline["test_terminal_position_error_cm_mean"]
+    )
+    baseline_orientation_delta = (
+        v2["test_terminal_orientation_error_deg_mean"]
+        - baseline["test_terminal_orientation_error_deg_mean"]
+    )
+    baseline_intent_delta = (
+        v2["test_intention_macro_f1_mean"]
+        - baseline["test_intention_macro_f1_mean"]
+    )
+    baseline_hand_delta = (
+        v2["test_receiving_hand_macro_f1_mean"]
+        - baseline["test_receiving_hand_macro_f1_mean"]
+    )
     better = position_delta < 0
+    selected_trial = confirmation["selected_trial"]
+    selected_validation = next(
+        row for row in confirmation["ranking"] if row["trial_tag"] == selected_trial
+    )
+    model_config = selected_config["model"]
+    training_config = selected_config["training"]
     lines = [
         "# Improved terminal end-pose experiment v2 (n214)",
         "",
@@ -332,8 +374,35 @@ def write_markdown(
             f"on aggregate terminal position: change {position_delta:+.2f} cm; "
             f"orientation change {orientation_delta:+.2f}°. Negative changes are improvements.",
             "",
+            "Compared with the t+1 model evaluated as a terminal predictor, endpose-v2 "
+            f"changes position by {baseline_position_delta:+.2f} cm, orientation by "
+            f"{baseline_orientation_delta:+.2f}°, intent macro-F1 by "
+            f"{baseline_intent_delta:+.3f}, and receiving-hand macro-F1 by "
+            f"{baseline_hand_delta:+.3f}. Thus its aggregate position is effectively "
+            "similar, while terminal orientation is substantially better; intent remains "
+            "slightly weaker.",
+            "",
             "The full remaining-time curves are in `data/error_vs_time_remaining.csv` "
             "and `figures/02_error_vs_time_remaining.{png,pdf}`.",
+            "",
+            "## Validation-selected configuration",
+            "",
+            f"The validation-only search selected **{selected_trial}** with "
+            f"{selected_validation['validation_terminal_position_error_cm']:.2f} ± "
+            f"{selected_validation['validation_terminal_position_error_cm_std']:.2f} cm "
+            "over seeds 42, 43 and 44. Test metrics were not used for selection.",
+            "",
+            "| Hyperparameter | Value |",
+            "|---|---:|",
+            f"| Model dimension | {model_config['d_model']} |",
+            f"| Transformer layers / heads | {model_config['num_layers']} / {model_config['nhead']} |",
+            f"| Feed-forward dimension | {model_config['dim_feedforward']} |",
+            f"| Dropout | {model_config['dropout']} |",
+            f"| Batch size | {training_config['batch_size']} |",
+            f"| Learning rate | {training_config['learning_rate']:.6g} |",
+            f"| Terminal pose loss weight | {training_config['pose_loss_weight']} |",
+            f"| Orientation loss weight | {training_config['orientation_loss_weight']} |",
+            f"| Auxiliary t+1 loss weight | {training_config['auxiliary_pose_loss_weight']} |",
             "",
             "## Latency",
             "",
@@ -417,6 +486,13 @@ def main() -> int:
         / "residual_v2_endpose_v2_hp_confirm"
         / "summary.json"
     )
+    selected_config = read(
+        PROJECT_ROOT
+        / "Training/reports"
+        / args.dataset_tag
+        / "residual_v2_endpose_v2_hp_confirm"
+        / "selected_config.json"
+    )
     complete = (
         not errors
         and len(runs) == len(MODELS) * len(SEEDS)
@@ -430,7 +506,15 @@ def main() -> int:
         plot_comparison(summary, figures)
         plot_time(time_summary, figures)
         plot_latency(latency, figures)
-        write_markdown(report / "README.md", summary, time_summary, latency, audit)
+        write_markdown(
+            report / "README.md",
+            summary,
+            time_summary,
+            latency,
+            audit,
+            confirmation,
+            selected_config,
+        )
     payload = {
         "schema_version": 1,
         "complete": complete,

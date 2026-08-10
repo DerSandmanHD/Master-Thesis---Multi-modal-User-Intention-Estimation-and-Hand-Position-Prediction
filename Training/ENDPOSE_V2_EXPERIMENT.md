@@ -75,3 +75,25 @@ conda run -n aria_conda python Training/endpose_v2_smoke_test.py
 conda run -n aria_conda python Training/residual_smoke_test.py
 conda run -n aria_conda python Training/endpose_smoke_test.py
 ```
+
+## Completed result (2026-08-10)
+
+The full pipeline completed on the TCML cluster. The audit accepted 208/214
+handover sequences (97.2%). The validation-only search selected `trial_003`
+after confirmation on seeds 42, 43 and 44. Its main settings are `d_model=32`,
+one transformer layer, eight heads, dropout 0.3, batch size 32, learning rate
+0.000182289, terminal pose loss weight 4.0, orientation weight 0.1 and auxiliary
+t+1 weight 0.25.
+
+On the held-out test participants, endpose-v2 achieved 16.30 ± 1.34 cm terminal
+position error and 42.79 ± 1.61° orientation error. This improves endpose-v1 by
+2.81 cm and 11.17°, respectively. Compared with t+1 evaluated as a terminal
+predictor, position is similar (+0.29 cm) and orientation is better (-6.33°),
+while intent macro-F1 is 0.020 lower.
+
+The complete tables, per-seed values, remaining-time curves, latency results and
+PNG/PDF figures are in:
+
+```text
+Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v2/
+```

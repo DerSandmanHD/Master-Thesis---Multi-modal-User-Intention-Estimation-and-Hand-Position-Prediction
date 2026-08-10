@@ -27,6 +27,9 @@ verschachtelte Run-Struktur automatisch. SLURM-Ausgaben landen gesammelt unter
 | `benchmark_ablation_latency_tcml.sbatch` | Full-Modell und vier Sensorablationen auf einem passenden realen Fenster auf TCML-CPU/GPU messen |
 | `benchmark_clip_latency_tcml.sbatch` | RGB-Preprocessing und frozen CLIP ViT-B/32 auf TCML-CPU/GPU messen |
 | `export_predictions.sbatch` | Residual-v2-Vorhersagen eines exakten Runs und Checkpoints exportieren |
+| `audit_endpose_v1.sbatch` | robuste terminale Handpose-Targets prüfen und einen trainingsfreien Dry-Run ausführen |
+| `train_endpose_v1.sbatch` | separates Endpose-Residual-v2 für Seeds 42/43/44 trainieren und das bestehende t+1-Modell auf denselben terminalen Targets auswerten |
+| `finalize_endpose_v1.sbatch` | Endpose/t+1-Latenz messen sowie CSV/JSON/PNG/PDF/Markdown-Vergleich erzeugen |
 
 Beispiel für den vollständigen Vergleich:
 

@@ -38,6 +38,7 @@ from run_layout import build_run_context, training_run_directory
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROGRESS_GROUPS = ("0-25%", "25-50%", "50-75%", "75-100%")
+TIME_TO_END_GROUPS = ("0-0.5s", "0.5-1s", "1-2s", "2-3s", ">=3s")
 
 
 def parse_args() -> argparse.Namespace:
@@ -122,6 +123,17 @@ def progress_masks(progress: torch.Tensor) -> dict[str, torch.Tensor]:
         "25-50%": (progress > 0.25) & (progress <= 0.5),
         "50-75%": (progress > 0.5) & (progress <= 0.75),
         "75-100%": progress > 0.75,
+    }
+
+
+def time_to_end_masks(seconds: torch.Tensor) -> dict[str, torch.Tensor]:
+    finite = torch.isfinite(seconds) & (seconds >= 0.0)
+    return {
+        "0-0.5s": finite & (seconds <= 0.5),
+        "0.5-1s": finite & (seconds > 0.5) & (seconds <= 1.0),
+        "1-2s": finite & (seconds > 1.0) & (seconds <= 2.0),
+        "2-3s": finite & (seconds > 2.0) & (seconds <= 3.0),
+        ">=3s": finite & (seconds > 3.0),
     }
 
 
@@ -256,6 +268,9 @@ def run_epoch(
     progress_storage: dict[str, dict[str, list[torch.Tensor]]] = {
         group: defaultdict(list) for group in PROGRESS_GROUPS
     }
+    time_to_end_storage: dict[str, dict[str, list[torch.Tensor]]] = {
+        group: defaultdict(list) for group in TIME_TO_END_GROUPS
+    }
     hand_pose_storage: dict[str, dict[str, list[torch.Tensor]]] = {
         hand: defaultdict(list) for hand in RECEIVING_HAND_NAMES
     }
@@ -380,6 +395,30 @@ def run_epoch(
                     batch["pose_target"],
                     oracle_valid & group_mask,
                 )
+            for group, group_mask in time_to_end_masks(
+                batch["time_to_sequence_end_seconds"]
+            ).items():
+                append_pose(
+                    time_to_end_storage[group],
+                    "oracle",
+                    oracle_pose,
+                    batch["pose_target"],
+                    oracle_valid & group_mask,
+                )
+                append_pose(
+                    time_to_end_storage[group],
+                    "end_to_end",
+                    predicted_hand_pose,
+                    batch["pose_target"],
+                    end_to_end_valid & group_mask,
+                )
+                append_pose(
+                    time_to_end_storage[group],
+                    "last_observation",
+                    oracle_reference,
+                    batch["pose_target"],
+                    oracle_valid & group_mask,
+                )
             for hand_id, hand_name in enumerate(RECEIVING_HAND_NAMES):
                 hand_mask = receiving_hand == hand_id
                 append_pose(
@@ -450,6 +489,7 @@ def run_epoch(
             pose_storage, "last_observation"
         ),
         "pose_coverage": {
+            "pose_targets": target_pose_count,
             "future_targets": target_pose_count,
             "oracle_reference_valid": oracle_reference_count,
             "predicted_reference_valid": predicted_reference_count,
@@ -465,6 +505,20 @@ def run_epoch(
                 ),
             }
             for group in PROGRESS_GROUPS
+        },
+        "pose_by_time_to_sequence_end": {
+            group: {
+                "pose_oracle": stored_pose_metrics(
+                    time_to_end_storage[group], "oracle"
+                ),
+                "pose_end_to_end": stored_pose_metrics(
+                    time_to_end_storage[group], "end_to_end"
+                ),
+                "last_observation_oracle": stored_pose_metrics(
+                    time_to_end_storage[group], "last_observation"
+                ),
+            }
+            for group in TIME_TO_END_GROUPS
         },
         "pose_by_receiving_hand": {
             hand: {
@@ -516,6 +570,7 @@ def checkpoint_payload(
         "selection_metric": selection_metric,
         "selection_value": selection_value,
         "dataset_provenance": checkpoint_provenance(bundle),
+        "pose_target_definition": bundle.split_metadata.get("pose_target", {}),
     }
     if "position_mae_cm" in selection_metric:
         payload["selection_metric_definition"] = (
@@ -601,6 +656,7 @@ def train(args: argparse.Namespace) -> Path:
         f"validation={bundle.validation.residual_pose_count()}, "
         f"test={bundle.test.residual_pose_count()}"
     )
+    print(f"Pose target: {bundle.split_metadata.get('pose_target', {})}")
 
     training_config = config["training"]
     train_loader = make_loader(
@@ -763,6 +819,7 @@ def train(args: argparse.Namespace) -> Path:
 
     report = {
         "model_type": "hierarchical_residual_pose_transformer_v2",
+        "pose_target_definition": bundle.split_metadata.get("pose_target", {}),
         "trainable_parameters": trainable_parameters,
         "checkpoints": checkpoint_metadata,
         "validation_by_checkpoint": validation_results,

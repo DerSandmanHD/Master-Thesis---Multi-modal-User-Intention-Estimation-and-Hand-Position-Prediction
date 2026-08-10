@@ -22,6 +22,11 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
+from endpose_targets import (
+    TERMINAL_ENDPOSE_MODE,
+    estimate_terminal_endpose,
+    normalized_terminal_endpose_config,
+)
 from visual_embeddings import VisualFeatureLoader
 
 
@@ -32,6 +37,7 @@ RECEIVING_HAND_NAMES = ["left", "right"]
 SUPPORTED_MODALITY_ABLATIONS = ("gaze", "hands", "objects", "vio")
 TRAINING_DATA_BUILDER_VERSION = "training_data_pipeline_v3_modality_ablation"
 VISUAL_DATA_BUILDER_VERSION = "training_data_pipeline_v4_visual_embeddings"
+ENDPOSE_DATA_BUILDER_VERSION = "training_data_pipeline_v5_terminal_endpose"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -115,6 +121,7 @@ def build_dataset_provenance(
     future_horizon_seconds: float,
     filter_metadata: dict,
     visual_features: dict | None = None,
+    pose_target_config: dict | None = None,
 ) -> tuple[dict, str | None]:
     master_files = []
     for path in files:
@@ -147,6 +154,7 @@ def build_dataset_provenance(
         Path("Code/build_master_dataset.py"),
         Path("Code/dataset_qa.py"),
         Path("Training/data.py"),
+        Path("Training/endpose_targets.py"),
         Path("Training/visual_embeddings.py"),
         Path("singularity/aria.recipe"),
     ):
@@ -154,11 +162,12 @@ def build_dataset_provenance(
         if path.is_file():
             builder_files[str(relative)] = sha256_file(path)
 
-    builder_version = (
-        VISUAL_DATA_BUILDER_VERSION
-        if visual_features and visual_features.get("enabled")
-        else TRAINING_DATA_BUILDER_VERSION
-    )
+    if pose_target_config:
+        builder_version = ENDPOSE_DATA_BUILDER_VERSION
+    elif visual_features and visual_features.get("enabled"):
+        builder_version = VISUAL_DATA_BUILDER_VERSION
+    else:
+        builder_version = TRAINING_DATA_BUILDER_VERSION
     schema_payload = {
         "feature_profile": feature_profile,
         "feature_columns": feature_columns,
@@ -168,6 +177,8 @@ def build_dataset_provenance(
     }
     if visual_features and visual_features.get("enabled"):
         schema_payload["visual_features"] = visual_features
+    if pose_target_config:
+        schema_payload["pose_target"] = pose_target_config
     schema_fingerprint = hashlib.sha256(
         json.dumps(
             schema_payload,
@@ -186,6 +197,17 @@ def build_dataset_provenance(
         "manifest_sha256": manifest["sha256"] if manifest else None,
         "schema_fingerprint": schema_fingerprint,
     }
+    source_content_payload = {
+        "master_files": content_payload["master_files"],
+        "manifest_sha256": content_payload["manifest_sha256"],
+    }
+    source_content_fingerprint = hashlib.sha256(
+        json.dumps(
+            source_content_payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
     content_fingerprint = hashlib.sha256(
         json.dumps(
             content_payload,
@@ -196,6 +218,7 @@ def build_dataset_provenance(
     return (
         {
             "builder_version": builder_version,
+            "source_content_fingerprint": source_content_fingerprint,
             "dataset_content_fingerprint": content_fingerprint,
             "schema": {
                 **schema_payload,
@@ -360,6 +383,8 @@ class SequenceRecord:
     receiving_hand_ids: np.ndarray | None = None
     hand_poses: np.ndarray | None = None
     hand_pose_valid: np.ndarray | None = None
+    pose_target_timestamp_ns: np.ndarray | None = None
+    pose_target_metadata: dict | None = None
 
 
 @dataclass
@@ -417,21 +442,24 @@ def load_record(
     *,
     future_horizon_seconds: float,
     include_hand_references: bool = False,
+    pose_target_config: dict | None = None,
 ) -> SequenceRecord:
+    terminal_config = None
+    if pose_target_config:
+        terminal_config = normalized_terminal_endpose_config(pose_target_config)
+    terminal_mode = bool(
+        terminal_config and terminal_config["mode"] == TERMINAL_ENDPOSE_MODE
+    )
+    load_hand_references = include_hand_references or terminal_mode
     prefix = horizon_prefix(future_horizon_seconds)
     pose_columns = [
         *(f"{prefix}receiving_wrist_robot_{axis}_m" for axis in "xyz"),
         *(f"{prefix}receiving_wrist_robot_q{component}" for component in "xyzw"),
     ]
-    required_core = [
-        "sequence_id",
-        "participant",
-        "timestamp_ns",
-        "intent_label",
-        f"{prefix}receiving_wrist_valid",
-        *pose_columns,
-    ]
-    if include_hand_references:
+    required_core = ["sequence_id", "participant", "timestamp_ns", "intent_label"]
+    if not terminal_mode:
+        required_core.extend([f"{prefix}receiving_wrist_valid", *pose_columns])
+    if load_hand_references:
         required_core.extend(
             [
                 "receiving_hand",
@@ -475,27 +503,34 @@ def load_record(
         unknown = sorted(frame.loc[labels.isna(), "intent_label"].astype(str).unique())
         raise ValueError(f"Unknown intention labels in {path.name}: {unknown}")
 
-    poses = (
-        frame[pose_columns].apply(pd.to_numeric, errors="coerce").to_numpy(np.float32)
-    )
-    explicit_pose_valid = (
-        pd.to_numeric(frame[f"{prefix}receiving_wrist_valid"], errors="coerce")
-        .fillna(0)
-        .to_numpy()
-        > 0
-    )
-    pose_valid = explicit_pose_valid & np.isfinite(poses).all(axis=1)
-    quaternion_norm = np.linalg.norm(poses[:, 3:7], axis=1)
-    pose_valid &= quaternion_norm > 1e-6
-    valid_indices = np.flatnonzero(pose_valid)
-    if len(valid_indices):
-        poses[valid_indices, 3:7] /= quaternion_norm[valid_indices, None]
-    poses[~pose_valid] = 0.0
+    if terminal_mode:
+        poses = np.zeros((len(frame), 7), dtype=np.float32)
+        poses[:, 6] = 1.0
+        pose_valid = np.zeros(len(frame), dtype=bool)
+    else:
+        poses = (
+            frame[pose_columns]
+            .apply(pd.to_numeric, errors="coerce")
+            .to_numpy(np.float32)
+        )
+        explicit_pose_valid = (
+            pd.to_numeric(frame[f"{prefix}receiving_wrist_valid"], errors="coerce")
+            .fillna(0)
+            .to_numpy()
+            > 0
+        )
+        pose_valid = explicit_pose_valid & np.isfinite(poses).all(axis=1)
+        quaternion_norm = np.linalg.norm(poses[:, 3:7], axis=1)
+        pose_valid &= quaternion_norm > 1e-6
+        valid_indices = np.flatnonzero(pose_valid)
+        if len(valid_indices):
+            poses[valid_indices, 3:7] /= quaternion_norm[valid_indices, None]
+        poses[~pose_valid] = 0.0
 
     receiving_hand_ids = None
     hand_poses = None
     hand_pose_valid = None
-    if include_hand_references:
+    if load_hand_references:
         receiving_hand_ids = (
             frame["receiving_hand"]
             .astype(str)
@@ -553,6 +588,32 @@ def load_record(
     timestamps = pd.to_numeric(frame["timestamp_ns"], errors="raise").to_numpy(np.int64)
     if np.any(np.diff(timestamps) < 0):
         raise ValueError(f"Timestamps are not sorted in {path.name}")
+    pose_target_timestamp_ns = None
+    pose_target_metadata = None
+    if terminal_mode:
+        assert receiving_hand_ids is not None
+        assert hand_poses is not None
+        assert hand_pose_valid is not None
+        estimate = estimate_terminal_endpose(
+            timestamps_ns=timestamps,
+            intention_ids=labels.to_numpy(np.int64),
+            receiving_hand_ids=receiving_hand_ids,
+            hand_poses=hand_poses,
+            hand_pose_valid=hand_pose_valid,
+            handover_intent_id=INTENTION_TO_ID["handover"],
+            receiving_hand_names=RECEIVING_HAND_NAMES,
+            config=terminal_config,
+        )
+        pose_target_metadata = estimate.to_dict()
+        if estimate.eligible:
+            assert estimate.pose is not None
+            assert estimate.handover_end_timestamp_ns is not None
+            handover_mask = labels.to_numpy(np.int64) == INTENTION_TO_ID["handover"]
+            poses[handover_mask] = np.asarray(estimate.pose, dtype=np.float32)
+            pose_valid[handover_mask] = True
+            pose_target_timestamp_ns = np.full(
+                len(frame), estimate.handover_end_timestamp_ns, dtype=np.int64
+            )
     return SequenceRecord(
         sequence_id=sequence_values[0],
         participant=canonical_participant(participant_values[0]),
@@ -564,6 +625,8 @@ def load_record(
         receiving_hand_ids=receiving_hand_ids,
         hand_poses=hand_poses,
         hand_pose_valid=hand_pose_valid,
+        pose_target_timestamp_ns=pose_target_timestamp_ns,
+        pose_target_metadata=pose_target_metadata,
     )
 
 
@@ -771,6 +834,18 @@ class WindowDataset(Dataset):
             "handover_progress": torch.tensor(
                 self.handover_progress[index], dtype=torch.float32
             ),
+            "time_to_sequence_end_seconds": torch.tensor(
+                (
+                    (
+                        int(record.pose_target_timestamp_ns[endpoint])
+                        - int(record.timestamps_ns[endpoint])
+                    )
+                    / 1e9
+                    if record.pose_target_timestamp_ns is not None
+                    else float("nan")
+                ),
+                dtype=torch.float32,
+            ),
         }
         if self.include_hand_references:
             assert record.receiving_hand_ids is not None
@@ -824,6 +899,28 @@ class WindowDataset(Dataset):
         return sum(
             bool(self[index]["residual_pose_valid"]) for index in range(len(self))
         )
+
+    def pose_target_sequence_audit(self) -> dict:
+        records = [
+            record.pose_target_metadata
+            for record in self.records
+            if record.pose_target_metadata is not None
+        ]
+        if not records:
+            return {}
+        status_counts = Counter(str(item["status"]) for item in records)
+        applicable = [item for item in records if item["status"] != "not_applicable"]
+        accepted = sum(bool(item["eligible"]) for item in applicable)
+        return {
+            "sequences": len(records),
+            "handover_sequences": len(applicable),
+            "accepted_handover_sequences": accepted,
+            "rejected_handover_sequences": len(applicable) - accepted,
+            "target_sequence_coverage": (
+                accepted / len(applicable) if applicable else None
+            ),
+            "status_counts": dict(sorted(status_counts.items())),
+        }
 
 
 @dataclass
@@ -1036,12 +1133,16 @@ def prepare_data(
             }
         )
     include_hand_references = bool(data_config.get("include_hand_references", False))
+    pose_target_config = data_config.get("pose_target")
+    if pose_target_config:
+        pose_target_config = normalized_terminal_endpose_config(pose_target_config)
     records = [
         load_record(
             path,
             sensor_feature_columns,
             future_horizon_seconds=float(data_config["future_horizon_seconds"]),
             include_hand_references=include_hand_references,
+            pose_target_config=pose_target_config,
         )
         for path in files
     ]
@@ -1075,7 +1176,27 @@ def prepare_data(
         ),
         filter_metadata=filter_metadata,
         visual_features=visual_provenance,
+        pose_target_config=pose_target_config,
     )
+    dataset_contract = data_config.get("dataset_contract", {})
+    contract_checks = {
+        "selected_sequences": filter_metadata["selected_sequences"],
+        "sequence_fingerprint": filter_metadata["sequence_fingerprint"],
+        "source_content_fingerprint": provenance["source_content_fingerprint"],
+    }
+    for key, actual in contract_checks.items():
+        expected = dataset_contract.get(f"expected_{key}")
+        if expected is not None and str(actual) != str(expected):
+            raise ValueError(
+                f"Frozen dataset contract mismatch for {key}: "
+                f"expected {expected}, got {actual}"
+            )
+    provenance["dataset_contract"] = {
+        "configured": bool(dataset_contract),
+        "expected": dataset_contract,
+        "verified": contract_checks,
+        "passed": True,
+    }
     filter_metadata = {
         **filter_metadata,
         "dataset_content_fingerprint": provenance[
@@ -1092,6 +1213,14 @@ def prepare_data(
     )
     split_metadata["feature_ablation"] = feature_ablation
     split_metadata["dataset_filter"] = filter_metadata
+    split_metadata["pose_target"] = (
+        pose_target_config
+        if pose_target_config
+        else {
+            "mode": "future_offset",
+            "future_horizon_seconds": float(data_config["future_horizon_seconds"]),
+        }
+    )
     normalizer = fit_normalizer(split["train"], feature_columns)
     normalized_split = {
         name: [
@@ -1129,6 +1258,7 @@ def save_data_metadata(bundle: DataBundle, path: Path) -> None:
         "label_mapping": INTENTION_TO_ID,
         "transition_policy": "context_only_never_window_target",
         "feature_ablation": bundle.split_metadata.get("feature_ablation", {}),
+        "pose_target": bundle.split_metadata.get("pose_target", {}),
         "feature_columns": bundle.feature_columns,
         "model_feature_columns": bundle.normalizer.output_feature_names,
         "normalizer": bundle.normalizer.to_dict(),
@@ -1169,6 +1299,14 @@ def save_data_metadata(bundle: DataBundle, path: Path) -> None:
         },
         "residual_pose_counts": {
             name: dataset.residual_pose_count()
+            for name, dataset in (
+                ("train", bundle.train),
+                ("validation", bundle.validation),
+                ("test", bundle.test),
+            )
+        },
+        "pose_target_sequence_audit": {
+            name: dataset.pose_target_sequence_audit()
             for name, dataset in (
                 ("train", bundle.train),
                 ("validation", bundle.validation),

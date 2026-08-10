@@ -16,7 +16,7 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 
 from data import (
     INTENTION_NAMES,
@@ -32,13 +32,22 @@ from metrics import (
     classification_metrics,
     pose_metrics,
 )
-from model import HierarchicalResidualPoseTransformer
+from endpose_v2 import (
+    DUAL_HORIZON_MODEL_TYPE,
+    residual_position_scale_m,
+    wrap_endpose_v2_bundle,
+)
+from model import (
+    HierarchicalDualHorizonResidualPoseTransformer,
+    HierarchicalResidualPoseTransformer,
+)
 from run_layout import build_run_context, training_run_directory
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROGRESS_GROUPS = ("0-25%", "25-50%", "50-75%", "75-100%")
 TIME_TO_END_GROUPS = ("0-0.5s", "0.5-1s", "1-2s", "2-3s", ">=3s")
+RESIDUAL_V2_MODEL_TYPE = "hierarchical_residual_pose_transformer_v2"
 
 
 def parse_args() -> argparse.Namespace:
@@ -137,6 +146,70 @@ def time_to_end_masks(seconds: torch.Tensor) -> dict[str, torch.Tensor]:
     }
 
 
+def weighted_mean(values: torch.Tensor, weights: torch.Tensor | None) -> torch.Tensor:
+    if weights is None:
+        return values.mean()
+    safe = weights.to(dtype=values.dtype).clamp_min(0.0)
+    denominator = safe.sum().clamp_min(torch.finfo(values.dtype).eps)
+    return (values * safe).sum() / denominator
+
+
+def pose_regression_components(
+    predicted_pose: torch.Tensor,
+    target_pose: torch.Tensor,
+    *,
+    training_config: dict,
+    position_scale_key: str,
+    sample_weights: torch.Tensor | None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    position_config = dict(training_config.get("position_loss", {}))
+    position_type = position_config.get("type", "smooth_l1_meters")
+    if position_type == "normalized_smooth_l1":
+        scale_values = training_config.get(position_scale_key)
+        if scale_values is None:
+            raise ValueError(f"Missing resolved loss scale: {position_scale_key}")
+        scale = torch.as_tensor(
+            scale_values,
+            dtype=predicted_pose.dtype,
+            device=predicted_pose.device,
+        )
+        normalized_error = (predicted_pose[:, :3] - target_pose[:, :3]) / scale
+        per_axis = F.smooth_l1_loss(
+            normalized_error,
+            torch.zeros_like(normalized_error),
+            reduction="none",
+            beta=float(position_config.get("beta", 1.0)),
+        )
+    elif position_type == "smooth_l1_meters":
+        per_axis = F.smooth_l1_loss(
+            predicted_pose[:, :3],
+            target_pose[:, :3],
+            reduction="none",
+            beta=float(position_config.get("beta_m", 1.0)),
+        )
+    else:
+        raise ValueError(f"Unknown position loss type: {position_type}")
+    position_loss = weighted_mean(per_axis.mean(dim=-1), sample_weights)
+
+    quaternion_similarity = torch.sum(
+        predicted_pose[:, 3:7] * target_pose[:, 3:7], dim=-1
+    ).abs().clamp(0.0, 1.0)
+    orientation_type = dict(training_config.get("orientation_loss", {})).get(
+        "type", "cosine_distance"
+    )
+    if orientation_type == "cosine_distance":
+        per_orientation = 1.0 - quaternion_similarity
+    elif orientation_type == "geodesic_radians":
+        # Clamp below one to avoid the singular derivative of acos at identity.
+        per_orientation = 2.0 * torch.acos(
+            quaternion_similarity.clamp(max=1.0 - 1e-7)
+        )
+    else:
+        raise ValueError(f"Unknown orientation loss type: {orientation_type}")
+    orientation_loss = weighted_mean(per_orientation, sample_weights)
+    return position_loss, orientation_loss
+
+
 def residual_multitask_loss(
     outputs: dict[str, torch.Tensor],
     batch: dict,
@@ -174,11 +247,18 @@ def residual_multitask_loss(
         oracle_pose = select_hand_pose(outputs["pose_candidates"], receiving_hand)
         predicted_pose = oracle_pose[pose_valid]
         target_pose = batch["pose_target"][pose_valid]
-        position_loss = F.smooth_l1_loss(predicted_pose[:, :3], target_pose[:, :3])
-        quaternion_similarity = torch.sum(
-            predicted_pose[:, 3:7] * target_pose[:, 3:7], dim=-1
-        ).abs()
-        orientation_loss = (1.0 - quaternion_similarity).mean()
+        pose_weights = (
+            batch["pose_sample_weight"][pose_valid]
+            if "pose_sample_weight" in batch
+            else None
+        )
+        position_loss, orientation_loss = pose_regression_components(
+            predicted_pose,
+            target_pose,
+            training_config=config,
+            position_scale_key="resolved_position_scale_m",
+            sample_weights=pose_weights,
+        )
         pose_loss = (
             position_loss + float(config["orientation_loss_weight"]) * orientation_loss
         )
@@ -187,11 +267,44 @@ def residual_multitask_loss(
         orientation_loss = outputs["quaternion_delta"].sum() * 0.0
         pose_loss = outputs["position_delta"].sum() * 0.0
 
+    auxiliary_pose_loss = outputs["position_delta"].sum() * 0.0
+    auxiliary_position_loss = outputs["position_delta"].sum() * 0.0
+    auxiliary_orientation_loss = outputs["quaternion_delta"].sum() * 0.0
+    if "auxiliary_pose_candidates" in outputs:
+        auxiliary_valid = batch["auxiliary_residual_pose_valid"] & hand_valid
+        if bool(auxiliary_valid.any()):
+            auxiliary_candidates = select_hand_pose(
+                outputs["auxiliary_pose_candidates"], receiving_hand
+            )
+            auxiliary_weights = (
+                batch["pose_sample_weight"][auxiliary_valid]
+                if "pose_sample_weight" in batch
+                else None
+            )
+            (
+                auxiliary_position_loss,
+                auxiliary_orientation_loss,
+            ) = pose_regression_components(
+                auxiliary_candidates[auxiliary_valid],
+                batch["auxiliary_pose_target"][auxiliary_valid],
+                training_config=config,
+                position_scale_key="resolved_auxiliary_position_scale_m",
+                sample_weights=auxiliary_weights,
+            )
+            auxiliary_pose_loss = auxiliary_position_loss + float(
+                config.get(
+                    "auxiliary_orientation_loss_weight",
+                    config["orientation_loss_weight"],
+                )
+            ) * auxiliary_orientation_loss
+
     total = (
         float(config["assistance_loss_weight"]) * assistance_loss
         + float(config["assistance_type_loss_weight"]) * assistance_type_loss
         + float(config["receiving_hand_loss_weight"]) * receiving_hand_loss
         + float(config["pose_loss_weight"]) * pose_loss
+        + float(config.get("auxiliary_pose_loss_weight", 0.0))
+        * auxiliary_pose_loss
     )
     return total, {
         "total": float(total.detach()),
@@ -200,6 +313,8 @@ def residual_multitask_loss(
         "receiving_hand": float(receiving_hand_loss.detach()),
         "position": float(position_loss.detach()),
         "orientation": float(orientation_loss.detach()),
+        "auxiliary_position": float(auxiliary_position_loss.detach()),
+        "auxiliary_orientation": float(auxiliary_orientation_loss.detach()),
     }
 
 
@@ -265,6 +380,7 @@ def run_epoch(
     hand_predictions = []
     hand_targets = []
     pose_storage: dict[str, list[torch.Tensor]] = defaultdict(list)
+    auxiliary_pose_storage: dict[str, list[torch.Tensor]] = defaultdict(list)
     progress_storage: dict[str, dict[str, list[torch.Tensor]]] = {
         group: defaultdict(list) for group in PROGRESS_GROUPS
     }
@@ -278,6 +394,9 @@ def run_epoch(
     target_pose_count = 0
     oracle_reference_count = 0
     predicted_reference_count = 0
+    auxiliary_target_pose_count = 0
+    auxiliary_oracle_reference_count = 0
+    auxiliary_predicted_reference_count = 0
 
     grad_context = torch.enable_grad() if is_training else torch.no_grad()
     with grad_context:
@@ -372,6 +491,51 @@ def run_epoch(
                 batch["pose_target"],
                 oracle_valid,
             )
+
+            if "auxiliary_pose_candidates" in outputs:
+                auxiliary_oracle_pose = select_hand_pose(
+                    outputs["auxiliary_pose_candidates"], receiving_hand
+                )
+                auxiliary_predicted_hand_pose = select_hand_pose(
+                    outputs["auxiliary_pose_candidates"], predicted_hand
+                )
+                auxiliary_target_valid = (
+                    batch["auxiliary_pose_valid"] & (intentions == 2) & known_hand
+                )
+                auxiliary_oracle_valid = (
+                    batch["auxiliary_residual_pose_valid"] & known_hand
+                )
+                auxiliary_end_to_end_valid = (
+                    auxiliary_target_valid & predicted_reference_valid
+                )
+                auxiliary_target_pose_count += int(auxiliary_target_valid.sum())
+                auxiliary_oracle_reference_count += int(
+                    auxiliary_oracle_valid.sum()
+                )
+                auxiliary_predicted_reference_count += int(
+                    auxiliary_end_to_end_valid.sum()
+                )
+                append_pose(
+                    auxiliary_pose_storage,
+                    "oracle",
+                    auxiliary_oracle_pose,
+                    batch["auxiliary_pose_target"],
+                    auxiliary_oracle_valid,
+                )
+                append_pose(
+                    auxiliary_pose_storage,
+                    "end_to_end",
+                    auxiliary_predicted_hand_pose,
+                    batch["auxiliary_pose_target"],
+                    auxiliary_end_to_end_valid,
+                )
+                append_pose(
+                    auxiliary_pose_storage,
+                    "last_observation",
+                    oracle_reference,
+                    batch["auxiliary_pose_target"],
+                    auxiliary_oracle_valid,
+                )
 
             for group, group_mask in progress_masks(batch["handover_progress"]).items():
                 append_pose(
@@ -494,6 +658,20 @@ def run_epoch(
             "oracle_reference_valid": oracle_reference_count,
             "predicted_reference_valid": predicted_reference_count,
         },
+        "auxiliary_t_plus_1": {
+            "pose_oracle": stored_pose_metrics(auxiliary_pose_storage, "oracle"),
+            "pose_end_to_end": stored_pose_metrics(
+                auxiliary_pose_storage, "end_to_end"
+            ),
+            "last_observation_oracle": stored_pose_metrics(
+                auxiliary_pose_storage, "last_observation"
+            ),
+            "coverage": {
+                "pose_targets": auxiliary_target_pose_count,
+                "oracle_reference_valid": auxiliary_oracle_reference_count,
+                "predicted_reference_valid": auxiliary_predicted_reference_count,
+            },
+        },
         "pose_by_handover_progress": {
             group: {
                 "pose_oracle": stored_pose_metrics(progress_storage[group], "oracle"),
@@ -540,13 +718,51 @@ def make_loader(
     dataset, config: dict, *, shuffle: bool, device: torch.device
 ) -> DataLoader:
     worker_count = int(config["num_workers"])
+    sampler = None
+    sampling_mode = str(config.get("sampling_mode", "window_uniform"))
+    if shuffle and sampling_mode == "sequence_balanced":
+        if not hasattr(dataset, "sequence_sampling_weights"):
+            raise ValueError(
+                "sequence_balanced sampling requires an endpose-v2 dataset"
+            )
+        generator = torch.Generator()
+        generator.manual_seed(int(config["seed"]))
+        sampler = WeightedRandomSampler(
+            dataset.sequence_sampling_weights(),
+            num_samples=len(dataset),
+            replacement=True,
+            generator=generator,
+        )
+    elif sampling_mode not in {"window_uniform", "sequence_balanced"}:
+        raise ValueError(f"Unknown training sampling mode: {sampling_mode}")
     return DataLoader(
         dataset,
         batch_size=int(config["batch_size"]),
-        shuffle=shuffle,
+        shuffle=shuffle and sampler is None,
+        sampler=sampler,
         num_workers=worker_count,
         pin_memory=device.type == "cuda",
         persistent_workers=worker_count > 0,
+    )
+
+
+def build_residual_model(
+    model_type: str,
+    *,
+    input_dim: int,
+    window_size: int,
+    model_config: dict,
+) -> nn.Module:
+    model_classes = {
+        RESIDUAL_V2_MODEL_TYPE: HierarchicalResidualPoseTransformer,
+        DUAL_HORIZON_MODEL_TYPE: HierarchicalDualHorizonResidualPoseTransformer,
+    }
+    if model_type not in model_classes:
+        raise ValueError(f"Unsupported residual model type: {model_type}")
+    return model_classes[model_type](
+        input_dim=input_dim,
+        window_size=window_size,
+        **model_config,
     )
 
 
@@ -562,7 +778,7 @@ def checkpoint_payload(
     payload = {
         "model_state_dict": model.state_dict(),
         "model_config": config["model"],
-        "model_type": "hierarchical_residual_pose_transformer_v2",
+        "model_type": config.get("model_type", RESIDUAL_V2_MODEL_TYPE),
         "input_dim": len(bundle.normalizer.output_feature_names),
         "window_size": int(config["data"]["window_size"]),
         "trainable_parameters": trainable_parameters,
@@ -571,6 +787,9 @@ def checkpoint_payload(
         "selection_value": selection_value,
         "dataset_provenance": checkpoint_provenance(bundle),
         "pose_target_definition": bundle.split_metadata.get("pose_target", {}),
+        "pose_training_protocol": bundle.split_metadata.get(
+            "endpose_v2_adapter"
+        ),
     }
     if "position_mae_cm" in selection_metric:
         payload["selection_metric_definition"] = (
@@ -584,6 +803,7 @@ def train(args: argparse.Namespace) -> Path:
     started_monotonic = time.perf_counter()
     config_path = resolve_project_path(args.config)
     config = json.loads(config_path.read_text(encoding="utf-8"))
+    model_type = str(config.get("model_type", RESIDUAL_V2_MODEL_TYPE))
     config["data"]["master_dir"] = str(
         resolve_project_path(config["data"]["master_dir"])
     )
@@ -631,6 +851,33 @@ def train(args: argparse.Namespace) -> Path:
     print(f"Device: {device}")
     print(f"Run directory: {run_dir}")
     bundle = prepare_data(config["data"], seed, args.limit_sequences)
+    if model_type == DUAL_HORIZON_MODEL_TYPE:
+        bundle = wrap_endpose_v2_bundle(bundle, config["data"])
+    training_config = config["training"]
+    if dict(training_config.get("position_loss", {})).get("type") == (
+        "normalized_smooth_l1"
+    ):
+        minimum_scale_m = float(
+            training_config["position_loss"].get("minimum_scale_m", 0.02)
+        )
+        training_config["resolved_position_scale_m"] = residual_position_scale_m(
+            bundle.train,
+            target_key="pose_target",
+            valid_key="residual_pose_valid",
+            minimum_scale_m=minimum_scale_m,
+        )
+        if model_type == DUAL_HORIZON_MODEL_TYPE:
+            training_config[
+                "resolved_auxiliary_position_scale_m"
+            ] = residual_position_scale_m(
+                bundle.train,
+                target_key="auxiliary_pose_target",
+                valid_key="auxiliary_residual_pose_valid",
+                minimum_scale_m=minimum_scale_m,
+            )
+        (run_dir / "config.json").write_text(
+            json.dumps(config, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
     save_data_metadata(bundle, run_dir / "data_metadata.json")
     print(
         f"Windows: train={len(bundle.train)}, validation={len(bundle.validation)}, "
@@ -656,9 +903,21 @@ def train(args: argparse.Namespace) -> Path:
         f"validation={bundle.validation.residual_pose_count()}, "
         f"test={bundle.test.residual_pose_count()}"
     )
+    if model_type == DUAL_HORIZON_MODEL_TYPE:
+        print(
+            "Auxiliary t+1 pose targets: "
+            f"train={bundle.train.auxiliary_pose_count()}, "
+            f"validation={bundle.validation.auxiliary_pose_count()}, "
+            f"test={bundle.test.auxiliary_pose_count()}"
+        )
     print(f"Pose target: {bundle.split_metadata.get('pose_target', {})}")
+    print(
+        "Pose training: "
+        f"sampling={training_config.get('sampling_mode', 'window_uniform')}, "
+        f"position_loss={training_config.get('position_loss', {'type': 'smooth_l1_meters'})}, "
+        f"orientation_loss={training_config.get('orientation_loss', {'type': 'cosine_distance'})}"
+    )
 
-    training_config = config["training"]
     train_loader = make_loader(
         bundle.train, training_config, shuffle=True, device=device
     )
@@ -671,10 +930,11 @@ def train(args: argparse.Namespace) -> Path:
         else make_loader(bundle.test, training_config, shuffle=False, device=device)
     )
 
-    model = HierarchicalResidualPoseTransformer(
+    model = build_residual_model(
+        model_type,
         input_dim=len(bundle.normalizer.output_feature_names),
         window_size=int(config["data"]["window_size"]),
-        **config["model"],
+        model_config=config["model"],
     ).to(device)
     trainable_parameters = sum(
         parameter.numel() for parameter in model.parameters() if parameter.requires_grad
@@ -818,8 +1078,11 @@ def train(args: argparse.Namespace) -> Path:
         }
 
     report = {
-        "model_type": "hierarchical_residual_pose_transformer_v2",
+        "model_type": model_type,
         "pose_target_definition": bundle.split_metadata.get("pose_target", {}),
+        "pose_training_protocol": bundle.split_metadata.get(
+            "endpose_v2_adapter"
+        ),
         "trainable_parameters": trainable_parameters,
         "checkpoints": checkpoint_metadata,
         "validation_by_checkpoint": validation_results,

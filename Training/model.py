@@ -333,6 +333,7 @@ class HierarchicalResidualPoseTransformer(HierarchicalGatedMultimodalTransformer
             dropout=dropout,
         )
         fused_dim = d_model * 2
+        del self.pose_head
         self.receiving_hand_head = nn.Linear(fused_dim, 2)
         self.pose_head = nn.Sequential(
             nn.Linear(fused_dim + 2, d_model),
@@ -385,5 +386,124 @@ class HierarchicalResidualPoseTransformer(HierarchicalGatedMultimodalTransformer
             "position_delta": position_delta,
             "quaternion_delta": quaternion_delta,
             "pose_candidates": pose_candidates,
+            "gate": gate,
+        }
+
+
+class HierarchicalDualHorizonResidualPoseTransformer(
+    HierarchicalGatedMultimodalTransformer
+):
+    """Residual model with separate terminal and t+1 pose heads.
+
+    Each pose head emits a distinct residual for the left and right hand.  The
+    terminal head is the primary output; the t+1 head is an auxiliary training
+    task that supplies a local-motion signal without changing the terminal
+    target used for checkpoint selection and evaluation.
+    """
+
+    def __init__(
+        self,
+        *,
+        input_dim: int,
+        window_size: int,
+        d_model: int = 64,
+        nhead: int = 4,
+        num_layers: int = 2,
+        dim_feedforward: int = 128,
+        dropout: float = 0.15,
+    ) -> None:
+        super().__init__(
+            input_dim=input_dim,
+            window_size=window_size,
+            d_model=d_model,
+            nhead=nhead,
+            num_layers=num_layers,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+        )
+        fused_dim = d_model * 2
+        del self.pose_head
+        self.receiving_hand_head = nn.Linear(fused_dim, 2)
+        self.terminal_pose_head = self._make_pose_head(fused_dim, d_model, dropout)
+        self.auxiliary_t1_pose_head = self._make_pose_head(
+            fused_dim, d_model, dropout
+        )
+
+    @staticmethod
+    def _make_pose_head(
+        fused_dim: int, d_model: int, dropout: float
+    ) -> nn.Sequential:
+        head = nn.Sequential(
+            nn.Linear(fused_dim + 2, d_model),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model, 14),
+        )
+        final_layer = head[-1]
+        assert isinstance(final_layer, nn.Linear)
+        nn.init.zeros_(final_layer.weight)
+        nn.init.zeros_(final_layer.bias)
+        with torch.no_grad():
+            final_layer.bias[6] = 1.0
+            final_layer.bias[13] = 1.0
+        return head
+
+    @staticmethod
+    def _pose_candidates(
+        raw_residual: torch.Tensor,
+        hand_reference_pose: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        residual = raw_residual.reshape(-1, 2, 7)
+        position_delta = residual[:, :, :3]
+        quaternion_delta = F.normalize(
+            residual[:, :, 3:7], dim=-1, eps=1e-8
+        )
+        candidate_positions = hand_reference_pose[:, :, :3] + position_delta
+        candidate_quaternions = quaternion_multiply(
+            hand_reference_pose[:, :, 3:7], quaternion_delta
+        )
+        candidate_quaternions = F.normalize(
+            candidate_quaternions, dim=-1, eps=1e-8
+        )
+        candidates = torch.cat(
+            (candidate_positions, candidate_quaternions), dim=-1
+        )
+        return candidates, position_delta, quaternion_delta
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        hand_reference_pose: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor]:
+        if hand_reference_pose is None:
+            raise ValueError("Dual-horizon residual model requires hand_reference_pose")
+        if hand_reference_pose.ndim != 3 or hand_reference_pose.shape[1:] != (2, 7):
+            raise ValueError(
+                "Expected hand_reference_pose with shape [batch, 2, 7], got "
+                f"{tuple(hand_reference_pose.shape)}"
+            )
+        if hand_reference_pose.shape[0] != x.shape[0]:
+            raise ValueError("Feature and hand-reference batch sizes differ")
+
+        fused, gate = self._encode(x)
+        receiving_hand_logits = self.receiving_hand_head(fused)
+        hand_probabilities = F.softmax(receiving_hand_logits, dim=-1)
+        pose_input = torch.cat((fused, hand_probabilities), dim=-1)
+        terminal = self._pose_candidates(
+            self.terminal_pose_head(pose_input), hand_reference_pose
+        )
+        auxiliary = self._pose_candidates(
+            self.auxiliary_t1_pose_head(pose_input), hand_reference_pose
+        )
+        return {
+            "assistance_logits": self.assistance_head(fused),
+            "assistance_type_logits": self.assistance_type_head(fused),
+            "receiving_hand_logits": receiving_hand_logits,
+            "position_delta": terminal[1],
+            "quaternion_delta": terminal[2],
+            "pose_candidates": terminal[0],
+            "auxiliary_position_delta": auxiliary[1],
+            "auxiliary_quaternion_delta": auxiliary[2],
+            "auxiliary_pose_candidates": auxiliary[0],
             "gate": gate,
         }

@@ -1,0 +1,13 @@
+trial_index,trial_tag,config,config_sha256,learning_rate,pose_loss_weight,orientation_loss_weight,auxiliary_pose_loss_weight,dropout,d_model,nhead,num_layers,dim_feedforward,batch_size
+0,trial_000,Training/configs/endpose_v2_search/trial_000.json,04456b0ab4bade693b559a1fbae84725ccd61eb4e3d253e31d1f61f8ac9f78f8,0.000381605632501,2.0,0.25,0.0,0.15,32,8,1,256,64
+1,trial_001,Training/configs/endpose_v2_search/trial_001.json,4b7919bbe58e849848a8e54917a42433774f18a9dad6f09a71dba2d55c1e2523,0.000381605632501,2.0,0.25,0.25,0.15,32,8,1,256,64
+2,trial_002,Training/configs/endpose_v2_search/trial_002.json,dfb974ff4ff6e51ff673c208931ee7393f816b05c7266b3cb6a9d9ca08451370,0.000842659283412,4.0,0.1,0.5,0.05,64,8,1,128,64
+3,trial_003,Training/configs/endpose_v2_search/trial_003.json,e51bd11849c67f9664396d5ce5341410bfbeb01c4c4ebb17023108dc10192753,0.000182289290736,4.0,0.1,0.25,0.3,32,8,1,256,32
+4,trial_004,Training/configs/endpose_v2_search/trial_004.json,eae9b2e6ec9ed5a6a726b57363d002faad6dbdcb1b01bc641d315d3ea8342f36,0.000123463601154,4.0,1.0,1.0,0.3,64,4,1,256,64
+5,trial_005,Training/configs/endpose_v2_search/trial_005.json,42b828c9d06adb07bd6309aa2cab4f2fd47edbca0f37c95cf351c8f223d7a2de,0.000709278992353,4.0,1.0,1.0,0.15,32,4,2,128,64
+6,trial_006,Training/configs/endpose_v2_search/trial_006.json,7a1534e46816cfd14990adfc1553e98d5621cce0c62b71a735a271837e901115,0.000317072774995,1.0,0.25,0.5,0.05,32,8,2,256,32
+7,trial_007,Training/configs/endpose_v2_search/trial_007.json,29f9cc192d87e5cf107591702ec797141848022bf424568654fb1d96868b513e,8.02846837501e-05,4.0,0.25,0.25,0.15,64,4,1,256,32
+8,trial_008,Training/configs/endpose_v2_search/trial_008.json,8abf22244022423259ec7666b22a30d2634643cde7df4e16410f54b9919fe42a,0.000364306973547,2.0,0.25,0.5,0.3,64,4,1,256,32
+9,trial_009,Training/configs/endpose_v2_search/trial_009.json,d06b3a3b708af69f8ecb85e4762d7ee6ec8290e324179d46bf10cdc2dd029961,0.000149529466626,4.0,1.0,0.1,0.3,32,4,1,128,64
+10,trial_010,Training/configs/endpose_v2_search/trial_010.json,3abfa5c80a32fa0af1637851326bcbb005a153c834d75fede54b8a4123ad7c25,0.000388881838963,8.0,1.0,0.5,0.15,64,8,2,256,32
+11,trial_011,Training/configs/endpose_v2_search/trial_011.json,f332a82b9074770407afae48202c7c5c2300c0087dc4dacc9756197e5c906021,9.33747862199e-05,2.0,0.5,0.5,0.05,64,8,2,256,32

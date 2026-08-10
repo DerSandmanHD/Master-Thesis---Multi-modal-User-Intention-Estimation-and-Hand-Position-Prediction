@@ -17,7 +17,7 @@ import numpy as np
 import torch
 
 from data import sha256_file
-from model import HierarchicalResidualPoseTransformer
+from train_residual import build_residual_model
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -223,10 +223,15 @@ def main() -> int:
     features_np, hand_np, fixture_metadata = load_fixture(fixture_path)
     load_started = time.perf_counter_ns()
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    model = HierarchicalResidualPoseTransformer(
+    model = build_residual_model(
+        str(
+            checkpoint.get(
+                "model_type", "hierarchical_residual_pose_transformer_v2"
+            )
+        ),
         input_dim=int(checkpoint["input_dim"]),
         window_size=int(checkpoint["window_size"]),
-        **checkpoint["model_config"],
+        model_config=checkpoint["model_config"],
     ).to(device)
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()

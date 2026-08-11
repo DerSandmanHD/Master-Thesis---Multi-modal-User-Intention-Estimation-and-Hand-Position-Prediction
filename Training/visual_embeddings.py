@@ -10,10 +10,16 @@ from pathlib import Path
 
 import numpy as np
 
+from clip_alignment import (
+    VISUAL_ALIGNMENT_VERSION,
+    VISUAL_TIME_BASIS,
+    canonical_json_hash,
+)
+
 
 SUPPORTED_VISUAL_MODES = ("append", "only", "random_control")
-VISUAL_CACHE_SCHEMA_VERSION = 1
-VISUAL_PROJECTION_SCHEMA_VERSION = 1
+VISUAL_CACHE_SCHEMA_VERSION = 2
+VISUAL_PROJECTION_SCHEMA_VERSION = 2
 
 
 def sha256_file(path: Path) -> str:
@@ -37,13 +43,19 @@ def stable_sequence_seed(sequence_id: str, seed: int) -> int:
 
 def load_cache(path: Path) -> tuple[np.ndarray, np.ndarray, dict]:
     with np.load(path, allow_pickle=False) as archive:
-        required = {"timestamps_ns", "embeddings", "metadata_json"}
+        required = {
+            "timestamps_ns",
+            "rgb_frame_indices",
+            "embeddings",
+            "metadata_json",
+        }
         missing = sorted(required - set(archive.files))
         if missing:
             raise ValueError(
                 f"Visual cache {path} is missing arrays: {', '.join(missing)}"
             )
         timestamps_ns = archive["timestamps_ns"].astype(np.int64, copy=False)
+        frame_indices = archive["rgb_frame_indices"].astype(np.int64, copy=False)
         embeddings = archive["embeddings"].astype(np.float32, copy=False)
         metadata_value = archive["metadata_json"]
         metadata = json.loads(str(metadata_value.item()))
@@ -51,14 +63,32 @@ def load_cache(path: Path) -> tuple[np.ndarray, np.ndarray, dict]:
         raise ValueError(f"Visual cache timestamps must be one-dimensional: {path}")
     if embeddings.ndim != 2 or len(embeddings) != len(timestamps_ns):
         raise ValueError(f"Visual cache embeddings/timestamps do not align: {path}")
+    if frame_indices.ndim != 1 or len(frame_indices) != len(timestamps_ns):
+        raise ValueError(f"Visual cache frame indices do not align: {path}")
     if not len(timestamps_ns):
         raise ValueError(f"Visual cache is empty: {path}")
     if np.any(np.diff(timestamps_ns) <= 0):
         raise ValueError(f"Visual cache timestamps are not strictly increasing: {path}")
+    if np.any(np.diff(frame_indices) <= 0) or np.any(frame_indices < 0):
+        raise ValueError(f"Visual cache frame indices are invalid: {path}")
     if not np.isfinite(embeddings).all():
         raise ValueError(f"Visual cache contains non-finite embeddings: {path}")
     if int(metadata.get("schema_version", -1)) != VISUAL_CACHE_SCHEMA_VERSION:
         raise ValueError(f"Unsupported visual cache schema in {path}")
+    if metadata.get("alignment_version") != VISUAL_ALIGNMENT_VERSION:
+        raise ValueError(f"Unsupported visual alignment version in {path}")
+    if metadata.get("time_basis") != VISUAL_TIME_BASIS:
+        raise ValueError(f"Unsupported visual timestamp basis in {path}")
+    alignment = metadata.get("alignment")
+    if not isinstance(alignment, dict):
+        raise ValueError(f"Visual cache alignment metadata is missing in {path}")
+    if metadata.get("alignment_fingerprint") != canonical_json_hash(alignment):
+        raise ValueError(f"Visual cache alignment fingerprint mismatch in {path}")
+    source_files = metadata.get("source_files")
+    if not isinstance(source_files, dict) or not {"master", "vrs"}.issubset(
+        source_files
+    ):
+        raise ValueError(f"Visual cache source identities are incomplete in {path}")
     return timestamps_ns, embeddings, metadata
 
 
@@ -121,6 +151,8 @@ class VisualFeatureLoader:
     cache_manifest_sha256: str
     projection_sha256: str
     alignment_by_sequence: dict[str, dict] = field(default_factory=dict)
+    verified_master_sources: set[str] = field(default_factory=set)
+    split_binding: dict = field(default_factory=dict)
 
     @classmethod
     def from_config(cls, config: dict) -> "VisualFeatureLoader":
@@ -156,10 +188,38 @@ class VisualFeatureLoader:
             VISUAL_PROJECTION_SCHEMA_VERSION
         ):
             raise ValueError("Unsupported visual projection schema")
+        if projection_metadata.get("fit_split") != "train_only":
+            raise ValueError("Visual projection must be fitted on train_only")
+        required_split_metadata = (
+            "train_sequence_ids",
+            "train_sequence_fingerprint",
+            "selected_sequence_fingerprint",
+            "validation_participants_excluded",
+            "test_participants_excluded",
+        )
+        missing_split_metadata = [
+            key for key in required_split_metadata
+            if key not in projection_metadata
+        ]
+        if missing_split_metadata:
+            raise ValueError(
+                "Visual projection lacks train-split binding metadata: "
+                + ", ".join(missing_split_metadata)
+            )
         if int(cache_manifest.get("schema_version", -1)) != (
             VISUAL_CACHE_SCHEMA_VERSION
         ):
             raise ValueError("Unsupported visual cache manifest schema")
+        alignment = cache_manifest.get("alignment")
+        if not isinstance(alignment, dict):
+            raise ValueError("Visual cache manifest has no alignment specification")
+        if alignment.get("version") != VISUAL_ALIGNMENT_VERSION:
+            raise ValueError("Unsupported visual cache alignment version")
+        if alignment.get("time_basis") != VISUAL_TIME_BASIS:
+            raise ValueError("Unsupported visual cache timestamp basis")
+        alignment_fingerprint = canonical_json_hash(alignment)
+        if cache_manifest.get("alignment_fingerprint") != alignment_fingerprint:
+            raise ValueError("Visual cache manifest alignment fingerprint mismatch")
         projection_sha256 = sha256_file(projection_path)
         expected_projection_sha256 = projection_metadata.get("projection_sha256")
         if expected_projection_sha256 != projection_sha256:
@@ -172,6 +232,16 @@ class VisualFeatureLoader:
             "encoder_fingerprint"
         ):
             raise ValueError("Projection and cache use different visual encoders")
+        if projection_metadata.get("alignment_version") != VISUAL_ALIGNMENT_VERSION:
+            raise ValueError("Projection uses an obsolete visual alignment")
+        if projection_metadata.get("alignment_fingerprint") != (
+            cache_manifest.get("alignment_fingerprint")
+        ):
+            raise ValueError("Projection and cache use different visual alignments")
+        if projection_metadata.get("cache_manifest_sha256") != sha256_file(
+            manifest_path
+        ):
+            raise ValueError("Projection was fitted from a different cache manifest")
 
         max_age_seconds = float(config.get("max_age_seconds", 0.25))
         if max_age_seconds <= 0:
@@ -197,6 +267,85 @@ class VisualFeatureLoader:
             cache_manifest_sha256=sha256_file(manifest_path),
             projection_sha256=projection_sha256,
         )
+
+    def validate_split_binding(
+        self,
+        split_metadata: dict,
+        *,
+        selected_sequence_ids: list[str],
+    ) -> dict:
+        """Prove that the loaded projection was fitted on this exact train split."""
+        sequences = split_metadata.get("sequences", {})
+        participants = split_metadata.get("participants", {})
+        actual_train_ids = sorted(str(value) for value in sequences.get("train", []))
+        actual_selected_ids = sorted(str(value) for value in selected_sequence_ids)
+        actual_validation = sorted(
+            str(value) for value in participants.get("validation", [])
+        )
+        actual_test = sorted(str(value) for value in participants.get("test", []))
+        expected_train_ids = sorted(
+            str(value)
+            for value in self.projection_metadata.get("train_sequence_ids", [])
+        )
+        checks = {
+            "train_sequence_ids": (expected_train_ids, actual_train_ids),
+            "train_sequence_fingerprint": (
+                self.projection_metadata.get("train_sequence_fingerprint"),
+                sequence_fingerprint(actual_train_ids),
+            ),
+            "selected_sequence_fingerprint": (
+                self.projection_metadata.get("selected_sequence_fingerprint"),
+                sequence_fingerprint(actual_selected_ids),
+            ),
+            "validation_participants_excluded": (
+                sorted(
+                    str(value)
+                    for value in self.projection_metadata.get(
+                        "validation_participants_excluded", []
+                    )
+                ),
+                actual_validation,
+            ),
+            "test_participants_excluded": (
+                sorted(
+                    str(value)
+                    for value in self.projection_metadata.get(
+                        "test_participants_excluded", []
+                    )
+                ),
+                actual_test,
+            ),
+            "cache_sequence_fingerprint": (
+                self.cache_manifest.get("sequence_fingerprint"),
+                sequence_fingerprint(actual_selected_ids),
+            ),
+        }
+        mismatches = [
+            key for key, (expected, actual) in checks.items()
+            if expected != actual
+        ]
+        if mismatches:
+            details = "; ".join(
+                f"{key}: projection/cache={checks[key][0]!r}, "
+                f"active_split={checks[key][1]!r}"
+                for key in mismatches
+            )
+            raise ValueError(
+                "Visual projection is not bound to the active train split: "
+                + details
+            )
+        self.split_binding = {
+            "version": "visual_projection_active_split_binding_v1",
+            "verified": True,
+            "train_sequence_ids": actual_train_ids,
+            "train_sequence_fingerprint": sequence_fingerprint(actual_train_ids),
+            "selected_sequence_fingerprint": sequence_fingerprint(
+                actual_selected_ids
+            ),
+            "validation_participants_excluded": actual_validation,
+            "test_participants_excluded": actual_test,
+        }
+        return dict(self.split_binding)
 
     @property
     def output_dim(self) -> int:
@@ -227,14 +376,40 @@ class VisualFeatureLoader:
         self,
         sequence_id: str,
         target_timestamps_ns: np.ndarray,
+        *,
+        source_master_path: Path | None = None,
     ) -> np.ndarray:
         cache_path, entry = self._entry(sequence_id)
+        if source_master_path is not None:
+            expected_master = entry.get("source_files", {}).get("master")
+            source_master_path = Path(source_master_path).expanduser().resolve()
+            if not isinstance(expected_master, dict):
+                raise ValueError(
+                    f"Visual cache master identity is missing: {cache_path}"
+                )
+            actual_master = {
+                "file": source_master_path.name,
+                "size_bytes": int(source_master_path.stat().st_size),
+                "sha256": sha256_file(source_master_path),
+            }
+            if actual_master != expected_master:
+                raise ValueError(
+                    "Current master source differs from the visual cache: "
+                    f"{source_master_path}"
+                )
+            self.verified_master_sources.add(sequence_id)
         timestamps_ns, embeddings, metadata = load_cache(cache_path)
         if metadata.get("sequence_id") != sequence_id:
             raise ValueError(f"Visual cache sequence mismatch: {cache_path}")
         encoder_fingerprint = self.cache_manifest.get("encoder_fingerprint")
         if metadata.get("encoder_fingerprint") != encoder_fingerprint:
             raise ValueError(f"Visual cache encoder mismatch: {cache_path}")
+        if metadata.get("alignment_fingerprint") != self.cache_manifest.get(
+            "alignment_fingerprint"
+        ):
+            raise ValueError(f"Visual cache alignment mismatch: {cache_path}")
+        if metadata.get("source_files") != entry.get("source_files"):
+            raise ValueError(f"Visual cache source identity mismatch: {cache_path}")
         if embeddings.shape[1] != len(self.projection_mean):
             raise ValueError(f"Visual cache dimension mismatch: {cache_path}")
         if int(entry.get("samples", -1)) != len(embeddings):
@@ -276,6 +451,7 @@ class VisualFeatureLoader:
         return {
             "enabled": True,
             "mode": self.mode,
+            "cache_manifest_path": str(self.cache_dir / "cache_manifest.json"),
             "cache_manifest_sha256": self.cache_manifest_sha256,
             "cache_sequence_fingerprint": self.cache_manifest.get(
                 "sequence_fingerprint"
@@ -284,11 +460,28 @@ class VisualFeatureLoader:
             "encoder_fingerprint": self.cache_manifest.get(
                 "encoder_fingerprint"
             ),
+            "alignment_version": self.cache_manifest.get("alignment", {}).get(
+                "version"
+            ),
+            "alignment_fingerprint": self.cache_manifest.get(
+                "alignment_fingerprint"
+            ),
+            "time_basis": self.cache_manifest.get("alignment", {}).get(
+                "time_basis"
+            ),
             "projection_sha256": self.projection_sha256,
+            "projection_path": str(self.projection_path),
+            "projection_metadata_path": str(
+                self.projection_path.with_suffix(".json")
+            ),
+            "projection_metadata_sha256": sha256_file(
+                self.projection_path.with_suffix(".json")
+            ),
             "projection_fit_split": self.projection_metadata.get("fit_split"),
             "projection_train_sequence_fingerprint": self.projection_metadata.get(
                 "train_sequence_fingerprint"
             ),
+            "projection_split_binding": dict(self.split_binding),
             "raw_embedding_dim": int(len(self.projection_mean)),
             "projected_embedding_dim": self.output_dim,
             "max_age_seconds": self.max_age_seconds,
@@ -296,6 +489,9 @@ class VisualFeatureLoader:
                 self.random_seed if self.mode == "random_control" else None
             ),
             "verify_cache_hashes": self.verify_cache_hashes,
+            "current_master_sources_verified": len(
+                self.verified_master_sources
+            ),
             "alignment": {
                 "sequences": len(self.alignment_by_sequence),
                 "target_rows": total_rows,

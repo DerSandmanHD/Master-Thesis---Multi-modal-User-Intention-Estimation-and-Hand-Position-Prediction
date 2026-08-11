@@ -1,5 +1,16 @@
 # Reproducible terminal end-pose experiment
 
+## Historischer Status
+
+Dieses Dokument beschreibt das unverändert erhaltene Endpose-v1-Experiment.
+Seine alten Targets und Reports sind wegen duplizierter physischer Captures und
+der früheren Checkpoint-/Oracle-Berichtssemantik keine korrigierten
+Thesis-Hauptergebnisse. Neue Terminal-Läufe verwenden
+`configs/models/residual_transformer_endpose_v2.json` mit
+`terminal_endpose_physical_capture_v2` und das aktive Protokoll in
+`THESIS_FINAL_PROTOCOL_V2.md`. Alte Runs, Checkpoints und Berichte werden nicht
+gelöscht oder überschrieben.
+
 This experiment is separate from the existing Residual-v2 experiment. The
 existing model predicts the receiving-hand pose at **t+1 second**. The new
 `residual_v2_endpose` model predicts one **robust terminal receiving-hand pose**

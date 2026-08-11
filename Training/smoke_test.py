@@ -58,8 +58,11 @@ def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> No
             "sequence_id": [f"{participant}_{sequence_number}"] * rows,
             "participant": [participant] * rows,
             "timestamp_ns": timestamps,
+            "hand_timestamp_ns": timestamps,
             "intent_label": intent_labels,
             "receiving_hand": [receiving_hand] * rows,
+            "target_object_id": [6 + (sequence_number % 9)] * rows,
+            "target_object_known": np.ones(rows),
             "gaze_valid": np.ones(rows),
             "gaze_yaw_rad": rng.normal(size=rows),
             "gaze_pitch_rad": rng.normal(size=rows),
@@ -79,6 +82,9 @@ def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> No
             "robot_frame_valid": np.ones(rows),
             "robot_anchor_interpolated": np.zeros(rows),
             "future_1s_receiving_wrist_valid": np.ones(rows),
+            "future_target_timestamp_ns": timestamps + 1_000_000_000,
+            "future_target_hand_timestamp_ns": timestamps + 1_000_000_000,
+            "future_1s_time_error_ms": np.zeros(rows),
         }
     )
     for side in ("left", "right"):
@@ -160,6 +166,8 @@ def main() -> int:
             "stride": 10,
             "future_horizon_seconds": 1.0,
             "pose_intent_ids": [2],
+            "include_hand_references": True,
+            "max_hand_reference_age_seconds": 0.25,
             "minimum_observed_fraction": 0.05,
             "max_timestamp_gap_seconds": 0.2,
             "validation_fraction": 0.2,
@@ -213,6 +221,7 @@ def main() -> int:
         batch = next(iter(DataLoader(bundle.train, batch_size=4, shuffle=False)))
         assistance_criterion = nn.CrossEntropyLoss()
         assistance_type_criterion = nn.CrossEntropyLoss()
+        receiving_hand_criterion = nn.CrossEntropyLoss()
         assert (
             sum(
                 dataset.discarded_gap_windows
@@ -230,6 +239,7 @@ def main() -> int:
         training_config = {
             "assistance_loss_weight": 1.0,
             "assistance_type_loss_weight": 1.0,
+            "receiving_hand_loss_weight": 1.0,
             "pose_loss_weight": 1.0,
             "orientation_loss_weight": 0.25,
             "gradient_clip_norm": 1.0,
@@ -246,11 +256,13 @@ def main() -> int:
                 batch,
                 assistance_criterion,
                 assistance_type_criterion,
+                receiving_hand_criterion,
                 training_config,
             )
             loss.backward()
             assert outputs["assistance_logits"].shape == (4, 2)
             assert outputs["assistance_type_logits"].shape == (4, 2)
+            assert outputs["receiving_hand_logits"].shape == (4, 2)
             assert outputs["pose"].shape == (4, 7)
             assert torch.isfinite(loss)
             assert all(np.isfinite(value) for value in components.values())
@@ -262,12 +274,14 @@ def main() -> int:
                 torch.device("cpu"),
                 assistance_criterion,
                 assistance_type_criterion,
+                receiving_hand_criterion,
                 training_config,
                 optimizer,
             )
             assert epoch_metrics["intention"]["samples"] == len(bundle.train)
             assert epoch_metrics["assistance"]["samples"] == len(bundle.train)
             assert epoch_metrics["assistance_type"]["samples"] > 0
+            assert epoch_metrics["receiving_hand"]["samples"] > 0
             assert epoch_metrics["pose"]["samples"] > 0
             assert (
                 epoch_metrics["pose"][

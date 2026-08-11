@@ -18,6 +18,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from checkpoint_semantics import (
+    DEFAULT_VALIDATION_SELECTION_RULE,
+    mark_seed_aggregate,
+    pose_selected_diagnostic,
+    primary_result_row,
+    select_primary_checkpoint_row,
+)
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SEEDS = (42, 43, 44)
@@ -28,6 +36,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-tag", required=True)
     parser.add_argument("--experiment-tag", default="modality_ablation_v1")
+    parser.add_argument(
+        "--report-tag", default="modality_ablation_v2_checkpoint_coherent"
+    )
     parser.add_argument("--baseline-experiment", default="benchmark_v2")
     parser.add_argument("--require-complete", action="store_true")
     return parser.parse_args()
@@ -35,36 +46,24 @@ def parse_args() -> argparse.Namespace:
 
 def test_row(variant: str, seed: int, run_dir: Path) -> dict:
     metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
-    intention_test = metrics["test"]["best_intention"]
-    pose_test = metrics["test"]["best_pose"]
+    validation = primary_result_row(
+        metrics, checkpoint="best_intention", split="validation"
+    )
     return {
         "variant": variant,
         "seed": seed,
         "run_dir": str(run_dir),
-        "test_intention_macro_f1": float(
-            intention_test["intention"]["macro_f1"]
+        "validation_intention_macro_f1": validation[
+            "validation_intention_macro_f1"
+        ],
+        "validation_receiving_hand_macro_f1": validation[
+            "validation_receiving_hand_macro_f1"
+        ],
+        "validation_pose_mae_cm": validation["validation_pose_mae_cm"],
+        **primary_result_row(
+            metrics, checkpoint="best_intention", split="test"
         ),
-        "test_intention_accuracy": float(
-            intention_test["intention"]["accuracy"]
-        ),
-        "test_receiving_hand_macro_f1": float(
-            intention_test["receiving_hand"]["macro_f1_supported"]
-        ),
-        "test_pose_mae_cm": float(
-            pose_test["pose_oracle"]["position_mae_cm"]
-        ),
-        "test_pose_end_to_end_mae_cm": float(
-            pose_test["pose_end_to_end"]["position_mae_cm"]
-        ),
-        "test_pose_at_intention_checkpoint_mae_cm": float(
-            intention_test["pose_oracle"]["position_mae_cm"]
-        ),
-        "test_pose_end_to_end_at_intention_checkpoint_mae_cm": float(
-            intention_test["pose_end_to_end"]["position_mae_cm"]
-        ),
-        "test_intention_macro_f1_at_pose_checkpoint": float(
-            pose_test["intention"]["macro_f1"]
-        ),
+        **pose_selected_diagnostic(metrics, split="test"),
         "trainable_parameters": int(metrics["trainable_parameters"]),
         "wall_seconds": float(metrics.get("runtime", {}).get("wall_seconds", np.nan)),
     }
@@ -79,17 +78,23 @@ def aggregate_runs(frame: pd.DataFrame) -> pd.DataFrame:
             "test_intention_accuracy",
             "test_receiving_hand_macro_f1",
             "test_pose_mae_cm",
+            "test_pose_orientation_error_deg",
+            "test_pose_samples",
             "test_pose_end_to_end_mae_cm",
-            "test_pose_at_intention_checkpoint_mae_cm",
-            "test_pose_end_to_end_at_intention_checkpoint_mae_cm",
-            "test_intention_macro_f1_at_pose_checkpoint",
+            "test_pose_end_to_end_orientation_error_deg",
+            "test_pose_end_to_end_samples",
+            "test_pose_target_coverage",
+            "diagnostic_pose_selected_test_pose_mae_cm",
+            "diagnostic_pose_selected_test_pose_orientation_error_deg",
+            "diagnostic_pose_selected_test_pose_samples",
+            "diagnostic_pose_selected_test_intention_macro_f1",
             "trainable_parameters",
             "wall_seconds",
         ):
             values = group[metric].astype(float)
             row[f"{metric}_mean"] = float(values.mean())
             row[f"{metric}_std"] = float(values.std(ddof=0))
-        rows.append(row)
+        rows.append(mark_seed_aggregate(row))
     summary = pd.DataFrame(rows)
     if summary.empty:
         return summary
@@ -129,7 +134,7 @@ def save_plots(summary: pd.DataFrame, output_dir: Path) -> None:
         ("test_receiving_hand_macro_f1", "Test receiving-hand macro-F1", False),
         (
             "test_pose_mae_cm",
-            "Test pose MAE (best-pose checkpoint; cm; lower better)",
+            "Test pose error (same primary checkpoint; cm; lower better)",
             True,
         ),
     )
@@ -183,7 +188,7 @@ def save_plots(summary: pd.DataFrame, output_dir: Path) -> None:
 def main() -> int:
     args = parse_args()
     root = PROJECT_ROOT / "Training/runs" / args.dataset_tag
-    output_dir = PROJECT_ROOT / "Training/reports" / args.dataset_tag / args.experiment_tag
+    output_dir = PROJECT_ROOT / "Training/reports" / args.dataset_tag / args.report_tag
     data_dir = output_dir / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
     rows = []
@@ -208,21 +213,37 @@ def main() -> int:
     complete = not errors and len(summary_frame) == 5 and bool((summary_frame["completed_seeds"] == 3).all())
     if complete:
         save_plots(summary_frame, output_dir)
+    primary_results = []
+    for variant, group in frame.groupby("variant", sort=False):
+        selected = select_primary_checkpoint_row(
+            group.to_dict(orient="records")
+        )
+        selected["variant"] = variant
+        primary_results.append(selected)
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "dataset_tag": args.dataset_tag,
         "experiment_tag": args.experiment_tag,
+        "report_tag": args.report_tag,
         "baseline_experiment": args.baseline_experiment,
         "seeds": list(SEEDS),
         "test_evaluation_preregistered": True,
         "checkpoint_policy": {
-            "intention_and_hand": "best_intention checkpoint selected on validation",
-            "pose_mae": "best_pose checkpoint selected on validation",
-            "deployment_pose_also_reported": "pose at best_intention checkpoint",
+            "primary": "all primary metrics use one best_intention checkpoint",
+            "selection_split": "validation",
+            "seed_selection_rule": DEFAULT_VALIDATION_SELECTION_RULE,
+            "pose_selected": "separately namespaced diagnostic only",
+        },
+        "ablation_semantics": {
+            "no_gaze": "strict feature-dependency ablation, including object-gaze relations",
+            "no_hands": "hand feature-channel ablation; residual wrist reference retained for pose",
+            "no_objects": "strict object feature-dependency ablation; negative or improved results are retained",
+            "no_vio": "direct VIO feature-channel ablation; other robot-frame coordinates remain SLAM-derived",
         },
         "complete": complete,
         "errors": errors,
-        "variants": (
+        "primary_results": primary_results,
+        "seed_aggregate_diagnostics": (
             summary_frame.astype(object)
             .where(pd.notna(summary_frame), None)
             .to_dict(orient="records")

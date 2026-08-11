@@ -10,6 +10,19 @@ voraus, ob Unterstützung benötigt wird, unterscheidet anschließend zwischen
 `fetch` und `handover` und schätzt für Handover die zukünftige Pose der
 Empfangshand.
 
+## Aktives Thesis-Protokoll
+
+Neue Experimente folgen ausschließlich
+`Training/THESIS_FINAL_PROTOCOL_V2.md`: absolute VRS-Device-Time für RGB/CLIP,
+hashgebundene Cache- und Run-Artefakte, Validation-only-Modellauswahl und genau
+ein Checkpoint pro Hauptergebniszeile. Bereits vorhandene n214-Testwerte sind
+beobachtete historische Resultate und dürfen nicht zur neuen Architektur- oder
+Hyperparameterwahl verwendet werden. Die maschinenlesbare Gültigkeitseinstufung
+steht in
+`Training/reports/dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json`.
+Der geprüfte Implementierungs- und Blockerstatus der Pakete P0–P5 steht in
+`Training/IMPLEMENTATION_STATUS_P0_P5.json`.
+
 ## Aktueller Datenfluss
 
 ```text

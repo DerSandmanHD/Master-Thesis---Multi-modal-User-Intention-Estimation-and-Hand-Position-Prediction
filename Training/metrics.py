@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import math
+import hashlib
+import json
 
 import torch
 
@@ -24,6 +26,13 @@ POSITION_RMS_ERROR_DEFINITION = (
 )
 
 
+def sample_key_fingerprint(sample_keys: list[str]) -> str:
+    """Stable identity for an unordered scientific evaluation cohort."""
+
+    payload = json.dumps(sorted(str(key) for key in sample_keys), separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def classification_metrics(
     predictions: torch.Tensor,
     targets: torch.Tensor,
@@ -36,12 +45,22 @@ def classification_metrics(
     total = int(confusion.sum())
     accuracy = float(confusion.diag().sum() / total) if total else 0.0
     f1_values = []
+    precision_values = []
+    recall_values = []
     support = confusion.sum(dim=1)
     for index in range(num_classes):
         true_positive = float(confusion[index, index])
         false_positive = float(confusion[:, index].sum() - confusion[index, index])
         false_negative = float(confusion[index, :].sum() - confusion[index, index])
+        precision_denominator = true_positive + false_positive
+        recall_denominator = true_positive + false_negative
         denominator = 2 * true_positive + false_positive + false_negative
+        precision_values.append(
+            true_positive / precision_denominator if precision_denominator else 0.0
+        )
+        recall_values.append(
+            true_positive / recall_denominator if recall_denominator else 0.0
+        )
         f1_values.append(2 * true_positive / denominator if denominator else 0.0)
     return {
         "accuracy": accuracy,
@@ -50,6 +69,8 @@ def classification_metrics(
             sum(value for value, count in zip(f1_values, support) if int(count) > 0)
             / max(1, int((support > 0).sum()))
         ),
+        "per_class_precision": precision_values,
+        "per_class_recall": recall_values,
         "per_class_f1": f1_values,
         "support": support.tolist(),
         "confusion_matrix": confusion.tolist(),
@@ -66,7 +87,9 @@ def pose_metrics(predictions: torch.Tensor, targets: torch.Tensor) -> dict:
             # Compatibility alias for existing artifacts and consumers.
             "position_mae_cm": None,
             "position_rmse_cm": None,
+            "position_median_cm": None,
             "orientation_mean_deg": None,
+            "orientation_median_deg": None,
             "position_error_definition": POSITION_ERROR_DEFINITION,
             "position_rmse_definition": POSITION_RMS_ERROR_DEFINITION,
         }
@@ -86,7 +109,11 @@ def pose_metrics(predictions: torch.Tensor, targets: torch.Tensor) -> dict:
         LEGACY_POSITION_ERROR_KEY: mean_euclidean_error_cm,
         POSITION_RMS_EUCLIDEAN_ERROR_KEY: rms_euclidean_error_cm,
         "position_rmse_cm": rms_euclidean_error_cm,
+        "position_median_cm": float(position_error.median() * 100.0),
         "orientation_mean_deg": float(orientation_radians.mean() * 180.0 / math.pi),
+        "orientation_median_deg": float(
+            orientation_radians.median() * 180.0 / math.pi
+        ),
         "position_error_definition": POSITION_ERROR_DEFINITION,
         "position_rmse_definition": POSITION_RMS_ERROR_DEFINITION,
     }

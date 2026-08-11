@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "matrix_id": "thesis_final_v2_corrected_alignment",
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "seeds": [42, 43, 44],
+  "validation_experiment_tag": "thesis_final_v2_validation",
+  "policy": {
+    "selection_split": "validation",
+    "validation_training_flag": "--skip-test-evaluation",
+    "test_stage": "evaluate the immutable best_intention checkpoint with Training/evaluate_frozen_run.py only after the model/config is frozen",
+    "test_already_observed": true,
+    "test_interpretation": "historical/exploratory; participant-grouped CV is the preferred robustness analysis",
+    "same_budget": true,
+    "same_seed_set": true
+  },
+  "training_experiments": [
+    {
+      "id": "baseline_mlp",
+      "family": "baseline",
+      "factor": "backbone",
+      "variant": "MLP",
+      "entrypoint": "Training/train.py",
+      "config": "Training/configs/models/mlp_v1.json"
+    },
+    {
+      "id": "baseline_gru",
+      "family": "baseline",
+      "factor": "backbone",
+      "variant": "GRU",
+      "entrypoint": "Training/train.py",
+      "config": "Training/configs/models/gru_v1.json"
+    },
+    {
+      "id": "baseline_transformer",
+      "family": "baseline",
+      "factor": "backbone",
+      "variant": "temporal_channel_transformer",
+      "entrypoint": "Training/train.py",
+      "config": "Training/configs/models/transformer_v1.json"
+    },
+    {
+      "id": "residual_current_gate",
+      "family": "primary",
+      "factor": "fusion",
+      "variant": "temporal_channel_gated",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/models/residual_transformer_v2.json"
+    },
+    {
+      "id": "residual_simple_gate",
+      "family": "architecture_ablation",
+      "factor": "fusion",
+      "variant": "temporal_channel_simple",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/architecture/residual_v2_fusion_simple.json"
+    },
+    {
+      "id": "residual_modality_gated",
+      "family": "architecture_ablation",
+      "factor": "fusion",
+      "variant": "modality_gated",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/architecture/residual_v2_modality_gated.json"
+    },
+    {
+      "id": "residual_temporal_only",
+      "family": "architecture_ablation",
+      "factor": "fusion",
+      "variant": "temporal_only",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/architecture/residual_v2_temporal_only.json"
+    },
+    {
+      "id": "residual_flat",
+      "family": "architecture_ablation",
+      "factor": "intention_head",
+      "variant": "flat_continue_fetch_handover",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/architecture/residual_v2_flat.json"
+    },
+    {
+      "id": "residual_without_pose_aux",
+      "family": "multitask_ablation",
+      "factor": "future_pose_loss",
+      "variant": "pose_loss_weight_zero",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/architecture/residual_v2_without_pose_loss.json"
+    },
+    {
+      "id": "modality_no_gaze",
+      "family": "modality_ablation",
+      "factor": "input_modality",
+      "variant": "strict_gaze_dependency_ablation",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/ablations/residual_v2_no_gaze.json"
+    },
+    {
+      "id": "modality_no_hands",
+      "family": "modality_ablation",
+      "factor": "input_modality",
+      "variant": "hand_feature_channel_ablation",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/ablations/residual_v2_no_hands.json"
+    },
+    {
+      "id": "modality_no_objects",
+      "family": "modality_ablation",
+      "factor": "input_modality",
+      "variant": "strict_object_dependency_ablation",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/ablations/residual_v2_no_objects.json"
+    },
+    {
+      "id": "modality_no_vio",
+      "family": "modality_ablation",
+      "factor": "input_modality",
+      "variant": "direct_vio_channel_ablation",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/ablations/residual_v2_no_vio.json"
+    },
+    {
+      "id": "visual_corrected_clip_current_gate",
+      "family": "visual",
+      "factor": "visual_context",
+      "variant": "sensor_plus_corrected_clip_temporal_channel_gate",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/visual/residual_v2_sensor_plus_clip.json",
+      "requires": ["corrected_clip_cache_v2", "train_only_pca_v2"]
+    },
+    {
+      "id": "visual_corrected_clip_modality_gate",
+      "family": "visual",
+      "factor": "visual_fusion",
+      "variant": "sensor_plus_corrected_clip_modality_gate",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/visual/residual_v2_sensor_plus_clip_modality_gated.json",
+      "requires": ["corrected_clip_cache_v2", "train_only_pca_v2"]
+    },
+    {
+      "id": "terminal_endpose_learned",
+      "family": "secondary_endpose",
+      "factor": "terminal_pose_method",
+      "variant": "dual_horizon_learned",
+      "entrypoint": "Training/train_residual.py",
+      "config": "Training/configs/models/residual_transformer_endpose_v2.json",
+      "requires": ["corrected_terminal_target_audit"]
+    }
+  ],
+  "aliases_without_training": [
+    {
+      "id": "baseline_residual_transformer",
+      "source_experiment": "residual_current_gate",
+      "reason": "same residual Transformer configuration"
+    },
+    {
+      "id": "modality_no_clip_sensor_only",
+      "source_experiment": "residual_current_gate",
+      "reason": "sensor-only input contains no visual feature group"
+    },
+    {
+      "id": "terminal_endpose_persistence",
+      "source_experiment": "terminal_endpose_learned",
+      "reason": "evaluation-only baseline on the exact same terminal target samples"
+    }
+  ],
+  "evaluation_only": [
+    {
+      "id": "t1_pose_baselines",
+      "command": "python3 Training/export_residual_predictions.py --run-dir <validation_frozen_run> --checkpoint best_intention_model.pt --split test --output-csv <report_dir>/test_predictions.csv --report-out <report_dir>/test_predictions.json",
+      "methods": ["persistence", "constant_velocity", "learned_model_oracle_hand"],
+      "primary_comparison": "test_predictions.json pose_baselines.fair_common_metrics",
+      "note": "evaluate_pose_baselines.py remains a model-independent two-baseline diagnostic; the checkpoint-bound export is the authoritative learned three-way comparison"
+    },
+    {
+      "id": "grouped_metrics",
+      "command": "python3 Training/evaluation/evaluate_grouped_predictions.py --predictions <prediction_csv> --prediction-report <prediction_json> --report-out <report_dir>/grouped_metrics.json --table-out <report_dir>/grouped_metrics.csv --bootstrap-iterations 10000 --bootstrap-seed 42 --sequence-bootstrap",
+      "methods": ["window", "sequence", "participant", "per_hand", "participant_cluster_bootstrap", "sequence_cluster_bootstrap"]
+    },
+    {
+      "id": "qualitative_cases",
+      "command": "python3 Training/render_prediction_overlay.py --predictions <prediction_csv> --prediction-report <prediction_json> --visual-cache-manifest <corrected_cache_manifest> --alignment-dir <sidecars> --output-dir <report_dir>",
+      "cases": ["good", "typical", "failure"]
+    }
+  ]
+}

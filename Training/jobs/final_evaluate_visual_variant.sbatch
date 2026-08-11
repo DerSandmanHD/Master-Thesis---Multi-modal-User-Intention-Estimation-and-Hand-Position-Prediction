@@ -14,8 +14,8 @@ set -euo pipefail
 REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
 IMAGE="$HOME/singularity/aria_master.simg"
 : "${DATASET_TAG:?Set DATASET_TAG to an immutable dataset version}"
-SCREEN_TAG="${SCREEN_TAG:-visual_embedding_screen_v1}"
-EXPERIMENT_TAG="${EXPERIMENT_TAG:-visual_embedding_final_v1}"
+SCREEN_TAG="${SCREEN_TAG:-visual_embedding_screen_v2_device_time}"
+EXPERIMENT_TAG="${EXPERIMENT_TAG:-visual_embedding_final_v2_device_time}"
 SUMMARY="Training/reports/${DATASET_TAG}/${SCREEN_TAG}/summary.json"
 SEEDS=(42 43 44)
 SEED="${SEEDS[$SLURM_ARRAY_TASK_ID]}"
@@ -41,6 +41,8 @@ case "$VARIANT" in
 esac
 RUN_ID="${EXPERIMENT_TAG}_${VARIANT}_seed${SEED}"
 RUN_DIR="Training/runs/${DATASET_TAG}/${EXPERIMENT_TAG}/${VARIANT}/${RUN_ID}"
+VISUAL_CACHE_DIR="Data_collection/visual_embeddings/${DATASET_TAG}/clip_vit_b32_openai_5hz_device_time_v2"
+VISUAL_PROJECTION="Training/visual_projections/${DATASET_TAG}/clip_vit_b32_openai_5hz_device_time_v2_pca32.npz"
 if [[ -f "$RUN_DIR/metrics.json" ]]; then
     if python3 - "$RUN_DIR/metrics.json" <<'PY'
 import json
@@ -66,4 +68,6 @@ singularity exec --nv "$IMAGE" \
     --dataset-tag "$DATASET_TAG" \
     --experiment-tag "$EXPERIMENT_TAG" \
     --seed "$SEED" \
-    --run-dir "$RUN_DIR"
+    --run-dir "$RUN_DIR" \
+    --visual-cache-dir "$VISUAL_CACHE_DIR" \
+    --visual-projection-path "$VISUAL_PROJECTION"

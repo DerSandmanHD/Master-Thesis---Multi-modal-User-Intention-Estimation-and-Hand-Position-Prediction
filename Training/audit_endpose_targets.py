@@ -160,6 +160,7 @@ def main() -> int:
         "notes": [
             "Quality thresholds were fixed in the config before this audit.",
             "Rejected sequences remain available for intention and receiving-hand classification but contribute no pose loss or pose metric.",
+            "Target-window counts distinguish fully pre-aggregation endpoints from partially overlapping terminal-state estimates; endpoints at or after the last contributing physical capture are masked.",
             "No model training or checkpoint selection is performed by this audit.",
         ],
     }

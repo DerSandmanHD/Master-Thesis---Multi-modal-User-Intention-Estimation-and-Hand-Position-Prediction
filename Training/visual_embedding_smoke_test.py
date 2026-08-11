@@ -15,6 +15,12 @@ from torch.utils.data import DataLoader
 from data import prepare_data
 from model import HierarchicalResidualPoseTransformer
 from smoke_test import synthetic_sequence
+from clip_alignment import (
+    VISUAL_ALIGNMENT_VERSION,
+    VISUAL_TIME_BASIS,
+    alignment_specification,
+    canonical_json_hash,
+)
 from visual_embeddings import (
     VISUAL_CACHE_SCHEMA_VERSION,
     VISUAL_PROJECTION_SCHEMA_VERSION,
@@ -33,6 +39,8 @@ def write_visual_artifacts(
 ) -> None:
     cache_dir.mkdir()
     encoder_fingerprint = "synthetic_encoder_sha256"
+    alignment = alignment_specification(sample_hz=5.0)
+    alignment_fingerprint = canonical_json_hash(alignment)
     entries = {}
     for sequence_number, sequence_id in enumerate(sequence_ids):
         master = pd.read_csv(
@@ -43,15 +51,37 @@ def write_visual_artifacts(
         rng = np.random.default_rng(sequence_number)
         embeddings = rng.normal(size=(len(timestamps), 8)).astype(np.float32)
         embeddings /= np.linalg.norm(embeddings, axis=1, keepdims=True)
+        source_files = {
+            "master": {
+                "file": f"{sequence_id}_master.csv",
+                "size_bytes": int(
+                    (master_dir / f"{sequence_id}_master.csv").stat().st_size
+                ),
+                "sha256": sha256_file(
+                    master_dir / f"{sequence_id}_master.csv"
+                ),
+            },
+            "vrs": {
+                "file": f"{sequence_id}.vrs",
+                "size_bytes": 123,
+                "sha256": f"synthetic-vrs-{sequence_number}",
+            },
+        }
         metadata = {
             "schema_version": VISUAL_CACHE_SCHEMA_VERSION,
             "sequence_id": sequence_id,
             "encoder_fingerprint": encoder_fingerprint,
+            "alignment_version": VISUAL_ALIGNMENT_VERSION,
+            "time_basis": VISUAL_TIME_BASIS,
+            "alignment": alignment,
+            "alignment_fingerprint": alignment_fingerprint,
+            "source_files": source_files,
         }
         path = cache_dir / f"{sequence_id}.npz"
         np.savez_compressed(
             path,
             timestamps_ns=timestamps,
+            rgb_frame_indices=np.arange(len(timestamps), dtype=np.int64) * 5,
             embeddings=embeddings.astype(np.float16),
             metadata_json=np.asarray(json.dumps(metadata)),
         )
@@ -60,11 +90,15 @@ def write_visual_artifacts(
             "sha256": sha256_file(path),
             "samples": len(timestamps),
             "embedding_dim": 8,
+            "alignment_fingerprint": alignment_fingerprint,
+            "source_files": source_files,
         }
     manifest = {
         "schema_version": VISUAL_CACHE_SCHEMA_VERSION,
         "encoder": {"model_name": "synthetic"},
         "encoder_fingerprint": encoder_fingerprint,
+        "alignment": alignment,
+        "alignment_fingerprint": alignment_fingerprint,
         "sequence_fingerprint": sequence_fingerprint(sequence_ids),
         "entries": entries,
     }
@@ -83,8 +117,16 @@ def write_visual_artifacts(
         "input_dim": 8,
         "output_dim": 4,
         "fit_split": "train_only",
+        "train_sequence_ids": sorted(sequence_ids[:4]),
         "train_sequence_fingerprint": sequence_fingerprint(sequence_ids[:4]),
+        "selected_sequence_fingerprint": sequence_fingerprint(sequence_ids),
+        "validation_participants_excluded": ["P5"],
+        "test_participants_excluded": ["P6"],
         "encoder_fingerprint": encoder_fingerprint,
+        "alignment_version": VISUAL_ALIGNMENT_VERSION,
+        "time_basis": VISUAL_TIME_BASIS,
+        "alignment_fingerprint": alignment_fingerprint,
+        "cache_manifest_sha256": sha256_file(cache_dir / "cache_manifest.json"),
         "projection_sha256": sha256_file(projection_path),
     }
     projection_path.with_suffix(".json").write_text(
@@ -177,6 +219,7 @@ def main() -> int:
             assert visual["alignment"]["future_matches"] == 0
             assert visual["alignment"]["coverage"] > 0.9
             assert visual["projection_fit_split"] == "train_only"
+            assert visual["projection_split_binding"]["verified"] is True
             if mode == "only":
                 assert len(bundle.feature_columns) == 4
             else:
@@ -216,6 +259,22 @@ def main() -> int:
         first = first_loader.features_for(sequence_ids[0], target_timestamps)
         second = second_loader.features_for(sequence_ids[0], target_timestamps)
         np.testing.assert_allclose(first, second, equal_nan=True)
+
+        changed_master = master_dir / f"{sequence_ids[0]}_master.csv"
+        changed_master.write_text(
+            changed_master.read_text(encoding="utf-8") + "\n",
+            encoding="utf-8",
+        )
+        try:
+            first_loader.features_for(
+                sequence_ids[0],
+                target_timestamps,
+                source_master_path=changed_master,
+            )
+        except ValueError as exc:
+            assert "differs from the visual cache" in str(exc)
+        else:
+            raise AssertionError("Changed master source was not invalidated")
 
     print("Visual embedding smoke test passed")
     return 0

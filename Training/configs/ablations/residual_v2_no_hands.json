@@ -1,8 +1,14 @@
 {
   "run_name": "residual_v2_ablation_no_hands",
   "model_type": "hierarchical_residual_pose_transformer_v2",
+  "experiment_definition": {
+    "ablation_type": "feature-channel ablation",
+    "removed_source_modality": "hands",
+    "limitation": "causal receiving-wrist reference remains in the residual pose head and is not an intention-backbone input"
+  },
   "data": {
     "master_dir": "Data_collection/master_datasets",
+    "required_observation_alignment_version": "causal_backward_device_time_v1",
     "manifest_filter": {
       "path": "dataset_manifest.csv",
       "allowed_statuses": ["valid"],
@@ -16,6 +22,7 @@
     "future_horizon_seconds": 1.0,
     "pose_intent_ids": [2],
     "include_hand_references": true,
+    "max_hand_reference_age_seconds": 0.25,
     "minimum_observed_fraction": 0.05,
     "max_timestamp_gap_seconds": 0.2,
     "validation_fraction": 0.2,
@@ -24,6 +31,8 @@
     "test_participants": ["Edu", "Jona", "Mona"]
   },
   "model": {
+    "fusion_mode": "temporal_channel_gated",
+    "intention_head_mode": "hierarchical",
     "d_model": 64,
     "nhead": 4,
     "num_layers": 2,

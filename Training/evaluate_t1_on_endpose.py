@@ -142,7 +142,7 @@ def main() -> int:
         }
 
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "evaluation": "existing_t_plus_1_model_used_as_terminal_pose_estimator",
         "source_model_target": "receiving-hand pose at t+1 second",
@@ -164,6 +164,9 @@ def main() -> int:
         "pose_target_definition": bundle.split_metadata["pose_target"],
         "split_participants": bundle.split_metadata["participants"],
         "checkpoint_selection_reused_without_test_reselection": True,
+        "primary_checkpoint": "best_intention",
+        "primary_checkpoint_rule": "validation_intention_macro_f1",
+        "best_pose_checkpoint_role": "oracle_pose_selected_diagnostic_only",
         "checkpoints": checkpoint_metadata,
         "validation_by_checkpoint": results["validation"],
         "test": results["test"],
@@ -177,9 +180,10 @@ def main() -> int:
     output_path.write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
-    pose = report["test"]["best_pose"]["pose_oracle"]
+    pose = report["test"]["best_intention"]["pose_end_to_end"]
     print(
-        f"t+1-as-terminal seed {seed}: position={pose['position_mae_cm']} cm, "
+        f"t+1-as-terminal seed {seed} (single best-intention checkpoint, "
+        f"end-to-end): position={pose['position_mae_cm']} cm, "
         f"orientation={pose['orientation_mean_deg']} deg"
     )
     print(f"Report: {output_path}")

@@ -28,6 +28,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from checkpoint_semantics import (
+    mark_seed_aggregate,
+    pose_selected_diagnostic,
+    primary_result_row,
+    select_primary_checkpoint_row,
+)
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 TRAINING_ROOT = PROJECT_ROOT / "Training"
@@ -238,15 +245,13 @@ def history_rows(
             )
         rows.append(row)
 
-    if model_type == "hierarchical_residual_pose_transformer_v2":
-        intention_test = metrics["test"]["best_intention"]
-        pose_test = metrics["test"]["best_pose"]["pose_oracle"]
-    else:
-        intention_test = metrics.get("test_by_checkpoint", {}).get(
-            "best_intention",
-            metrics["test"],
-        )
-        pose_test = metrics["test_by_checkpoint"]["best_pose"]["pose"]
+    primary = primary_result_row(
+        metrics, checkpoint="best_intention", split="test"
+    )
+    validation_primary = primary_result_row(
+        metrics, checkpoint="best_intention", split="validation"
+    )
+    diagnostic = pose_selected_diagnostic(metrics, split="test")
 
     summary = {
         "run_name": run_dir.name,
@@ -262,37 +267,23 @@ def history_rows(
         "best_validation_pose_position_mae_cm": float(
             checkpoints["best_pose"]["selection_value"]
         ),
-        "test_intention_macro_f1": nested_value(
-            intention_test, "intention", "macro_f1"
-        ),
-        "test_intention_accuracy": nested_value(
-            intention_test, "intention", "accuracy"
-        ),
-        "test_assistance_macro_f1": nested_value(
-            intention_test, "assistance", "macro_f1"
-        ),
-        "test_assistance_accuracy": nested_value(
-            intention_test, "assistance", "accuracy"
-        ),
-        "test_assistance_type_macro_f1": nested_value(
-            intention_test, "assistance_type", "macro_f1"
-        ),
-        "test_assistance_type_accuracy": nested_value(
-            intention_test, "assistance_type", "accuracy"
-        ),
-        "test_receiving_hand_macro_f1": nested_value(
-            intention_test, "receiving_hand", "macro_f1"
-        ),
-        "test_receiving_hand_accuracy": nested_value(
-            intention_test, "receiving_hand", "accuracy"
-        ),
-        "test_pose_position_mae_cm": nested_value(
-            pose_test, "position_mae_cm"
-        ),
-        "test_pose_orientation_mean_deg": nested_value(
-            pose_test, "orientation_mean_deg"
-        ),
+        "validation_intention_macro_f1": validation_primary[
+            "validation_intention_macro_f1"
+        ],
+        "validation_receiving_hand_macro_f1": validation_primary[
+            "validation_receiving_hand_macro_f1"
+        ],
+        "validation_pose_mae_cm": validation_primary[
+            "validation_pose_mae_cm"
+        ],
+        **primary,
+        **diagnostic,
     }
+    # Compatibility aliases now point to the same primary checkpoint.
+    summary["test_pose_position_mae_cm"] = summary["test_pose_mae_cm"]
+    summary["test_pose_orientation_mean_deg"] = summary[
+        "test_pose_orientation_error_deg"
+    ]
     return rows, summary
 
 
@@ -1167,10 +1158,22 @@ def main() -> int:
             record[f"{metric}_std"] = (
                 float(np.std(values, ddof=0)) if len(values) else np.nan
             )
-        benchmark_summary_records.append(record)
+        benchmark_summary_records.append(mark_seed_aggregate(record))
     pd.DataFrame(benchmark_summary_records).to_csv(
         data_dir / "benchmark_test_summary_mean_std.csv",
         index=False,
+    )
+    primary_checkpoint_records = []
+    for model_type in MODEL_ORDER:
+        model_rows = summary.loc[summary["model_type"] == model_type]
+        selected = select_primary_checkpoint_row(
+            model_rows.to_dict(orient="records")
+        )
+        selected["model_type"] = model_type
+        selected["model"] = MODEL_LABELS[model_type]
+        primary_checkpoint_records.append(selected)
+    pd.DataFrame(primary_checkpoint_records).to_csv(
+        data_dir / "validation_selected_checkpoint_results.csv", index=False
     )
 
     configure_style()
@@ -1218,6 +1221,8 @@ def main() -> int:
         "dataset_tag": dataset_tag,
         "runs_dir": display_path(args.runs_dir),
         "run_count": len(summary),
+        "primary_result_file": "data/validation_selected_checkpoint_results.csv",
+        "seed_aggregate_file": "data/benchmark_test_summary_mean_std.csv",
         "models": {
             label: sorted(
                 summary.loc[summary["model"] == label, "seed"]

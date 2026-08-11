@@ -28,7 +28,9 @@ F1_TOLERANCE = 0.005
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-tag", required=True)
-    parser.add_argument("--experiment-tag", default="visual_embedding_screen_v1")
+    parser.add_argument(
+        "--experiment-tag", default="visual_embedding_screen_v2_device_time"
+    )
     parser.add_argument("--baseline-experiment", default="benchmark_v2")
     parser.add_argument("--baseline-model", default="residual_v2")
     parser.add_argument("--require-complete", action="store_true")
@@ -47,10 +49,21 @@ def metric_row(
     *, variant: str, seed: int, run_dir: Path, validation_only: bool
 ) -> dict:
     metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    metadata = json.loads(
+        (run_dir / "data_metadata.json").read_text(encoding="utf-8")
+    )
     if validation_only:
         if metrics.get("test_evaluation_skipped") is not True or "test" in metrics:
             raise ValueError(f"Visual screening leaked test metrics: {run_dir}")
     values = validation_metrics(metrics)
+    visual = metadata.get("provenance", {}).get("schema", {}).get(
+        "visual_features", {}
+    )
+    if variant != "sensor_baseline":
+        if visual.get("alignment_version") != "vrs_rgb_device_time_v2":
+            raise ValueError(f"Visual run uses obsolete CLIP alignment: {run_dir}")
+        if not visual.get("alignment_fingerprint"):
+            raise ValueError(f"Visual run has no alignment fingerprint: {run_dir}")
     return {
         "variant": variant,
         "seed": seed,
@@ -64,6 +77,8 @@ def metric_row(
         ),
         "trainable_parameters": int(metrics["trainable_parameters"]),
         "test_metrics_used": False,
+        "clip_alignment_version": visual.get("alignment_version"),
+        "clip_alignment_fingerprint": visual.get("alignment_fingerprint"),
     }
 
 
@@ -143,6 +158,23 @@ def main() -> int:
 
     selected = None
     selection_reason = None
+    visual_alignment_versions = set(
+        frame.loc[
+            frame["variant"] != "sensor_baseline", "clip_alignment_version"
+        ].dropna()
+    )
+    visual_alignment_fingerprints = set(
+        frame.loc[
+            frame["variant"] != "sensor_baseline",
+            "clip_alignment_fingerprint",
+        ].dropna()
+    )
+    if frame.shape[0] and (
+        visual_alignment_versions != {"vrs_rgb_device_time_v2"}
+        or len(visual_alignment_fingerprints) != 1
+    ):
+        missing.append("visual variants do not share corrected CLIP alignment")
+        complete = False
     if complete:
         candidates = summary_frame.loc[
             summary_frame["variant"].isin(["sensor_baseline", "clip_only", "sensor_plus_clip"])
@@ -163,7 +195,7 @@ def main() -> int:
         )
         save_plot(summary_frame, output_dir)
     summary = {
-        "schema_version": 1,
+        "schema_version": 2,
         "dataset_tag": args.dataset_tag,
         "experiment_tag": args.experiment_tag,
         "selection_split": "validation",
@@ -175,6 +207,16 @@ def main() -> int:
         "selected_variant_for_final_test": selected,
         "selection_rule": selection_reason,
         "random_control_selectable": False,
+        "clip_alignment_version": (
+            next(iter(visual_alignment_versions))
+            if len(visual_alignment_versions) == 1
+            else None
+        ),
+        "clip_alignment_fingerprint": (
+            next(iter(visual_alignment_fingerprints))
+            if len(visual_alignment_fingerprints) == 1
+            else None
+        ),
     }
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Visual screening complete: {complete}; selected: {selected}")

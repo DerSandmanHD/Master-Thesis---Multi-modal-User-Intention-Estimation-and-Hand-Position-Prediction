@@ -7,6 +7,7 @@ import argparse
 import json
 import math
 import random
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -16,6 +17,12 @@ from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
+from artifact_freeze import (
+    ARTIFACT_FREEZE_PROTOCOL,
+    finalize_artifact_freeze,
+    sha256_file,
+    start_artifact_freeze,
+)
 from data import (
     INTENTION_NAMES,
     DataBundle,
@@ -28,6 +35,7 @@ from metrics import (
     POSITION_RMS_ERROR_DEFINITION,
     classification_metrics,
     pose_metrics,
+    sample_key_fingerprint,
 )
 from model import (
     HierarchicalGRU,
@@ -35,6 +43,11 @@ from model import (
     HierarchicalWindowMLP,
 )
 from run_layout import build_run_context, training_run_directory
+from training_control import (
+    available_validation_checkpoints,
+    finite_diagnostic_improved,
+    next_primary_patience,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -70,6 +83,11 @@ def parse_args() -> argparse.Namespace:
         "--device", choices=("auto", "cpu", "cuda", "mps"), default="auto"
     )
     parser.add_argument("--limit-sequences", type=int, default=None)
+    parser.add_argument(
+        "--skip-test-evaluation",
+        action="store_true",
+        help="Train/select checkpoints on train/validation without evaluating test.",
+    )
     return parser.parse_args()
 
 
@@ -129,6 +147,7 @@ def multitask_loss(
     batch: dict,
     assistance_criterion: nn.Module,
     assistance_type_criterion: nn.Module,
+    receiving_hand_criterion: nn.Module,
     config: dict,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     intentions = batch["intention"]
@@ -146,6 +165,18 @@ def multitask_loss(
         )
     else:
         assistance_type_loss = outputs["assistance_type_logits"].sum() * 0.0
+
+    receiving_hand = batch["receiving_hand"]
+    hand_valid = (
+        (intentions == 2) & (receiving_hand >= 0) & (receiving_hand < 2)
+    )
+    if bool(hand_valid.any()):
+        receiving_hand_loss = receiving_hand_criterion(
+            outputs["receiving_hand_logits"][hand_valid],
+            receiving_hand[hand_valid],
+        )
+    else:
+        receiving_hand_loss = outputs["receiving_hand_logits"].sum() * 0.0
 
     pose_valid = batch["pose_valid"] & (intentions == 2)
     if bool(pose_valid.any()):
@@ -167,12 +198,15 @@ def multitask_loss(
     total = (
         float(config["assistance_loss_weight"]) * assistance_loss
         + float(config["assistance_type_loss_weight"]) * assistance_type_loss
+        + float(config.get("receiving_hand_loss_weight", 1.0))
+        * receiving_hand_loss
         + float(config["pose_loss_weight"]) * pose_loss
     )
     components = {
         "total": float(total.detach()),
         "assistance": float(assistance_loss.detach()),
         "assistance_type": float(assistance_type_loss.detach()),
+        "receiving_hand": float(receiving_hand_loss.detach()),
         "position": float(position_loss.detach()),
         "orientation": float(orientation_loss.detach()),
     }
@@ -192,6 +226,7 @@ def run_epoch(
     device: torch.device,
     assistance_criterion: nn.Module,
     assistance_type_criterion: nn.Module,
+    receiving_hand_criterion: nn.Module,
     training_config: dict,
     optimizer: torch.optim.Optimizer | None = None,
 ) -> dict:
@@ -204,8 +239,14 @@ def run_epoch(
     assistance_targets = []
     assistance_type_predictions = []
     assistance_type_targets = []
+    hand_predictions = []
+    hand_targets = []
     pose_predictions = []
     pose_targets = []
+    fixed_pose_predictions = []
+    fixed_pose_targets = []
+    fixed_pose_sample_keys: list[str] = []
+    pose_target_count = 0
     gate_values = []
 
     grad_context = torch.enable_grad() if is_training else torch.no_grad()
@@ -220,6 +261,7 @@ def run_epoch(
                 batch,
                 assistance_criterion,
                 assistance_type_criterion,
+                receiving_hand_criterion,
                 training_config,
             )
             if is_training:
@@ -253,10 +295,44 @@ def run_epoch(
                 )
                 assistance_type_targets.append((intentions[assistance_valid] - 1).cpu())
 
+            receiving_hand = batch["receiving_hand"]
+            hand_valid = (
+                (intentions == 2)
+                & (receiving_hand >= 0)
+                & (receiving_hand < 2)
+            )
+            if bool(hand_valid.any()):
+                hand_predictions.append(
+                    outputs["receiving_hand_logits"]
+                    .argmax(dim=-1)[hand_valid]
+                    .cpu()
+                )
+                hand_targets.append(receiving_hand[hand_valid].cpu())
+
             pose_valid = batch["pose_valid"] & (intentions == 2)
+            pose_target_count += int(pose_valid.sum().item())
             if bool(pose_valid.any()):
                 pose_predictions.append(outputs["pose"][pose_valid].detach().cpu())
                 pose_targets.append(batch["pose_target"][pose_valid].cpu())
+            if "hand_reference_valid" in batch:
+                fixed_pose_valid = (
+                    pose_valid
+                    & hand_valid
+                    & batch["hand_reference_valid"].all(dim=1)
+                )
+                if bool(fixed_pose_valid.any()):
+                    fixed_pose_predictions.append(
+                        outputs["pose"][fixed_pose_valid].detach().cpu()
+                    )
+                    fixed_pose_targets.append(
+                        batch["pose_target"][fixed_pose_valid].cpu()
+                    )
+                    valid_indices = fixed_pose_valid.nonzero(as_tuple=False).view(-1)
+                    fixed_pose_sample_keys.extend(
+                        f"{batch['sequence_id'][int(index)]}|"
+                        f"{int(batch['timestamp_ns'][int(index)])}"
+                        for index in valid_indices
+                    )
             if "gate" in outputs:
                 gate_values.append(outputs["gate"].detach().cpu())
 
@@ -293,10 +369,27 @@ def run_epoch(
             "confusion_matrix": [],
             "class_names": ["fetch", "handover"],
         }
+    if hand_targets:
+        receiving_hand_metrics = classification_metrics(
+            torch.cat(hand_predictions), torch.cat(hand_targets), 2
+        )
+    else:
+        receiving_hand_metrics = classification_metrics(
+            torch.empty(0, dtype=torch.long),
+            torch.empty(0, dtype=torch.long),
+            2,
+        )
+    receiving_hand_metrics["class_names"] = ["left", "right"]
     if pose_targets:
         poses = pose_metrics(torch.cat(pose_predictions), torch.cat(pose_targets))
     else:
         poses = pose_metrics(torch.empty((0, 7)), torch.empty((0, 7)))
+    if fixed_pose_targets:
+        fixed_poses = pose_metrics(
+            torch.cat(fixed_pose_predictions), torch.cat(fixed_pose_targets)
+        )
+    else:
+        fixed_poses = pose_metrics(torch.empty((0, 7)), torch.empty((0, 7)))
     mean_gate = None
     if gate_values:
         gate = torch.cat(gate_values).mean(dim=0).tolist()
@@ -306,7 +399,33 @@ def run_epoch(
         "intention": intention,
         "assistance": assistance,
         "assistance_type": assistance_type,
+        "receiving_hand": receiving_hand_metrics,
         "pose": poses,
+        "pose_fixed_both_references": {
+            **fixed_poses,
+            "cohort_definition": (
+                "pose_target_valid_and_both_hand_references_valid"
+            ),
+            "cohort_model_dependent": False,
+            "coverage_denominator_pose_targets": pose_target_count,
+            "sample_key_fingerprint": sample_key_fingerprint(
+                fixed_pose_sample_keys
+            ),
+        },
+        "pose_coverage": {
+            "pose_targets": pose_target_count,
+            "future_targets": pose_target_count,
+            "predicted_pose_valid": int(poses["samples"]),
+            "coverage": (
+                float(poses["samples"] / pose_target_count)
+                if pose_target_count
+                else None
+            ),
+            "receiving_hand_context": (
+                "legacy parallel single-pose baseline head; receiving-hand is "
+                "predicted by a separate classification head"
+            ),
+        },
         "mean_gate": mean_gate,
     }
 
@@ -315,10 +434,13 @@ def make_loader(
     dataset, config: dict, *, shuffle: bool, device: torch.device
 ) -> DataLoader:
     worker_count = int(config["num_workers"])
+    generator = torch.Generator()
+    generator.manual_seed(int(config["seed"]))
     return DataLoader(
         dataset,
         batch_size=int(config["batch_size"]),
         shuffle=shuffle,
+        generator=generator,
         num_workers=worker_count,
         pin_memory=device.type == "cuda",
         persistent_workers=worker_count > 0,
@@ -326,6 +448,8 @@ def make_loader(
 
 
 def train(args: argparse.Namespace) -> Path:
+    started_at = datetime.now().astimezone()
+    started_monotonic = time.perf_counter()
     config_path = resolve_project_path(args.config)
     config = json.loads(config_path.read_text(encoding="utf-8"))
     config["data"]["master_dir"] = str(
@@ -347,6 +471,17 @@ def train(args: argparse.Namespace) -> Path:
         model_tag=run_name,
     )
     config["run_context"] = run_context
+    skip_test_evaluation = bool(
+        getattr(args, "skip_test_evaluation", False)
+    )
+    config["evaluation"] = {
+        "validation_checkpoints": ["best_intention", "best_pose"],
+        "test_evaluation_enabled": not skip_test_evaluation,
+        "selection_split": "validation",
+        "primary_checkpoint": "best_intention",
+        "primary_checkpoint_rule": "maximize validation intention macro-F1",
+        "pose_selected_checkpoint_role": "diagnostic_only",
+    }
     run_dir = resolve_project_path(
         args.run_dir
         or training_run_directory(
@@ -366,6 +501,22 @@ def train(args: argparse.Namespace) -> Path:
     print(f"Run directory: {run_dir}")
     bundle: DataBundle = prepare_data(config["data"], seed, args.limit_sequences)
     save_data_metadata(bundle, run_dir / "data_metadata.json")
+    artifact_manifest_path = start_artifact_freeze(
+        run_dir=run_dir,
+        source_config_path=config_path,
+        run_context=run_context,
+        seed=seed,
+        selection_policy={
+            "selection_split": "validation",
+            "primary_checkpoint": "best_intention",
+            "primary_checkpoint_rule": "maximize validation intention macro-F1",
+            "pose_selected_checkpoint": "best_pose",
+            "pose_selected_checkpoint_role": "diagnostic_only",
+            "pose_selected_checkpoint_rule": "minimize validation pose position error",
+            "test_used_for_selection": False,
+        },
+        started_at=started_at.isoformat(),
+    )
     print(
         f"Windows: train={len(bundle.train)}, validation={len(bundle.validation)}, "
         f"test={len(bundle.test)}"
@@ -398,8 +549,10 @@ def train(args: argparse.Namespace) -> Path:
     validation_loader = make_loader(
         bundle.validation, training_config, shuffle=False, device=device
     )
-    test_loader = make_loader(
-        bundle.test, training_config, shuffle=False, device=device
+    test_loader = (
+        None
+        if skip_test_evaluation
+        else make_loader(bundle.test, training_config, shuffle=False, device=device)
     )
 
     model, model_type = build_model(
@@ -427,6 +580,9 @@ def train(args: argparse.Namespace) -> Path:
     assistance_type_criterion = nn.CrossEntropyLoss(
         weight=class_weights(intention_counts[1:3], device)
     )
+    receiving_hand_criterion = nn.CrossEntropyLoss(
+        weight=class_weights(bundle.train.receiving_hand_counts(), device)
+    )
 
     best_score = -math.inf
     best_pose = math.inf
@@ -441,6 +597,7 @@ def train(args: argparse.Namespace) -> Path:
             device,
             assistance_criterion,
             assistance_type_criterion,
+            receiving_hand_criterion,
             training_config,
             optimizer,
         )
@@ -450,6 +607,7 @@ def train(args: argparse.Namespace) -> Path:
             device,
             assistance_criterion,
             assistance_type_criterion,
+            receiving_hand_criterion,
             training_config,
         )
         record = {
@@ -469,8 +627,8 @@ def train(args: argparse.Namespace) -> Path:
             "val pose mean Euclidean cm="
             f"{validation_metrics['pose']['position_mae_cm']}"
         )
-        improved = False
-        if score > best_score:
+        primary_improved = score > best_score
+        if primary_improved:
             best_score = score
             torch.save(
                 {
@@ -488,8 +646,8 @@ def train(args: argparse.Namespace) -> Path:
                 },
                 checkpoint_path,
             )
-            improved = True
-        if pose_score < best_pose:
+        diagnostic_improved = finite_diagnostic_improved(pose_score, best_pose)
+        if diagnostic_improved:
             best_pose = pose_score
             torch.save(
                 {
@@ -509,85 +667,131 @@ def train(args: argparse.Namespace) -> Path:
                 },
                 pose_checkpoint_path,
             )
-            improved = True
-        epochs_without_improvement = 0 if improved else epochs_without_improvement + 1
+        epochs_without_improvement = next_primary_patience(
+            epochs_without_improvement,
+            primary_improved=primary_improved,
+            diagnostic_improved=diagnostic_improved,
+        )
         if epochs_without_improvement >= int(
             training_config["early_stopping_patience"]
         ):
             print("Early stopping")
             break
 
-    checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=True)
-    model.load_state_dict(checkpoint["model_state_dict"])
-    test_metrics = run_epoch(
-        model,
-        test_loader,
-        device,
-        assistance_criterion,
-        assistance_type_criterion,
-        training_config,
+    validation_results = {}
+    test_results = {}
+    checkpoint_metadata = {}
+    loaded_checkpoints = {}
+    checkpoints_to_evaluate, pose_diagnostic_status = (
+        available_validation_checkpoints(checkpoint_path, pose_checkpoint_path)
     )
-    pose_checkpoint = torch.load(
-        pose_checkpoint_path, map_location=device, weights_only=True
-    )
-    model.load_state_dict(pose_checkpoint["model_state_dict"])
-    pose_checkpoint_test_metrics = run_epoch(
-        model,
-        test_loader,
-        device,
-        assistance_criterion,
-        assistance_type_criterion,
-        training_config,
-    )
+    for name, path in checkpoints_to_evaluate:
+        checkpoint_value = torch.load(path, map_location=device, weights_only=True)
+        loaded_checkpoints[name] = checkpoint_value
+        model.load_state_dict(checkpoint_value["model_state_dict"])
+        validation_results[name] = run_epoch(
+            model,
+            validation_loader,
+            device,
+            assistance_criterion,
+            assistance_type_criterion,
+            receiving_hand_criterion,
+            training_config,
+        )
+        if test_loader is not None:
+            test_results[name] = run_epoch(
+                model,
+                test_loader,
+                device,
+                assistance_criterion,
+                assistance_type_criterion,
+                receiving_hand_criterion,
+                training_config,
+            )
+        checkpoint_metadata[name] = {
+            "path": str(path),
+            "sha256": sha256_file(path),
+            "epoch": int(checkpoint_value["epoch"]),
+            "selection_metric": checkpoint_value["selection_metric"],
+            "selection_value": float(checkpoint_value["selection_value"]),
+            "selection_metric_definition": checkpoint_value.get(
+                "selection_metric_definition"
+            ),
+        }
+    checkpoint = loaded_checkpoints["best_intention"]
     report = {
         "model_type": model_type,
         "trainable_parameters": trainable_parameters,
         "best_epoch": checkpoint["epoch"],
         "best_validation_intention_macro_f1": best_score,
-        "best_validation_pose_position_mae_cm": best_pose,
-        "best_validation_pose_mean_euclidean_error_cm": best_pose,
+        "best_validation_pose_position_mae_cm": (
+            best_pose if math.isfinite(best_pose) else None
+        ),
+        "best_validation_pose_mean_euclidean_error_cm": (
+            best_pose if math.isfinite(best_pose) else None
+        ),
+        "pose_selected_diagnostic": pose_diagnostic_status,
         "legacy_pose_metric_alias": {
             "position_mae_cm": POSITION_ERROR_DEFINITION,
             "position_rmse_cm": POSITION_RMS_ERROR_DEFINITION,
         },
-        "test": test_metrics,
-        "checkpoints": {
-            "best_intention": {
-                "path": str(checkpoint_path),
-                "epoch": int(checkpoint["epoch"]),
-                "selection_metric": checkpoint["selection_metric"],
-                "selection_value": float(checkpoint["selection_value"]),
-            },
-            "best_pose": {
-                "path": str(pose_checkpoint_path),
-                "epoch": int(pose_checkpoint["epoch"]),
-                "selection_metric": pose_checkpoint["selection_metric"],
-                "selection_value": float(pose_checkpoint["selection_value"]),
-                "selection_metric_definition": pose_checkpoint.get(
-                    "selection_metric_definition"
-                ),
-            },
-        },
-        "test_by_checkpoint": {
-            "best_intention": test_metrics,
-            "best_pose": pose_checkpoint_test_metrics,
-        },
+        "checkpoints": checkpoint_metadata,
+        "validation_by_checkpoint": validation_results,
+        "test_evaluation_skipped": skip_test_evaluation,
         "history": history,
+        "run_context": run_context,
+        "code_provenance": bundle.provenance.get("git", {}),
+        "runtime": {
+            "started_at": started_at.isoformat(),
+            "completed_at": datetime.now().astimezone().isoformat(),
+            "wall_seconds": time.perf_counter() - started_monotonic,
+            "device": str(device),
+            "torch_version": torch.__version__,
+            "cuda_runtime": torch.version.cuda,
+        },
+        "artifact_freeze": {
+            "protocol": ARTIFACT_FREEZE_PROTOCOL,
+            "manifest": str(artifact_manifest_path),
+        },
     }
-    (run_dir / "metrics.json").write_text(
+    if test_results:
+        report["test"] = test_results["best_intention"]
+        report["test_by_checkpoint"] = test_results
+    metrics_path = run_dir / "metrics.json"
+    metrics_path.write_text(
         json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    print(f"Test intention macro F1: {test_metrics['intention']['macro_f1']:.4f}")
-    print(f"Test assistance macro F1: {test_metrics['assistance']['macro_f1']:.4f}")
-    print(
-        "Test fetch/handover macro F1: "
-        f"{test_metrics['assistance_type']['macro_f1']:.4f}"
+    frozen_checkpoints = {"best_intention": checkpoint_path}
+    if pose_diagnostic_status["available"]:
+        frozen_checkpoints["best_pose_diagnostic"] = pose_checkpoint_path
+    finalize_artifact_freeze(
+        artifact_manifest_path,
+        checkpoint_paths=frozen_checkpoints,
+        metrics_path=metrics_path,
+        completed_at=report["runtime"]["completed_at"],
     )
-    print(
-        "Best-pose checkpoint test mean Euclidean position error="
-        f"{pose_checkpoint_test_metrics['pose']['position_mae_cm']} cm"
-    )
-    print(f"Metrics: {run_dir / 'metrics.json'}")
+    if test_results:
+        test_metrics = test_results["best_intention"]
+        print(f"Test intention macro F1: {test_metrics['intention']['macro_f1']:.4f}")
+        print(f"Test assistance macro F1: {test_metrics['assistance']['macro_f1']:.4f}")
+        print(
+            "Test fetch/handover macro F1: "
+            f"{test_metrics['assistance_type']['macro_f1']:.4f}"
+        )
+        if "best_pose" in test_results:
+            print(
+                "Diagnostic best-pose checkpoint test mean Euclidean position error="
+                f"{test_results['best_pose']['pose']['position_mae_cm']} cm"
+            )
+        else:
+            print(
+                "Diagnostic best-pose checkpoint unavailable: "
+                f"{pose_diagnostic_status['reason']}"
+            )
+    else:
+        print("Test evaluation skipped by request")
+    print(f"Metrics: {metrics_path}")
+    print(f"Artifact freeze: {artifact_manifest_path}")
     return run_dir
 
 

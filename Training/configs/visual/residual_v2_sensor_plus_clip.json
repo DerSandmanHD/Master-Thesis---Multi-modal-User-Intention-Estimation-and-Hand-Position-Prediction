@@ -1,8 +1,16 @@
 {
   "run_name": "sensor_plus_clip",
   "model_type": "hierarchical_residual_pose_transformer_v2",
+  "experiment_definition": {
+    "factor": "visual_context",
+    "variant": "corrected_clip_current_gate",
+    "comparison_reference": "Training/configs/models/residual_transformer_v2.json",
+    "controlled_change": "append corrected CLIP-PCA features only",
+    "selection": "validation_only"
+  },
   "data": {
     "master_dir": "Data_collection/master_datasets",
+    "required_observation_alignment_version": "causal_backward_device_time_v1",
     "manifest_filter": {
       "path": "dataset_manifest.csv",
       "allowed_statuses": [
@@ -21,6 +29,7 @@
       2
     ],
     "include_hand_references": true,
+    "max_hand_reference_age_seconds": 0.25,
     "minimum_observed_fraction": 0.05,
     "max_timestamp_gap_seconds": 0.2,
     "validation_fraction": 0.2,
@@ -38,56 +47,35 @@
     "visual_embeddings": {
       "enabled": true,
       "mode": "append",
-      "cache_dir": "Data_collection/visual_embeddings/clip_vit_b32_openai_5hz",
-      "projection_path": "Training/visual_projections/dataset_v2_20260802_n214_5d136a34/clip_vit_b32_openai_5hz_pca32.npz",
+      "cache_dir": "Data_collection/visual_embeddings/dataset_v2_20260802_n214_5d136a34/clip_vit_b32_openai_5hz_device_time_v2",
+      "projection_path": "Training/visual_projections/dataset_v2_20260802_n214_5d136a34/clip_vit_b32_openai_5hz_device_time_v2_pca32.npz",
       "expected_output_dim": 32,
       "max_age_seconds": 0.25,
       "verify_cache_hashes": true
     }
   },
   "model": {
-    "d_model": 32,
-    "nhead": 8,
-    "num_layers": 1,
-    "dim_feedforward": 256,
+    "fusion_mode": "temporal_channel_gated",
+    "intention_head_mode": "hierarchical",
+    "d_model": 64,
+    "nhead": 4,
+    "num_layers": 2,
+    "dim_feedforward": 128,
     "dropout": 0.15
   },
   "training": {
     "seed": 42,
     "epochs": 20,
-    "batch_size": 64,
-    "learning_rate": 0.000381605632501,
+    "batch_size": 32,
+    "learning_rate": 0.0003,
     "weight_decay": 0.0001,
     "assistance_loss_weight": 1.0,
     "assistance_type_loss_weight": 1.0,
-    "receiving_hand_loss_weight": 2.0,
+    "receiving_hand_loss_weight": 1.0,
     "pose_loss_weight": 1.0,
-    "orientation_loss_weight": 0.5,
+    "orientation_loss_weight": 0.25,
     "gradient_clip_norm": 1.0,
     "early_stopping_patience": 7,
     "num_workers": 2
-  },
-  "hyperparameter_selection": {
-    "source_trial": "trial_022",
-    "stage_a_experiment": "residual_v2_hp_search_v1",
-    "confirmation_experiment": "residual_v2_hp_confirm_v1",
-    "selection_split": "validation",
-    "confirmation_seeds": [
-      42,
-      43,
-      44
-    ],
-    "test_evaluation_used_for_selection": false,
-    "selection_rule": "maximize mean validation intention macro-F1; retain trials within 0.005; minimize mean validation pose MAE measured at the best-intention checkpoint; maximize mean hand F1; minimize parameters"
-  },
-  "visual_experiment": {
-    "selection_split": "validation",
-    "test_evaluation_policy": "disabled_during_variant_screening",
-    "frozen_encoder": true,
-    "pca_fit_split": "train_only",
-    "sensor_hyperparameters_frozen": true,
-    "sensor_hyperparameter_config": "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_hp_confirm_v1/selected_config.json",
-    "sensor_hyperparameter_config_sha256": "709b60d8eefdc76576df09508ab4fda0e4af9079a9b1319fde2bb5e07dc306e0",
-    "sensor_hyperparameter_source_trial": "trial_022"
   }
 }

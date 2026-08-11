@@ -7,6 +7,22 @@
     "slurm_logs": "Training/slurm_logs",
     "tag_pattern": "^[a-z0-9][a-z0-9_-]*$"
   },
+  "active_protocol": {
+    "protocol_tag": "thesis_final_v2_corrected_alignment",
+    "status": "implementation_ready_no_new_results",
+    "experiment_matrix": "Training/configs/experiment_matrix_v2.json",
+    "implementation_status": "Training/IMPLEMENTATION_STATUS_P0_P5.json",
+    "artifact_validity": "Training/reports/dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json",
+    "selection_split": "validation",
+    "final_test_transition": "Training/evaluate_frozen_run.py",
+    "authoritative_summary": "Training/evaluation/summarize_thesis_v2_matrix.py",
+    "participant_group_cv": "Training/prepare_group_cv_runs.py",
+    "test_split_status": "previously observed; no longer eligible for architecture or hyperparameter decisions",
+    "required_clip_alignment_version": "vrs_rgb_device_time_v2",
+    "required_terminal_target_version": "terminal_endpose_unique_hand_capture_v2",
+    "main_checkpoint": "best_intention",
+    "pose_selected_checkpoint_role": "diagnostic_only"
+  },
   "datasets": [
     {
       "dataset_tag": "dataset_v1_20260729_n156_seq457a80f1",

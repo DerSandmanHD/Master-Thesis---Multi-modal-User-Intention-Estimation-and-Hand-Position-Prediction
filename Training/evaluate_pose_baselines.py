@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate leakage-safe naive baselines for future receiving-hand pose."""
+"""Evaluate pure, timestamp-aware t+1 receiving-wrist pose baselines."""
 
 from __future__ import annotations
 
@@ -10,14 +10,31 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
 
 from data import INTENTION_TO_ID, WindowDataset, prepare_data
-from metrics import pose_metrics
+from pose_baselines import (
+    POSE_COMPONENTS,
+    BaselineEstimate,
+    ObservationSeries,
+    constant_velocity_pose as estimate_constant_velocity_pose,
+    extract_hand_observations,
+    normalize_quaternion,
+    observation_pose,
+    persistence_pose,
+    pose_columns,
+    pose_matches,
+    pose_metric_summary,
+    resolve_target_timing,
+    sample_key_fingerprint,
+    single_pose_errors,
+    truthy,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-POSE_COMPONENTS = ("x", "y", "z", "qx", "qy", "qz", "qw")
+DEFAULT_MAXIMUM_OBSERVATION_AGE_SECONDS = 0.25
+DEFAULT_VELOCITY_LOOKBACK_SECONDS = 0.5
+DEFAULT_MINIMUM_VELOCITY_FIT_SPAN_SECONDS = 0.1
 
 
 def parse_args() -> argparse.Namespace:
@@ -25,29 +42,35 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=Path("Training/configs/models/transformer_v1.json"),
+        default=Path("Training/configs/models/residual_transformer_v2.json"),
     )
     parser.add_argument(
         "--report-out",
         type=Path,
-        default=Path("Training/reports/pose_baselines.json"),
+        default=Path("Training/reports/t_plus_1_pose_baselines.json"),
     )
     parser.add_argument(
         "--details-out",
         type=Path,
-        default=Path("Training/reports/pose_baselines.csv"),
+        default=Path("Training/reports/t_plus_1_pose_baselines.csv"),
     )
     parser.add_argument(
-        "--model-metrics",
-        type=Path,
-        default=None,
-        help="Optional metrics.json whose test pose result is copied into the report.",
+        "--maximum-observation-age-seconds",
+        type=float,
+        default=DEFAULT_MAXIMUM_OBSERVATION_AGE_SECONDS,
+        help="Reject a latest wrist capture older than this at the window endpoint.",
     )
     parser.add_argument(
         "--velocity-lookback-seconds",
         type=float,
-        default=0.5,
-        help="History duration used to fit the constant linear velocity baseline.",
+        default=DEFAULT_VELOCITY_LOOKBACK_SECONDS,
+        help="History duration on real hand-capture timestamps used for velocity.",
+    )
+    parser.add_argument(
+        "--minimum-velocity-fit-span-seconds",
+        type=float,
+        default=DEFAULT_MINIMUM_VELOCITY_FIT_SPAN_SECONDS,
+        help="Minimum time span between unique captures in a velocity fit.",
     )
     parser.add_argument("--limit-sequences", type=int, default=None)
     return parser.parse_args()
@@ -58,25 +81,13 @@ def project_path(path: Path) -> Path:
     return path if path.is_absolute() else PROJECT_ROOT / path
 
 
-def truthy(value: object) -> bool:
-    try:
-        return float(value) > 0.0
-    except (TypeError, ValueError):
-        return False
-
-
-def normalize_quaternion(values: np.ndarray) -> np.ndarray | None:
-    quaternion = np.asarray(values, dtype=np.float64)
-    if quaternion.shape != (4,) or not np.isfinite(quaternion).all():
-        return None
-    norm = float(np.linalg.norm(quaternion))
-    if norm <= 1e-6:
-        return None
-    return quaternion / norm
-
-
 def mean_pose(targets: np.ndarray) -> np.ndarray:
-    """Return arithmetic position and sign-invariant quaternion mean."""
+    """Return arithmetic position and sign-invariant quaternion mean.
+
+    Retained for backwards-compatible imports by historical export scripts.  It
+    is not a fallback for either primary baseline.
+    """
+
     values = np.asarray(targets, dtype=np.float64)
     if values.ndim != 2 or values.shape[1] != 7 or not len(values):
         raise ValueError("At least one valid 7D training pose is required")
@@ -93,27 +104,9 @@ def mean_pose(targets: np.ndarray) -> np.ndarray:
     quaternion = eigenvectors[:, -1]
     if quaternion[3] < 0.0:
         quaternion = -quaternion
-    return np.concatenate((values[:, :3].mean(axis=0), quaternion)).astype(np.float32)
-
-
-def pose_columns(side: str) -> list[str]:
-    return [
-        *(f"{side}_wrist_robot_{axis}_m" for axis in "xyz"),
-        *(f"{side}_wrist_robot_q{component}" for component in "xyzw"),
-    ]
-
-
-def observation_pose(frame: pd.DataFrame, row_index: int, side: str) -> np.ndarray | None:
-    row = frame.iloc[row_index]
-    if not truthy(row[f"hand_{side}_valid"]) or not truthy(row["robot_frame_valid"]):
-        return None
-    values = pd.to_numeric(row[pose_columns(side)], errors="coerce").to_numpy(dtype=float)
-    if not np.isfinite(values).all():
-        return None
-    quaternion = normalize_quaternion(values[3:7])
-    if quaternion is None:
-        return None
-    return np.concatenate((values[:3], quaternion)).astype(np.float32)
+    return np.concatenate((values[:, :3].mean(axis=0), quaternion)).astype(
+        np.float32
+    )
 
 
 def window_observations(
@@ -122,25 +115,29 @@ def window_observations(
     endpoint: int,
     side: str,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    indices = []
-    timestamps = []
-    poses = []
-    for row_index in range(start, endpoint + 1):
-        pose = observation_pose(frame, row_index, side)
-        if pose is not None:
-            indices.append(row_index)
-            timestamps.append(int(frame.iloc[row_index]["timestamp_ns"]))
-            poses.append(pose)
-    if not poses:
-        return (
-            np.empty(0, dtype=np.int64),
-            np.empty(0, dtype=np.int64),
-            np.empty((0, 7), dtype=np.float32),
-        )
+    """Compatibility wrapper returning deduplicated real capture timestamps.
+
+    Current masters expose ``hand_timestamp_ns``.  Legacy synthetic fixtures
+    without it retain their former master-timestamp behaviour only for scripts
+    importing this wrapper; the baseline evaluator itself requires the real
+    source timestamp.
+    """
+
+    source_column = (
+        "hand_timestamp_ns" if "hand_timestamp_ns" in frame else "timestamp_ns"
+    )
+    observations = extract_hand_observations(
+        frame,
+        start,
+        endpoint,
+        side,
+        source_timestamp_column=source_column,
+        require_causal=True,
+    )
     return (
-        np.asarray(indices, dtype=np.int64),
-        np.asarray(timestamps, dtype=np.int64),
-        np.asarray(poses, dtype=np.float32),
+        observations.row_indices,
+        observations.capture_timestamps_ns,
+        observations.poses,
     )
 
 
@@ -150,33 +147,39 @@ def constant_velocity_pose(
     desired_timestamp_ns: int,
     lookback_seconds: float,
 ) -> tuple[np.ndarray | None, int, float | None]:
-    if len(poses) < 2:
-        return None, len(poses), None
-    latest_timestamp = int(timestamps_ns[-1])
-    earliest_timestamp = latest_timestamp - int(lookback_seconds * 1e9)
-    selected = timestamps_ns >= earliest_timestamp
-    times = (timestamps_ns[selected] - latest_timestamp).astype(np.float64) / 1e9
-    positions = poses[selected, :3].astype(np.float64)
-    if len(times) < 2 or float(np.ptp(times)) <= 1e-6:
-        return None, len(times), None
+    """Compatibility wrapper for the former tuple-returning public function."""
 
-    centered = times - times.mean()
-    denominator = float(np.dot(centered, centered))
-    if denominator <= 1e-12:
-        return None, len(times), None
-    velocity = np.sum(centered[:, None] * positions, axis=0) / denominator
-    delta_seconds = (desired_timestamp_ns - latest_timestamp) / 1e9
-    predicted_position = poses[-1, :3] + velocity * delta_seconds
-    prediction = np.concatenate((predicted_position, poses[-1, 3:7])).astype(np.float32)
-    return prediction, len(times), float(np.linalg.norm(velocity))
+    timestamps_ns = np.asarray(timestamps_ns, dtype=np.int64)
+    poses = np.asarray(poses, dtype=np.float32)
+    if not len(timestamps_ns):
+        return None, 0, None
+    observations = ObservationSeries(
+        row_indices=np.arange(len(timestamps_ns), dtype=np.int64),
+        capture_timestamps_ns=timestamps_ns,
+        poses=poses,
+    )
+    endpoint_timestamp_ns = int(timestamps_ns[-1])
+    estimate = estimate_constant_velocity_pose(
+        observations,
+        endpoint_timestamp_ns,
+        int(desired_timestamp_ns),
+        maximum_age_seconds=max(lookback_seconds, 1e-6),
+        lookback_seconds=lookback_seconds,
+        minimum_fit_span_seconds=1e-6,
+    )
+    return estimate.pose, estimate.fit_samples, estimate.estimated_speed_m_s
 
 
-def metric_dict(predictions: list[np.ndarray], targets: list[np.ndarray]) -> dict:
-    if not predictions:
-        return pose_metrics(torch.empty((0, 7)), torch.empty((0, 7)))
-    return pose_metrics(
-        torch.from_numpy(np.asarray(predictions, dtype=np.float32)),
-        torch.from_numpy(np.asarray(targets, dtype=np.float32)),
+def metric_dict(
+    predictions: list[np.ndarray],
+    targets: list[np.ndarray],
+) -> dict:
+    """Compatibility metric helper with the richer corrected pose semantics."""
+
+    return pose_metric_summary(
+        predictions,
+        targets,
+        coverage_denominator=len(targets),
     )
 
 
@@ -193,16 +196,37 @@ def required_observation_columns() -> list[str]:
     return columns
 
 
-def load_observation_frame(path: Path, expected_timestamps: np.ndarray) -> pd.DataFrame:
+def load_observation_frame(
+    path: Path,
+    expected_timestamps: np.ndarray,
+    *,
+    require_source_timestamps: bool = False,
+    require_target_timestamps: bool = False,
+) -> pd.DataFrame:
+    """Load pose columns while keeping legacy importers compatible."""
+
     header = pd.read_csv(path, nrows=0).columns.tolist()
-    missing = sorted(set(required_observation_columns()) - set(header))
+    required = set(required_observation_columns())
+    if require_source_timestamps:
+        required.add("hand_timestamp_ns")
+    if require_target_timestamps:
+        required.add("future_target_timestamp_ns")
+    missing = sorted(required - set(header))
     if missing:
         raise ValueError(
             f"{path.name} lacks pose-baseline columns: {', '.join(missing)}. "
             "Rebuild it with the current master builder."
         )
-    frame = pd.read_csv(path, usecols=required_observation_columns(), low_memory=False)
-    timestamps = pd.to_numeric(frame["timestamp_ns"], errors="raise").to_numpy(np.int64)
+    optional = [
+        column
+        for column in ("hand_timestamp_ns", "future_target_timestamp_ns")
+        if column in header
+    ]
+    use_columns = list(dict.fromkeys([*required_observation_columns(), *optional]))
+    frame = pd.read_csv(path, usecols=use_columns, low_memory=False)
+    timestamps = pd.to_numeric(frame["timestamp_ns"], errors="raise").to_numpy(
+        np.int64
+    )
     if len(timestamps) != len(expected_timestamps) or not np.array_equal(
         timestamps, expected_timestamps
     ):
@@ -219,126 +243,263 @@ def valid_targets(dataset: WindowDataset) -> np.ndarray:
     return np.asarray(targets, dtype=np.float32)
 
 
+def unavailable(reason: str) -> BaselineEstimate:
+    return BaselineEstimate(None, False, reason)
+
+
+def alignment_summary(values: list[float]) -> dict:
+    if not values:
+        return {
+            "samples": 0,
+            "mean_ms": None,
+            "median_ms": None,
+            "minimum_ms": None,
+            "maximum_ms": None,
+            "maximum_absolute_ms": None,
+        }
+    array = np.asarray(values, dtype=np.float64)
+    return {
+        "samples": int(len(array)),
+        "mean_ms": float(array.mean()),
+        "median_ms": float(np.median(array)),
+        "minimum_ms": float(array.min()),
+        "maximum_ms": float(array.max()),
+        "maximum_absolute_ms": float(np.abs(array).max()),
+    }
+
+
+def add_estimate_to_detail(
+    detail: dict,
+    name: str,
+    estimate: BaselineEstimate,
+    target: np.ndarray,
+) -> None:
+    detail[f"{name}_available"] = estimate.available
+    detail[f"{name}_reason"] = estimate.reason
+    detail[f"{name}_latest_capture_timestamp_ns"] = (
+        estimate.latest_capture_timestamp_ns
+    )
+    detail[f"{name}_observation_age_seconds"] = estimate.observation_age_seconds
+    detail[f"{name}_fit_samples"] = estimate.fit_samples
+    detail[f"{name}_fit_span_seconds"] = estimate.fit_span_seconds
+    detail[f"{name}_estimated_speed_m_s"] = estimate.estimated_speed_m_s
+    for component in POSE_COMPONENTS:
+        detail[f"{name}_{component}"] = None
+    detail[f"{name}_position_error_cm"] = None
+    detail[f"{name}_orientation_error_deg"] = None
+    if estimate.available:
+        assert estimate.pose is not None
+        for component, value in zip(POSE_COMPONENTS, estimate.pose):
+            detail[f"{name}_{component}"] = float(value)
+        position_error, orientation_error = single_pose_errors(
+            estimate.pose, target
+        )
+        detail[f"{name}_position_error_cm"] = position_error
+        detail[f"{name}_orientation_error_deg"] = orientation_error
+
+
 def evaluate_split(
     split_name: str,
     dataset: WindowDataset,
     master_dir: Path,
-    training_mean: np.ndarray,
     horizon_seconds: float,
     velocity_lookback_seconds: float,
+    maximum_observation_age_seconds: float,
+    minimum_velocity_fit_span_seconds: float,
 ) -> tuple[dict, list[dict]]:
     handover_id = INTENTION_TO_ID["handover"]
     endpoints_by_record: dict[int, list[int]] = defaultdict(list)
+    handover_windows = 0
     for record_index, endpoint in dataset.indices:
         record = dataset.records[record_index]
-        if int(record.intentions[endpoint]) == handover_id and bool(record.pose_valid[endpoint]):
-            endpoints_by_record[record_index].append(endpoint)
+        if int(record.intentions[endpoint]) == handover_id:
+            handover_windows += 1
+            if bool(record.pose_valid[endpoint]):
+                endpoints_by_record[record_index].append(endpoint)
 
-    predictions: dict[str, list[np.ndarray]] = {
-        "training_mean": [],
-        "last_observation": [],
-        "constant_velocity": [],
-    }
+    method_names = ("persistence", "constant_velocity")
     native_predictions: dict[str, list[np.ndarray]] = defaultdict(list)
     native_targets: dict[str, list[np.ndarray]] = defaultdict(list)
-    targets: list[np.ndarray] = []
-    sources: dict[str, Counter] = defaultdict(Counter)
-    details = []
+    native_keys: dict[str, list[str]] = defaultdict(list)
+    common_predictions: dict[str, list[np.ndarray]] = defaultdict(list)
+    common_targets: dict[str, list[np.ndarray]] = defaultdict(list)
+    reasons: dict[str, Counter] = defaultdict(Counter)
+    common_keys: list[str] = []
+    details: list[dict] = []
+    valid_target_count = sum(len(values) for values in endpoints_by_record.values())
+    master_alignment_errors: list[float] = []
+    actual_capture_errors: list[float] = []
 
     for record_index, endpoints in sorted(endpoints_by_record.items()):
         record = dataset.records[record_index]
         frame = load_observation_frame(
-            master_dir / f"{record.sequence_id}_master.csv", record.timestamps_ns
+            master_dir / f"{record.sequence_id}_master.csv",
+            record.timestamps_ns,
+            require_source_timestamps=True,
+            require_target_timestamps=True,
         )
         for endpoint in endpoints:
             target = record.pose_targets[endpoint].astype(np.float32)
-            targets.append(target)
+            endpoint_timestamp_ns = int(record.timestamps_ns[endpoint])
             side = str(frame.iloc[endpoint]["receiving_hand"]).strip().lower()
+            sample_key = (
+                f"{split_name}|{record.sequence_id}|{endpoint_timestamp_ns}"
+            )
             start = endpoint - dataset.window_size + 1
+
+            timing = None
+            observations = ObservationSeries.empty()
             if side in {"left", "right"}:
-                _, observed_timestamps, observed_poses = window_observations(
-                    frame, start, endpoint, side
+                timing = resolve_target_timing(
+                    frame,
+                    endpoint,
+                    horizon_seconds=horizon_seconds,
                 )
+                target_row_pose = observation_pose(
+                    frame, timing.target_row_index, side
+                )
+                if target_row_pose is None or not pose_matches(
+                    target_row_pose, target
+                ):
+                    raise ValueError(
+                        "Future target does not match the receiving-hand pose at "
+                        f"its source row: {sample_key}"
+                    )
+                observations = extract_hand_observations(
+                    frame,
+                    start,
+                    endpoint,
+                    side,
+                    source_timestamp_column="hand_timestamp_ns",
+                    require_causal=True,
+                )
+                persistence = persistence_pose(
+                    observations,
+                    endpoint_timestamp_ns,
+                    maximum_age_seconds=maximum_observation_age_seconds,
+                )
+                velocity = estimate_constant_velocity_pose(
+                    observations,
+                    endpoint_timestamp_ns,
+                    timing.prediction_horizon_timestamp_ns,
+                    maximum_age_seconds=maximum_observation_age_seconds,
+                    lookback_seconds=velocity_lookback_seconds,
+                    minimum_fit_span_seconds=minimum_velocity_fit_span_seconds,
+                )
+                master_alignment_errors.append(timing.master_alignment_error_ms)
+                actual_capture_errors.append(timing.actual_capture_error_ms)
             else:
-                observed_timestamps = np.empty(0, dtype=np.int64)
-                observed_poses = np.empty((0, 7), dtype=np.float32)
+                persistence = unavailable("unknown_receiving_hand")
+                velocity = unavailable("unknown_receiving_hand")
 
-            if len(observed_poses):
-                last_prediction = observed_poses[-1].copy()
-                last_source = "last_observation"
-                last_age_seconds = (
-                    int(record.timestamps_ns[endpoint]) - int(observed_timestamps[-1])
-                ) / 1e9
-                native_predictions["last_observation"].append(last_prediction)
-                native_targets["last_observation"].append(target)
-            else:
-                last_prediction = training_mean.copy()
-                last_source = "training_mean_fallback"
-                last_age_seconds = None
+            estimates = {
+                "persistence": persistence,
+                "constant_velocity": velocity,
+            }
+            for name, estimate in estimates.items():
+                reasons[name][estimate.reason] += 1
+                if estimate.available:
+                    assert estimate.pose is not None
+                    native_predictions[name].append(estimate.pose)
+                    native_targets[name].append(target)
+                    native_keys[name].append(sample_key)
 
-            desired_timestamp_ns = int(record.timestamps_ns[endpoint]) + int(
-                horizon_seconds * 1e9
+            fair_common = all(
+                estimates[name].available for name in method_names
             )
-            velocity_prediction, velocity_samples, speed_m_s = constant_velocity_pose(
-                observed_timestamps,
-                observed_poses,
-                desired_timestamp_ns,
-                velocity_lookback_seconds,
-            )
-            if velocity_prediction is not None:
-                velocity_source = "constant_velocity"
-                native_predictions["constant_velocity"].append(velocity_prediction)
-                native_targets["constant_velocity"].append(target)
-            elif len(observed_poses):
-                velocity_prediction = last_prediction.copy()
-                velocity_source = "last_observation_fallback"
-            else:
-                velocity_prediction = training_mean.copy()
-                velocity_source = "training_mean_fallback"
-
-            predictions["training_mean"].append(training_mean.copy())
-            predictions["last_observation"].append(last_prediction)
-            predictions["constant_velocity"].append(velocity_prediction)
-            sources["training_mean"]["training_mean"] += 1
-            sources["last_observation"][last_source] += 1
-            sources["constant_velocity"][velocity_source] += 1
+            if fair_common:
+                common_keys.append(sample_key)
+                for name in method_names:
+                    assert estimates[name].pose is not None
+                    common_predictions[name].append(estimates[name].pose)
+                    common_targets[name].append(target)
 
             detail = {
+                "sample_key": sample_key,
                 "split": split_name,
                 "participant": record.participant,
                 "sequence_id": record.sequence_id,
                 "endpoint_row": endpoint,
-                "endpoint_timestamp_ns": int(record.timestamps_ns[endpoint]),
+                "endpoint_timestamp_ns": endpoint_timestamp_ns,
                 "receiving_hand": side,
-                "last_observation_age_seconds": last_age_seconds,
-                "velocity_fit_samples": velocity_samples,
-                "estimated_speed_m_s": speed_m_s,
-                "last_observation_source": last_source,
-                "constant_velocity_source": velocity_source,
+                "valid_future_pose_target": True,
+                "fair_common": fair_common,
+                "unique_observation_captures": int(len(observations.poses)),
+                "duplicate_aligned_captures_removed": (
+                    observations.duplicate_captures_removed
+                ),
+                "noncausal_captures_removed": (
+                    observations.noncausal_captures_removed
+                ),
+                "nominal_target_timestamp_ns": (
+                    timing.nominal_timestamp_ns if timing else None
+                ),
+                "aligned_target_master_timestamp_ns": (
+                    timing.aligned_master_timestamp_ns if timing else None
+                ),
+                "actual_target_hand_capture_timestamp_ns": (
+                    timing.actual_hand_capture_timestamp_ns if timing else None
+                ),
+                "target_master_alignment_error_ms": (
+                    timing.master_alignment_error_ms if timing else None
+                ),
+                "target_actual_capture_error_ms": (
+                    timing.actual_capture_error_ms if timing else None
+                ),
             }
             for component, value in zip(POSE_COMPONENTS, target):
                 detail[f"target_{component}"] = float(value)
-            for baseline_name, prediction in (
-                ("training_mean", training_mean),
-                ("last_observation", last_prediction),
-                ("constant_velocity", velocity_prediction),
-            ):
-                for component, value in zip(POSE_COMPONENTS, prediction):
-                    detail[f"{baseline_name}_{component}"] = float(value)
+            for name, estimate in estimates.items():
+                add_estimate_to_detail(detail, name, estimate, target)
             details.append(detail)
 
     split_report = {
-        "valid_pose_targets": len(targets),
+        "handover_windows": handover_windows,
+        "valid_pose_targets": valid_target_count,
+        "valid_target_coverage": (
+            float(valid_target_count / handover_windows)
+            if handover_windows
+            else None
+        ),
+        "coverage_denominator_definition": (
+            "handover windows with a finite, valid t+1 receiving-wrist target"
+        ),
+        "fair_common": {
+            "samples": len(common_keys),
+            "coverage_denominator": valid_target_count,
+            "coverage": (
+                float(len(common_keys) / valid_target_count)
+                if valid_target_count
+                else None
+            ),
+            "sample_key_fingerprint": sample_key_fingerprint(common_keys),
+            "definition": (
+                "intersection of valid t+1 targets for which pure persistence "
+                "and pure constant velocity are both available"
+            ),
+        },
+        "target_timing": {
+            "nominal_definition": "endpoint timestamp_ns + future horizon",
+            "aligned_master_error": alignment_summary(master_alignment_errors),
+            "actual_hand_capture_error": alignment_summary(actual_capture_errors),
+        },
         "baselines": {},
     }
-    for name, values in predictions.items():
+    for name in method_names:
         split_report["baselines"][name] = {
-            "metrics": metric_dict(values, targets),
-            "prediction_sources": dict(sorted(sources[name].items())),
-            "native_metrics": (
-                metric_dict(native_predictions[name], native_targets[name])
-                if name in native_predictions
-                else metric_dict(values, targets)
+            "native_metrics": pose_metric_summary(
+                native_predictions[name],
+                native_targets[name],
+                coverage_denominator=valid_target_count,
+            ),
+            "fair_common_metrics": pose_metric_summary(
+                common_predictions[name],
+                common_targets[name],
+                coverage_denominator=valid_target_count,
+            ),
+            "availability_reasons": dict(sorted(reasons[name].items())),
+            "native_sample_key_fingerprint": sample_key_fingerprint(
+                native_keys[name]
             ),
         }
     return split_report, details
@@ -350,20 +511,42 @@ def evaluate(
     config_path: Path,
     report_path: Path,
     details_path: Path,
-    velocity_lookback_seconds: float,
-    model_metrics_path: Path | None = None,
+    velocity_lookback_seconds: float = DEFAULT_VELOCITY_LOOKBACK_SECONDS,
+    maximum_observation_age_seconds: float = (
+        DEFAULT_MAXIMUM_OBSERVATION_AGE_SECONDS
+    ),
+    minimum_velocity_fit_span_seconds: float = (
+        DEFAULT_MINIMUM_VELOCITY_FIT_SPAN_SECONDS
+    ),
     limit_sequences: int | None = None,
 ) -> dict:
-    if velocity_lookback_seconds <= 0.0:
-        raise ValueError("velocity-lookback-seconds must be greater than zero")
+    for name, value in (
+        ("velocity_lookback_seconds", velocity_lookback_seconds),
+        ("maximum_observation_age_seconds", maximum_observation_age_seconds),
+        (
+            "minimum_velocity_fit_span_seconds",
+            minimum_velocity_fit_span_seconds,
+        ),
+    ):
+        if value <= 0.0:
+            raise ValueError(f"{name} must be greater than zero")
+    if minimum_velocity_fit_span_seconds > velocity_lookback_seconds:
+        raise ValueError(
+            "minimum_velocity_fit_span_seconds cannot exceed the lookback"
+        )
+
     data_config = dict(config["data"])
+    if data_config.get("pose_target"):
+        raise ValueError(
+            "This evaluator is only for PRIMARY future-offset t+1 targets, "
+            "not terminal/endpose targets"
+        )
+    horizon_seconds = float(data_config["future_horizon_seconds"])
     master_dir = project_path(Path(data_config["master_dir"]))
     data_config["master_dir"] = str(master_dir)
     seed = int(config["training"]["seed"])
     bundle = prepare_data(data_config, seed, limit_sequences)
 
-    train_targets = valid_targets(bundle.train)
-    training_mean = mean_pose(train_targets)
     split_reports = {}
     detail_rows = []
     for split_name, dataset in (
@@ -375,35 +558,58 @@ def evaluate(
             split_name,
             dataset,
             master_dir,
-            training_mean,
-            float(data_config["future_horizon_seconds"]),
+            horizon_seconds,
             velocity_lookback_seconds,
+            maximum_observation_age_seconds,
+            minimum_velocity_fit_span_seconds,
         )
         split_reports[split_name] = split_report
         detail_rows.extend(split_details)
 
     report = {
+        "schema_version": 2,
+        "task": {
+            "name": "primary_t_plus_1_future_receiving_wrist_pose",
+            "pose_target_mode": "future_offset",
+            "future_horizon_seconds": horizon_seconds,
+            "coordinate_frame": "static robot-marker frame",
+        },
         "config": str(config_path),
         "master_dir": str(master_dir),
         "seed": seed,
-        "future_horizon_seconds": float(data_config["future_horizon_seconds"]),
-        "velocity_lookback_seconds": velocity_lookback_seconds,
         "oracle_receiving_hand": True,
-        "fallback_policy": {
-            "last_observation": "training_mean",
-            "constant_velocity": "last_observation_then_training_mean",
+        "receiving_hand_context": (
+            "ground-truth receiving hand is shared by both pose baselines"
+        ),
+        "timestamp_policy": {
+            "observation_time": (
+                "real hand_timestamp_ns; repeated merge-asof captures are deduplicated"
+            ),
+            "causality": "captures after the master endpoint are excluded",
+            "target_measurement_time": (
+                "hand_timestamp_ns at the master row referenced by "
+                "future_target_timestamp_ns"
+            ),
+            "constant_velocity_prediction_horizon": (
+                "endpoint timestamp_ns + future_horizon_seconds; future target "
+                "capture jitter is never exposed to the baseline"
+            ),
         },
-        "training_target_count_for_mean": int(len(train_targets)),
-        "training_mean_pose": training_mean.tolist(),
+        "baseline_policy": {
+            "fallbacks": "none",
+            "maximum_observation_age_seconds": maximum_observation_age_seconds,
+            "velocity_lookback_seconds": velocity_lookback_seconds,
+            "minimum_velocity_fit_span_seconds": (
+                minimum_velocity_fit_span_seconds
+            ),
+            "constant_velocity_orientation": (
+                "zero angular velocity; hold latest valid normalized quaternion"
+            ),
+            "primary_comparison": "fair_common_metrics",
+        },
         "split_participants": bundle.split_metadata["participants"],
         "splits": split_reports,
     }
-    if model_metrics_path is not None:
-        model_report = json.loads(model_metrics_path.read_text(encoding="utf-8"))
-        report["transformer_reference"] = {
-            "metrics_path": str(model_metrics_path),
-            "test_pose": model_report["test"]["pose"],
-        }
 
     report_path.parent.mkdir(parents=True, exist_ok=True)
     details_path.parent.mkdir(parents=True, exist_ok=True)
@@ -417,9 +623,6 @@ def main() -> int:
     config_path = project_path(args.config)
     report_path = project_path(args.report_out)
     details_path = project_path(args.details_out)
-    model_metrics_path = (
-        project_path(args.model_metrics) if args.model_metrics is not None else None
-    )
     try:
         config = json.loads(config_path.read_text(encoding="utf-8"))
         report = evaluate(
@@ -428,7 +631,12 @@ def main() -> int:
             report_path=report_path,
             details_path=details_path,
             velocity_lookback_seconds=args.velocity_lookback_seconds,
-            model_metrics_path=model_metrics_path,
+            maximum_observation_age_seconds=(
+                args.maximum_observation_age_seconds
+            ),
+            minimum_velocity_fit_span_seconds=(
+                args.minimum_velocity_fit_span_seconds
+            ),
             limit_sequences=args.limit_sequences,
         )
     except (FileNotFoundError, KeyError, OSError, RuntimeError, ValueError) as exc:
@@ -437,15 +645,18 @@ def main() -> int:
 
     for split_name in ("train", "validation", "test"):
         split = report["splits"][split_name]
-        print(f"{split_name}: valid pose targets={split['valid_pose_targets']}")
+        print(
+            f"{split_name}: handover={split['handover_windows']}, "
+            f"valid targets={split['valid_pose_targets']}, "
+            f"fair common={split['fair_common']['samples']}"
+        )
         for name, result in split["baselines"].items():
-            metrics = result["metrics"]
+            metrics = result["fair_common_metrics"]
             print(
-                f"  {name}: position mean Euclidean error="
-                f"{metrics['position_mae_cm']:.2f} cm, "
-                f"RMSE={metrics['position_rmse_cm']:.2f} cm, "
-                f"orientation={metrics['orientation_mean_deg']:.2f} deg, "
-                f"sources={result['prediction_sources']}"
+                f"  {name}: mean={metrics['position_mean_euclidean_error_cm']} cm, "
+                f"median={metrics['position_median_euclidean_error_cm']} cm, "
+                f"orientation={metrics['orientation_mean_deg']} deg, "
+                f"n={metrics['samples']}, coverage={metrics['coverage']}"
             )
     print(f"Report:  {report_path}")
     print(f"Details: {details_path}")

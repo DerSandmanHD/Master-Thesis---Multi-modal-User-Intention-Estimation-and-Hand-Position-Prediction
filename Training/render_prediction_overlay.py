@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -11,9 +12,23 @@ import shutil
 import subprocess
 from pathlib import Path
 
-import cv2
+try:
+    import cv2
+except ImportError:  # Pure alignment/selection tests do not require OpenCV.
+    cv2 = None
 import numpy as np
 import pandas as pd
+
+from video_alignment import (
+    VIDEO_ALIGNMENT_FILE_SUFFIX,
+    VIDEO_ALIGNMENT_SCHEMA_VERSION,
+    file_identity,
+    first_rgb_frame_at_or_after,
+    load_video_alignment_sidecar,
+    prediction_indices_for_rgb_frames,
+    sha256_file,
+    validate_visual_manifest,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -24,18 +39,39 @@ INTENTION_COLORS = {
 }
 GT_COLOR = (70, 220, 70)
 PRED_COLOR = (60, 60, 240)
+OVERLAY_SCHEMA_VERSION = "qualitative_overlay_device_time_v2"
+QUALITATIVE_SELECTION_VERSION = "qualitative_good_typical_failure_v1"
+POSE_COMPONENTS = ("x_m", "y_m", "z_m", "qx", "qy", "qz", "qw")
+
+
+def require_opencv() -> None:
+    if cv2 is None:
+        raise RuntimeError(
+            "OpenCV is required to render qualitative overlays; use the "
+            "pinned Singularity environment or install opencv-python."
+        )
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--predictions", type=Path, required=True)
+    parser.add_argument("--prediction-report", type=Path, required=True)
+    parser.add_argument("--visual-cache-manifest", type=Path, required=True)
+    parser.add_argument("--alignment-dir", type=Path, required=True)
     parser.add_argument(
         "--video-dir", type=Path, default=Path("Data_collection/Data_mp4")
+    )
+    parser.add_argument(
+        "--vrs-dir", type=Path, default=Path("Data_collection/Data_vrs")
+    )
+    parser.add_argument(
+        "--master-dir", type=Path, default=Path("Data_collection/master_datasets")
     )
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--sequence", action="append", default=[])
     parser.add_argument("--count", type=int, default=3)
     parser.add_argument("--max-prediction-age-s", type=float, default=0.5)
+    parser.add_argument("--selection-seed", type=int, default=42)
     parser.add_argument("--no-transcode", action="store_true")
     return parser.parse_args()
 
@@ -49,72 +85,96 @@ def as_bool(series: pd.Series) -> pd.Series:
     return series.astype(str).str.strip().str.casefold().isin({"true", "1", "yes"})
 
 
-def sequence_statistics(frame: pd.DataFrame) -> pd.DataFrame:
-    rows = []
-    for sequence_id, group in frame.groupby("sequence_id"):
-        pose = group.loc[as_bool(group["pose_valid"])]
-        rows.append(
-            {
-                "sequence_id": sequence_id,
-                "windows": len(group),
-                "intention_accuracy": float(as_bool(group["intention_correct"]).mean()),
-                "pose_windows": len(pose),
-                "pose_mae_cm": (
-                    float(pose["predicted_position_error_cm"].astype(float).mean())
-                    if len(pose)
-                    else np.nan
-                ),
-                "incorrect_windows": int((~as_bool(group["intention_correct"])).sum()),
-            }
+def row_bool(value: object) -> bool:
+    return str(value).strip().casefold() in {"true", "1", "yes"}
+
+
+def _stable_tie_breaker(row: pd.Series, seed: int) -> str:
+    identity = str(
+        row.get(
+            "sample_key",
+            f"{row['sequence_id']}|{int(row['endpoint_timestamp_ns'])}",
         )
-    return pd.DataFrame(rows)
+    )
+    return hashlib.sha256(f"{seed}|{identity}".encode("utf-8")).hexdigest()
 
 
-def choose_sequences(frame: pd.DataFrame, count: int) -> tuple[list[str], dict]:
-    stats = sequence_statistics(frame)
-    eligible = stats.loc[(stats["windows"] >= 3) & (stats["pose_windows"] >= 1)].copy()
-    if eligible.empty:
-        eligible = stats.copy()
-    chosen: list[str] = []
-    reasons = {}
+def choose_qualitative_cases(
+    frame: pd.DataFrame,
+    *,
+    seed: int,
+) -> dict[str, pd.Series]:
+    """Select distinct reproducible good, typical, and failure pose windows."""
 
-    success = eligible.sort_values(
-        ["intention_accuracy", "pose_mae_cm"],
-        ascending=[False, True],
-        na_position="last",
+    available = as_bool(frame["learned_end_to_end_available"])
+    errors = pd.to_numeric(frame["predicted_position_error_cm"], errors="coerce")
+    eligible = frame.loc[available & errors.notna()].copy()
+    if len(eligible) < 3:
+        raise ValueError(
+            "At least three learned_end_to_end_available pose windows are required "
+            "for good/typical/failure qualitative cases"
+        )
+    eligible["_pose_error"] = pd.to_numeric(
+        eligible["predicted_position_error_cm"], errors="raise"
+    )
+    eligible["_confidence"] = eligible[
+        ["continue_probability", "fetch_probability", "handover_probability"]
+    ].max(axis=1)
+    eligible["_correct"] = as_bool(eligible["intention_correct"])
+    eligible["_tie"] = [
+        _stable_tie_breaker(row, seed) for _, row in eligible.iterrows()
+    ]
+
+    cases: dict[str, pd.Series] = {}
+    good_pool = eligible.loc[eligible["_correct"]]
+    if good_pool.empty:
+        good_pool = eligible
+    good = good_pool.sort_values(
+        ["_pose_error", "_confidence", "_tie"],
+        ascending=[True, False, True],
     ).iloc[0]
-    chosen.append(str(success["sequence_id"]))
-    reasons[chosen[-1]] = "success_example_high_accuracy_low_pose_error"
+    cases["good"] = good
 
-    error_pool = eligible.loc[~eligible["sequence_id"].isin(chosen)]
-    if not error_pool.empty:
-        failure = error_pool.sort_values(
-            ["intention_accuracy", "pose_mae_cm"],
-            ascending=[True, False],
-            na_position="last",
-        ).iloc[0]
-        chosen.append(str(failure["sequence_id"]))
-        reasons[chosen[-1]] = "failure_example_low_accuracy_or_high_pose_error"
+    remaining = eligible.drop(index=good.name)
+    failure_pool = remaining.loc[~remaining["_correct"]]
+    if failure_pool.empty:
+        failure_pool = remaining
+    failure = failure_pool.sort_values(
+        ["_correct", "_pose_error", "_confidence", "_tie"],
+        ascending=[True, False, False, True],
+    ).iloc[0]
+    cases["failure"] = failure
 
-    remaining = eligible.loc[~eligible["sequence_id"].isin(chosen)].copy()
-    if not remaining.empty and len(chosen) < count:
-        accuracy_median = float(eligible["intention_accuracy"].median())
-        pose_median = float(eligible["pose_mae_cm"].median())
-        remaining["median_distance"] = (
-            (remaining["intention_accuracy"] - accuracy_median).abs()
-            + (remaining["pose_mae_cm"] - pose_median).abs()
-            / max(1.0, abs(pose_median))
-        )
-        typical = remaining.sort_values("median_distance").iloc[0]
-        chosen.append(str(typical["sequence_id"]))
-        reasons[chosen[-1]] = "representative_example_near_median_metrics"
+    remaining = remaining.drop(index=failure.name).copy()
+    median_error = float(eligible["_pose_error"].median())
+    remaining["_median_distance"] = (
+        remaining["_pose_error"] - median_error
+    ).abs()
+    typical = remaining.sort_values(
+        ["_median_distance", "_tie"], ascending=[True, True]
+    ).iloc[0]
+    cases["typical"] = typical
+    return cases
 
-    for sequence_id in stats["sequence_id"].astype(str):
+
+def choose_sequences_from_cases(
+    cases: dict[str, pd.Series],
+    frame: pd.DataFrame,
+    count: int,
+) -> tuple[list[str], dict[str, str]]:
+    chosen: list[str] = []
+    reasons: dict[str, str] = {}
+    for label in ("good", "typical", "failure"):
+        sequence_id = str(cases[label]["sequence_id"])
+        if sequence_id not in chosen:
+            chosen.append(sequence_id)
+            reasons[sequence_id] = f"contains_{label}_qualitative_case"
+    for sequence_id in sorted(frame["sequence_id"].astype(str).unique()):
         if len(chosen) >= count:
             break
         if sequence_id not in chosen:
             chosen.append(sequence_id)
-            reasons[sequence_id] = "additional_available_example"
+            reasons[sequence_id] = "additional_deterministic_sequence"
     return chosen[:count], reasons
 
 
@@ -127,6 +187,7 @@ def put_text(
     color: tuple[int, int, int] = (245, 245, 245),
     thickness: int = 2,
 ) -> None:
+    require_opencv()
     cv2.putText(
         image,
         text,
@@ -181,7 +242,7 @@ def draw_probability_bars(
 
 def pose_bounds(group: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     values = []
-    valid = group.loc[as_bool(group["pose_valid"])]
+    valid = group.loc[as_bool(group["learned_end_to_end_available"])]
     for prefix in ("target", "predicted"):
         columns = [f"{prefix}_{axis}_m" for axis in "xyz"]
         if set(columns).issubset(valid.columns):
@@ -225,7 +286,7 @@ def draw_pose_inset(
         (120, 120, 120),
         1,
     )
-    if bool(row.get("pose_valid", False)):
+    if row_bool(row.get("learned_end_to_end_available", False)):
         target = np.asarray([float(row[f"target_{axis}_m"]) for axis in "xyz"])
         prediction = np.asarray([float(row[f"predicted_{axis}_m"]) for axis in "xyz"])
         if np.isfinite(target).all() and np.isfinite(prediction).all():
@@ -260,6 +321,8 @@ def annotate_frame(
     correct = bool(row["intention_correct"])
     put_text(canvas, f"GT: {gt.upper()}", (25, int(48 * scale)), scale=0.72 * scale, color=GT_COLOR)
     put_text(canvas, f"Pred: {pred.upper()}", (25, int(92 * scale)), scale=0.72 * scale, color=GT_COLOR if correct else PRED_COLOR)
+    participant = str(row.get("participant", ""))
+    sequence = str(row.get("sequence_id", ""))
     gt_hand = str(row.get("target_receiving_hand", "")).strip() or "n/a"
     pred_hand = str(row.get("predicted_receiving_hand", ""))
     hand_probability = float(row.get("predicted_receiving_hand_probability", 0.0))
@@ -278,7 +341,14 @@ def annotate_frame(
         scale=0.52 * scale,
         thickness=max(1, int(1.5 * scale)),
     )
-    age_text = "" if prediction_age_s is None else f"prediction age {prediction_age_s * 1000:.0f} ms"
+    age_text = (
+        f"{participant} / {sequence}"
+        if prediction_age_s is None
+        else (
+            f"{participant} / {sequence} | prediction age "
+            f"{prediction_age_s * 1000:.0f} ms"
+        )
+    )
     put_text(canvas, age_text, (25, int(174 * scale)), scale=0.38 * scale, color=(170, 170, 170), thickness=1)
     draw_probability_bars(
         canvas,
@@ -296,19 +366,194 @@ def annotate_frame(
     return canvas
 
 
-def still_rows(group: pd.DataFrame) -> dict[str, float]:
-    result = {}
-    correct = group.loc[as_bool(group["intention_correct"])]
-    if not correct.empty:
-        result["success"] = float(correct.iloc[len(correct) // 2]["video_time_s"])
-    incorrect = group.loc[~as_bool(group["intention_correct"])]
-    if not incorrect.empty:
-        confidence = incorrect[["continue_probability", "fetch_probability", "handover_probability"]].max(axis=1)
-        result["error"] = float(incorrect.loc[confidence.idxmax()]["video_time_s"])
-    handover = group.loc[group["target_intention"].astype(str) == "handover"]
-    if not handover.empty:
-        result["handover"] = float(handover.iloc[len(handover) // 2]["video_time_s"])
-    return result
+def validate_prediction_report(
+    report: dict,
+    *,
+    report_path: Path,
+    predictions_path: Path,
+    prediction_rows: int,
+) -> dict:
+    if report.get("result_role") != "primary_validation_selected_checkpoint":
+        raise ValueError(
+            "Qualitative main evidence requires the primary validation-selected "
+            "checkpoint, not an oracle/pose-selected diagnostic"
+        )
+    if report.get("checkpoint_selection_split") != "validation" or not str(
+        report.get("checkpoint_selection_metric", "")
+    ).startswith("validation_"):
+        raise ValueError("Qualitative checkpoint selection must use validation only")
+    required = (
+        "checkpoint",
+        "checkpoint_sha256",
+        "checkpoint_epoch",
+        "predictions_csv_sha256",
+        "dataset_content_fingerprint",
+        "architecture",
+    )
+    missing = [name for name in required if report.get(name) in (None, "")]
+    if missing:
+        raise ValueError(f"Prediction report lacks provenance fields: {missing}")
+    if report.get("rows") is not None and int(report["rows"]) != prediction_rows:
+        raise ValueError("Prediction report and CSV row counts differ")
+    predictions_hash = sha256_file(predictions_path)
+    if str(report["predictions_csv_sha256"]).lower() != predictions_hash:
+        raise ValueError("Prediction report and CSV SHA-256 differ")
+    checkpoint_hash = str(report["checkpoint_sha256"]).lower()
+    if len(checkpoint_hash) != 64 or any(
+        character not in "0123456789abcdef" for character in checkpoint_hash
+    ):
+        raise ValueError("Prediction report checkpoint SHA-256 is invalid")
+    checkpoint_path = Path(str(report["checkpoint"]))
+    if not checkpoint_path.is_absolute():
+        checkpoint_path = (report_path.parent / checkpoint_path).resolve()
+    verification = "not_locally_available"
+    if checkpoint_path.is_file():
+        if sha256_file(checkpoint_path) != checkpoint_hash:
+            raise ValueError("Prediction report checkpoint hash mismatch")
+        verification = "matched_local_checkpoint"
+    return {
+        "prediction_report": str(report_path),
+        "prediction_report_sha256": sha256_file(report_path),
+        "predictions_csv": str(predictions_path),
+        "predictions_csv_sha256": predictions_hash,
+        "checkpoint": str(report["checkpoint"]),
+        "checkpoint_sha256": checkpoint_hash,
+        "checkpoint_hash_verification": verification,
+        "checkpoint_epoch": int(report["checkpoint_epoch"]),
+        "checkpoint_selection_split": "validation",
+        "checkpoint_selection_metric": report["checkpoint_selection_metric"],
+        "checkpoint_selection_value": report.get("checkpoint_selection_value"),
+        "dataset_content_fingerprint": report["dataset_content_fingerprint"],
+        "architecture": report["architecture"],
+        "split": report.get("split"),
+    }
+
+
+def validate_qualitative_columns(frame: pd.DataFrame) -> None:
+    required = {
+        "participant",
+        "sequence_id",
+        "endpoint_timestamp_ns",
+        "target_intention",
+        "predicted_intention",
+        "intention_correct",
+        "continue_probability",
+        "fetch_probability",
+        "handover_probability",
+        "sequence_receiving_hand",
+        "target_receiving_hand",
+        "predicted_receiving_hand",
+        "predicted_receiving_hand_probability",
+        "pose_valid",
+        "learned_end_to_end_available",
+        "predicted_position_error_cm",
+        "predicted_orientation_error_deg",
+        *(f"target_{component}" for component in POSE_COMPONENTS),
+        *(f"predicted_{component}" for component in POSE_COMPONENTS),
+    }
+    missing = sorted(required - set(frame.columns))
+    if missing:
+        raise ValueError(f"Prediction CSV missing qualitative fields: {missing}")
+    weight_names = {
+        column.removeprefix("modality_").removesuffix("_weight")
+        for column in frame.columns
+        if column.startswith("modality_") and column.endswith("_weight")
+    }
+    availability_names = {
+        column.removeprefix("modality_").removesuffix("_available")
+        for column in frame.columns
+        if column.startswith("modality_") and column.endswith("_available")
+    }
+    if weight_names != availability_names:
+        raise ValueError(
+            "Every qualitative modality weight requires a matching availability flag"
+        )
+
+
+def qualitative_case_record(
+    label: str,
+    row: pd.Series,
+    *,
+    rgb_capture_timestamps_ns: np.ndarray,
+    checkpoint_provenance: dict,
+) -> dict:
+    if not row_bool(row["learned_end_to_end_available"]):
+        raise ValueError("Qualitative pose cases require learned end-to-end availability")
+    endpoint_timestamp_ns = int(row["endpoint_timestamp_ns"])
+    rgb_index = first_rgb_frame_at_or_after(
+        rgb_capture_timestamps_ns, endpoint_timestamp_ns
+    )
+    rgb_timestamp_ns = int(rgb_capture_timestamps_ns[rgb_index])
+    modality_names = sorted(
+        column.removeprefix("modality_").removesuffix("_weight")
+        for column in row.index
+        if column.startswith("modality_") and column.endswith("_weight")
+    )
+    modality_weights = {
+        name: float(row[f"modality_{name}_weight"])
+        for name in modality_names
+    }
+    modality_available = {
+        name: row_bool(row[f"modality_{name}_available"])
+        for name in modality_names
+    }
+
+    def pose(prefix: str) -> dict:
+        values = {
+            component: float(row[f"{prefix}_{component}"])
+            for component in POSE_COMPONENTS
+        }
+        if not np.isfinite(list(values.values())).all():
+            raise ValueError(f"Selected qualitative {prefix} pose is non-finite")
+        return values
+
+    return {
+        "case": label,
+        "selection_version": QUALITATIVE_SELECTION_VERSION,
+        "sample_key": row.get("sample_key"),
+        "participant": str(row["participant"]),
+        "sequence_id": str(row["sequence_id"]),
+        "endpoint_timestamp_ns": endpoint_timestamp_ns,
+        "display_rgb_frame_index": rgb_index,
+        "display_rgb_capture_timestamp_ns": rgb_timestamp_ns,
+        "display_after_prediction_ms": (
+            rgb_timestamp_ns - endpoint_timestamp_ns
+        )
+        / 1e6,
+        "ground_truth_intention": str(row["target_intention"]),
+        "predicted_intention": str(row["predicted_intention"]),
+        "intention_correct": row_bool(row["intention_correct"]),
+        "class_probabilities": {
+            name: float(row[f"{name}_probability"])
+            for name in ("continue", "fetch", "handover")
+        },
+        "ground_truth_receiving_hand": str(
+            row.get("target_receiving_hand", "")
+        ),
+        "sequence_receiving_hand": str(row.get("sequence_receiving_hand", "")),
+        "predicted_receiving_hand": str(row["predicted_receiving_hand"]),
+        "predicted_receiving_hand_probability": float(
+            row["predicted_receiving_hand_probability"]
+        ),
+        "ground_truth_future_wrist": pose("target"),
+        "predicted_future_wrist": pose("predicted"),
+        "position_error_cm": float(row["predicted_position_error_cm"]),
+        "orientation_error_deg": (
+            float(row["predicted_orientation_error_deg"])
+            if not pd.isna(row["predicted_orientation_error_deg"])
+            else None
+        ),
+        "learned_end_to_end_available": True,
+        "modality_weights": modality_weights,
+        "modality_available": modality_available,
+        "available_modalities": [
+            name for name in modality_names if modality_available[name]
+        ],
+        "missing_modalities": [
+            name for name in modality_names if not modality_available[name]
+        ],
+        "checkpoint_provenance": checkpoint_provenance,
+    }
 
 
 def transcode(temp_path: Path, source_path: Path, output_path: Path) -> str:
@@ -359,9 +604,14 @@ def render_sequence(
     video_path: Path,
     output_dir: Path,
     *,
+    rgb_capture_timestamps_ns: np.ndarray,
+    alignment_sidecar: dict,
+    alignment_sidecar_path: Path,
+    requested_stills: dict[str, int],
     max_prediction_age_s: float,
     use_transcode: bool,
 ) -> dict:
+    require_opencv()
     capture = cv2.VideoCapture(str(video_path))
     if not capture.isOpened():
         raise RuntimeError(f"Could not open {video_path}")
@@ -372,10 +622,16 @@ def render_sequence(
     if fps <= 0 or width <= 0 or height <= 0:
         capture.release()
         raise ValueError(f"Invalid video metadata: {video_path}")
+    if frame_count != len(rgb_capture_timestamps_ns):
+        capture.release()
+        raise ValueError(
+            f"MP4/VRS RGB frame count mismatch for {sequence_id}: "
+            f"{frame_count} != {len(rgb_capture_timestamps_ns)}"
+        )
     scale = max(0.75, width / 1800.0)
     panel_h = int(185 * scale)
     temp_path = output_dir / f".{sequence_id}.mp4v.mp4"
-    output_path = output_dir / f"{sequence_id}_prediction_overlay.mp4"
+    output_path = output_dir / f"{sequence_id}_device_time_v2_prediction_overlay.mp4"
     writer = cv2.VideoWriter(
         str(temp_path),
         cv2.VideoWriter_fourcc(*"mp4v"),
@@ -386,14 +642,21 @@ def render_sequence(
         capture.release()
         raise RuntimeError(f"Could not create {temp_path}")
 
-    group = group.sort_values("video_time_s").reset_index(drop=True)
-    times = group["video_time_s"].to_numpy(np.float64)
+    group = group.sort_values("endpoint_timestamp_ns").reset_index(drop=True)
+    times = pd.to_numeric(
+        group["endpoint_timestamp_ns"], errors="raise"
+    ).to_numpy(np.int64)
     if np.any(np.diff(times) <= 0):
         raise ValueError(f"Prediction times are not strictly increasing: {sequence_id}")
+    frame_prediction_indices = prediction_indices_for_rgb_frames(
+        times, rgb_capture_timestamps_ns
+    )
     group["intention_correct"] = as_bool(group["intention_correct"])
     group["pose_valid"] = as_bool(group["pose_valid"])
+    group["learned_end_to_end_available"] = as_bool(
+        group["learned_end_to_end_available"]
+    )
     bounds = pose_bounds(group)
-    requested_stills = still_rows(group)
     saved_stills = {}
     ages = []
     future_matches = 0
@@ -402,12 +665,17 @@ def render_sequence(
         ok, frame = capture.read()
         if not ok:
             break
-        frame_time = rendered_frames / fps
-        index = int(np.searchsorted(times, frame_time, side="right") - 1)
+        if rendered_frames >= len(rgb_capture_timestamps_ns):
+            capture.release()
+            writer.release()
+            temp_path.unlink(missing_ok=True)
+            raise ValueError(f"MP4 decoded more frames than VRS RGB for {sequence_id}")
+        frame_timestamp_ns = int(rgb_capture_timestamps_ns[rendered_frames])
+        index = int(frame_prediction_indices[rendered_frames])
         row = None
         age = None
         if index >= 0:
-            age = frame_time - times[index]
+            age = (frame_timestamp_ns - int(times[index])) / 1e9
             if age < -1e-9:
                 future_matches += 1
             elif age <= max_prediction_age_s:
@@ -415,9 +683,11 @@ def render_sequence(
                 ages.append(age)
         annotated = annotate_frame(frame, row, bounds, prediction_age_s=age if row is not None else None)
         writer.write(annotated)
-        for label, target_time in requested_stills.items():
-            if label not in saved_stills and frame_time >= target_time:
-                still_path = output_dir / f"{sequence_id}_{label}.png"
+        for label, target_timestamp_ns in requested_stills.items():
+            if label not in saved_stills and frame_timestamp_ns >= target_timestamp_ns:
+                still_path = (
+                    output_dir / f"{sequence_id}_{label}_device_time_v2.png"
+                )
                 cv2.imwrite(str(still_path), annotated)
                 saved_stills[label] = str(still_path)
         rendered_frames += 1
@@ -425,6 +695,12 @@ def render_sequence(
     writer.release()
     if rendered_frames == 0 or not temp_path.is_file():
         raise RuntimeError(f"No output frames rendered for {sequence_id}")
+    if rendered_frames != len(rgb_capture_timestamps_ns):
+        temp_path.unlink(missing_ok=True)
+        raise ValueError(
+            f"Decoded MP4/VRS RGB frame count mismatch for {sequence_id}: "
+            f"{rendered_frames} != {len(rgb_capture_timestamps_ns)}"
+        )
     codec = (
         transcode(temp_path, video_path, output_path)
         if use_transcode
@@ -441,12 +717,32 @@ def render_sequence(
         "source_fps": fps,
         "source_reported_frames": frame_count,
         "rendered_frames": rendered_frames,
-        "duration_s": rendered_frames / fps,
+        "duration_s": float(
+            (int(rgb_capture_timestamps_ns[-1]) - int(rgb_capture_timestamps_ns[0]))
+            / 1e9
+        ),
         "prediction_windows": len(group),
-        "prediction_first_s": float(times[0]),
-        "prediction_last_s": float(times[-1]),
+        "prediction_first_timestamp_ns": int(times[0]),
+        "prediction_last_timestamp_ns": int(times[-1]),
+        "rgb_first_capture_timestamp_ns": int(rgb_capture_timestamps_ns[0]),
+        "rgb_last_capture_timestamp_ns": int(rgb_capture_timestamps_ns[-1]),
         "prediction_times_strictly_increasing": True,
-        "alignment_policy": "latest prediction with video_time_s <= frame_time",
+        "alignment_policy": (
+            "latest endpoint_timestamp_ns at or before VRS RGB "
+            "image_record.capture_timestamp_ns"
+        ),
+        "time_basis": alignment_sidecar["time_basis"],
+        "clip_alignment_version": alignment_sidecar["clip_alignment_version"],
+        "clip_alignment_fingerprint": alignment_sidecar[
+            "clip_alignment_fingerprint"
+        ],
+        "video_alignment_schema_version": alignment_sidecar["schema_version"],
+        "video_alignment_sidecar": str(alignment_sidecar_path),
+        "video_alignment_sidecar_sha256": sha256_file(alignment_sidecar_path),
+        "video_alignment_sidecar_fingerprint": alignment_sidecar[
+            "sidecar_fingerprint"
+        ],
+        "source_video_sha256": sha256_file(video_path),
         "max_allowed_prediction_age_ms": max_prediction_age_s * 1000.0,
         "matched_video_frames": len(ages),
         "mean_prediction_age_ms": float(ages_ms.mean()) if len(ages_ms) else None,
@@ -460,27 +756,35 @@ def render_sequence(
 
 def main() -> int:
     args = parse_args()
-    if args.count <= 0 or args.max_prediction_age_s <= 0:
-        raise ValueError("count and max-prediction-age-s must be positive")
+    if args.count < 3 or args.max_prediction_age_s <= 0:
+        raise ValueError("count must be at least three and prediction age positive")
     predictions_path = resolve(args.predictions).resolve()
+    prediction_report_path = resolve(args.prediction_report).resolve()
+    visual_manifest_path = resolve(args.visual_cache_manifest).resolve()
+    alignment_dir = resolve(args.alignment_dir).resolve()
     video_dir = resolve(args.video_dir).resolve()
+    vrs_dir = resolve(args.vrs_dir).resolve()
+    master_dir = resolve(args.master_dir).resolve()
     output_dir = resolve(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     frame = pd.read_csv(predictions_path)
-    required = {
-        "sequence_id",
-        "video_time_s",
-        "target_intention",
-        "predicted_intention",
-        "intention_correct",
-        "continue_probability",
-        "fetch_probability",
-        "handover_probability",
-        "pose_valid",
-    }
-    missing = sorted(required - set(frame.columns))
-    if missing:
-        raise ValueError(f"Prediction CSV missing columns: {missing}")
+    validate_qualitative_columns(frame)
+    prediction_report = json.loads(
+        prediction_report_path.read_text(encoding="utf-8")
+    )
+    checkpoint_provenance = validate_prediction_report(
+        prediction_report,
+        report_path=prediction_report_path,
+        predictions_path=predictions_path,
+        prediction_rows=len(frame),
+    )
+    visual_manifest = json.loads(
+        visual_manifest_path.read_text(encoding="utf-8")
+    )
+    alignment_spec, clip_alignment_fingerprint = validate_visual_manifest(
+        visual_manifest
+    )
+    visual_manifest_sha256 = sha256_file(visual_manifest_path)
     available = set(frame["sequence_id"].astype(str))
     if args.sequence:
         selected = list(dict.fromkeys(args.sequence))
@@ -488,16 +792,72 @@ def main() -> int:
         if missing_sequences:
             raise ValueError(f"Sequences absent from predictions: {missing_sequences}")
         reasons = {sequence_id: "manually_selected" for sequence_id in selected}
+        case_frame = frame.loc[frame["sequence_id"].astype(str).isin(selected)]
     else:
-        selected, reasons = choose_sequences(frame, args.count)
-    reports = []
+        case_frame = frame
+    cases = choose_qualitative_cases(case_frame, seed=args.selection_seed)
+    if not args.sequence:
+        selected, reasons = choose_sequences_from_cases(cases, frame, args.count)
+
+    alignments: dict[str, tuple[dict, np.ndarray, Path, Path]] = {}
     for sequence_id in selected:
         video_path = video_dir / f"{sequence_id}.mp4"
+        source_files = {
+            "master": file_identity(master_dir / f"{sequence_id}_master.csv"),
+            "vrs": file_identity(vrs_dir / f"{sequence_id}.vrs"),
+            "mp4": file_identity(video_path),
+        }
+        sidecar_path = alignment_dir / (
+            f"{sequence_id}{VIDEO_ALIGNMENT_FILE_SUFFIX}"
+        )
+        sidecar, rgb_timestamps = load_video_alignment_sidecar(
+            sidecar_path,
+            sequence_id=sequence_id,
+            expected_source_files=source_files,
+            visual_manifest=visual_manifest,
+            visual_manifest_sha256=visual_manifest_sha256,
+        )
+        alignments[sequence_id] = (
+            sidecar,
+            rgb_timestamps,
+            sidecar_path,
+            video_path,
+        )
+
+    qualitative_cases = []
+    for label in ("good", "typical", "failure"):
+        row = cases[label]
+        sequence_id = str(row["sequence_id"])
+        if sequence_id not in alignments:
+            raise ValueError(f"Selected case sequence was not prepared: {sequence_id}")
+        qualitative_cases.append(
+            qualitative_case_record(
+                label,
+                row,
+                rgb_capture_timestamps_ns=alignments[sequence_id][1],
+                checkpoint_provenance=checkpoint_provenance,
+            )
+        )
+
+    stills_by_sequence: dict[str, dict[str, int]] = {
+        sequence_id: {} for sequence_id in selected
+    }
+    for case in qualitative_cases:
+        stills_by_sequence[case["sequence_id"]][case["case"]] = int(
+            case["display_rgb_capture_timestamp_ns"]
+        )
+    reports = []
+    for sequence_id in selected:
+        sidecar, rgb_timestamps, sidecar_path, video_path = alignments[sequence_id]
         report = render_sequence(
             sequence_id,
             frame.loc[frame["sequence_id"].astype(str) == sequence_id].copy(),
             video_path,
             output_dir,
+            rgb_capture_timestamps_ns=rgb_timestamps,
+            alignment_sidecar=sidecar,
+            alignment_sidecar_path=sidecar_path,
+            requested_stills=stills_by_sequence[sequence_id],
             max_prediction_age_s=args.max_prediction_age_s,
             use_transcode=not args.no_transcode,
         )
@@ -507,10 +867,24 @@ def main() -> int:
         reports.append(report)
         print(f"Rendered: {report['output_video']}")
     summary = {
-        "schema_version": 1,
+        "schema_version": OVERLAY_SCHEMA_VERSION,
         "predictions": str(predictions_path),
+        "predictions_sha256": sha256_file(predictions_path),
+        "checkpoint_provenance": checkpoint_provenance,
+        "visual_cache_manifest": str(visual_manifest_path),
+        "visual_cache_manifest_sha256": visual_manifest_sha256,
+        "clip_alignment_version": alignment_spec["version"],
+        "clip_alignment_fingerprint": clip_alignment_fingerprint,
+        "time_basis": alignment_spec["time_basis"],
+        "video_alignment_schema_version": VIDEO_ALIGNMENT_SCHEMA_VERSION,
+        "video_time_s_role": (
+            "display-only START-relative field; never used for RGB/prediction matching"
+        ),
         "selected_sequences": selected,
         "selection_reasons": reasons,
+        "selection_seed": int(args.selection_seed),
+        "qualitative_selection_version": QUALITATIVE_SELECTION_VERSION,
+        "qualitative_cases": qualitative_cases,
         "videos": reports,
         "synchronization_valid": all(
             report["future_prediction_matches"] == 0
@@ -521,7 +895,40 @@ def main() -> int:
             "Separate robot-frame XY inset; no 3D-to-RGB projection is claimed "
             "because a validated time-varying camera projection was not available."
         ),
+        "legacy_overlay_artifacts_valid": False,
+        "legacy_invalidation_reason": (
+            "Schema-v1 overlays compared START-relative video_time_s with MP4 time. "
+            "Only device-time-v2 sidecar-bound artifacts are valid."
+        ),
     }
+    cases_path = output_dir / "qualitative_cases_device_time_v2.json"
+    cases_path.write_text(
+        json.dumps(qualitative_cases, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    flat_cases = []
+    for case in qualitative_cases:
+        flat = {
+            key: value
+            for key, value in case.items()
+            if not isinstance(value, dict) and not isinstance(value, list)
+        }
+        for name, value in case["class_probabilities"].items():
+            flat[f"probability_{name}"] = value
+        for prefix, source in (
+            ("ground_truth_future_wrist", case["ground_truth_future_wrist"]),
+            ("predicted_future_wrist", case["predicted_future_wrist"]),
+        ):
+            for component, value in source.items():
+                flat[f"{prefix}_{component}"] = value
+        for name, value in case["modality_weights"].items():
+            flat[f"modality_{name}_weight"] = value
+        for name, value in case["modality_available"].items():
+            flat[f"modality_{name}_available"] = value
+        flat_cases.append(flat)
+    pd.DataFrame(flat_cases).to_csv(
+        output_dir / "qualitative_cases_device_time_v2.csv", index=False
+    )
     (output_dir / "overlay_report.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",

@@ -4,7 +4,31 @@ Dieser Ordner enthaelt die reproduzierbare Trainingspipeline fuer die
 hierarchische Assistenzintention und die handover-spezifische Vorhersage der
 zukuenftigen Empfangshand.
 
-## Finaler n214-Experimentstand
+## Aktiver Korrektur- und Experimentstand
+
+Der aktive Code-/Methodenstand ist `THESIS_FINAL_PROTOCOL_V2.md`. Neue
+Experimente verwenden korrigierte absolute VRS-RGB-Zeitstempel, hashgebundene
+CLIP-v2-Caches, einen Checkpoint pro Hauptzeile, t+1-Persistence und Constant
+Velocity, modality-wise Fusion, gruppierte Auswertung und einen vollständigen
+Artifact Freeze. Die maschinenlesbare minimale Matrix steht in
+`configs/experiment_matrix_v2.json`.
+
+Alle nachfolgend dokumentierten n214-Ergebniszahlen sind historische,
+bereits beobachtete Resultate. Sie sind keine Resultate des korrigierten
+Protokolls. Insbesondere historische CLIP-, qualitative und Terminal-Endpose-
+Artefakte dürfen nicht als korrigierte Thesis-Hauptergebnisse verwendet werden;
+die genaue Einstufung steht in
+`reports/dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json`.
+
+Die voreingestellten Replay-/Live-Pfade auf
+`final_clean_v1_residual_v2_seed44` bleiben ausschließlich für die
+rückwärtskompatible historische Sensor-only-Demonstration erhalten. Sie sind
+kein Artefakt des korrigierten v2-Protokolls und dürfen weder als Nachweis für
+korrigierte CLIP-Synchronisation noch als finales Thesis-Ergebnis zitiert
+werden. Der Echtzeit-CLIP-Frontend-Pfad ist nicht Teil dieses Arbeitspakets;
+CLIP-v2 wird hier offline und checkpoint-gebunden evaluiert.
+
+## Historischer n214-Experimentstand
 
 Die vollständige Experimentreihe für
 `dataset_v2_20260802_n214_5d136a34` ist abgeschlossen. Einstiegspunkte sind:
@@ -46,11 +70,25 @@ SLAM-Pose fortgefuehrt; `robot_frame_valid` und
 
 ## Architektur
 
-`model.py` implementiert einen an GTN angelehnten Zwei-Turm-Transformer. Ein
-Turm modelliert zeitliche Abhaengigkeiten, der zweite Beziehungen zwischen
-Sensorkanaelen. Ein lernbares Gate fusioniert beide Repraesentationen. Die
-Klassifikationskoepfe bilden die Assistenzhierarchie explizit ab; der Pose-Kopf
-wird nur mit gueltigen Handover-Targets trainiert.
+`model.py` implementiert einen an GTN angelehnten Transformer. Der historische
+Default `temporal_channel_gated` kombiniert einen Temporal- und einen
+Channel-Turm mit einem lernbaren Gate. Kontrollierte Varianten verwenden eine
+feste einfache Fusion (`temporal_channel_simple`) oder nur den Temporalpfad
+(`temporal_only`).
+
+`modality_gated` gruppiert die Eingabe semantisch in Gaze, Hands, Objects, VIO
+und optional CLIP. Jede vorhandene Gruppe wird separat codiert; ein
+availability-maskiertes Gate lernt pro Window Gewichte, bevor die gewichtete
+Sequenz temporal verarbeitet wird. Eine vollstaendig fehlende Modalitaet hat
+exakt Gewicht null. Die Gewichte sind interne Konditionierungen, keine kausalen
+Modalitaetsbeitraege. Das zentrale Schema und sein Fingerprint stehen in
+`modality_schema.py` und werden in Provenienz, Config und Checkpoint
+eingefroren.
+
+Der Intentionskopf ist standardmaessig hierarchisch (`continue` gegen
+`assistance`, danach `fetch` gegen `handover`). Die kontrollierte Ablation
+`intention_head_mode=flat` verwendet denselben Backbone und einen direkten
+Drei-Klassen-Kopf.
 
 ### Vergleichsbackbones
 
@@ -108,6 +146,9 @@ future_quaternion = last_quaternion * quaternion_delta
 Der Pose-Head ist mit Positionsdelta null und Quaterniondelta Identitaet
 initialisiert. Vor dem Lernen entspricht er daher exakt Last Observation. Die
 Korrektur wird von der vorhergesagten Handwahrscheinlichkeit konditioniert.
+Die Residualreferenz ist der letzte kausale Capture gemaess
+`hand_timestamp_ns`; Captures nach dem Window-Endpunkt und Referenzen aelter
+als 250 ms sind ungueltig.
 
 Die Auswertung unterscheidet:
 
@@ -130,6 +171,47 @@ Data_collection/master_datasets/*_master.csv
 Erforderlich sind Intentionslabels sowie das ausgewaehlte zukuenftige
 Empfangshand-Target. Labels und Zukunftswerte werden nicht als Eingabefeatures
 verwendet.
+
+## CLIP-Zeitbasis und Cache-Gueltigkeit
+
+Aktive CLIP-Features werden direkt aus dem RGB-Stream `214-1` der VRS-Datei
+dekodiert. Fuer jedes Bild wird
+`image_record.capture_timestamp_ns` unveraendert als absolute Project-Aria-
+`DEVICE_TIME` gespeichert. Die Master-Zeilen enthalten `timestamp_ns` in
+derselben Zeitbasis. Beim Laden wird fuer jede Master-Zeile ausschliesslich das
+neueste RGB-Sample mit `rgb_timestamp_ns <= master_timestamp_ns` verwendet;
+`time_since_start_s` und der gesprochene START dienen nur einer
+Konsistenzpruefung und werden niemals vom RGB-Zeitstempel subtrahiert. Ein
+konfiguriertes maximales Sample-Alter begrenzt veraltete visuelle Features.
+
+Das aktive Alignment heisst `vrs_rgb_device_time_v2`. Jeder Cache bindet sich
+an Alignment-Fingerprint, Encoder-Fingerprint sowie SHA-256 und Groesse der
+zugehoerigen Master- und VRS-Datei. Cache-Manifest und train-only PCA sind
+zusaetzlich gegenseitig per SHA-256 gebunden. Dateien ohne diese Metadaten,
+mit alter MP4-/START-relativer Zeitbasis oder mit veraenderter Quelle werden
+abgelehnt und neu erzeugt. Deshalb sind alle historischen visuellen v1-Caches,
+PCA-Projektionen und Sensor+CLIP-Checkpoints nur historische Artefakte und
+duerfen nicht als korrigierte Ergebnisse berichtet werden.
+
+Der reproduzierbare Neuaufbau ist:
+
+```bash
+sbatch Training/jobs/prepare_clip_embeddings.sbatch
+```
+
+Danach muessen CLIP-only und Sensor+CLIP neu trainiert werden. Die drei
+Sensor+CLIP-Configs verweisen ausschliesslich auf die versionierten v2-Pfade.
+
+## Checkpoint-kohaerente Ergebniszeilen
+
+Eine primaere Ergebniszeile stammt vollstaendig aus einem einzigen, anhand
+von Validation ausgewaehlten, ausfuehrbaren Checkpoint. Intent-, Assistance-,
+Fetch/Handover-, Receiving-Hand-, Pose-, Orientierungs-, Coverage- und
+Samplemetriken duerfen nicht zwischen `best_intention` und `best_pose`
+gemischt werden. Ein separat pose-selektierter Checkpoint bleibt erlaubt, wird
+aber nur unter `diagnostic_pose_selected_*` ausgegeben. Mehrere Seeds werden
+als Diagnose aggregiert; fuer eine primaere Zeile wird wiederum genau ein Seed
+nach der vorab definierten Validation-Regel eingefroren.
 
 ## Ablagestruktur und Versionierung
 
@@ -308,7 +390,7 @@ Featuregruppe vor Normalisierung und Missing-Data-Maskierung:
 | `configs/ablations/residual_v2_no_gaze.json` | direkte Gazefeatures sowie gaze-abgeleitete Objektwinkel und -distanzen | 64 / 128 |
 | `configs/ablations/residual_v2_no_hands.json` | Handgueltigkeit, Trackingkonfidenz und beide Wrist-Posen | 74 / 148 |
 | `configs/ablations/residual_v2_no_objects.json` | alle ArUco-6-bis-14-Positionen, Gaze-Beziehungen und Gueltigkeitsflags | 38 / 76 |
-| `configs/ablations/residual_v2_no_vio.json` | direkte SLAM-Bewegungs-/Qualitaetsfeatures sowie Robot-Frame-Gueltigkeitsflags | 83 / 166 |
+| `configs/ablations/residual_v2_no_vio.json` | direkte SLAM-Bewegungs-/Qualitaetsfeatures, `apriltag_0_valid` und Robot-Frame-Gueltigkeitsflags | 82 / 164 |
 
 Alle Varianten behalten Architektur, Split, Fenster, Losses und Hyperparameter
 der Residual-v2-Vollvariante. `data_metadata.json` und
@@ -332,6 +414,13 @@ Kurzer lokaler Konfigurations- und Formtest:
 ```bash
 python3 Training/ablation_smoke_test.py
 ```
+
+Die kontrollierten P2-Architekturvarianten liegen unter
+`Training/configs/architecture/`: einfache Fusion, modality-wise Fusion,
+temporal-only, Flat-Intentionskopf und dieselbe hierarchische Architektur ohne
+Future-Pose-Loss. Alle Screening-Laeufe muessen mit
+`--skip-test-evaluation` laufen; Auswahl und Checkpoints verwenden nur
+Validation-Metriken. Receiving-Hand-Loss bleibt in der Pose-off-Ablation aktiv.
 
 Der Array-Job startet vier Varianten mit jeweils drei Seeds:
 
@@ -531,21 +620,45 @@ Der Audit schreibt eine Zusammenfassung nach
 `Training/reports/pose_target_audit.json` und alle Handover-Fenster mit ihrer
 konkreten Ursache nach `Training/reports/pose_target_audit.csv`.
 
-Naive Pose-Baselines auf exakt denselben gueltigen Zukunftstargets auswerten:
+Zeitstempel-korrekte Pose-Baselines fuer das primaere t+1-Ziel auswerten:
 
 ```bash
 python3 Training/evaluate_pose_baselines.py \
-  --config Training/configs/models/transformer_v1.json \
-  --model-metrics Training/runs/hierarchical_baseline_20260712_101448/metrics.json
+  --config Training/configs/models/residual_transformer_v2.json \
+  --maximum-observation-age-seconds 0.25 \
+  --velocity-lookback-seconds 0.5 \
+  --minimum-velocity-fit-span-seconds 0.1 \
+  --report-out Training/reports/t_plus_1_pose_baselines.json \
+  --details-out Training/reports/t_plus_1_pose_baselines.csv
 ```
 
-Der Evaluator vergleicht den Trainingsmittelwert, die letzte beobachtete Pose
-und eine konstante lineare Geschwindigkeit. Die beiden bewegungsbasierten
-Verfahren verwenden die annotierte Empfangshand und werden deshalb explizit
-als Oracle-Receiving-Hand-Baselines dokumentiert. Fehlende Beobachtungen
-werden per festgelegter Fallback-Kette aufgefangen, damit alle Metriken dieselbe
-Target-Menge verwenden. Direkte Abdeckung und Metriken ohne Fallback werden
-separat berichtet.
+Persistence und Constant Velocity verwenden die annotierte Empfangshand und
+die echten `hand_timestamp_ns`, nicht die Zeilenindizes oder Master-Zeitpunkte
+der `merge_asof`-Zuordnung. Wiederholte Captures werden dedupliziert,
+nicht-kausale Captures entfernt und Beobachtungen ueber 250 ms verworfen. Es
+gibt keine versteckten Trainingsmittelwert-Fallbacks. Der Hauptvergleich nutzt
+die Schnittmenge der fuer beide Methoden gueltigen Samples; native Coverage,
+Mean, Median, RMS und Quaternion-Geodesic-Error werden zusaetzlich berichtet.
+
+Persistence, Constant Velocity und ein einzelner validation-selektierter
+Learned-Checkpoint werden automatisch in einer gemeinsamen t+1-Auswertung
+verglichen:
+
+```bash
+python3 Training/export_residual_predictions.py \
+  --run-dir Training/runs/<t1-run> \
+  --checkpoint best_intention_model.pt \
+  --split test \
+  --output-csv Training/reports/t1_final_predictions.csv \
+  --report-out Training/reports/t1_final_comparison.json
+```
+
+Alle drei Verfahren verwenden dort dieselbe Ground-Truth-Empfangshand und
+dieselbe `fair_common`-Samplemenge. Ein `best_pose_model.pt` bleibt als
+validation-pose-selektierte Oracle-Diagnostik zulaessig, wird im Report aber
+nicht als primaeres System bezeichnet. `video_time_s` ist nur die
+START-relative Anzeigezeit; Pose- und CLIP-Alignment verwenden absolute
+Device-Time.
 
 Fenstergenaue Vorhersagen eines vorhandenen Checkpoints exportieren:
 

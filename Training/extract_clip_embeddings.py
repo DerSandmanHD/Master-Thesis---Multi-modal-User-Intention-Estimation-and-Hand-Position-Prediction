@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Extract frozen CLIP image embeddings from timestamp-aligned MP4 frames."""
+"""Extract frozen CLIP embeddings from VRS RGB frames in absolute device time."""
 
 from __future__ import annotations
 
 import argparse
-import csv
-import hashlib
 import json
 import os
 import platform
@@ -15,12 +13,21 @@ import types
 from datetime import datetime, timezone
 from pathlib import Path
 
-import cv2
 import numpy as np
 import pandas as pd
 import torch
-from PIL import Image
 
+from clip_alignment import (
+    DEFAULT_RGB_STREAM_ID,
+    VISUAL_ALIGNMENT_VERSION,
+    VISUAL_TIME_BASIS,
+    DeviceTimeSampler,
+    absolute_alignment_statistics,
+    alignment_specification,
+    cache_metadata_matches,
+    canonical_json_hash,
+    infer_master_start_timestamp_ns,
+)
 from data import manifest_filtered_master_files, sequence_id_from_master_path
 from visual_embeddings import (
     VISUAL_CACHE_SCHEMA_VERSION,
@@ -39,7 +46,7 @@ def parse_args() -> argparse.Namespace:
         "--master-dir", type=Path, default=Path("Data_collection/master_datasets")
     )
     parser.add_argument(
-        "--video-dir", type=Path, default=Path("Data_collection/Data_mp4")
+        "--vrs-dir", type=Path, default=Path("Data_collection/Data_vrs")
     )
     parser.add_argument(
         "--manifest", type=Path, default=Path("Data_collection/dataset_manifest.csv")
@@ -55,6 +62,7 @@ def parse_args() -> argparse.Namespace:
         help="Pinned SHA-256 that must match before the checkpoint is loaded.",
     )
     parser.add_argument("--sample-hz", type=float, default=5.0)
+    parser.add_argument("--rgb-stream-id", default=DEFAULT_RGB_STREAM_ID)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument(
         "--device", choices=("auto", "cpu", "cuda", "mps"), default="auto"
@@ -77,16 +85,6 @@ def choose_device(requested: str) -> torch.device:
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
         return torch.device("mps")
     return torch.device("cpu")
-
-
-def canonical_json_hash(data: dict) -> str:
-    payload = json.dumps(
-        data,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=True,
-    ).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()
 
 
 def preprocessing_specification(preprocess) -> list[dict]:
@@ -148,7 +146,7 @@ def resolve_sequences(args: argparse.Namespace) -> tuple[list[Path], str]:
     return selected, fingerprint
 
 
-def load_master_clock(path: Path) -> tuple[np.ndarray, np.ndarray]:
+def load_master_clock(path: Path) -> tuple[np.ndarray, np.ndarray, int]:
     header = pd.read_csv(path, nrows=0).columns
     if "time_since_start_s" not in header:
         raise ValueError(f"{path.name} has no time_since_start_s column")
@@ -163,7 +161,20 @@ def load_master_clock(path: Path) -> tuple[np.ndarray, np.ndarray]:
         raise ValueError(f"Master clock is empty or unsorted: {path}")
     if np.any(np.diff(elapsed) < 0) or not np.isfinite(elapsed).all():
         raise ValueError(f"Master elapsed time is invalid: {path}")
-    return timestamps, elapsed
+    start_timestamp_ns = infer_master_start_timestamp_ns(timestamps, elapsed)
+    return timestamps, elapsed, start_timestamp_ns
+
+
+def file_identity(path: Path) -> dict:
+    """Return a path-independent, content-addressed source identity."""
+    path = path.expanduser().resolve()
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    return {
+        "file": path.name,
+        "size_bytes": int(path.stat().st_size),
+        "sha256": sha256_file(path),
+    }
 
 
 def flush_batch(
@@ -180,114 +191,133 @@ def flush_batch(
     return encoded.cpu().numpy().astype(np.float32)
 
 
-def extract_video(
+def extract_vrs_rgb(
     *,
     sequence_id: str,
-    video_path: Path,
+    vrs_path: Path,
     master_path: Path,
     model,
     preprocess,
     device: torch.device,
     batch_size: int,
     sample_hz: float,
+    rgb_stream_id: str,
+    source_files: dict,
     common_metadata: dict,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
+    """Encode RGB frames while preserving their absolute VRS device timestamps."""
     processing_started = time.perf_counter()
-    master_timestamps, master_elapsed = load_master_clock(master_path)
-    capture = cv2.VideoCapture(str(video_path))
-    if not capture.isOpened():
-        raise RuntimeError(f"Could not open video: {video_path}")
-    fps = float(capture.get(cv2.CAP_PROP_FPS))
-    frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
-    if not np.isfinite(fps) or fps <= 0:
-        capture.release()
-        raise ValueError(f"Video FPS is invalid: {video_path}")
+    master_timestamps, master_elapsed, master_start_ns = load_master_clock(master_path)
+    try:
+        from projectaria_tools.core import data_provider
+        from projectaria_tools.core.stream_id import StreamId
+        from PIL import Image
+    except ImportError as exc:
+        raise RuntimeError(
+            "projectaria_tools and Pillow are required to decode timestamped "
+            "RGB frames directly from VRS"
+        ) from exc
+    provider = data_provider.create_vrs_data_provider(str(vrs_path))
+    if provider is None:
+        raise RuntimeError(f"Could not create VRS provider: {vrs_path}")
+    stream_id = StreamId(rgb_stream_id)
+    frame_count = int(provider.get_num_data(stream_id))
+    if frame_count <= 0:
+        raise ValueError(f"No RGB frames in {vrs_path} stream {rgb_stream_id}")
 
-    next_sample_time = 0.0
-    frame_index = 0
+    sampler = DeviceTimeSampler(sample_hz)
     batch_tensors: list[torch.Tensor] = []
-    batch_times: list[float] = []
+    batch_timestamps: list[int] = []
+    batch_indices: list[int] = []
     embedding_chunks: list[np.ndarray] = []
-    sampled_times: list[float] = []
-    while True:
-        ok = capture.grab()
-        if not ok:
-            break
-        frame_time = frame_index / fps
-        if frame_time + 0.5 / fps >= next_sample_time:
-            ok, frame = capture.retrieve()
-            if not ok:
-                capture.release()
-                raise RuntimeError(
-                    f"Could not decode frame {frame_index} from {video_path}"
-                )
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            batch_tensors.append(preprocess(Image.fromarray(rgb)))
-            batch_times.append(frame_time)
-            next_sample_time += 1.0 / sample_hz
-            if len(batch_tensors) >= batch_size:
-                embedding_chunks.append(flush_batch(model, batch_tensors, device))
-                sampled_times.extend(batch_times)
-                batch_tensors.clear()
-                batch_times.clear()
-        frame_index += 1
-    capture.release()
+    sampled_timestamps: list[int] = []
+    sampled_indices: list[int] = []
+    first_rgb_timestamp_ns = None
+    last_rgb_timestamp_ns = None
+    for frame_index in range(frame_count):
+        image_data, image_record = provider.get_image_data_by_index(
+            stream_id,
+            frame_index,
+        )
+        timestamp_ns = int(image_record.capture_timestamp_ns)
+        first_rgb_timestamp_ns = (
+            timestamp_ns if first_rgb_timestamp_ns is None else first_rgb_timestamp_ns
+        )
+        last_rgb_timestamp_ns = timestamp_ns
+        if not sampler.should_sample(
+            timestamp_ns,
+            is_final=frame_index == frame_count - 1,
+        ):
+            continue
+        rgb = image_data.to_numpy_array()
+        batch_tensors.append(preprocess(Image.fromarray(rgb)))
+        batch_timestamps.append(timestamp_ns)
+        batch_indices.append(frame_index)
+        if len(batch_tensors) >= batch_size:
+            embedding_chunks.append(flush_batch(model, batch_tensors, device))
+            sampled_timestamps.extend(batch_timestamps)
+            sampled_indices.extend(batch_indices)
+            batch_tensors.clear()
+            batch_timestamps.clear()
+            batch_indices.clear()
     if batch_tensors:
         embedding_chunks.append(flush_batch(model, batch_tensors, device))
-        sampled_times.extend(batch_times)
+        sampled_timestamps.extend(batch_timestamps)
+        sampled_indices.extend(batch_indices)
     if not embedding_chunks:
-        raise ValueError(f"No frames were sampled from {video_path}")
+        raise ValueError(f"No RGB frames were sampled from {vrs_path}")
 
     embeddings = np.concatenate(embedding_chunks, axis=0)
-    frame_times = np.asarray(sampled_times, dtype=np.float64)
-    # A frame becomes available only at the first sensor timestamp at or after
-    # its presentation time. The later loader uses a backward lookup, so this
-    # ceil mapping prevents future-frame leakage.
-    master_indices = np.searchsorted(master_elapsed, frame_times, side="left")
-    in_range = master_indices < len(master_timestamps)
-    embeddings = embeddings[in_range]
-    frame_times = frame_times[in_range]
-    master_indices = master_indices[in_range]
-    timestamps = master_timestamps[master_indices]
-    sync_error_ms = (master_elapsed[master_indices] - frame_times) * 1000.0
-
-    unique = np.concatenate(([True], np.diff(timestamps) > 0))
-    timestamps = timestamps[unique]
-    embeddings = embeddings[unique]
-    frame_times = frame_times[unique]
-    sync_error_ms = sync_error_ms[unique]
-    if np.any(sync_error_ms < -1e-6):
-        raise ValueError(f"Non-causal video/master alignment in {sequence_id}")
+    timestamps = np.asarray(sampled_timestamps, dtype=np.int64)
+    frame_indices = np.asarray(sampled_indices, dtype=np.int64)
+    if len(timestamps) != len(embeddings) or np.any(np.diff(timestamps) <= 0):
+        raise ValueError(f"Invalid RGB timestamp sequence in {sequence_id}")
+    if int(frame_indices[-1]) != frame_count - 1:
+        raise ValueError(f"Final VRS RGB frame was not retained for {sequence_id}")
+    frame_times = (
+        timestamps.astype(np.float64) - float(first_rgb_timestamp_ns)
+    ) / 1e9
+    master_alignment = absolute_alignment_statistics(timestamps, master_timestamps)
+    if master_alignment["future_matches"]:
+        raise ValueError(f"Non-causal RGB/master alignment in {sequence_id}")
     processing_wall_seconds = time.perf_counter() - processing_started
 
     metadata = {
         **common_metadata,
         "sequence_id": sequence_id,
-        "video_file": video_path.name,
-        "video_size_bytes": video_path.stat().st_size,
-        "video_fps": fps,
-        "video_reported_frame_count": frame_count,
-        "video_decoded_frame_count": frame_index,
+        "source_files": source_files,
+        "vrs_file": vrs_path.name,
+        "rgb_stream_id": rgb_stream_id,
+        "rgb_frame_count": frame_count,
+        "rgb_first_capture_timestamp_ns": int(first_rgb_timestamp_ns),
+        "rgb_last_capture_timestamp_ns": int(last_rgb_timestamp_ns),
         "master_file": master_path.name,
-        "master_sha256": sha256_file(master_path),
+        "master_start_timestamp_ns": int(master_start_ns),
+        "master_first_timestamp_ns": int(master_timestamps[0]),
+        "master_last_timestamp_ns": int(master_timestamps[-1]),
+        "master_start_offset_from_first_rgb_s": float(
+            (master_start_ns - int(first_rgb_timestamp_ns)) / 1e9
+        ),
         "samples": int(len(embeddings)),
         "embedding_dim": int(embeddings.shape[1]),
-        "frame_time_first_s": float(frame_times[0]),
-        "frame_time_last_s": float(frame_times[-1]),
+        "sampled_frame_index_first": int(frame_indices[0]),
+        "sampled_frame_index_last": int(frame_indices[-1]),
+        "rgb_relative_time_first_s": float(frame_times[0]),
+        "rgb_relative_time_last_s": float(frame_times[-1]),
         "master_duration_s": float(master_elapsed[-1]),
-        "alignment_policy": "frame_time_ceil_to_master_then_causal_backward_fill",
-        "alignment_error_ms_mean": float(sync_error_ms.mean()),
-        "alignment_error_ms_max": float(sync_error_ms.max()),
-        "future_frame_matches": int((sync_error_ms < -1e-6).sum()),
+        "master_alignment_diagnostic": master_alignment,
+        "final_rgb_frame_included": True,
         "decode_preprocess_encoder_wall_seconds": processing_wall_seconds,
         "embeddings_per_processing_second": float(
             len(embeddings) / processing_wall_seconds
         ),
         "source_duration_to_processing_wall_ratio": float(
-            master_elapsed[-1] / processing_wall_seconds
+            (int(last_rgb_timestamp_ns) - int(first_rgb_timestamp_ns))
+            / 1e9
+            / processing_wall_seconds
         ),
     }
-    return timestamps, frame_times, embeddings, metadata
+    return timestamps, frame_indices, embeddings, metadata
 
 
 def valid_existing_cache(
@@ -295,14 +325,19 @@ def valid_existing_cache(
     *,
     sequence_id: str,
     encoder_fingerprint: str,
+    alignment_fingerprint: str,
+    source_files: dict,
 ) -> bool:
     try:
         _, _, metadata = load_cache(path)
     except (OSError, ValueError, KeyError, json.JSONDecodeError):
         return False
-    return (
-        metadata.get("sequence_id") == sequence_id
-        and metadata.get("encoder_fingerprint") == encoder_fingerprint
+    return cache_metadata_matches(
+        metadata,
+        sequence_id=sequence_id,
+        encoder_fingerprint=encoder_fingerprint,
+        alignment_fingerprint=alignment_fingerprint,
+        source_files=source_files,
     )
 
 
@@ -310,7 +345,7 @@ def write_cache(
     path: Path,
     *,
     timestamps_ns: np.ndarray,
-    frame_times_s: np.ndarray,
+    frame_indices: np.ndarray,
     embeddings: np.ndarray,
     metadata: dict,
 ) -> None:
@@ -319,7 +354,7 @@ def write_cache(
         np.savez_compressed(
             handle,
             timestamps_ns=timestamps_ns.astype(np.int64),
-            frame_times_s=frame_times_s.astype(np.float64),
+            rgb_frame_indices=frame_indices.astype(np.int64),
             embeddings=embeddings.astype(np.float16),
             metadata_json=np.asarray(
                 json.dumps(metadata, sort_keys=True, ensure_ascii=False)
@@ -334,7 +369,7 @@ def main() -> int:
         raise ValueError("sample_hz and batch_size must be positive")
     selected, fingerprint = resolve_sequences(args)
     output_dir = project_path(args.output_dir).resolve()
-    video_dir = project_path(args.video_dir).resolve()
+    vrs_dir = project_path(args.vrs_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     device = choose_device(args.device)
 
@@ -393,11 +428,20 @@ def main() -> int:
         "trainable_parameters": 0,
     }
     encoder_fingerprint = canonical_json_hash(encoder)
+    alignment = alignment_specification(
+        rgb_stream_id=args.rgb_stream_id,
+        sample_hz=args.sample_hz,
+    )
+    alignment_fingerprint = canonical_json_hash(alignment)
     common_metadata = {
         "schema_version": VISUAL_CACHE_SCHEMA_VERSION,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "encoder": encoder,
         "encoder_fingerprint": encoder_fingerprint,
+        "alignment_version": VISUAL_ALIGNMENT_VERSION,
+        "time_basis": VISUAL_TIME_BASIS,
+        "alignment": alignment,
+        "alignment_fingerprint": alignment_fingerprint,
         "device": str(device),
         "torch_version": torch.__version__,
         "python_version": sys.version,
@@ -407,40 +451,49 @@ def main() -> int:
     print(f"Device: {device}")
     print(f"Sequences: {len(selected)} ({fingerprint})")
     print(f"Encoder fingerprint: {encoder_fingerprint}")
+    print(f"Alignment: {VISUAL_ALIGNMENT_VERSION} ({alignment_fingerprint})")
     errors: dict[str, str] = {}
+    source_identities: dict[str, dict] = {}
     for index, master_path in enumerate(selected, start=1):
         sequence_id = sequence_id_from_master_path(master_path)
         output_path = output_dir / f"{sequence_id}.npz"
-        if (
-            output_path.is_file()
-            and not args.overwrite
-            and valid_existing_cache(
-                output_path,
-                sequence_id=sequence_id,
-                encoder_fingerprint=encoder_fingerprint,
-            )
-        ):
-            print(f"[{index}/{len(selected)}] {sequence_id}: cached", flush=True)
-            continue
-        video_path = video_dir / f"{sequence_id}.mp4"
+        vrs_path = vrs_dir / f"{sequence_id}.vrs"
         try:
-            if not video_path.is_file():
-                raise FileNotFoundError(video_path)
-            timestamps, frame_times, embeddings, metadata = extract_video(
+            source_files = {
+                "master": file_identity(master_path),
+                "vrs": file_identity(vrs_path),
+            }
+            source_identities[sequence_id] = source_files
+            if (
+                output_path.is_file()
+                and not args.overwrite
+                and valid_existing_cache(
+                    output_path,
+                    sequence_id=sequence_id,
+                    encoder_fingerprint=encoder_fingerprint,
+                    alignment_fingerprint=alignment_fingerprint,
+                    source_files=source_files,
+                )
+            ):
+                print(f"[{index}/{len(selected)}] {sequence_id}: cached", flush=True)
+                continue
+            timestamps, frame_indices, embeddings, metadata = extract_vrs_rgb(
                 sequence_id=sequence_id,
-                video_path=video_path,
+                vrs_path=vrs_path,
                 master_path=master_path,
                 model=model,
                 preprocess=preprocess,
                 device=device,
                 batch_size=args.batch_size,
                 sample_hz=args.sample_hz,
+                rgb_stream_id=args.rgb_stream_id,
+                source_files=source_files,
                 common_metadata=common_metadata,
             )
             write_cache(
                 output_path,
                 timestamps_ns=timestamps,
-                frame_times_s=frame_times,
+                frame_indices=frame_indices,
                 embeddings=embeddings,
                 metadata=metadata,
             )
@@ -464,8 +517,15 @@ def main() -> int:
             continue
         try:
             timestamps, embeddings, metadata = load_cache(cache_path)
-            if metadata.get("encoder_fingerprint") != encoder_fingerprint:
-                raise ValueError("encoder fingerprint mismatch")
+            source_files = source_identities.get(sequence_id)
+            if source_files is None or not valid_existing_cache(
+                cache_path,
+                sequence_id=sequence_id,
+                encoder_fingerprint=encoder_fingerprint,
+                alignment_fingerprint=alignment_fingerprint,
+                source_files=source_files,
+            ):
+                raise ValueError("cache identity or alignment mismatch")
             entries[sequence_id] = {
                 "file": cache_path.name,
                 "sha256": sha256_file(cache_path),
@@ -473,6 +533,8 @@ def main() -> int:
                 "embedding_dim": int(embeddings.shape[1]),
                 "first_timestamp_ns": int(timestamps[0]),
                 "last_timestamp_ns": int(timestamps[-1]),
+                "alignment_fingerprint": alignment_fingerprint,
+                "source_files": source_files,
                 "decode_preprocess_encoder_wall_seconds": metadata.get(
                     "decode_preprocess_encoder_wall_seconds"
                 ),
@@ -497,13 +559,15 @@ def main() -> int:
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "encoder": encoder,
         "encoder_fingerprint": encoder_fingerprint,
+        "alignment": alignment,
+        "alignment_fingerprint": alignment_fingerprint,
         "selected_sequences": len(selected),
         "completed_sequences": len(entries),
         "sequence_fingerprint": fingerprint,
         "entries": dict(sorted(entries.items())),
         "errors": dict(sorted(errors.items())),
         "extraction_performance": {
-            "scope": "video_decode_plus_preprocess_plus_frozen_encoder; excludes NPZ write",
+            "scope": "VRS_RGB_decode_plus_preprocess_plus_frozen_encoder; excludes NPZ write and source hashing",
             "timed_sequences": len(timed_entries),
             "timed_embeddings": total_timed_embeddings,
             "wall_seconds_sum": total_processing_seconds,

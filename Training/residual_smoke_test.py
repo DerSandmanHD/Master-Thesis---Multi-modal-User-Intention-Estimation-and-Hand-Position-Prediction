@@ -4,18 +4,21 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pandas as pd
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
 
 from data import prepare_data
 from model import HierarchicalResidualPoseTransformer, quaternion_multiply
-from smoke_test import synthetic_sequence
+from pose_baselines_smoke_test import make_consistent_t_plus_one_sequence
 from train_residual import residual_multitask_loss, run_epoch, train
 
 
@@ -30,7 +33,7 @@ def main() -> int:
         master_dir = Path(directory)
         for index in range(6):
             participant = f"P{index + 1}"
-            synthetic_sequence(
+            make_consistent_t_plus_one_sequence(
                 master_dir / f"{participant}_{index}_master.csv", participant, index
             )
         data_config = {
@@ -41,6 +44,7 @@ def main() -> int:
             "future_horizon_seconds": 1.0,
             "pose_intent_ids": [2],
             "include_hand_references": True,
+            "max_hand_reference_age_seconds": 0.25,
             "minimum_observed_fraction": 0.05,
             "max_timestamp_gap_seconds": 0.2,
             "validation_fraction": 0.2,
@@ -115,6 +119,14 @@ def main() -> int:
         assert metrics["pose_oracle"]["samples"] > 0
         assert metrics["pose_end_to_end"]["samples"] > 0
         assert metrics["last_observation_oracle"]["samples"] > 0
+        fair = metrics["pose_fair_common"]
+        assert fair["shared_samples"] > 0
+        assert fair["methods"]["learned_end_to_end"]["samples"] == fair[
+            "methods"
+        ]["persistence"]["samples"]
+        assert fair["methods"]["learned_oracle_hand"]["samples"] == fair[
+            "shared_samples"
+        ]
         assert set(metrics["pose_by_handover_progress"]) == {
             "0-25%",
             "25-50%",
@@ -122,6 +134,61 @@ def main() -> int:
             "75-100%",
         }
         assert set(metrics["pose_by_receiving_hand"]) == {"left", "right"}
+
+        architecture_variants = (
+            ("temporal_channel_simple", "hierarchical"),
+            ("temporal_only", "hierarchical"),
+            ("modality_gated", "hierarchical"),
+            ("temporal_channel_gated", "flat"),
+        )
+        for fusion_mode, head_mode in architecture_variants:
+            variant_kwargs = {
+                "fusion_mode": fusion_mode,
+                "intention_head_mode": head_mode,
+            }
+            if fusion_mode == "modality_gated":
+                variant_kwargs["modality_schema"] = bundle.split_metadata[
+                    "modality_schema"
+                ]
+            variant = HierarchicalResidualPoseTransformer(
+                input_dim=len(bundle.normalizer.output_feature_names),
+                window_size=20,
+                d_model=16,
+                nhead=4,
+                num_layers=1,
+                dim_feedforward=32,
+                dropout=0.0,
+                **variant_kwargs,
+            )
+            variant_training = dict(training_config)
+            if head_mode == "flat":
+                variant_training.update(
+                    {
+                        "intention_loss_weight": 1.0,
+                        "resolved_flat_intention_class_weights": [
+                            1.0,
+                            1.0,
+                            1.0,
+                        ],
+                    }
+                )
+            variant_metrics = run_epoch(
+                variant,
+                DataLoader(bundle.train, batch_size=8, shuffle=False),
+                torch.device("cpu"),
+                assistance_criterion,
+                assistance_type_criterion,
+                hand_criterion,
+                variant_training,
+            )
+            assert variant_metrics["intention"]["samples"] == len(bundle.train)
+            assert variant_metrics["fusion"]["mode"] == fusion_mode
+            if fusion_mode == "modality_gated":
+                assert set(
+                    variant_metrics["fusion"][
+                        "modality_mean_weights_when_available"
+                    ]
+                ) == set(bundle.split_metadata["modality_schema"]["active_modalities"])
 
         config = {
             "run_name": "residual_smoke",
@@ -195,6 +262,50 @@ def main() -> int:
             "position_mae_cm"
         ]
 
+        prediction_csv = Path(directory) / "t1_predictions.csv"
+        prediction_report = Path(directory) / "t1_predictions.json"
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).with_name("export_residual_predictions.py")),
+                "--run-dir",
+                str(completed_run),
+                "--master-dir",
+                str(master_dir),
+                "--split",
+                "test",
+                "--output-csv",
+                str(prediction_csv),
+                "--report-out",
+                str(prediction_report),
+                "--device",
+                "cpu",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        assert completed.returncode == 0
+        exported = json.loads(prediction_report.read_text(encoding="utf-8"))
+        assert exported["result_role"] == "primary_validation_selected_checkpoint"
+        comparison = exported["pose_comparison"]
+        assert comparison["fair_common_samples"] > 0
+        assert set(comparison["methods"]) == {
+            "persistence",
+            "constant_velocity",
+            "learned_model_oracle_hand",
+        }
+        common_counts = {
+            values["fair_common_metrics"]["samples"]
+            for values in comparison["methods"].values()
+        }
+        assert common_counts == {comparison["fair_common_samples"]}
+        exported_rows = pd.read_csv(prediction_csv)
+        assert exported_rows["sequence_receiving_hand"].isin(
+            ["left", "right"]
+        ).all()
+        assert exported_rows["target_object_id"].notna().all()
+
         validation_only_run = train(
             SimpleNamespace(
                 config=config_path,
@@ -214,6 +325,88 @@ def main() -> int:
             "best_intention",
             "best_pose",
         }
+        frozen_test_output = Path(directory) / "frozen_final_test.json"
+        frozen_evaluation = subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).with_name("evaluate_frozen_run.py")),
+                "--run-dir",
+                str(validation_only_run),
+                "--master-dir",
+                str(master_dir),
+                "--output",
+                str(frozen_test_output),
+                "--device",
+                "cpu",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert frozen_evaluation.returncode == 0, (
+            frozen_evaluation.stdout + frozen_evaluation.stderr
+        )
+        frozen_test = json.loads(frozen_test_output.read_text(encoding="utf-8"))
+        assert frozen_test["split"] == "test"
+        assert frozen_test["checkpoint"]["name"] == "best_intention"
+        assert frozen_test["test_used_for_model_or_checkpoint_selection"] is False
+        assert frozen_test["test_metrics"]["intention"]["samples"] > 0
+
+        modality_config = json.loads(json.dumps(config))
+        modality_config["run_name"] = "residual_modality_smoke"
+        modality_config["model"].update(
+            {
+                "fusion_mode": "modality_gated",
+                "intention_head_mode": "hierarchical",
+            }
+        )
+        modality_config_path = Path(directory) / "modality_config.json"
+        modality_config_path.write_text(
+            json.dumps(modality_config), encoding="utf-8"
+        )
+        modality_run = train(
+            SimpleNamespace(
+                config=modality_config_path,
+                run_dir=Path(directory) / "modality_run",
+                epochs=1,
+                device="cpu",
+                limit_sequences=None,
+                skip_test_evaluation=True,
+            )
+        )
+        modality_csv = Path(directory) / "modality_predictions.csv"
+        modality_report_path = Path(directory) / "modality_predictions.json"
+        subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).with_name("export_residual_predictions.py")),
+                "--run-dir",
+                str(modality_run),
+                "--master-dir",
+                str(master_dir),
+                "--split",
+                "validation",
+                "--output-csv",
+                str(modality_csv),
+                "--report-out",
+                str(modality_report_path),
+                "--device",
+                "cpu",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        modality_report = json.loads(
+            modality_report_path.read_text(encoding="utf-8")
+        )
+        assert modality_report["architecture"]["fusion_mode"] == "modality_gated"
+        modality_columns = modality_csv.read_text(encoding="utf-8").splitlines()[0]
+        for modality_name in bundle.split_metadata["modality_schema"][
+            "active_modalities"
+        ]:
+            assert f"modality_{modality_name}_weight" in modality_columns
+            assert f"modality_{modality_name}_available" in modality_columns
         print("Residual v2 smoke test passed")
     return 0
 

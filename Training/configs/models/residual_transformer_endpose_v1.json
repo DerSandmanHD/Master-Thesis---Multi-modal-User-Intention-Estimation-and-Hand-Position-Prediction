@@ -31,6 +31,8 @@
     "future_horizon_seconds": 1.0,
     "pose_target": {
       "mode": "terminal_endpose",
+      "target_definition_version": "terminal_endpose_unique_hand_capture_v2",
+      "capture_timestamp_basis": "hand_timestamp_ns",
       "aggregation_window_seconds": 0.5,
       "minimum_valid_samples": 8,
       "minimum_valid_ratio": 0.7,
@@ -43,6 +45,7 @@
       2
     ],
     "include_hand_references": true,
+    "max_hand_reference_age_seconds": 0.25,
     "minimum_observed_fraction": 0.05,
     "max_timestamp_gap_seconds": 0.2,
     "validation_fraction": 0.2,
@@ -59,6 +62,8 @@
     ]
   },
   "model": {
+    "fusion_mode": "temporal_channel_gated",
+    "intention_head_mode": "hierarchical",
     "d_model": 32,
     "nhead": 8,
     "num_layers": 1,

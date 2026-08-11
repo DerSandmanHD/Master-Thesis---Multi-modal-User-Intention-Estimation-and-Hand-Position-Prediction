@@ -14,28 +14,68 @@ from data import DataBundle, INTENTION_TO_ID
 
 
 DUAL_HORIZON_MODEL_TYPE = "hierarchical_dual_horizon_residual_pose_transformer_v3"
-ADAPTER_VERSION = "terminal_endpose_v2_dual_horizon_sequence_balanced_v1"
+ADAPTER_VERSION = "terminal_endpose_v2_actual_capture_timing_and_balancing_v3"
+AUXILIARY_TARGET_DEFINITION_VERSION = "future_offset_unique_hand_capture_v2"
+AUXILIARY_CAPTURE_TIMESTAMP_BASIS = "hand_timestamp_ns"
 
 
-def _nearest_future_index(
-    timestamps_ns: np.ndarray,
+def _nearest_future_capture_index(
+    event_timestamps_ns: np.ndarray,
+    capture_timestamps_ns: np.ndarray,
+    capture_pose_valid: np.ndarray,
     endpoint: int,
+    hand_id: int,
     horizon_ns: int,
     maximum_gap_ns: int,
 ) -> int | None:
-    target = int(timestamps_ns[endpoint]) + horizon_ns
-    insertion = int(np.searchsorted(timestamps_ns, target, side="left"))
-    candidates = [
-        index
-        for index in (insertion - 1, insertion)
-        if endpoint < index < len(timestamps_ns)
-    ]
-    if not candidates:
+    """Find the closest unique physical capture to the requested horizon."""
+
+    event_timestamps = np.asarray(event_timestamps_ns, dtype=np.int64)
+    capture_timestamps = np.asarray(capture_timestamps_ns, dtype=np.int64)
+    valid = np.asarray(capture_pose_valid, dtype=bool)
+    if (
+        capture_timestamps.shape != event_timestamps.shape
+        or valid.shape != (len(event_timestamps), 2)
+        or endpoint < 0
+        or endpoint >= len(event_timestamps)
+        or hand_id not in (0, 1)
+    ):
+        raise ValueError("Inconsistent auxiliary capture-timing arrays")
+
+    endpoint_timestamp = int(event_timestamps[endpoint])
+    query_timestamp = endpoint_timestamp + int(horizon_ns)
+    candidate_rows = np.flatnonzero(
+        (capture_timestamps > endpoint_timestamp) & valid[:, hand_id]
+    )
+    if not len(candidate_rows):
         return None
-    nearest = min(candidates, key=lambda index: abs(int(timestamps_ns[index]) - target))
-    if abs(int(timestamps_ns[nearest]) - target) > maximum_gap_ns:
+
+    representatives = []
+    for capture_timestamp in np.unique(capture_timestamps[candidate_rows]):
+        matching = candidate_rows[
+            capture_timestamps[candidate_rows] == capture_timestamp
+        ]
+        representatives.append(
+            min(
+                matching.tolist(),
+                key=lambda row: (
+                    abs(int(event_timestamps[row]) - int(capture_timestamp)),
+                    int(event_timestamps[row]),
+                    int(row),
+                ),
+            )
+        )
+    nearest = min(
+        representatives,
+        key=lambda row: (
+            abs(int(capture_timestamps[row]) - query_timestamp),
+            int(capture_timestamps[row]),
+            int(row),
+        ),
+    )
+    if abs(int(capture_timestamps[nearest]) - query_timestamp) > maximum_gap_ns:
         return None
-    return nearest
+    return int(nearest)
 
 
 def _time_bin(seconds: float) -> str:
@@ -68,6 +108,30 @@ class EndposeV2Dataset(Dataset):
         )
         if horizon_seconds <= 0 or maximum_gap_seconds <= 0:
             raise ValueError("auxiliary horizon and maximum gap must be positive")
+        configured_version = self.auxiliary_config.get(
+            "target_definition_version", AUXILIARY_TARGET_DEFINITION_VERSION
+        )
+        if configured_version != AUXILIARY_TARGET_DEFINITION_VERSION:
+            raise ValueError(
+                "Unsupported auxiliary target_definition_version: "
+                f"{configured_version!r}"
+            )
+        configured_basis = self.auxiliary_config.get(
+            "capture_timestamp_basis", AUXILIARY_CAPTURE_TIMESTAMP_BASIS
+        )
+        if configured_basis != AUXILIARY_CAPTURE_TIMESTAMP_BASIS:
+            raise ValueError(
+                "Auxiliary targets require capture_timestamp_basis="
+                f"{AUXILIARY_CAPTURE_TIMESTAMP_BASIS!r}"
+            )
+        self.auxiliary_config.update(
+            {
+                "future_horizon_seconds": horizon_seconds,
+                "maximum_target_gap_seconds": maximum_gap_seconds,
+                "target_definition_version": AUXILIARY_TARGET_DEFINITION_VERSION,
+                "capture_timestamp_basis": AUXILIARY_CAPTURE_TIMESTAMP_BASIS,
+            }
+        )
         horizon_ns = int(round(horizon_seconds * 1e9))
         maximum_gap_ns = int(round(maximum_gap_seconds * 1e9))
 
@@ -76,29 +140,36 @@ class EndposeV2Dataset(Dataset):
         self.auxiliary_pose_targets[:, 6] = 1.0
         self.auxiliary_pose_valid = np.zeros(count, dtype=bool)
         self.auxiliary_target_timestamp_ns = np.full(count, -1, dtype=np.int64)
+        self.auxiliary_query_timestamp_ns = np.full(count, -1, dtype=np.int64)
+        self.auxiliary_target_time_error_ms = np.full(
+            count, np.nan, dtype=np.float32
+        )
 
         for dataset_index, (record_index, endpoint) in enumerate(self.indices):
             record = self.records[record_index]
+            query_timestamp_ns = int(record.timestamps_ns[endpoint]) + horizon_ns
+            self.auxiliary_query_timestamp_ns[dataset_index] = query_timestamp_ns
             if (
                 int(record.intentions[endpoint]) != INTENTION_TO_ID["handover"]
-                or not bool(record.pose_valid[endpoint])
                 or record.receiving_hand_ids is None
                 or record.hand_poses is None
                 or record.hand_pose_valid is None
+                or record.hand_timestamps_ns is None
             ):
                 continue
             hand_id = int(record.receiving_hand_ids[endpoint])
             if hand_id not in (0, 1):
                 continue
-            target_index = _nearest_future_index(
+            target_index = _nearest_future_capture_index(
                 record.timestamps_ns,
+                record.hand_timestamps_ns,
+                record.hand_pose_valid,
                 endpoint,
+                hand_id,
                 horizon_ns,
                 maximum_gap_ns,
             )
-            if target_index is None or not bool(
-                record.hand_pose_valid[target_index, hand_id]
-            ):
+            if target_index is None:
                 continue
             target = np.asarray(
                 record.hand_poses[target_index, hand_id], dtype=np.float32
@@ -110,7 +181,14 @@ class EndposeV2Dataset(Dataset):
             self.auxiliary_pose_targets[dataset_index] = target
             self.auxiliary_pose_valid[dataset_index] = True
             self.auxiliary_target_timestamp_ns[dataset_index] = int(
-                record.timestamps_ns[target_index]
+                record.hand_timestamps_ns[target_index]
+            )
+            self.auxiliary_target_time_error_ms[dataset_index] = float(
+                (
+                    int(record.hand_timestamps_ns[target_index])
+                    - query_timestamp_ns
+                )
+                / 1e6
             )
 
         sequence_counts = Counter(record_index for record_index, _ in self.indices)
@@ -120,12 +198,16 @@ class EndposeV2Dataset(Dataset):
         )
         self._sequence_sampling_weights /= self._sequence_sampling_weights.mean()
 
-        self._pose_sample_weights = np.ones(count, dtype=np.float32)
+        self._primary_pose_sample_weights = np.ones(count, dtype=np.float32)
+        self._auxiliary_pose_sample_weights = np.ones(count, dtype=np.float32)
         pose_groups: list[tuple[int, str] | None] = [None] * count
         group_counts: Counter[tuple[int, str]] = Counter()
         for dataset_index, (record_index, endpoint) in enumerate(self.indices):
             record = self.records[record_index]
-            if not bool(record.pose_valid[endpoint]):
+            # Match the actual residual-loss mask. A terminal target without a
+            # valid receiving-hand reference is not executable and must not
+            # dilute a sequence/time-bin group.
+            if not bool(self.base[dataset_index]["residual_pose_valid"]):
                 continue
             target_timestamps = record.pose_target_timestamp_ns
             if target_timestamps is None:
@@ -142,14 +224,51 @@ class EndposeV2Dataset(Dataset):
         for dataset_index, group in enumerate(pose_groups):
             if group is None:
                 continue
-            weight = 1.0 / group_counts[group]
-            self._pose_sample_weights[dataset_index] = weight
+            record_index, _ = self.indices[dataset_index]
+            # WeightedRandomSampler draws each window with probability
+            # proportional to 1 / n_sequence. Multiplying by n_sequence here
+            # cancels that proposal probability; division by the executable
+            # group count then gives equal expected mass per sequence/time bin.
+            weight = sequence_counts[record_index] / group_counts[group]
+            self._primary_pose_sample_weights[dataset_index] = weight
             valid_weights.append(weight)
         if valid_weights:
             normalization = float(np.mean(valid_weights))
             for dataset_index, group in enumerate(pose_groups):
                 if group is not None:
-                    self._pose_sample_weights[dataset_index] /= normalization
+                    self._primary_pose_sample_weights[dataset_index] /= normalization
+
+        auxiliary_groups: list[int | None] = [None] * count
+        auxiliary_group_counts: Counter[int] = Counter()
+        for dataset_index, (record_index, _) in enumerate(self.indices):
+            item = self.base[dataset_index]
+            receiving_hand = int(item["receiving_hand"])
+            reference_valid = bool(
+                receiving_hand in (0, 1)
+                and item["hand_reference_valid"][receiving_hand]
+            )
+            if not (bool(self.auxiliary_pose_valid[dataset_index]) and reference_valid):
+                continue
+            auxiliary_groups[dataset_index] = record_index
+            auxiliary_group_counts[record_index] += 1
+        auxiliary_valid_weights = []
+        for dataset_index, record_index in enumerate(auxiliary_groups):
+            if record_index is None:
+                continue
+            # The auxiliary task has one fixed horizon, so it is balanced by
+            # sequence only. This again corrects for the sequence-balanced
+            # sampler and uses only executable auxiliary residual targets.
+            weight = (
+                sequence_counts[record_index]
+                / auxiliary_group_counts[record_index]
+            )
+            self._auxiliary_pose_sample_weights[dataset_index] = weight
+            auxiliary_valid_weights.append(weight)
+        if auxiliary_valid_weights:
+            normalization = float(np.mean(auxiliary_valid_weights))
+            for dataset_index, record_index in enumerate(auxiliary_groups):
+                if record_index is not None:
+                    self._auxiliary_pose_sample_weights[dataset_index] /= normalization
 
     def __len__(self) -> int:
         return len(self.base)
@@ -176,8 +295,23 @@ class EndposeV2Dataset(Dataset):
                 "auxiliary_pose_target_timestamp_ns": torch.tensor(
                     self.auxiliary_target_timestamp_ns[index], dtype=torch.long
                 ),
+                "auxiliary_pose_query_timestamp_ns": torch.tensor(
+                    self.auxiliary_query_timestamp_ns[index], dtype=torch.long
+                ),
+                "auxiliary_pose_target_time_error_ms": torch.tensor(
+                    self.auxiliary_target_time_error_ms[index],
+                    dtype=torch.float32,
+                ),
+                "primary_pose_sample_weight": torch.tensor(
+                    self._primary_pose_sample_weights[index], dtype=torch.float32
+                ),
+                "auxiliary_pose_sample_weight": torch.tensor(
+                    self._auxiliary_pose_sample_weights[index], dtype=torch.float32
+                ),
+                # Historical alias retained for old diagnostics. New training
+                # code reads the task-specific keys above.
                 "pose_sample_weight": torch.tensor(
-                    self._pose_sample_weights[index], dtype=torch.float32
+                    self._primary_pose_sample_weights[index], dtype=torch.float32
                 ),
             }
         )
@@ -208,9 +342,24 @@ def wrap_endpose_v2_bundle(bundle: DataBundle, data_config: dict) -> DataBundle:
     split_metadata["endpose_v2_adapter"] = {
         "version": ADAPTER_VERSION,
         "primary_target": target,
-        "auxiliary_target": auxiliary,
+        "auxiliary_target": wrapped["train"].auxiliary_config,
         "auxiliary_target_windows": {
             split: wrapped[split].auxiliary_pose_count() for split in wrapped
+        },
+        "loss_balancing": {
+            "sampler": "sequence_balanced_weighted_random_sampler",
+            "primary_terminal_pose": (
+                "importance-corrected equal expected mass per executable "
+                "sequence/time-to-terminal bin"
+            ),
+            "auxiliary_t_plus_1_pose": (
+                "separate importance-corrected equal expected mass per "
+                "executable sequence at the fixed horizon"
+            ),
+            "validity_masks": {
+                "primary": "residual_pose_valid",
+                "auxiliary": "auxiliary_residual_pose_valid",
+            },
         },
     }
     return replace(

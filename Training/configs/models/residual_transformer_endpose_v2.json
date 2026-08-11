@@ -13,11 +13,12 @@
       "separate hand-specific residuals",
       "separate auxiliary t+1 pose head"
     ],
-    "selection_policy": "All hyperparameter and checkpoint selection uses validation only. Test is evaluated once after confirmation.",
-    "comparison_policy": "The terminal target definition and frozen n214 split remain identical to endpose-v1."
+    "selection_policy": "Architecture and hyperparameters are carried forward as a fixed configuration after correcting the target; checkpoints use validation only and test is evaluated only after freeze.",
+    "comparison_policy": "Corrected endpose-v1 and v2 reruns share terminal_endpose_unique_hand_capture_v2 and the frozen participant split; historical pre-correction results are not reused."
   },
   "data": {
     "master_dir": "Data_collection/master_datasets",
+    "required_observation_alignment_version": "causal_backward_device_time_v1",
     "manifest_filter": {
       "path": "dataset_manifest.csv",
       "allowed_statuses": ["valid"],
@@ -35,6 +36,8 @@
     "future_horizon_seconds": 1.0,
     "pose_target": {
       "mode": "terminal_endpose",
+      "target_definition_version": "terminal_endpose_unique_hand_capture_v2",
+      "capture_timestamp_basis": "hand_timestamp_ns",
       "aggregation_window_seconds": 0.5,
       "minimum_valid_samples": 8,
       "minimum_valid_ratio": 0.7,
@@ -45,11 +48,14 @@
     },
     "auxiliary_pose_target": {
       "mode": "future_offset",
+      "target_definition_version": "future_offset_unique_hand_capture_v2",
+      "capture_timestamp_basis": "hand_timestamp_ns",
       "future_horizon_seconds": 1.0,
       "maximum_target_gap_seconds": 0.1
     },
     "pose_intent_ids": [2],
     "include_hand_references": true,
+    "max_hand_reference_age_seconds": 0.25,
     "minimum_observed_fraction": 0.05,
     "max_timestamp_gap_seconds": 0.2,
     "validation_fraction": 0.2,
@@ -58,6 +64,8 @@
     "test_participants": ["Edu", "Jona", "Mona"]
   },
   "model": {
+    "fusion_mode": "temporal_channel_gated",
+    "intention_head_mode": "hierarchical",
     "d_model": 32,
     "nhead": 8,
     "num_layers": 1,
@@ -96,7 +104,9 @@
     "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
     "source_config": "Training/configs/models/residual_transformer_endpose_v1.json",
     "selection_split": "validation",
-    "test_evaluation_used_for_selection": false
+    "test_evaluation_used_for_selection": false,
+    "corrected_target_retuned": false,
+    "interpretation": "fixed inherited configuration, not evidence of optimal hyperparameters for the corrected terminal target"
   },
   "audit_requirements": {
     "minimum_overall_target_sequence_coverage": 0.7,

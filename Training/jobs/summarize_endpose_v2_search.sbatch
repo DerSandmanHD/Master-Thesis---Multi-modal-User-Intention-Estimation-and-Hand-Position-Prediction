@@ -12,7 +12,9 @@ REPO_DIR="${REPO_DIR:-$HOME/Master-Thesis---Multi-modal-User-Intention-Estimatio
 IMAGE="$HOME/singularity/aria_master.simg"
 DATASET_TAG="${DATASET_TAG:-dataset_v2_20260802_n214_5d136a34}"
 EXPERIMENT_TAG="${EXPERIMENT_TAG:-residual_v2_endpose_v2_hp_search}"
+REPORT_TAG="${REPORT_TAG:-${EXPERIMENT_TAG}_checkpoint_coherent_v2}"
 cd "$REPO_DIR"
 singularity exec "$IMAGE" python3 Training/evaluation/summarize_endpose_v2_search.py \
     --stage a --dataset-tag "$DATASET_TAG" --experiment-tag "$EXPERIMENT_TAG" \
+    --report-tag "$REPORT_TAG" \
     --require-complete

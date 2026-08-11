@@ -135,8 +135,10 @@ def test_online_engine_uses_shared_joint_decision() -> None:
             std=np.asarray([1.0], dtype=np.float32),
             feature_names=["gaze_valid"],
         ),
-        intention_model=object(),
-        pose_model=object(),
+        model=object(),
+        checkpoint_path=Path("best_intention_model.pt"),
+        checkpoint_epoch=1,
+        checkpoint_selection_metric="validation_intention_macro_f1",
         device=torch.device("cpu"),
     )
     engine.filter = TemporalDecisionFilter(
@@ -177,7 +179,7 @@ def test_online_engine_uses_shared_joint_decision() -> None:
     } <= set(prediction["pipeline_timestamps"])
 
 
-def test_online_engine_warms_both_models_once() -> None:
+def test_online_engine_warms_single_executable_checkpoint_once() -> None:
     dummy_model = SimpleNamespace(input_dim=4)
     artifacts = SimpleNamespace(
         window_size=3,
@@ -185,8 +187,7 @@ def test_online_engine_warms_both_models_once() -> None:
         minimum_observed_fraction=0.0,
         max_timestamp_gap_ns=100,
         feature_columns=["a", "b"],
-        intention_model=dummy_model,
-        pose_model=dummy_model,
+        model=dummy_model,
         device=torch.device("cpu"),
     )
     calls = []
@@ -205,14 +206,8 @@ def test_online_engine_warms_both_models_once() -> None:
     finally:
         online_inference.load_artifacts = original_load
         online_inference.timed_forward = original_forward
-    assert calls == [
-        ((1, 3, 4), (1, 2, 7)),
-        ((1, 3, 4), (1, 2, 7)),
-    ]
-    assert engine.warmup_latency_ms == {
-        "intention": 1.25,
-        "pose": 1.25,
-    }
+    assert calls == [((1, 3, 4), (1, 2, 7))]
+    assert engine.warmup_latency_ms == {"model": 1.25}
 
 
 def test_replay_and_live_use_same_quality_gate_semantics() -> None:
@@ -427,7 +422,7 @@ def main() -> int:
     test_unconfident_prediction_resets_confident_run()
     test_joint_probabilities_define_raw_and_stable_class()
     test_online_engine_uses_shared_joint_decision()
-    test_online_engine_warms_both_models_once()
+    test_online_engine_warms_single_executable_checkpoint_once()
     test_replay_and_live_use_same_quality_gate_semantics()
     test_gap_resets_quality_window_and_causal_lookup()
     test_live_missing_hand_values_match_offline_missing_semantics()

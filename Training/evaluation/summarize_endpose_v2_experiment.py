@@ -20,8 +20,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from checkpoint_semantics import (
+    DEFAULT_VALIDATION_SELECTION_RULE,
+    checkpoint_metrics,
+    persistence_diagnostic,
+    pose_selected_diagnostic,
+    primary_result_row,
+    select_primary_checkpoint_row,
+)
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+TERMINAL_TARGET_VERSION = "terminal_endpose_unique_hand_capture_v2"
 SEEDS = (42, 43, 44)
 MODELS = ("t_plus_1_as_terminal", "terminal_endpose_v1", "terminal_endpose_v2")
 LABELS = {
@@ -36,6 +46,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-tag", required=True)
     parser.add_argument("--experiment-tag", default="residual_v2_endpose_v2")
+    parser.add_argument(
+        "--report-tag", default="residual_v2_endpose_v2_checkpoint_coherent_v2"
+    )
     parser.add_argument("--require-complete", action="store_true")
     return parser.parse_args()
 
@@ -78,30 +91,57 @@ def checkpoint_epoch(report: dict, checkpoint: str) -> int:
 
 
 def metric_row(model: str, seed: int, report: dict, artifact: Path) -> dict:
-    intention = report["test"]["best_intention"]
-    pose = report["test"]["best_pose"]
+    pose = checkpoint_metrics(report, split="test", checkpoint="best_intention")
+    primary = primary_result_row(
+        report, checkpoint="best_intention", split="test"
+    )
+    validation = primary_result_row(
+        report, checkpoint="best_intention", split="validation"
+    )
+    persistence = persistence_diagnostic(
+        report, checkpoint="best_intention", split="test"
+    )
+    pose_selected = pose_selected_diagnostic(report, split="test")
     coverage = pose["pose_coverage"]
-    target_windows = int(coverage.get("pose_targets", coverage["future_targets"]))
-    handover_windows = int(intention["receiving_hand"]["samples"])
-    auxiliary = pose.get("auxiliary_t_plus_1", {}).get("pose_oracle", {})
+    target_windows = int(
+        coverage.get("pose_targets", coverage.get("future_targets", 0))
+    )
+    handover_windows = int(pose["receiving_hand"]["samples"])
+    auxiliary_values = pose.get("auxiliary_t_plus_1", {})
+    auxiliary = auxiliary_values.get("pose_end_to_end", {})
+    auxiliary_oracle = auxiliary_values.get("pose_oracle", {})
     return {
         "model": model,
         "model_label": LABELS[model],
         "seed": seed,
         "artifact": portable(artifact),
-        "test_intention_macro_f1": float(intention["intention"]["macro_f1"]),
-        "test_receiving_hand_macro_f1": float(
-            intention["receiving_hand"]["macro_f1_supported"]
-        ),
-        "test_terminal_position_error_cm": float(
-            pose["pose_oracle"]["position_mae_cm"]
-        ),
-        "test_terminal_orientation_error_deg": float(
-            pose["pose_oracle"]["orientation_mean_deg"]
-        ),
+        **primary,
+        **persistence,
+        **pose_selected,
+        "validation_intention_macro_f1": validation[
+            "validation_intention_macro_f1"
+        ],
+        "validation_pose_mae_cm": validation["validation_pose_mae_cm"],
+        "validation_pose_orientation_error_deg": validation[
+            "validation_pose_orientation_error_deg"
+        ],
+        "test_intention_macro_f1": primary["test_intention_macro_f1"],
+        "test_receiving_hand_macro_f1": primary[
+            "test_receiving_hand_macro_f1"
+        ],
+        "test_terminal_position_error_cm": primary["test_pose_mae_cm"],
+        "test_terminal_orientation_error_deg": primary[
+            "test_pose_orientation_error_deg"
+        ],
         "test_terminal_end_to_end_position_error_cm": float(
-            pose["pose_end_to_end"]["position_mae_cm"]
+            primary["test_pose_end_to_end_mae_cm"]
         ),
+        "diagnostic_test_terminal_oracle_position_error_cm": primary[
+            "diagnostic_pose_oracle_test_position_mean_cm"
+        ],
+        "diagnostic_test_terminal_oracle_orientation_error_deg": primary[
+            "diagnostic_pose_oracle_test_orientation_mean_deg"
+        ],
         "test_target_windows": target_windows,
         "test_handover_windows": handover_windows,
         "test_target_window_coverage": target_windows / handover_windows,
@@ -116,28 +156,43 @@ def metric_row(model: str, seed: int, report: dict, artifact: Path) -> dict:
             else None
         ),
         "trainable_parameters": int(report["trainable_parameters"]),
-        "best_intention_epoch": checkpoint_epoch(report, "best_intention"),
-        "best_pose_epoch": checkpoint_epoch(report, "best_pose"),
+        "diagnostic_best_intention_epoch": checkpoint_epoch(
+            report, "best_intention"
+        ),
+        "diagnostic_auxiliary_t1_oracle_position_error_cm": (
+            float(auxiliary_oracle["position_mae_cm"])
+            if auxiliary_oracle.get("position_mae_cm") is not None
+            else None
+        ),
     }
 
 
 def time_rows(model: str, seed: int, report: dict) -> list[dict]:
-    groups = report["test"]["best_pose"]["pose_by_time_to_sequence_end"]
-    return [
-        {
-            "model": model,
-            "seed": seed,
-            "time_to_sequence_end_bin": group,
-            "samples": int(groups[group]["pose_oracle"]["samples"]),
-            "position_error_cm": float(
-                groups[group]["pose_oracle"]["position_mae_cm"]
-            ),
-            "orientation_error_deg": float(
-                groups[group]["pose_oracle"]["orientation_mean_deg"]
-            ),
-        }
-        for group in TIME_BINS
-    ]
+    groups = checkpoint_metrics(
+        report, split="test", checkpoint="best_intention"
+    )["pose_by_time_to_sequence_end"]
+    rows = []
+    for group in TIME_BINS:
+        for evaluation in (
+            "pose_end_to_end",
+            "pose_oracle",
+            "last_observation_oracle",
+        ):
+            metrics = groups[group][evaluation]
+            rows.append(
+                {
+                    "model": model,
+                    "seed": seed,
+                    "time_to_sequence_end_bin": group,
+                    "evaluation": evaluation,
+                    "samples": int(metrics["samples"]),
+                    "position_error_cm": metrics.get("position_mae_cm"),
+                    "orientation_error_deg": metrics.get(
+                        "orientation_mean_deg"
+                    ),
+                }
+            )
+    return rows
 
 
 def aggregate(frame: pd.DataFrame, group_columns: list[str]) -> pd.DataFrame:
@@ -231,6 +286,7 @@ def plot_comparison(summary: pd.DataFrame, figures: Path) -> None:
 
 
 def plot_time(curves: pd.DataFrame, figures: Path) -> None:
+    curves = curves.loc[curves["evaluation"] == "pose_end_to_end"].copy()
     indexed = curves.set_index(["model", "time_to_sequence_end_bin"])
     x = np.arange(len(TIME_BINS))
     figure, axes = plt.subplots(1, 2, figsize=(14, 5.5))
@@ -343,8 +399,8 @@ def write_markdown(
         "",
         "Status: **complete**.",
         "",
-        "Endpose-v2 keeps the exact robust terminal target and participant split from "
-        "v1, but adds train-fitted position scaling, geodesic orientation loss, "
+        "Endpose-v2 uses the corrected unique-physical-capture terminal target and the "
+        "same participant split as v1. It adds train-fitted position scaling, geodesic orientation loss, "
         "sequence/time-bin balancing, hand-specific residuals, and an auxiliary t+1 head. "
         "Hyperparameters and checkpoints were selected using validation only.",
         "",
@@ -378,9 +434,8 @@ def write_markdown(
             f"changes position by {baseline_position_delta:+.2f} cm, orientation by "
             f"{baseline_orientation_delta:+.2f}°, intent macro-F1 by "
             f"{baseline_intent_delta:+.3f}, and receiving-hand macro-F1 by "
-            f"{baseline_hand_delta:+.3f}. Thus its aggregate position is effectively "
-            "similar, while terminal orientation is substantially better; intent remains "
-            "slightly weaker.",
+            f"{baseline_hand_delta:+.3f}. These deltas are descriptive; their sign and "
+            "magnitude must be interpreted from the corrected-target reruns.",
             "",
             "The full remaining-time curves are in `data/error_vs_time_remaining.csv` "
             "and `figures/02_error_vs_time_remaining.{png,pdf}`.",
@@ -430,7 +485,10 @@ def write_markdown(
 def main() -> int:
     args = parse_args()
     runs_root = PROJECT_ROOT / "Training/runs" / args.dataset_tag
-    report = PROJECT_ROOT / "Training/reports" / args.dataset_tag / args.experiment_tag
+    source_report = (
+        PROJECT_ROOT / "Training/reports" / args.dataset_tag / args.experiment_tag
+    )
+    report = PROJECT_ROOT / "Training/reports" / args.dataset_tag / args.report_tag
     v1_report = (
         PROJECT_ROOT
         / "Training/reports"
@@ -470,15 +528,29 @@ def main() -> int:
     runs = pd.DataFrame(rows)
     times = pd.DataFrame(time_data)
     summary = aggregate(runs, ["model"])
-    time_summary = aggregate(times, ["model", "time_to_sequence_end_bin"])
+    if not summary.empty:
+        summary["result_semantics"] = "multi_seed_aggregate_diagnostic"
+    time_summary = aggregate(
+        times, ["model", "time_to_sequence_end_bin", "evaluation"]
+    )
     runs.to_csv(data_dir / "model_runs.csv", index=False)
     summary.to_csv(data_dir / "model_summary.csv", index=False)
+    primary_results = []
+    for model, group in runs.groupby("model", sort=False):
+        selected = select_primary_checkpoint_row(
+            group.to_dict(orient="records")
+        )
+        selected["model"] = model
+        primary_results.append(selected)
+    pd.DataFrame(primary_results).to_csv(
+        data_dir / "validation_selected_checkpoint_results.csv", index=False
+    )
     times.to_csv(data_dir / "error_vs_time_remaining_by_seed.csv", index=False)
     time_summary.to_csv(data_dir / "error_vs_time_remaining.csv", index=False)
-    latency, latency_errors = load_latency(report, v1_report)
+    latency, latency_errors = load_latency(source_report, v1_report)
     errors.extend(latency_errors)
     latency.to_csv(data_dir / "latency.csv", index=False)
-    audit = read(report / "audit/endpose_target_audit.json")
+    audit = read(source_report / "audit/endpose_target_audit.json")
     confirmation = read(
         PROJECT_ROOT
         / "Training/reports"
@@ -499,8 +571,14 @@ def main() -> int:
         and set(summary.get("model", [])) == set(MODELS)
         and len(latency) == len(MODELS) * 2
         and audit.get("training_authorized_by_audit") is True
+        and audit.get("pose_target_definition", {}).get(
+            "target_definition_version"
+        )
+        == TERMINAL_TARGET_VERSION
         and confirmation.get("complete") is True
         and confirmation.get("test_metrics_used") is False
+        and confirmation.get("target_definition_version")
+        == TERMINAL_TARGET_VERSION
     )
     if complete:
         plot_comparison(summary, figures)
@@ -516,11 +594,12 @@ def main() -> int:
             selected_config,
         )
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "complete": complete,
         "errors": errors,
         "dataset_tag": args.dataset_tag,
         "experiment_tag": args.experiment_tag,
+        "report_tag": args.report_tag,
         "seeds": list(SEEDS),
         "target_definition": "robust terminal receiving-hand pose from the latest stable 0.5-second segment after THIRD",
         "improvements": [
@@ -534,11 +613,15 @@ def main() -> int:
         "selection": {
             "split": "validation",
             "test_metrics_used": False,
+            "primary_checkpoint": "best_intention",
+            "primary_checkpoint_rule": "validation_intention_macro_f1",
+            "pose_selected_checkpoint_role": "diagnostic_only",
+            "seed_selection_rule": DEFAULT_VALIDATION_SELECTION_RULE,
             "confirmation_summary": confirmation,
         },
         "target_audit": audit,
-        "run_results": runs.to_dict(orient="records"),
-        "aggregate_results": summary.to_dict(orient="records"),
+        "primary_results": primary_results,
+        "seed_aggregate_diagnostics": summary.to_dict(orient="records"),
         "latency": latency.to_dict(orient="records"),
     }
     (report / "comparison.json").write_text(

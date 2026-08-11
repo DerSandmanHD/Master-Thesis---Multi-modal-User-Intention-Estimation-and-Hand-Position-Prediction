@@ -30,6 +30,23 @@ verschachtelte Run-Struktur automatisch. SLURM-Ausgaben landen gesammelt unter
 | `audit_endpose_v1.sbatch` | robuste terminale Handpose-Targets prüfen und einen trainingsfreien Dry-Run ausführen |
 | `train_endpose_v1.sbatch` | separates Endpose-Residual-v2 für Seeds 42/43/44 trainieren und das bestehende t+1-Modell auf denselben terminalen Targets auswerten |
 | `finalize_endpose_v1.sbatch` | Endpose/t+1-Latenz messen sowie CSV/JSON/PNG/PDF/Markdown-Vergleich erzeugen |
+| `thesis_v2_validation_matrix.sbatch` | aktive minimale Matrix: 16 Konfigurationen mal drei Seeds, strikt validation-only |
+| `thesis_v2_final_test_matrix.sbatch` | lädt ausschließlich eingefrorene Best-Intent-Checkpoints für den finalen Test; kein Retraining |
+| `thesis_v2_postprocess_selected.sbatch` | Prediction-Export, t+1-Baselines, gruppierte Bootstrap-Metriken und ggf. Modalitätsgewichte |
+| `thesis_v2_qualitative.sbatch` | hashgebundene VRS/MP4-Sidecars und gute/typische/fehlerhafte qualitative Fälle |
+| `thesis_v2_group_cv.sbatch` | ausführbare verschachtelte participant-disjoint Group-CV für eine zuvor auf Validation eingefrorene Architektur |
+| `thesis_v2_summarize_matrix.sbatch` | prüft alle 48 autorisierten Testartefakte und erzeugt checkpoint-kohärente Seed- und Aggregate-Tabellen |
+
+## Aktive v2-Reihenfolge
+
+Die `thesis_v2_*`-Jobs gehören zum aktiven Protokoll in
+`../THESIS_FINAL_PROTOCOL_V2.md`. Zuerst laufen der korrigierte CLIP-Neuaufbau
+und der Terminal-Target-Audit, danach das Validation-Array. Anschließend wird
+`select_matrix_checkpoints.py --require-complete` lokal oder im Login-Job
+ausgeführt und geprüft. Erst danach darf das Final-Test-Array laufen; Postprocess
+und qualitative Fälle verwenden ausschließlich dessen eingefrorenen
+Best-Intent-Checkpoint. Das Beispiel in der Protokolldatei enthält die exakten
+`sbatch`-Abhängigkeiten.
 
 Beispiel für den vollständigen Vergleich:
 

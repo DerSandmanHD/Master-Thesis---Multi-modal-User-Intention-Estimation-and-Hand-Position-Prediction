@@ -24,6 +24,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--expected-sequence-fingerprint", default=EXPECTED_DATASET_FINGERPRINT)
+    parser.add_argument("--visual-cache-dir", type=Path, default=None)
+    parser.add_argument("--visual-projection-path", type=Path, default=None)
     return parser.parse_args()
 
 
@@ -35,11 +37,22 @@ def main() -> int:
     args = parse_args()
     config = json.loads(resolve(args.config).read_text(encoding="utf-8"))
     data_config = dict(config["data"])
+    data_config["visual_embeddings"] = dict(
+        data_config.get("visual_embeddings", {})
+    )
+    if args.visual_cache_dir is not None:
+        data_config["visual_embeddings"]["cache_dir"] = str(
+            resolve(args.visual_cache_dir)
+        )
+    if args.visual_projection_path is not None:
+        data_config["visual_embeddings"]["projection_path"] = str(
+            resolve(args.visual_projection_path)
+        )
     data_config["master_dir"] = str(resolve(Path(data_config["master_dir"])))
     bundle = prepare_data(data_config, seed=int(config["training"]["seed"]))
     dataset_filter = bundle.split_metadata["dataset_filter"]
     if dataset_filter["sequence_fingerprint"] != args.expected_sequence_fingerprint:
-        raise ValueError("Visual dataset does not match the frozen n214 sequence set")
+        raise ValueError("Visual dataset does not match the expected sequence set")
     visual = bundle.provenance["schema"].get("visual_features")
     if not visual or not visual.get("enabled"):
         raise ValueError("Visual provenance is missing")

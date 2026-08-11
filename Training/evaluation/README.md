@@ -1,5 +1,23 @@
 # Training evaluation
 
+## Aktiver versus historischer Ergebnisstand
+
+Die nachfolgend beschriebenen n214-Ausgaben sind historische, bereits
+beobachtete Auswertungen. Neue Thesis-Hauptergebnisse werden nach
+`../THESIS_FINAL_PROTOCOL_V2.md` aus einem einzelnen validation-ausgewählten
+Checkpoint erzeugt. Historische CLIP-, qualitative und Terminal-Endpose-
+Artefakte sind nicht mit dem korrigierten Zeit-/Target-Protokoll gleichzusetzen;
+ihre Einstufung steht in
+`../reports/dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json`.
+
+Der autoritative v2-Gesamtbericht wird mit
+`summarize_thesis_v2_matrix.py` erzeugt. Das Skript verlangt alle 48
+vorab deklarierten, durch `validation_selection.json` autorisierten
+Final-Test-Dateien. Jede Seed-Zeile bleibt an genau einen ausführbaren
+`best_intention`-Checkpoint gebunden; Mittelwert und Seed-SD stehen in einer
+separaten Aggregattabelle. Optionale t+1-Baselines werden nur aus einem
+hashgebundenen Prediction-Export übernommen und fehlende Werte nicht ergänzt.
+
 Dieser Ordner erzeugt reproduzierbare Lernkurven aus einem vollständigen
 Benchmark mit:
 

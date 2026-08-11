@@ -21,6 +21,7 @@ import pandas as pd
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+TERMINAL_TARGET_VERSION = "terminal_endpose_unique_hand_capture_v2"
 PARAMETERS = (
     "learning_rate",
     "pose_loss_weight",
@@ -49,6 +50,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stage-a-summary", type=Path, default=None)
     parser.add_argument("--runs-dir", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, default=None)
+    parser.add_argument("--report-tag", default=None)
     parser.add_argument("--require-complete", action="store_true")
     return parser.parse_args()
 
@@ -114,37 +116,42 @@ def result_row(
             "hierarchical_dual_horizon_residual_pose_transformer_v3"
         ):
             raise ValueError("wrong model type")
-        pose = nested(metrics, "validation_by_checkpoint", "best_pose")
-        intention = nested(metrics, "validation_by_checkpoint", "best_intention")
+        target_definition = metadata.get("pose_target", {})
+        if (
+            target_definition.get("target_definition_version")
+            != TERMINAL_TARGET_VERSION
+        ):
+            raise ValueError("run uses a stale terminal-target definition")
+        pose = nested(metrics, "validation_by_checkpoint", "best_intention")
         row.update(
             {
                 "status": "completed",
                 "validation_terminal_position_error_cm": float(
-                    nested(pose, "pose_oracle", "position_mae_cm")
+                    nested(pose, "pose_end_to_end", "position_mae_cm")
                 ),
                 "validation_terminal_orientation_error_deg": float(
-                    nested(pose, "pose_oracle", "orientation_mean_deg")
+                    nested(pose, "pose_end_to_end", "orientation_mean_deg")
                 ),
                 "validation_auxiliary_t1_position_error_cm": float(
                     nested(
                         pose,
                         "auxiliary_t_plus_1",
-                        "pose_oracle",
+                        "pose_end_to_end",
                         "position_mae_cm",
                     )
                 ),
                 "validation_intention_macro_f1": float(
-                    nested(intention, "intention", "macro_f1")
+                    nested(pose, "intention", "macro_f1")
                 ),
                 "validation_receiving_hand_macro_f1": float(
-                    nested(intention, "receiving_hand", "macro_f1_supported")
-                ),
-                "best_pose_epoch": int(
-                    nested(metrics, "checkpoints", "best_pose", "epoch")
+                    nested(pose, "receiving_hand", "macro_f1_supported")
                 ),
                 "best_intention_epoch": int(
                     nested(metrics, "checkpoints", "best_intention", "epoch")
                 ),
+                "metric_source_checkpoint": "best_intention",
+                "pose_metric_semantics": "learned_end_to_end_predicted_receiving_hand_and_reference",
+                "target_definition_version": TERMINAL_TARGET_VERSION,
                 "trainable_parameters": int(metrics["trainable_parameters"]),
                 "wall_seconds": float(nested(metrics, "runtime", "wall_seconds")),
                 "dataset_content_fingerprint": nested(
@@ -238,7 +245,12 @@ def main() -> int:
     )
     output = resolve(
         args.output_dir
-        or Path("Training/reports") / args.dataset_tag / args.experiment_tag
+        or Path("Training/reports")
+        / args.dataset_tag
+        / (
+            args.report_tag
+            or f"{args.experiment_tag}_checkpoint_coherent_v2"
+        )
     )
     data_dir = output / "data"
     figures = output / "figures"
@@ -352,6 +364,9 @@ def main() -> int:
         "complete": complete,
         "test_metrics_used": False,
         "selection_split": "validation",
+        "metric_source_checkpoint": "best_intention",
+        "pose_metric_semantics": "learned_end_to_end_predicted_receiving_hand_and_reference",
+        "target_definition_version": TERMINAL_TARGET_VERSION,
         "position_tolerance_cm": tolerance,
         "selection_rule": manifest["selection_rule"],
         "completed_runs": len(completed),

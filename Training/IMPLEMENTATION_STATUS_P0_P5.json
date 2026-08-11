@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-08-11",
+  "scope": "implementation audit for thesis protocol v2; statuses do not claim new experimental results",
+  "status_definitions": {
+    "PASS": "implemented and locally verified to the extent possible without protected external artifacts",
+    "PARTIAL": "a scoped implementation exists but a required local verification is incomplete",
+    "BLOCKED": "execution requires data, hardware, container software or artifacts absent from this checkout",
+    "NOT_APPLICABLE": "explicitly outside this work package"
+  },
+  "requirements": [
+    {
+      "id": "P0.clip_device_time_alignment",
+      "status": "PASS",
+      "evidence": ["Training/clip_alignment.py", "Training/extract_clip_embeddings.py", "tests/test_t1_target_invariants.py", "Training/clip_alignment_smoke_test.py"]
+    },
+    {
+      "id": "P0.corrected_clip_cache_and_pca_regeneration",
+      "status": "BLOCKED",
+      "reason": "Raw VRS, master datasets, manifest, pinned CLIP weights and a GPU/container are absent locally; code and exact job are ready.",
+      "evidence": ["Training/jobs/prepare_clip_embeddings.sbatch"]
+    },
+    {
+      "id": "P0.cache_invalidation_and_source_binding",
+      "status": "PASS",
+      "evidence": ["Training/visual_embeddings.py", "Training/artifact_freeze.py", "tests/test_artifact_freeze.py"]
+    },
+    {
+      "id": "P0.one_checkpoint_per_main_result",
+      "status": "PASS",
+      "evidence": ["Training/evaluation/checkpoint_semantics.py", "Training/evaluate_frozen_run.py", "tests/test_checkpoint_reporting_semantics.py"]
+    },
+    {
+      "id": "P1.timestamp_aware_persistence",
+      "status": "PASS",
+      "evidence": ["Training/pose_baselines.py", "Training/evaluate_pose_baselines.py", "Training/pose_baselines_smoke_test.py"]
+    },
+    {
+      "id": "P1.timestamp_aware_constant_velocity",
+      "status": "PASS",
+      "evidence": ["Training/pose_baselines.py", "Training/evaluate_pose_baselines.py", "Training/pose_baselines_smoke_test.py"]
+    },
+    {
+      "id": "P1.learned_three_way_fair_common_evaluation",
+      "status": "PASS",
+      "evidence": ["Training/export_residual_predictions.py", "Training/evaluation/grouped_metrics.py", "tests/test_grouped_evaluation.py"]
+    },
+    {
+      "id": "P1.new_t1_results",
+      "status": "BLOCKED",
+      "reason": "The full dataset and trained corrected checkpoints are not present locally."
+    },
+    {
+      "id": "P2.modality_wise_learned_fusion",
+      "status": "PASS",
+      "evidence": ["Training/modality_schema.py", "Training/model.py", "tests/test_model_fusion.py", "tests/test_modality_schema.py"]
+    },
+    {
+      "id": "P2.fusion_hierarchy_and_auxiliary_ablations",
+      "status": "PASS",
+      "evidence": ["Training/configs/architecture", "Training/configs/experiment_matrix_v2.json", "tests/test_p2_experiment_configs.py"]
+    },
+    {
+      "id": "P2.ablation_training_results",
+      "status": "BLOCKED",
+      "reason": "GPU training and full derived datasets/corrected CLIP artifacts are unavailable locally."
+    },
+    {
+      "id": "P3.participant_hand_object_phase_audit",
+      "status": "PASS",
+      "evidence": ["Training/audit_participant_splits.py", "Training/participant_splits.py", "tests/test_participant_splits.py"]
+    },
+    {
+      "id": "P3.executable_nested_participant_group_cv",
+      "status": "PASS",
+      "evidence": ["Training/prepare_group_cv_runs.py", "Training/jobs/thesis_v2_group_cv.sbatch", "tests/test_participant_splits.py", "tests/test_slurm_protocol.py"]
+    },
+    {
+      "id": "P3.group_cv_results",
+      "status": "BLOCKED",
+      "reason": "Fold training requires the absent full dataset and cluster GPU resources."
+    },
+    {
+      "id": "P3.window_sequence_participant_hand_evaluation",
+      "status": "PASS",
+      "evidence": ["Training/evaluation/grouped_metrics.py", "Training/evaluation/evaluate_grouped_predictions.py", "tests/test_grouped_evaluation.py"]
+    },
+    {
+      "id": "P3.cluster_bootstrap_intervals",
+      "status": "PASS",
+      "evidence": ["Training/evaluation/grouped_metrics.py", "tests/test_grouped_evaluation.py"]
+    },
+    {
+      "id": "P4.primary_t1_secondary_terminal_separation",
+      "status": "PASS",
+      "evidence": ["Training/endpose_v2.py", "Training/configs/models/residual_transformer_endpose_v2.json", "tests/test_endpose_target_invariants.py"]
+    },
+    {
+      "id": "P4.terminal_target_and_persistence_reporting",
+      "status": "PASS",
+      "evidence": ["Training/endpose_targets.py", "Training/train_residual.py", "Training/evaluation/summarize_thesis_v2_matrix.py", "Training/residual_smoke_test.py"]
+    },
+    {
+      "id": "P4.corrected_terminal_rerun",
+      "status": "BLOCKED",
+      "reason": "Master/MPS data and cluster training resources are unavailable locally."
+    },
+    {
+      "id": "P4.qualitative_case_generation",
+      "status": "PASS",
+      "evidence": ["Training/render_prediction_overlay.py", "tests/test_qualitative_overlay.py"]
+    },
+    {
+      "id": "P4.qualitative_video_rendering",
+      "status": "BLOCKED",
+      "reason": "Corrected prediction CSVs, RGB alignment sidecars, source video and OpenCV runtime artifacts are absent."
+    },
+    {
+      "id": "P5.artifact_freeze_and_invalidation",
+      "status": "PASS",
+      "evidence": ["Training/artifact_freeze.py", "tests/test_artifact_freeze.py"]
+    },
+    {
+      "id": "P5.validation_only_matrix_and_final_authorization",
+      "status": "PASS",
+      "evidence": ["Training/experiment_matrix.py", "Training/select_matrix_checkpoints.py", "Training/evaluate_frozen_run.py", "tests/test_experiment_matrix.py"]
+    },
+    {
+      "id": "P5.authoritative_checkpoint_coherent_summary",
+      "status": "PASS",
+      "evidence": ["Training/evaluation/summarize_thesis_v2_matrix.py", "tests/test_thesis_v2_matrix_summary.py"]
+    },
+    {
+      "id": "P5.slurm_workflow",
+      "status": "PASS",
+      "evidence": ["Training/jobs/thesis_v2_validation_matrix.sbatch", "Training/jobs/thesis_v2_final_test_matrix.sbatch", "Training/jobs/thesis_v2_group_cv.sbatch", "tests/test_slurm_protocol.py"]
+    },
+    {
+      "id": "P5.slurm_runtime_execution",
+      "status": "BLOCKED",
+      "reason": "SLURM, Singularity, cluster storage and GPU resources are not available in the local Windows environment."
+    },
+    {
+      "id": "P5.documentation_and_protocol",
+      "status": "PASS",
+      "evidence": ["Training/THESIS_FINAL_PROTOCOL_V2.md", "Training/jobs/README.md", "README.md"]
+    },
+    {
+      "id": "out_of_scope.franka_ros_robot_control",
+      "status": "NOT_APPLICABLE",
+      "reason": "Explicitly excluded; no Franka/ROS actuation code was changed."
+    },
+    {
+      "id": "out_of_scope.live_clip_frontend",
+      "status": "NOT_APPLICABLE",
+      "reason": "A new realtime CLIP frontend was explicitly outside scope; corrected CLIP-v2 evaluation is offline-only."
+    }
+  ]
+}

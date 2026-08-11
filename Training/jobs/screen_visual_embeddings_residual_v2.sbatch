@@ -14,7 +14,7 @@ set -euo pipefail
 REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
 IMAGE="$HOME/singularity/aria_master.simg"
 : "${DATASET_TAG:?Set DATASET_TAG to an immutable dataset version}"
-EXPERIMENT_TAG="${EXPERIMENT_TAG:-visual_embedding_screen_v1}"
+EXPERIMENT_TAG="${EXPERIMENT_TAG:-visual_embedding_screen_v2_device_time}"
 VARIANTS=(clip_only sensor_plus_clip sensor_plus_random)
 CONFIGS=(
     Training/configs/visual/residual_v2_clip_only.json
@@ -30,9 +30,11 @@ CONFIG="${CONFIGS[$VARIANT_INDEX]}"
 SEED="${SEEDS[$SEED_INDEX]}"
 RUN_ID="${EXPERIMENT_TAG}_${VARIANT}_seed${SEED}"
 RUN_DIR="Training/runs/${DATASET_TAG}/${EXPERIMENT_TAG}/${VARIANT}/${RUN_ID}"
+VISUAL_CACHE_DIR="Data_collection/visual_embeddings/${DATASET_TAG}/clip_vit_b32_openai_5hz_device_time_v2"
+VISUAL_PROJECTION="Training/visual_projections/${DATASET_TAG}/clip_vit_b32_openai_5hz_device_time_v2_pca32.npz"
 
 cd "$REPO_DIR"
-[[ -f Training/visual_projections/${DATASET_TAG}/clip_vit_b32_openai_5hz_pca32.npz ]] || {
+[[ -f Training/visual_projections/${DATASET_TAG}/clip_vit_b32_openai_5hz_device_time_v2_pca32.npz ]] || {
     echo "CLIP projection is missing; run prepare_clip_embeddings.sbatch first" >&2
     exit 2
 }
@@ -62,4 +64,6 @@ singularity exec --nv "$IMAGE" \
     --experiment-tag "$EXPERIMENT_TAG" \
     --seed "$SEED" \
     --run-dir "$RUN_DIR" \
+    --visual-cache-dir "$VISUAL_CACHE_DIR" \
+    --visual-projection-path "$VISUAL_PROJECTION" \
     --skip-test-evaluation

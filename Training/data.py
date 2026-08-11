@@ -25,8 +25,10 @@ from torch.utils.data import Dataset
 from endpose_targets import (
     TERMINAL_ENDPOSE_MODE,
     estimate_terminal_endpose,
+    future_terminal_target_mask,
     normalized_terminal_endpose_config,
 )
+from modality_schema import feature_dependencies, resolve_modality_schema
 from visual_embeddings import VisualFeatureLoader
 
 
@@ -37,7 +39,15 @@ RECEIVING_HAND_NAMES = ["left", "right"]
 SUPPORTED_MODALITY_ABLATIONS = ("gaze", "hands", "objects", "vio")
 TRAINING_DATA_BUILDER_VERSION = "training_data_pipeline_v3_modality_ablation"
 VISUAL_DATA_BUILDER_VERSION = "training_data_pipeline_v4_visual_embeddings"
-ENDPOSE_DATA_BUILDER_VERSION = "training_data_pipeline_v5_terminal_endpose"
+ENDPOSE_DATA_BUILDER_VERSION = (
+    "training_data_pipeline_v6_unique_capture_terminal_endpose"
+)
+OBSERVATION_ALIGNMENT_VERSION = "causal_backward_device_time_v1"
+WINDOW_ELIGIBILITY_VERSION = "full_sensor_observation_mask_v1"
+TERMINAL_TARGET_REGIME_NAMES = (
+    "strictly_before_aggregation",
+    "partially_overlapping_aggregation",
+)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -125,6 +135,16 @@ def build_dataset_provenance(
 ) -> tuple[dict, str | None]:
     master_files = []
     for path in files:
+        report_path = path.with_name(
+            path.name.replace("_master.csv", "_master_report.json")
+        )
+        report_identity = None
+        if report_path.is_file():
+            report_identity = {
+                "file_name": report_path.name,
+                "size_bytes": report_path.stat().st_size,
+                "sha256": sha256_file(report_path),
+            }
         master_files.append(
             {
                 "sequence_id": sequence_id_from_master_path(path),
@@ -132,6 +152,7 @@ def build_dataset_provenance(
                 "relative_path": str(path.relative_to(master_dir)),
                 "size_bytes": path.stat().st_size,
                 "sha256": sha256_file(path),
+                "master_report": report_identity,
             }
         )
 
@@ -140,12 +161,11 @@ def build_dataset_provenance(
     manifest_path_value = filter_metadata.get("manifest_path")
     if manifest_path_value:
         manifest_path = Path(manifest_path_value)
-        manifest_snapshot = manifest_path.read_text(encoding="utf-8")
+        manifest_bytes = manifest_path.read_bytes()
+        manifest_snapshot = manifest_bytes.decode("utf-8")
         manifest = {
             "source_path": str(manifest_path),
-            "sha256": hashlib.sha256(
-                manifest_snapshot.encode("utf-8")
-            ).hexdigest(),
+            "sha256": hashlib.sha256(manifest_bytes).hexdigest(),
             "snapshot_file": "dataset_manifest_snapshot.csv",
         }
 
@@ -155,6 +175,7 @@ def build_dataset_provenance(
         Path("Code/dataset_qa.py"),
         Path("Training/data.py"),
         Path("Training/endpose_targets.py"),
+        Path("Training/modality_schema.py"),
         Path("Training/visual_embeddings.py"),
         Path("singularity/aria.recipe"),
     ):
@@ -168,9 +189,11 @@ def build_dataset_provenance(
         builder_version = VISUAL_DATA_BUILDER_VERSION
     else:
         builder_version = TRAINING_DATA_BUILDER_VERSION
+    modality_schema = resolve_modality_schema(feature_columns)
     schema_payload = {
         "feature_profile": feature_profile,
         "feature_columns": feature_columns,
+        "modality_schema": modality_schema,
         "feature_ablation": feature_ablation,
         "future_horizon_seconds": float(future_horizon_seconds),
         "builder_version": builder_version,
@@ -218,6 +241,7 @@ def build_dataset_provenance(
     return (
         {
             "builder_version": builder_version,
+            "master_dir": str(master_dir),
             "source_content_fingerprint": source_content_fingerprint,
             "dataset_content_fingerprint": content_fingerprint,
             "schema": {
@@ -328,21 +352,9 @@ def normalize_excluded_modalities(values: object) -> list[str]:
 
 
 def feature_modalities(column: str) -> set[str]:
-    modalities: set[str] = set()
-    if column.startswith("gaze_"):
-        modalities.add("gaze")
-    if column.startswith(("hand_", "left_wrist_", "right_wrist_")):
-        modalities.add("hands")
-    if column.startswith("aruco_"):
-        modalities.add("objects")
-        if "_gaze_" in column:
-            modalities.add("gaze")
-    if column.startswith("slam_") or column in {
-        "robot_frame_valid",
-        "robot_anchor_interpolated",
-    }:
-        modalities.add("vio")
-    return modalities
+    """Return source dependencies used by strict feature ablations."""
+
+    return feature_dependencies(column)
 
 
 def select_feature_columns(
@@ -383,8 +395,13 @@ class SequenceRecord:
     receiving_hand_ids: np.ndarray | None = None
     hand_poses: np.ndarray | None = None
     hand_pose_valid: np.ndarray | None = None
+    hand_timestamps_ns: np.ndarray | None = None
     pose_target_timestamp_ns: np.ndarray | None = None
+    pose_target_hand_timestamp_ns: np.ndarray | None = None
+    pose_target_time_error_ms: np.ndarray | None = None
     pose_target_metadata: dict | None = None
+    eligibility_observed: np.ndarray | None = None
+    pose_target_regime_ids: np.ndarray | None = None
 
 
 @dataclass
@@ -443,6 +460,8 @@ def load_record(
     future_horizon_seconds: float,
     include_hand_references: bool = False,
     pose_target_config: dict | None = None,
+    eligibility_feature_columns: list[str] | None = None,
+    required_observation_alignment_version: str | None = None,
 ) -> SequenceRecord:
     terminal_config = None
     if pose_target_config:
@@ -457,12 +476,22 @@ def load_record(
         *(f"{prefix}receiving_wrist_robot_q{component}" for component in "xyzw"),
     ]
     required_core = ["sequence_id", "participant", "timestamp_ns", "intent_label"]
+    if required_observation_alignment_version:
+        required_core.append("observation_alignment_version")
     if not terminal_mode:
-        required_core.extend([f"{prefix}receiving_wrist_valid", *pose_columns])
+        required_core.extend(
+            [
+                f"{prefix}receiving_wrist_valid",
+                "future_target_timestamp_ns",
+                f"{prefix}time_error_ms",
+                *pose_columns,
+            ]
+        )
     if load_hand_references:
         required_core.extend(
             [
                 "receiving_hand",
+                "hand_timestamp_ns",
                 "robot_frame_valid",
                 "hand_left_valid",
                 "hand_right_valid",
@@ -485,14 +514,51 @@ def load_record(
             f"{path.name} is not compatible with the training schema; missing: "
             f"{', '.join(missing)}. Rebuild master datasets after semantic annotation."
         )
+    eligibility_columns = list(
+        dict.fromkeys(
+            feature_columns
+            if eligibility_feature_columns is None
+            else eligibility_feature_columns
+        )
+    )
     available_features = [column for column in feature_columns if column in header]
-    use_columns = list(dict.fromkeys([*required_core, *available_features]))
+    available_eligibility = [
+        column for column in eligibility_columns if column in header
+    ]
+    optional_target_columns = [
+        column
+        for column in ("future_target_hand_timestamp_ns",)
+        if column in header
+    ]
+    use_columns = list(
+        dict.fromkeys(
+            [
+                *required_core,
+                *optional_target_columns,
+                *available_features,
+                *available_eligibility,
+            ]
+        )
+    )
     frame = pd.read_csv(path, usecols=use_columns)
     for column in feature_columns:
         if column not in frame:
             frame[column] = 0.0 if column.endswith("_valid") else np.nan
     if frame.empty:
         raise ValueError(f"Empty master CSV: {path}")
+    if required_observation_alignment_version:
+        versions = set(
+            frame["observation_alignment_version"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+        )
+        if versions != {str(required_observation_alignment_version)}:
+            raise ValueError(
+                f"{path.name} observation alignment is {sorted(versions)!r}; "
+                f"required {required_observation_alignment_version!r}. Rebuild "
+                "the derived master dataset before training."
+            )
     sequence_values = frame["sequence_id"].dropna().astype(str).unique()
     participant_values = frame["participant"].dropna().astype(str).unique()
     if len(sequence_values) != 1 or len(participant_values) != 1:
@@ -530,6 +596,7 @@ def load_record(
     receiving_hand_ids = None
     hand_poses = None
     hand_pose_valid = None
+    hand_timestamps_ns = None
     if load_hand_references:
         receiving_hand_ids = (
             frame["receiving_hand"]
@@ -543,6 +610,14 @@ def load_record(
         hand_poses = np.zeros((len(frame), 2, 7), dtype=np.float32)
         hand_poses[:, :, 6] = 1.0
         hand_pose_valid = np.zeros((len(frame), 2), dtype=bool)
+        hand_timestamp_values = pd.to_numeric(
+            frame["hand_timestamp_ns"], errors="coerce"
+        ).to_numpy(np.float64)
+        hand_timestamps_ns = np.full(len(frame), -1, dtype=np.int64)
+        finite_hand_timestamps = np.isfinite(hand_timestamp_values)
+        hand_timestamps_ns[finite_hand_timestamps] = hand_timestamp_values[
+            finite_hand_timestamps
+        ].astype(np.int64)
         robot_valid = (
             pd.to_numeric(frame["robot_frame_valid"], errors="coerce")
             .fillna(0)
@@ -566,7 +641,10 @@ def load_record(
                 > 0
             )
             current_valid = (
-                explicit_valid & robot_valid & np.isfinite(current).all(axis=1)
+                explicit_valid
+                & robot_valid
+                & finite_hand_timestamps
+                & np.isfinite(current).all(axis=1)
             )
             current_quaternion_norm = np.linalg.norm(current[:, 3:7], axis=1)
             current_valid &= current_quaternion_norm > 1e-6
@@ -585,21 +663,46 @@ def load_record(
         .apply(pd.to_numeric, errors="coerce")
         .to_numpy(np.float32)
     )
+    # Window inclusion is based on one common, unabated sensor schema.  Missing
+    # columns stay NaN here even though a retained *_valid model channel may be
+    # filled with zero, so an absent source cannot improve eligibility.
+    eligibility_values = np.full(
+        (len(frame), len(eligibility_columns)), np.nan, dtype=np.float32
+    )
+    if available_eligibility:
+        eligibility_indices = {
+            column: index for index, column in enumerate(eligibility_columns)
+        }
+        numeric_eligibility = (
+            frame[available_eligibility]
+            .apply(pd.to_numeric, errors="coerce")
+            .to_numpy(np.float32)
+        )
+        for source_index, column in enumerate(available_eligibility):
+            eligibility_values[:, eligibility_indices[column]] = (
+                numeric_eligibility[:, source_index]
+            )
+    eligibility_observed = np.isfinite(eligibility_values)
     timestamps = pd.to_numeric(frame["timestamp_ns"], errors="raise").to_numpy(np.int64)
     if np.any(np.diff(timestamps) < 0):
         raise ValueError(f"Timestamps are not sorted in {path.name}")
     pose_target_timestamp_ns = None
+    pose_target_hand_timestamp_ns = None
+    pose_target_time_error_ms = None
     pose_target_metadata = None
+    pose_target_regime_ids = np.full(len(frame), -1, dtype=np.int8)
     if terminal_mode:
         assert receiving_hand_ids is not None
         assert hand_poses is not None
         assert hand_pose_valid is not None
+        assert hand_timestamps_ns is not None
         estimate = estimate_terminal_endpose(
             timestamps_ns=timestamps,
             intention_ids=labels.to_numpy(np.int64),
             receiving_hand_ids=receiving_hand_ids,
             hand_poses=hand_poses,
             hand_pose_valid=hand_pose_valid,
+            hand_timestamps_ns=hand_timestamps_ns,
             handover_intent_id=INTENTION_TO_ID["handover"],
             receiving_hand_names=RECEIVING_HAND_NAMES,
             config=terminal_config,
@@ -607,12 +710,93 @@ def load_record(
         pose_target_metadata = estimate.to_dict()
         if estimate.eligible:
             assert estimate.pose is not None
-            assert estimate.handover_end_timestamp_ns is not None
+            assert estimate.target_capture_timestamp_ns is not None
+            target_capture_timestamp_ns = int(
+                estimate.target_capture_timestamp_ns
+            )
+            if estimate.aggregation_capture_start_timestamp_ns is None:
+                raise ValueError(
+                    "Accepted terminal target lacks aggregation capture start"
+                )
+            aggregation_capture_start_ns = int(
+                estimate.aggregation_capture_start_timestamp_ns
+            )
             handover_mask = labels.to_numpy(np.int64) == INTENTION_TO_ID["handover"]
-            poses[handover_mask] = np.asarray(estimate.pose, dtype=np.float32)
-            pose_valid[handover_mask] = True
+            future_mask = handover_mask & future_terminal_target_mask(
+                timestamps, target_capture_timestamp_ns
+            )
+            strictly_before_aggregation = handover_mask & (
+                timestamps < aggregation_capture_start_ns
+            )
+            partially_overlapping = handover_mask & (
+                timestamps >= aggregation_capture_start_ns
+            ) & (timestamps < target_capture_timestamp_ns)
+            already_observed = handover_mask & (
+                timestamps >= target_capture_timestamp_ns
+            )
+            poses[future_mask] = np.asarray(estimate.pose, dtype=np.float32)
+            pose_valid[future_mask] = True
+            pose_target_regime_ids[strictly_before_aggregation] = 0
+            pose_target_regime_ids[partially_overlapping] = 1
             pose_target_timestamp_ns = np.full(
-                len(frame), estimate.handover_end_timestamp_ns, dtype=np.int64
+                len(frame), target_capture_timestamp_ns, dtype=np.int64
+            )
+            pose_target_hand_timestamp_ns = np.full(
+                len(frame), target_capture_timestamp_ns, dtype=np.int64
+            )
+            pose_target_metadata.update(
+                {
+                    "target_timestamp_semantics": (
+                        "latest unique valid physical hand capture used by "
+                        "the accepted robust aggregation"
+                    ),
+                    "future_endpoint_policy": (
+                        "endpoint timestamp_ns < target_capture_timestamp_ns"
+                    ),
+                    "future_handover_endpoint_rows": int(future_mask.sum()),
+                    "strictly_before_aggregation_handover_endpoint_rows": int(
+                        strictly_before_aggregation.sum()
+                    ),
+                    "partially_overlapping_aggregation_handover_endpoint_rows": int(
+                        partially_overlapping.sum()
+                    ),
+                    "already_observed_handover_endpoint_rows": int(
+                        already_observed.sum()
+                    ),
+                    "overlap_interpretation": (
+                        "Endpoints inside the aggregation-capture interval are "
+                        "terminal-state estimation with partial target evidence, "
+                        "not fully pre-aggregation forecasting. Endpoints at or "
+                        "after the final target capture are masked."
+                    ),
+                }
+            )
+    else:
+        target_timestamp_values = pd.to_numeric(
+            frame["future_target_timestamp_ns"], errors="coerce"
+        ).to_numpy(np.float64)
+        pose_target_timestamp_ns = np.full(len(frame), -1, dtype=np.int64)
+        finite_target_timestamps = np.isfinite(target_timestamp_values)
+        pose_target_timestamp_ns[finite_target_timestamps] = (
+            target_timestamp_values[finite_target_timestamps].astype(np.int64)
+        )
+        pose_target_time_error_ms = pd.to_numeric(
+            frame[f"{prefix}time_error_ms"], errors="coerce"
+        ).to_numpy(np.float64)
+        if "future_target_hand_timestamp_ns" in header:
+            target_hand_values = pd.to_numeric(
+                frame["future_target_hand_timestamp_ns"], errors="coerce"
+            ).to_numpy(np.float64)
+            pose_target_hand_timestamp_ns = np.full(
+                len(frame), -1, dtype=np.int64
+            )
+            finite_target_hand = np.isfinite(target_hand_values)
+            pose_target_hand_timestamp_ns[finite_target_hand] = (
+                target_hand_values[finite_target_hand].astype(np.int64)
+            )
+        if np.any(pose_valid & ~finite_target_timestamps):
+            raise ValueError(
+                f"Valid t+1 poses lack future_target_timestamp_ns in {path.name}"
             )
     return SequenceRecord(
         sequence_id=sequence_values[0],
@@ -625,8 +809,13 @@ def load_record(
         receiving_hand_ids=receiving_hand_ids,
         hand_poses=hand_poses,
         hand_pose_valid=hand_pose_valid,
+        hand_timestamps_ns=hand_timestamps_ns,
         pose_target_timestamp_ns=pose_target_timestamp_ns,
+        pose_target_hand_timestamp_ns=pose_target_hand_timestamp_ns,
+        pose_target_time_error_ms=pose_target_time_error_ms,
         pose_target_metadata=pose_target_metadata,
+        eligibility_observed=eligibility_observed,
+        pose_target_regime_ids=pose_target_regime_ids,
     )
 
 
@@ -638,6 +827,7 @@ def split_records(
     test_fraction: float,
     validation_participants: list[str],
     test_participants: list[str],
+    train_participants: list[str] | None = None,
 ) -> tuple[dict[str, list[SequenceRecord]], dict]:
     records = [
         replace(record, participant=canonical_participant(record.participant))
@@ -649,21 +839,45 @@ def split_records(
             "At least three participants are required for leakage-safe train/val/test splits"
         )
 
-    explicit = bool(validation_participants or test_participants)
+    configured_train = list(train_participants or [])
+    explicit = bool(
+        configured_train or validation_participants or test_participants
+    )
     if explicit:
+        train = {canonical_participant(value) for value in configured_train}
         validation = {canonical_participant(value) for value in validation_participants}
         test = {canonical_participant(value) for value in test_participants}
-        unknown = (validation | test) - set(participants)
+        unknown = (train | validation | test) - set(participants)
         if unknown:
             raise ValueError(
                 f"Configured split participants not found: {sorted(unknown)}"
             )
-        if validation & test:
-            raise ValueError("Validation and test participant sets overlap")
+        if any(
+            left & right
+            for left, right in (
+                (train, validation),
+                (train, test),
+                (validation, test),
+            )
+        ):
+            raise ValueError("Configured participant split sets overlap")
         if not validation or not test:
             raise ValueError(
                 "Explicit splits require both validation and test participants"
             )
+        if configured_train:
+            if not train:
+                raise ValueError("Explicit train participant set is empty")
+            present = set(participants)
+            declared = train | validation | test
+            if declared != present:
+                raise ValueError(
+                    "Complete explicit participant split does not match the "
+                    "selected dataset; missing/extra participants: "
+                    f"{sorted(declared ^ present)}"
+                )
+        else:
+            train = set(participants) - validation - test
     else:
         shuffled = participants.copy()
         random.Random(seed).shuffle(shuffled)
@@ -681,7 +895,8 @@ def split_records(
         validation = set(shuffled[:validation_count])
         test = set(shuffled[validation_count : validation_count + test_count])
 
-    train = set(participants) - validation - test
+    if not explicit:
+        train = set(participants) - validation - test
     split = {
         "train": [record for record in records if record.participant in train],
         "validation": [
@@ -692,7 +907,9 @@ def split_records(
     if any(not values for values in split.values()):
         raise ValueError("One of train/validation/test contains no sequences")
     metadata = {
-        "strategy": "explicit_participants"
+        "strategy": "explicit_complete_participants"
+        if configured_train
+        else "explicit_participants"
         if explicit
         else "seeded_participant_group_split",
         "seed": seed,
@@ -719,6 +936,7 @@ class WindowDataset(Dataset):
         minimum_observed_fraction: float,
         max_timestamp_gap_seconds: float,
         include_hand_references: bool = False,
+        max_hand_reference_age_seconds: float = 0.25,
     ) -> None:
         self.records = records
         self.window_size = window_size
@@ -727,6 +945,13 @@ class WindowDataset(Dataset):
         self.discarded_observation_windows = 0
         self.discarded_unlabeled_windows = 0
         self.include_hand_references = include_hand_references
+        self.max_hand_reference_age_seconds = float(
+            max_hand_reference_age_seconds
+        )
+        if self.max_hand_reference_age_seconds <= 0.0:
+            raise ValueError(
+                "max_hand_reference_age_seconds must be greater than zero"
+            )
         max_timestamp_gap_ns = int(max_timestamp_gap_seconds * 1e9)
         if max_timestamp_gap_ns <= 0:
             raise ValueError("max_timestamp_gap_seconds must be greater than zero")
@@ -737,7 +962,6 @@ class WindowDataset(Dataset):
                 "is restricted to handover"
             )
         for record_index, record in enumerate(records):
-            raw_feature_count = record.features.shape[1] // 2
             for endpoint in range(window_size - 1, len(record.features), stride):
                 start = endpoint - window_size + 1
                 if record.intentions[endpoint] < 0:
@@ -749,9 +973,19 @@ class WindowDataset(Dataset):
                 ):
                     self.discarded_gap_windows += 1
                     continue
-                observed_fraction = float(
-                    record.features[start : endpoint + 1, raw_feature_count:].mean()
-                )
+                if record.eligibility_observed is not None:
+                    observed_fraction = float(
+                        record.eligibility_observed[start : endpoint + 1].mean()
+                    )
+                else:
+                    # Compatibility for hand-built test records. prepare_data
+                    # always supplies the invariant full-sensor mask.
+                    raw_feature_count = record.features.shape[1] // 2
+                    observed_fraction = float(
+                        record.features[
+                            start : endpoint + 1, raw_feature_count:
+                        ].mean()
+                    )
                 if observed_fraction < minimum_observed_fraction:
                     self.discarded_observation_windows += 1
                     continue
@@ -772,6 +1006,7 @@ class WindowDataset(Dataset):
                     record.receiving_hand_ids is None
                     or record.hand_poses is None
                     or record.hand_pose_valid is None
+                    or record.hand_timestamps_ns is None
                 ):
                     raise ValueError(
                         f"Hand-reference data was not loaded for {record.sequence_id}"
@@ -784,15 +1019,29 @@ class WindowDataset(Dataset):
                 for side_id in range(2):
                     valid_rows = np.flatnonzero(
                         record.hand_pose_valid[start : endpoint + 1, side_id]
+                        & (
+                            record.hand_timestamps_ns[start : endpoint + 1]
+                            <= int(record.timestamps_ns[endpoint])
+                        )
                     )
                     if len(valid_rows):
-                        reference_row = start + int(valid_rows[-1])
+                        local_timestamps = record.hand_timestamps_ns[
+                            start : endpoint + 1
+                        ][valid_rows]
+                        latest_local_row = int(
+                            valid_rows[int(np.argmax(local_timestamps))]
+                        )
+                        reference_row = start + latest_local_row
                         references[side_id] = record.hand_poses[reference_row, side_id]
                         validity[side_id] = True
                         ages[side_id] = (
                             int(record.timestamps_ns[endpoint])
-                            - int(record.timestamps_ns[reference_row])
+                            - int(record.hand_timestamps_ns[reference_row])
                         ) / 1e9
+                        if ages[side_id] > self.max_hand_reference_age_seconds:
+                            # Retain the measured age for coverage diagnostics,
+                            # but a stale wrist cannot be a residual origin.
+                            validity[side_id] = False
                 self.hand_reference_poses.append(references)
                 self.hand_reference_valid.append(validity)
                 self.hand_reference_age_seconds.append(ages)
@@ -830,6 +1079,38 @@ class WindowDataset(Dataset):
             "participant": record.participant,
             "timestamp_ns": torch.tensor(
                 record.timestamps_ns[endpoint], dtype=torch.long
+            ),
+            "pose_target_timestamp_ns": torch.tensor(
+                (
+                    int(record.pose_target_timestamp_ns[endpoint])
+                    if record.pose_target_timestamp_ns is not None
+                    else -1
+                ),
+                dtype=torch.long,
+            ),
+            "pose_target_hand_timestamp_ns": torch.tensor(
+                (
+                    int(record.pose_target_hand_timestamp_ns[endpoint])
+                    if record.pose_target_hand_timestamp_ns is not None
+                    else -1
+                ),
+                dtype=torch.long,
+            ),
+            "pose_target_time_error_ms": torch.tensor(
+                (
+                    float(record.pose_target_time_error_ms[endpoint])
+                    if record.pose_target_time_error_ms is not None
+                    else float("nan")
+                ),
+                dtype=torch.float32,
+            ),
+            "pose_target_regime_id": torch.tensor(
+                (
+                    int(record.pose_target_regime_ids[endpoint])
+                    if record.pose_target_regime_ids is not None
+                    else -1
+                ),
+                dtype=torch.long,
             ),
             "handover_progress": torch.tensor(
                 self.handover_progress[index], dtype=torch.float32
@@ -873,6 +1154,14 @@ class WindowDataset(Dataset):
             )
         return item
 
+    def endpoint_fingerprint(self) -> str:
+        payload = "\n".join(
+            f"{self.records[record_index].sequence_id}:"
+            f"{int(self.records[record_index].timestamps_ns[endpoint])}"
+            for record_index, endpoint in self.indices
+        )
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
     def intention_counts(self) -> list[int]:
         counts = np.zeros(len(INTENTION_NAMES), dtype=np.int64)
         for record_index, endpoint in self.indices:
@@ -911,6 +1200,11 @@ class WindowDataset(Dataset):
         status_counts = Counter(str(item["status"]) for item in records)
         applicable = [item for item in records if item["status"] != "not_applicable"]
         accepted = sum(bool(item["eligible"]) for item in applicable)
+        endpoint_partition_keys = (
+            "strictly_before_aggregation_handover_endpoint_rows",
+            "partially_overlapping_aggregation_handover_endpoint_rows",
+            "already_observed_handover_endpoint_rows",
+        )
         return {
             "sequences": len(records),
             "handover_sequences": len(applicable),
@@ -920,6 +1214,16 @@ class WindowDataset(Dataset):
                 accepted / len(applicable) if applicable else None
             ),
             "status_counts": dict(sorted(status_counts.items())),
+            "handover_endpoint_target_relation": {
+                key: int(sum(int(item.get(key, 0)) for item in applicable))
+                for key in endpoint_partition_keys
+            },
+            "overlap_interpretation": (
+                "Strictly-before endpoints forecast the complete robust aggregation "
+                "interval; partially-overlapping endpoints estimate the terminal "
+                "state with some contributing captures already observed; endpoints "
+                "at/after target capture are excluded from pose targets."
+            ),
         }
 
 
@@ -1122,6 +1426,13 @@ def prepare_data(
         "full_raw_feature_count": len(full_feature_columns),
         "retained_raw_feature_count": len(feature_columns),
         "retained_model_feature_count_with_masks": len(feature_columns) * 2,
+        "window_eligibility": {
+            "version": WINDOW_ELIGIBILITY_VERSION,
+            "source": "complete_unabated_sensor_feature_schema",
+            "feature_columns": full_feature_columns,
+            "feature_count": len(full_feature_columns),
+            "includes_visual_features": False,
+        },
     }
     if visual_loader is not None:
         feature_ablation.update(
@@ -1143,14 +1454,22 @@ def prepare_data(
             future_horizon_seconds=float(data_config["future_horizon_seconds"]),
             include_hand_references=include_hand_references,
             pose_target_config=pose_target_config,
+            eligibility_feature_columns=full_feature_columns,
+            required_observation_alignment_version=data_config.get(
+                "required_observation_alignment_version"
+            ),
         )
         for path in files
     ]
     if visual_loader is not None:
+        master_by_sequence = {
+            sequence_id_from_master_path(path): path for path in files
+        }
         for record in records:
             visual_features = visual_loader.features_for(
                 record.sequence_id,
                 record.timestamps_ns,
+                source_master_path=master_by_sequence[record.sequence_id],
             )
             if visual_loader.mode == "only":
                 record.features = visual_features
@@ -1158,6 +1477,20 @@ def prepare_data(
                 record.features = np.concatenate(
                     (record.features, visual_features), axis=1
                 )
+    split, split_metadata = split_records(
+        records,
+        seed=seed,
+        validation_fraction=float(data_config["validation_fraction"]),
+        test_fraction=float(data_config["test_fraction"]),
+        validation_participants=list(data_config.get("validation_participants", [])),
+        test_participants=list(data_config.get("test_participants", [])),
+        train_participants=list(data_config.get("train_participants", [])),
+    )
+    if visual_loader is not None:
+        visual_loader.validate_split_binding(
+            split_metadata,
+            selected_sequence_ids=[record.sequence_id for record in records],
+        )
     visual_provenance = (
         visual_loader.provenance()
         if visual_loader is not None
@@ -1203,14 +1536,7 @@ def prepare_data(
             "dataset_content_fingerprint"
         ],
     }
-    split, split_metadata = split_records(
-        records,
-        seed=seed,
-        validation_fraction=float(data_config["validation_fraction"]),
-        test_fraction=float(data_config["test_fraction"]),
-        validation_participants=list(data_config.get("validation_participants", [])),
-        test_participants=list(data_config.get("test_participants", [])),
-    )
+    split_metadata["modality_schema"] = provenance["schema"]["modality_schema"]
     split_metadata["feature_ablation"] = feature_ablation
     split_metadata["dataset_filter"] = filter_metadata
     split_metadata["pose_target"] = (
@@ -1221,6 +1547,13 @@ def prepare_data(
             "future_horizon_seconds": float(data_config["future_horizon_seconds"]),
         }
     )
+    split_metadata["hand_reference"] = {
+        "timestamp_basis": "hand_timestamp_ns (source capture device time)",
+        "causal_at_window_endpoint": True,
+        "maximum_age_seconds": float(
+            data_config.get("max_hand_reference_age_seconds", 0.25)
+        ),
+    }
     normalizer = fit_normalizer(split["train"], feature_columns)
     normalized_split = {
         name: [
@@ -1239,12 +1572,35 @@ def prepare_data(
             minimum_observed_fraction=float(data_config["minimum_observed_fraction"]),
             max_timestamp_gap_seconds=float(data_config["max_timestamp_gap_seconds"]),
             include_hand_references=include_hand_references,
+            max_hand_reference_age_seconds=float(
+                data_config.get("max_hand_reference_age_seconds", 0.25)
+            ),
         )
 
+    datasets = {
+        name: make_dataset(normalized_split[name])
+        for name in ("train", "validation", "test")
+    }
+    split_metadata["window_eligibility"] = {
+        "version": WINDOW_ELIGIBILITY_VERSION,
+        "source": "complete_unabated_sensor_feature_schema",
+        "feature_columns": full_feature_columns,
+        "minimum_observed_fraction": float(
+            data_config["minimum_observed_fraction"]
+        ),
+        "endpoint_fingerprints": {
+            name: dataset.endpoint_fingerprint()
+            for name, dataset in datasets.items()
+        },
+        "endpoint_counts": {
+            name: len(dataset) for name, dataset in datasets.items()
+        },
+    }
+
     return DataBundle(
-        train=make_dataset(normalized_split["train"]),
-        validation=make_dataset(normalized_split["validation"]),
-        test=make_dataset(normalized_split["test"]),
+        train=datasets["train"],
+        validation=datasets["validation"],
+        test=datasets["test"],
         normalizer=normalizer,
         feature_columns=feature_columns,
         split_metadata=split_metadata,
@@ -1261,6 +1617,7 @@ def save_data_metadata(bundle: DataBundle, path: Path) -> None:
         "pose_target": bundle.split_metadata.get("pose_target", {}),
         "feature_columns": bundle.feature_columns,
         "model_feature_columns": bundle.normalizer.output_feature_names,
+        "modality_schema": bundle.provenance["schema"]["modality_schema"],
         "normalizer": bundle.normalizer.to_dict(),
         "split": bundle.split_metadata,
         "provenance": bundle.provenance,
@@ -1324,7 +1681,9 @@ def save_data_metadata(bundle: DataBundle, path: Path) -> None:
         encoding="utf-8",
     )
     if bundle.manifest_snapshot is not None:
-        (path.parent / "dataset_manifest_snapshot.csv").write_text(
-            bundle.manifest_snapshot,
-            encoding="utf-8",
+        # Persist the exact bytes that were hashed above.  ``Path.write_text``
+        # performs platform newline translation on Windows, which made the
+        # frozen snapshot's SHA-256 disagree with its provenance record.
+        (path.parent / "dataset_manifest_snapshot.csv").write_bytes(
+            bundle.manifest_snapshot.encode("utf-8")
         )

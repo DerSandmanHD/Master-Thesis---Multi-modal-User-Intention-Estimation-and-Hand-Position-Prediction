@@ -7,11 +7,17 @@ import argparse
 import csv
 import hashlib
 import json
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+TRAINING_ROOT = PROJECT_ROOT / "Training"
+if str(TRAINING_ROOT) not in sys.path:
+    sys.path.insert(0, str(TRAINING_ROOT))
+
+from artifact_freeze import MANIFEST_NAME, validate_artifact_freeze  # noqa: E402
 SEEDS = (42, 43, 44)
 F1_TOLERANCE = 0.005
 
@@ -19,10 +25,14 @@ F1_TOLERANCE = 0.005
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-tag", required=True)
-    parser.add_argument("--screen-experiment", default="visual_embedding_screen_v1")
+    parser.add_argument(
+        "--screen-experiment", default="visual_embedding_screen_v2_device_time"
+    )
     parser.add_argument("--sensor-experiment", default="residual_v2_tuned_v1")
     parser.add_argument("--sensor-model", default="residual_v2_tuned")
-    parser.add_argument("--visual-experiment", default="visual_embedding_final_v1")
+    parser.add_argument(
+        "--visual-experiment", default="visual_embedding_final_v2_device_time"
+    )
     parser.add_argument("--output", type=Path, default=None)
     return parser.parse_args()
 
@@ -61,6 +71,11 @@ def main() -> int:
         "sensor_plus_clip",
     }:
         raise ValueError(f"Invalid visual-screen selection: {architecture!r}")
+    if screen.get("clip_alignment_version") != "vrs_rgb_device_time_v2":
+        raise ValueError("Visual screening does not use corrected Device-Time CLIP")
+    clip_alignment_fingerprint = screen.get("clip_alignment_fingerprint")
+    if not clip_alignment_fingerprint:
+        raise ValueError("Visual screening has no CLIP alignment fingerprint")
     if architecture == "sensor_baseline":
         experiment = args.sensor_experiment
         model = args.sensor_model
@@ -75,11 +90,35 @@ def main() -> int:
         run_dir = runs_root / run_id
         metrics_path = run_dir / "metrics.json"
         config_path = run_dir / "config.json"
+        metadata_path = run_dir / "data_metadata.json"
         checkpoint_path = run_dir / "best_intention_model.pt"
         metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
-        if metrics.get("test_evaluation_skipped") is not False or "test" not in metrics:
-            raise ValueError(f"Final evaluation is incomplete: {run_dir}")
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        if metrics.get("test_evaluation_skipped") is not True:
+            raise ValueError(f"Selection source is not validation-only: {run_dir}")
+        if "test" in metrics or "test_by_checkpoint" in metrics:
+            raise ValueError(f"Selection source already contains test metrics: {run_dir}")
+        artifact_manifest = validate_artifact_freeze(run_dir / MANIFEST_NAME)
         values = validation_metrics(metrics)
+        checkpoint_metadata = metrics.get("checkpoints", {}).get(
+            "best_intention", {}
+        )
+        if not str(checkpoint_metadata.get("selection_metric", "")).startswith(
+            "validation_"
+        ):
+            raise ValueError(f"Checkpoint was not selected on validation: {run_dir}")
+        visual = metadata.get("provenance", {}).get("schema", {}).get(
+            "visual_features", {}
+        )
+        if architecture != "sensor_baseline":
+            if (
+                visual.get("alignment_version") != "vrs_rgb_device_time_v2"
+                or visual.get("alignment_fingerprint")
+                != clip_alignment_fingerprint
+            ):
+                raise ValueError(
+                    f"Final visual run uses a different CLIP alignment: {run_dir}"
+                )
         rows.append(
             {
                 "seed": seed,
@@ -91,11 +130,27 @@ def main() -> int:
                     values["receiving_hand"]["macro_f1_supported"]
                 ),
                 "validation_pose_mae_cm": float(
-                    values["pose_oracle"]["position_mae_cm"]
+                    values["pose_end_to_end"]["position_mae_cm"]
                 ),
                 "checkpoint": str(checkpoint_path.relative_to(PROJECT_ROOT)),
                 "checkpoint_sha256": sha256_file(checkpoint_path),
                 "config_sha256": sha256_file(config_path),
+                "checkpoint_epoch": int(checkpoint_metadata["epoch"]),
+                "checkpoint_selection_metric": checkpoint_metadata[
+                    "selection_metric"
+                ],
+                "checkpoint_selection_value": float(
+                    checkpoint_metadata["selection_value"]
+                ),
+                "artifact_manifest_fingerprint": artifact_manifest[
+                    "manifest_fingerprint"
+                ],
+                "selected_checkpoint_clip_alignment_version": visual.get(
+                    "alignment_version"
+                ),
+                "selected_checkpoint_clip_alignment_fingerprint": visual.get(
+                    "alignment_fingerprint"
+                ),
             }
         )
     best_f1 = max(row["validation_intention_macro_f1"] for row in rows)
@@ -115,13 +170,13 @@ def main() -> int:
     output = (
         args.output.expanduser()
         if args.output
-        else reports / "final_model_selection.json"
+        else reports / "final_model_selection_v2_device_time.json"
     )
     if not output.is_absolute():
         output = PROJECT_ROOT / output
     output.parent.mkdir(parents=True, exist_ok=True)
     report = {
-        "schema_version": 1,
+        "schema_version": 3,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "dataset_tag": args.dataset_tag,
         "architecture_source": str(
@@ -135,8 +190,29 @@ def main() -> int:
         "selected_seed": selected["seed"],
         "selected_checkpoint": selected["checkpoint"],
         "selected_checkpoint_sha256": selected["checkpoint_sha256"],
+        "selected_checkpoint_epoch": selected["checkpoint_epoch"],
+        "selected_checkpoint_selection_metric": selected[
+            "checkpoint_selection_metric"
+        ],
+        "selected_checkpoint_selection_value": selected[
+            "checkpoint_selection_value"
+        ],
+        "selected_checkpoint_uses_clip": architecture != "sensor_baseline",
+        "clip_alignment_version": screen["clip_alignment_version"],
+        "clip_alignment_fingerprint": clip_alignment_fingerprint,
+        "selected_checkpoint_clip_alignment_version": selected[
+            "selected_checkpoint_clip_alignment_version"
+        ],
+        "selected_checkpoint_clip_alignment_fingerprint": selected[
+            "selected_checkpoint_clip_alignment_fingerprint"
+        ],
         "selection_split": "validation",
         "test_metrics_read_for_selection": False,
+        "test_evaluation_performed_before_selection": False,
+        "final_test_command": (
+            "python3 Training/evaluate_frozen_run.py --run-dir <selected_run_dir> "
+            "--checkpoint best_intention"
+        ),
         "selection_rule": (
             "retain seeds within 0.005 of best validation intention macro-F1; "
             "then minimize validation pose MAE; maximize validation hand F1; "

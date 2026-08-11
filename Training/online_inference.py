@@ -21,6 +21,7 @@ from replay_stream_inference import (
     load_artifacts,
     timed_forward,
 )
+from prediction_utils import intention_head_mode
 
 
 class OnlineInferenceEngine:
@@ -83,13 +84,13 @@ class OnlineInferenceEngine:
         self.last_timestamp_ns = None
 
     def _warm_up_models(self) -> dict[str, float]:
-        """Run one inference-only dummy forward per checkpoint at startup."""
+        """Run one inference-only dummy forward for the deployment checkpoint."""
 
         features = torch.zeros(
             (
                 1,
                 self.artifacts.window_size,
-                self.artifacts.intention_model.input_dim,
+                self.artifacts.model.input_dim,
             ),
             dtype=torch.float32,
             device=self.artifacts.device,
@@ -100,22 +101,13 @@ class OnlineInferenceEngine:
             device=self.artifacts.device,
         )
         references[:, :, 6] = 1.0
-        _, intention_ms = timed_forward(
-            self.artifacts.intention_model,
+        _, model_ms = timed_forward(
+            self.artifacts.model,
             features,
             references,
             self.artifacts.device,
         )
-        _, pose_ms = timed_forward(
-            self.artifacts.pose_model,
-            features,
-            references,
-            self.artifacts.device,
-        )
-        return {
-            "intention": float(intention_ms),
-            "pose": float(pose_ms),
-        }
+        return {"model": float(model_ms)}
 
     def _feature_array(self, values: Mapping[str, float | int | None]) -> np.ndarray:
         missing = [name for name in self.feature_columns if name not in values]
@@ -229,17 +221,25 @@ class OnlineInferenceEngine:
         reference_tensor = torch.from_numpy(references[None, ...]).to(
             self.artifacts.device
         )
-        phases["intention_inference_started_host_ns"] = time.monotonic_ns()
-        intention_outputs, intention_ms = timed_forward(
-            self.artifacts.intention_model,
+        inference_started_ns = time.monotonic_ns()
+        phases["model_inference_started_host_ns"] = inference_started_ns
+        # Compatibility timestamps: the single forward produces every task head.
+        phases["intention_inference_started_host_ns"] = inference_started_ns
+        outputs, model_ms = timed_forward(
+            self.artifacts.model,
             feature_tensor,
             reference_tensor,
             self.artifacts.device,
         )
-        phases["intention_inference_ended_host_ns"] = time.monotonic_ns()
-        probabilities = joint_intention_probabilities(intention_outputs)
+        inference_ended_ns = time.monotonic_ns()
+        phases["model_inference_ended_host_ns"] = inference_ended_ns
+        phases["intention_inference_ended_host_ns"] = inference_ended_ns
+        probabilities = joint_intention_probabilities(outputs)
         raw_id = intention_id_from_probabilities(probabilities)
-        hierarchical_raw_id = hierarchical_intention_id(intention_outputs)
+        decision_rule_raw_id = hierarchical_intention_id(outputs)
+        hierarchical_output = (
+            intention_head_mode(outputs) == "hierarchical"
+        )
         phases["raw_decision_host_ns"] = time.monotonic_ns()
         stable_label, stable_confidence, smoothed = self.filter.update(probabilities)
         phases["stable_decision_host_ns"] = time.monotonic_ns()
@@ -247,24 +247,15 @@ class OnlineInferenceEngine:
         predicted_hand = None
         predicted_pose = None
         pose_reference_valid = None
-        pose_ms = None
         if stable_label == "handover":
-            phases["pose_inference_started_host_ns"] = time.monotonic_ns()
-            pose_outputs, pose_ms = timed_forward(
-                self.artifacts.pose_model,
-                feature_tensor,
-                reference_tensor,
-                self.artifacts.device,
-            )
-            phases["pose_inference_ended_host_ns"] = time.monotonic_ns()
             hand_id = int(
-                pose_outputs["receiving_hand_logits"].argmax(dim=-1).item()
+                outputs["receiving_hand_logits"].argmax(dim=-1).item()
             )
             predicted_hand = RECEIVING_HAND_NAMES[hand_id]
             pose_reference_valid = bool(reference_valid[hand_id])
             if pose_reference_valid:
                 predicted_pose = (
-                    pose_outputs["pose_candidates"][0, hand_id]
+                    outputs["pose_candidates"][0, hand_id]
                     .detach()
                     .cpu()
                     .numpy()
@@ -274,14 +265,31 @@ class OnlineInferenceEngine:
         self.frames_since_prediction = 0
         self.prediction_index += 1
         phases["engine_prediction_ready_host_ns"] = time.monotonic_ns()
+        modality_names = list(
+            getattr(self.artifacts.model, "modality_names", ())
+        )
+        modality_weights = {
+            name: float(outputs["modality_weights"][0, index])
+            for index, name in enumerate(modality_names)
+        }
+        modality_available = {
+            name: bool(outputs["modality_available"][0, index])
+            for index, name in enumerate(modality_names)
+        }
         return {
             "prediction_index": self.prediction_index,
             "timestamp_ns": timestamp_ns,
             "raw_intention": INTENTION_NAMES[raw_id],
             "raw_confidence": float(probabilities[raw_id]),
-            "hierarchical_raw_intention": INTENTION_NAMES[
-                hierarchical_raw_id
+            "decision_rule_raw_intention": INTENTION_NAMES[
+                decision_rule_raw_id
             ],
+            "joint_probability_argmax_intention": INTENTION_NAMES[raw_id],
+            "hierarchical_raw_intention": (
+                INTENTION_NAMES[decision_rule_raw_id]
+                if hierarchical_output
+                else None
+            ),
 
             "raw_p_continue": float(probabilities[0]),
             "raw_p_fetch": float(probabilities[1]),
@@ -298,7 +306,16 @@ class OnlineInferenceEngine:
             "predicted_hand_reference_valid": pose_reference_valid,
             "predicted_pose_robot": predicted_pose,
             "observed_fraction": observed_fraction,
-            "intention_inference_ms": intention_ms,
-            "pose_inference_ms": pose_ms,
+            "model_inference_ms": model_ms,
+            "intention_inference_ms": model_ms,
+            "pose_inference_ms": None,
+            "pose_reuses_primary_forward": True,
+            "checkpoint_path": str(self.artifacts.checkpoint_path),
+            "checkpoint_epoch": self.artifacts.checkpoint_epoch,
+            "checkpoint_selection_metric": (
+                self.artifacts.checkpoint_selection_metric
+            ),
+            "modality_weights": modality_weights,
+            "modality_available": modality_available,
             "pipeline_timestamps": phases,
         }

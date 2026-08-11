@@ -17,7 +17,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-import cv2
+try:
+    import cv2
+except ImportError:  # Pure decision/unit tests do not require the RGB stack.
+    cv2 = None
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -40,6 +43,13 @@ APRILTAG_FAMILY = "apriltag_36h11"
 ARUCO_FAMILY = "aruco_4x4_50"
 OBJECT_MARKER_IDS = tuple(range(6, 15))
 RGB_CAMERA_LABEL = "camera-rgb"
+
+
+def require_opencv() -> None:
+    if cv2 is None:
+        raise RuntimeError(
+            "OpenCV with the aruco module is required for live RGB/marker inference"
+        )
 
 
 def parse_args() -> argparse.Namespace:
@@ -325,6 +335,7 @@ def marker_pose(
     family: str,
     marker_id: int,
 ) -> np.ndarray | None:
+    require_opencv()
     success, rvec, tvec = cv2.solvePnP(
         marker_object_points(
             marker_size_m(family, marker_id)
@@ -502,6 +513,7 @@ class LiveFeatureAssembler:
         self.latest_workflow: dict | None = None
         self.latest_anchor_diagnostics: dict | None = None
 
+        require_opencv()
         self.april_detector = cv2.aruco.ArucoDetector(
             cv2.aruco.getPredefinedDictionary(
                 cv2.aruco.DICT_APRILTAG_36h11

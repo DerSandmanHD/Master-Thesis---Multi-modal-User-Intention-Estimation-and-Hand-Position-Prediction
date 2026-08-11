@@ -21,6 +21,7 @@
       2
     ],
     "include_hand_references": true,
+    "max_hand_reference_age_seconds": 0.25,
     "minimum_observed_fraction": 0.05,
     "max_timestamp_gap_seconds": 0.2,
     "validation_fraction": 0.2,
@@ -38,14 +39,16 @@
     "visual_embeddings": {
       "enabled": true,
       "mode": "only",
-      "cache_dir": "Data_collection/visual_embeddings/clip_vit_b32_openai_5hz",
-      "projection_path": "Training/visual_projections/dataset_v2_20260802_n214_5d136a34/clip_vit_b32_openai_5hz_pca32.npz",
+      "cache_dir": "Data_collection/visual_embeddings/dataset_v2_20260802_n214_5d136a34/clip_vit_b32_openai_5hz_device_time_v2",
+      "projection_path": "Training/visual_projections/dataset_v2_20260802_n214_5d136a34/clip_vit_b32_openai_5hz_device_time_v2_pca32.npz",
       "expected_output_dim": 32,
       "max_age_seconds": 0.25,
       "verify_cache_hashes": true
     }
   },
   "model": {
+    "fusion_mode": "temporal_channel_gated",
+    "intention_head_mode": "hierarchical",
     "d_model": 32,
     "nhead": 8,
     "num_layers": 1,

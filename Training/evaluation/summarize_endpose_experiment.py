@@ -20,8 +20,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from checkpoint_semantics import (
+    DEFAULT_VALIDATION_SELECTION_RULE,
+    checkpoint_metrics,
+    mark_seed_aggregate,
+    persistence_diagnostic,
+    pose_selected_diagnostic,
+    primary_result_row,
+    select_primary_checkpoint_row,
+)
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+TERMINAL_TARGET_VERSION = "terminal_endpose_unique_hand_capture_v2"
 SEEDS = (42, 43, 44)
 MODEL_ORDER = ("t_plus_1_as_terminal", "terminal_endpose")
 MODEL_LABELS = {
@@ -35,6 +46,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-tag", required=True)
     parser.add_argument("--experiment-tag", default="residual_v2_endpose_v1")
+    parser.add_argument(
+        "--report-tag", default="residual_v2_endpose_v1_checkpoint_coherent_v2"
+    )
     parser.add_argument("--t1-experiment", default="residual_v2_tuned_v1")
     parser.add_argument("--require-complete", action="store_true")
     return parser.parse_args()
@@ -66,57 +80,72 @@ def portable_artifact_path(path: Path) -> str:
 
 
 def result_row(model: str, seed: int, report: dict, run_or_report: Path) -> dict:
-    test = report["test"]
-    intention = test["best_intention"]
-    pose = test["best_pose"]
-    coverage = pose["pose_coverage"]
-    handover_windows = int(intention["receiving_hand"]["samples"])
-    target_windows = int(coverage.get("pose_targets", coverage["future_targets"]))
+    metrics = checkpoint_metrics(report, split="test", checkpoint="best_intention")
+    primary = primary_result_row(
+        report, checkpoint="best_intention", split="test"
+    )
+    validation = primary_result_row(
+        report, checkpoint="best_intention", split="validation"
+    )
+    persistence = persistence_diagnostic(
+        report, checkpoint="best_intention", split="test"
+    )
+    pose_selected = pose_selected_diagnostic(report, split="test")
+    coverage = metrics["pose_coverage"]
+    handover_windows = int(metrics["receiving_hand"]["samples"])
+    target_windows = int(
+        coverage.get("pose_targets", coverage.get("future_targets", 0))
+    )
     return {
         "model": model,
         "model_label": MODEL_LABELS[model].replace("\n", " "),
         "seed": seed,
         "artifact": portable_artifact_path(run_or_report),
-        "test_intention_macro_f1": float(intention["intention"]["macro_f1"]),
-        "test_receiving_hand_macro_f1": float(
-            intention["receiving_hand"]["macro_f1_supported"]
-        ),
+        **primary,
+        **persistence,
+        **pose_selected,
+        "validation_intention_macro_f1": validation[
+            "validation_intention_macro_f1"
+        ],
+        "validation_pose_mae_cm": validation["validation_pose_mae_cm"],
+        "validation_pose_orientation_error_deg": validation[
+            "validation_pose_orientation_error_deg"
+        ],
+        "test_intention_macro_f1": primary["test_intention_macro_f1"],
+        "test_receiving_hand_macro_f1": primary[
+            "test_receiving_hand_macro_f1"
+        ],
         "test_terminal_position_error_cm": float(
-            pose["pose_oracle"]["position_mae_cm"]
+            primary["test_pose_mae_cm"]
         ),
         "test_terminal_orientation_error_deg": float(
-            pose["pose_oracle"]["orientation_mean_deg"]
+            primary["test_pose_orientation_error_deg"]
         ),
         "test_terminal_end_to_end_position_error_cm": float(
-            pose["pose_end_to_end"]["position_mae_cm"]
+            primary["test_pose_end_to_end_mae_cm"]
         ),
         "test_terminal_end_to_end_orientation_error_deg": float(
-            pose["pose_end_to_end"]["orientation_mean_deg"]
+            primary["test_pose_end_to_end_orientation_error_deg"]
         ),
-        "test_last_observation_position_error_cm": float(
-            pose["last_observation_oracle"]["position_mae_cm"]
-        ),
+        "diagnostic_test_terminal_oracle_position_error_cm": primary[
+            "diagnostic_pose_oracle_test_position_mean_cm"
+        ],
+        "diagnostic_test_terminal_oracle_orientation_error_deg": primary[
+            "diagnostic_pose_oracle_test_orientation_mean_deg"
+        ],
         "test_target_windows": target_windows,
         "test_handover_windows": handover_windows,
         "test_target_window_coverage": (
             target_windows / handover_windows if handover_windows else None
         ),
         "trainable_parameters": int(report["trainable_parameters"]),
-        "best_intention_epoch": int(
-            report["checkpoints"]["best_intention"].get(
-                "epoch", report["checkpoints"]["best_intention"].get("source_epoch")
-            )
-        ),
-        "best_pose_epoch": int(
-            report["checkpoints"]["best_pose"].get(
-                "epoch", report["checkpoints"]["best_pose"].get("source_epoch")
-            )
-        ),
     }
 
 
 def time_rows(model: str, seed: int, report: dict) -> list[dict]:
-    groups = report["test"]["best_pose"]["pose_by_time_to_sequence_end"]
+    groups = checkpoint_metrics(
+        report, split="test", checkpoint="best_intention"
+    )["pose_by_time_to_sequence_end"]
     rows = []
     for group in TIME_GROUPS:
         for evaluation in ("pose_oracle", "pose_end_to_end", "last_observation_oracle"):
@@ -140,7 +169,6 @@ def time_rows(model: str, seed: int, report: dict) -> list[dict]:
 def native_t1_row(seed: int, report: dict) -> dict:
     native = report["source_native_t_plus_1_test"]
     intention = native["best_intention"]
-    pose = native["best_pose"]
     return {
         "seed": seed,
         "target_definition": "receiving-hand pose at t+1 second",
@@ -149,10 +177,16 @@ def native_t1_row(seed: int, report: dict) -> dict:
             intention["receiving_hand"]["macro_f1_supported"]
         ),
         "native_t_plus_1_position_error_cm": float(
-            pose["pose_oracle"]["position_mae_cm"]
+            intention["pose_end_to_end"]["position_mae_cm"]
         ),
         "native_t_plus_1_orientation_error_deg": float(
-            pose["pose_oracle"]["orientation_mean_deg"]
+            intention["pose_end_to_end"]["orientation_mean_deg"]
+        ),
+        "diagnostic_native_t_plus_1_oracle_position_error_cm": float(
+            intention["pose_oracle"]["position_mae_cm"]
+        ),
+        "diagnostic_native_t_plus_1_oracle_orientation_error_deg": float(
+            intention["pose_oracle"]["orientation_mean_deg"]
         ),
     }
 
@@ -165,7 +199,14 @@ def aggregate_runs(frame: pd.DataFrame) -> pd.DataFrame:
         "test_terminal_orientation_error_deg",
         "test_terminal_end_to_end_position_error_cm",
         "test_terminal_end_to_end_orientation_error_deg",
-        "test_last_observation_position_error_cm",
+        "diagnostic_test_terminal_oracle_position_error_cm",
+        "diagnostic_test_terminal_oracle_orientation_error_deg",
+        "diagnostic_persistence_test_position_mean_cm",
+        "diagnostic_persistence_test_position_median_cm",
+        "diagnostic_persistence_test_orientation_mean_deg",
+        "diagnostic_persistence_test_orientation_median_deg",
+        "diagnostic_persistence_test_samples",
+        "diagnostic_persistence_test_coverage",
         "test_target_window_coverage",
         "trainable_parameters",
     )
@@ -183,7 +224,7 @@ def aggregate_runs(frame: pd.DataFrame) -> pd.DataFrame:
             values = pd.to_numeric(group[metric], errors="coerce")
             row[f"{metric}_mean"] = float(values.mean())
             row[f"{metric}_std"] = float(values.std(ddof=0))
-        rows.append(row)
+        rows.append(mark_seed_aggregate(row))
     return pd.DataFrame(rows)
 
 
@@ -276,7 +317,7 @@ def plot_model_comparison(summary: pd.DataFrame, figures: Path) -> None:
 
 
 def plot_time_curve(summary: pd.DataFrame, figures: Path) -> None:
-    selected = summary.loc[summary["evaluation"] == "pose_oracle"].copy()
+    selected = summary.loc[summary["evaluation"] == "pose_end_to_end"].copy()
     figure, axes = plt.subplots(1, 2, figsize=(12, 4.8))
     x = np.arange(len(TIME_GROUPS))
     for model, color in zip(MODEL_ORDER, ("#9C755F", "#4C78A8")):
@@ -303,7 +344,9 @@ def plot_time_curve(summary: pd.DataFrame, figures: Path) -> None:
             axis.set_ylabel(ylabel)
             axis.grid(alpha=0.25)
     axes[0].legend()
-    figure.suptitle("Terminal-pose error versus remaining time (oracle receiving hand)")
+    figure.suptitle(
+        "Terminal-pose error versus remaining time (executable end-to-end system)"
+    )
     figure.tight_layout()
     figure.savefig(figures / "02_error_vs_time_remaining.png", dpi=300, bbox_inches="tight")
     figure.savefig(figures / "02_error_vs_time_remaining.pdf", bbox_inches="tight")
@@ -379,7 +422,7 @@ def write_markdown(
     baseline = indexed.loc["t_plus_1_as_terminal"]
     terminal = indexed.loc["terminal_endpose"]
     oracle_time = time_summary.loc[
-        time_summary["evaluation"] == "pose_oracle"
+        time_summary["evaluation"] == "pose_end_to_end"
     ].set_index(["model", "time_to_sequence_end_bin"])
     baseline_far = oracle_time.loc[("t_plus_1_as_terminal", ">=3s")]
     terminal_far = oracle_time.loc[("terminal_endpose", ">=3s")]
@@ -419,16 +462,17 @@ def write_markdown(
         [
             "",
             "Values are mean ± population standard deviation across seeds 42, 43 and 44. "
-            "Intent and hand use the best-intention checkpoint; pose uses the best-pose "
-            "checkpoint. Both checkpoints were selected exclusively on validation.",
+            "Every seed-level row uses one best-intention checkpoint for intent, hand, pose, "
+            "orientation, coverage, and sample counts. The table is a clearly labelled "
+            "multi-seed diagnostic; executable primary rows are stored in "
+            "`data/validation_selected_checkpoint_results.csv`.",
             "",
             "## Result",
             "",
-            "The dedicated terminal model did **not** improve the aggregate terminal-pose "
-            "result. Relative to the existing t+1 checkpoint evaluated against the same "
-            f"terminal target, its position error is "
-            f"{terminal['test_terminal_position_error_cm_mean'] - baseline['test_terminal_position_error_cm_mean']:.2f} cm higher and its "
-            f"orientation error is {terminal['test_terminal_orientation_error_deg_mean'] - baseline['test_terminal_orientation_error_deg_mean']:.2f}° higher. "
+            "Relative to the existing t+1 checkpoint evaluated against the same terminal "
+            f"target, the dedicated terminal model changes position error by "
+            f"{terminal['test_terminal_position_error_cm_mean'] - baseline['test_terminal_position_error_cm_mean']:+.2f} cm and "
+            f"orientation error by {terminal['test_terminal_orientation_error_deg_mean'] - baseline['test_terminal_orientation_error_deg_mean']:+.2f}°. "
             f"Intent macro-F1 changes by {terminal['test_intention_macro_f1_mean'] - baseline['test_intention_macro_f1_mean']:+.3f} and "
             f"receiving-hand macro-F1 by {terminal['test_receiving_hand_macro_f1_mean'] - baseline['test_receiving_hand_macro_f1_mean']:+.3f}.",
             "",
@@ -438,9 +482,8 @@ def write_markdown(
             f"{terminal_far['orientation_error_deg_mean']:.2f}° versus "
             f"{baseline_far['position_error_cm_mean']:.2f} cm / "
             f"{baseline_far['orientation_error_deg_mean']:.2f}° for the t+1 baseline. "
-            "The t+1 baseline is better in every bin from 0 to 3 seconds. Thus the terminal "
-            "objective shows some long-horizon anticipation, but the overall hypothesis is "
-            "not supported by this experiment.",
+            "These bin-level values are descriptive diagnostics; conclusions must be based "
+            "on the newly generated corrected-target report, not historical runs.",
             "",
             "For context only, the original model's native t+1 position error was "
             f"{native_summary['native_t_plus_1_position_error_cm_mean']:.2f} ± "
@@ -482,14 +525,15 @@ def write_markdown(
 def main() -> int:
     args = parse_args()
     runs_root = PROJECT_ROOT / "Training/runs" / args.dataset_tag
-    report_dir = (
+    source_report_dir = (
         PROJECT_ROOT / "Training/reports" / args.dataset_tag / args.experiment_tag
     )
+    report_dir = PROJECT_ROOT / "Training/reports" / args.dataset_tag / args.report_tag
     data_dir = report_dir / "data"
     figures = report_dir / "figures"
     data_dir.mkdir(parents=True, exist_ok=True)
     figures.mkdir(parents=True, exist_ok=True)
-    audit_path = report_dir / "audit" / "endpose_target_audit.json"
+    audit_path = source_report_dir / "audit" / "endpose_target_audit.json"
     audit = read_json(audit_path)
 
     rows = []
@@ -498,11 +542,20 @@ def main() -> int:
     errors = []
     for seed in SEEDS:
         new_path = endpose_run_path(runs_root, args.experiment_tag, seed)
-        baseline_path = report_dir / "baseline_terminal_eval" / f"seed{seed}.json"
+        baseline_path = (
+            source_report_dir / "baseline_terminal_eval" / f"seed{seed}.json"
+        )
         try:
             new_report = read_json(new_path / "metrics.json")
             if new_report["pose_target_definition"]["mode"] != "terminal_endpose":
                 raise ValueError("new run does not use terminal targets")
+            if (
+                new_report["pose_target_definition"].get(
+                    "target_definition_version"
+                )
+                != TERMINAL_TARGET_VERSION
+            ):
+                raise ValueError("new run uses a stale terminal-target definition")
             rows.append(result_row("terminal_endpose", seed, new_report, new_path))
             curve_rows.extend(time_rows("terminal_endpose", seed, new_report))
         except (FileNotFoundError, KeyError, TypeError, ValueError) as exc:
@@ -532,6 +585,17 @@ def main() -> int:
     summary.to_csv(data_dir / "model_summary.csv", index=False)
     time_summary.to_csv(data_dir / "error_vs_time_remaining.csv", index=False)
     native_summary = {}
+    primary_results = []
+    for model, group in runs.groupby("model", sort=False):
+        selected = select_primary_checkpoint_row(
+            group.to_dict(orient="records")
+        )
+        selected["model"] = model
+        primary_results.append(selected)
+    primary = pd.DataFrame(primary_results)
+    primary.to_csv(
+        data_dir / "validation_selected_checkpoint_results.csv", index=False
+    )
     if not native.empty:
         for metric in (
             "test_intention_macro_f1",
@@ -543,7 +607,7 @@ def main() -> int:
             native_summary[f"{metric}_mean"] = float(values.mean())
             native_summary[f"{metric}_std"] = float(values.std(ddof=0))
 
-    latency, latency_errors = load_latency(report_dir)
+    latency, latency_errors = load_latency(source_report_dir)
     errors.extend(latency_errors)
     latency.to_csv(data_dir / "latency.csv", index=False)
     complete = (
@@ -552,6 +616,10 @@ def main() -> int:
         and len(native) == len(SEEDS)
         and len(latency) == len(MODEL_ORDER) * 2
         and audit.get("training_authorized_by_audit") is True
+        and audit.get("pose_target_definition", {}).get(
+            "target_definition_version"
+        )
+        == TERMINAL_TARGET_VERSION
         and set(summary.get("model", [])) == set(MODEL_ORDER)
     )
     if complete:
@@ -570,16 +638,19 @@ def main() -> int:
         )
 
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "dataset_tag": args.dataset_tag,
         "experiment_tag": args.experiment_tag,
+        "report_tag": args.report_tag,
         "complete": complete,
         "errors": errors,
         "seeds": list(SEEDS),
         "target_audit": audit,
         "checkpoint_policy": {
-            "intention_and_hand": "best-intention checkpoint selected on validation",
-            "pose": "best-pose checkpoint selected on validation",
+            "primary": "all primary metrics use one best-intention checkpoint",
+            "selection_split": "validation",
+            "seed_selection_rule": DEFAULT_VALIDATION_SELECTION_RULE,
+            "pose_selected_checkpoint_role": "diagnostic_only",
             "test_used_for_selection": False,
         },
         "target_definitions": {
@@ -587,13 +658,14 @@ def main() -> int:
             "new_terminal_endpose": "one robust pose from the latest stable 0.5-second receiving-hand segment after THIRD",
             "common_comparison_target": "robust terminal receiving-hand pose",
         },
-        "run_results": runs.to_dict(orient="records"),
-        "aggregate_results": summary.to_dict(orient="records"),
+        "primary_results": primary_results,
+        "seed_aggregate_diagnostics": summary.to_dict(orient="records"),
         "native_t_plus_1_context": native_summary,
         "latency": latency.to_dict(orient="records"),
         "generated_files": [
             "data/model_runs.csv",
             "data/model_summary.csv",
+            "data/validation_selected_checkpoint_results.csv",
             "data/error_vs_time_remaining_by_seed.csv",
             "data/error_vs_time_remaining.csv",
             "data/native_t_plus_1_context.csv",

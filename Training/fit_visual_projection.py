@@ -18,7 +18,13 @@ from data import (
     manifest_filtered_master_files,
     sequence_id_from_master_path,
 )
+from clip_alignment import (
+    VISUAL_ALIGNMENT_VERSION,
+    VISUAL_TIME_BASIS,
+    canonical_json_hash,
+)
 from visual_embeddings import (
+    VISUAL_CACHE_SCHEMA_VERSION,
     VISUAL_PROJECTION_SCHEMA_VERSION,
     load_cache,
     sequence_fingerprint,
@@ -116,6 +122,18 @@ def main() -> int:
 
     manifest_path = cache_dir / "cache_manifest.json"
     cache_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if int(cache_manifest.get("schema_version", -1)) != VISUAL_CACHE_SCHEMA_VERSION:
+        raise ValueError("Unsupported or obsolete visual cache manifest schema")
+    alignment = cache_manifest.get("alignment")
+    if not isinstance(alignment, dict):
+        raise ValueError("Visual cache manifest has no alignment specification")
+    if alignment.get("version") != VISUAL_ALIGNMENT_VERSION:
+        raise ValueError("Visual caches use an obsolete timestamp alignment")
+    if alignment.get("time_basis") != VISUAL_TIME_BASIS:
+        raise ValueError("Visual caches do not use absolute Aria device time")
+    alignment_fingerprint = canonical_json_hash(alignment)
+    if cache_manifest.get("alignment_fingerprint") != alignment_fingerprint:
+        raise ValueError("Visual cache alignment fingerprint mismatch")
     arrays: list[np.ndarray] = []
     encoder_fingerprint = cache_manifest.get("encoder_fingerprint")
     input_dim = None
@@ -132,6 +150,10 @@ def main() -> int:
         _, embeddings, metadata = load_cache(cache_path)
         if metadata.get("encoder_fingerprint") != encoder_fingerprint:
             raise ValueError(f"Visual encoder mismatch: {cache_path}")
+        if metadata.get("alignment_fingerprint") != alignment_fingerprint:
+            raise ValueError(f"Visual alignment mismatch: {cache_path}")
+        if metadata.get("source_files") != entry.get("source_files"):
+            raise ValueError(f"Visual source identity mismatch: {cache_path}")
         if input_dim is None:
             input_dim = int(embeddings.shape[1])
         if embeddings.shape[1] != input_dim:
@@ -182,6 +204,9 @@ def main() -> int:
         "validation_participants_excluded": sorted(validation),
         "test_participants_excluded": sorted(test),
         "encoder_fingerprint": encoder_fingerprint,
+        "alignment_version": VISUAL_ALIGNMENT_VERSION,
+        "time_basis": VISUAL_TIME_BASIS,
+        "alignment_fingerprint": alignment_fingerprint,
         "cache_manifest_sha256": sha256_file(manifest_path),
         "config_path": str(config_path),
         "config_sha256": sha256_file(config_path),

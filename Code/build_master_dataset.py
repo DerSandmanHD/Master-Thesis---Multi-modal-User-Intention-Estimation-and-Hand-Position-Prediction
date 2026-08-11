@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import importlib.metadata
 import json
+import platform
 import sys
 import tempfile
 from pathlib import Path
@@ -23,6 +26,7 @@ from extract_multimodal_data import default_gaze_output, extract_vrs_tracking, w
 
 
 INTENT_TO_ID = {"transition": -1, "continue": 0, "fetch": 1, "handover": 2}
+OBSERVATION_ALIGNMENT_VERSION = "causal_backward_device_time_v1"
 HAND_COORDINATE_COLUMNS = {
     "left": ("hand_tx_left_device_wrist", "hand_ty_left_device_wrist", "hand_tz_left_device_wrist"),
     "right": ("hand_tx_right_device_wrist", "hand_ty_right_device_wrist", "hand_tz_right_device_wrist"),
@@ -41,6 +45,33 @@ HAND_QUATERNION_COLUMNS = {
         "hand_qw_right_device_wrist",
     ),
 }
+
+
+def source_file_identity(path: Path) -> dict:
+    resolved = Path(path).expanduser().resolve()
+    digest = hashlib.sha256()
+    with resolved.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return {
+        "path": str(resolved),
+        "size_bytes": int(resolved.stat().st_size),
+        "sha256": digest.hexdigest(),
+    }
+
+
+def software_versions() -> dict:
+    packages = {}
+    for name in ("projectaria-tools", "projectaria-mps", "numpy", "pandas", "scipy"):
+        try:
+            packages[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            packages[name] = None
+    return {
+        "python": sys.version,
+        "platform": platform.platform(),
+        "packages": packages,
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -149,7 +180,7 @@ def label_timeline(frame: pd.DataFrame, commands: dict) -> pd.DataFrame:
     return frame
 
 
-def nearest_merge(
+def causal_observation_merge(
     timeline: pd.DataFrame,
     source: pd.DataFrame,
     source_timestamp: str,
@@ -164,7 +195,9 @@ def nearest_merge(
         source,
         left_on="timestamp_ns",
         right_on=source_timestamp,
-        direction="nearest",
+        # Observation windows must never contain a capture occurring after the
+        # master row. Future labels use a separate target-alignment path.
+        direction="backward",
         tolerance=int(tolerance_ms * 1e6),
     )
 
@@ -251,7 +284,9 @@ def merge_markers(timeline: pd.DataFrame, marker_path: Path, tolerance_ms: float
             }
         )
         source[f"{prefix}_valid"] = 1
-        timeline = nearest_merge(timeline, source, f"{prefix}_timestamp_ns", tolerance_ms)
+        timeline = causal_observation_merge(
+            timeline, source, f"{prefix}_timestamp_ns", tolerance_ms
+        )
         timeline[f"{prefix}_valid"] = timeline[f"{prefix}_valid"].fillna(0).astype("int8")
         timeline[f"{prefix}_time_offset_ms"] = (
             timeline[f"{prefix}_timestamp_ns"] - timeline["timestamp_ns"]
@@ -530,8 +565,13 @@ def add_future_targets(master: pd.DataFrame, horizon_seconds: float, tolerance_m
                 f"{side}_wrist_robot_{axis}_m" for axis in "xyz"
             ] + [f"{side}_wrist_robot_q{component}" for component in "xyzw"]
         )
-    target_source = master[["timestamp_ns", *target_columns]].copy()
+    target_source_columns = ["timestamp_ns", *target_columns]
+    if "hand_timestamp_ns" in master:
+        target_source_columns.append("hand_timestamp_ns")
+    target_source = master[target_source_columns].copy()
     rename = {column: f"future_{horizon_seconds:g}s_{column}" for column in target_columns}
+    if "hand_timestamp_ns" in target_source:
+        rename["hand_timestamp_ns"] = "future_target_hand_timestamp_ns"
     target_source = target_source.rename(columns={"timestamp_ns": "future_target_timestamp_ns", **rename})
 
     aligned = pd.merge_asof(
@@ -643,6 +683,7 @@ def build_report(
     annotation_confidence: str,
     annotation_source: str,
     horizon_seconds: float,
+    source_artifacts: dict,
 ) -> dict:
     marker_valid_ratios = {
         key: round(float(master[f"{key}_valid"].mean()), 4)
@@ -662,6 +703,13 @@ def build_report(
 
     return {
         "sequence_id": sequence_id,
+        "observation_alignment": {
+            "version": OBSERVATION_ALIGNMENT_VERSION,
+            "master_time_basis": "absolute device timestamp_ns",
+            "source_policy": "latest source capture at or before each master row",
+            "future_source_captures_allowed": False,
+            "future_target_alignment_is_separate": True,
+        },
         "rows": len(master),
         "columns": len(master.columns),
         "timestamp_start_ns": int(master["timestamp_ns"].min()),
@@ -703,6 +751,8 @@ def build_report(
             "pose_target": "static robot-marker frame estimated from AprilTag 0 and SLAM; physical robot-base offset not yet applied",
         },
         "master_csv": str(output_csv),
+        "source_artifacts": source_artifacts,
+        "software_versions": software_versions(),
     }
 
 
@@ -771,11 +821,15 @@ def build_master(args: argparse.Namespace) -> tuple[pd.DataFrame, dict, Path, Pa
     master["annotation_confidence"] = annotation["annotation_confidence"] or "unknown"
 
     hand = load_hand_data(hand_path)
-    master = nearest_merge(master, hand, "hand_timestamp_ns", args.hand_tolerance_ms)
+    master = causal_observation_merge(
+        master, hand, "hand_timestamp_ns", args.hand_tolerance_ms
+    )
     master["hand_time_offset_ms"] = (master["hand_timestamp_ns"] - master["timestamp_ns"]) / 1e6
 
     slam = load_slam_data(slam_path)
-    master = nearest_merge(master, slam, "slam_timestamp_ns", args.slam_tolerance_ms)
+    master = causal_observation_merge(
+        master, slam, "slam_timestamp_ns", args.slam_tolerance_ms
+    )
     master["slam_time_offset_ms"] = (master["slam_timestamp_ns"] - master["timestamp_ns"]) / 1e6
 
     master, marker_keys = merge_markers(master, marker_path, args.marker_tolerance_ms)
@@ -786,6 +840,9 @@ def build_master(args: argparse.Namespace) -> tuple[pd.DataFrame, dict, Path, Pa
     master = add_future_targets(master, args.future_horizon_seconds, args.hand_tolerance_ms)
     master = add_receiving_hand_target(master, args.future_horizon_seconds, receiving_hand)
     master = master.sort_values("timestamp_ns").reset_index(drop=True)
+    # Freeze observation-join semantics in every derived row so training and
+    # downstream caches can reject masters built with the former nearest join.
+    master["observation_alignment_version"] = OBSERVATION_ALIGNMENT_VERSION
 
     report = build_report(
         master,
@@ -797,6 +854,19 @@ def build_master(args: argparse.Namespace) -> tuple[pd.DataFrame, dict, Path, Pa
         annotation["annotation_confidence"],
         annotation["annotation_source"],
         args.future_horizon_seconds,
+        {
+            "vrs": source_file_identity(vrs_path),
+            "mps_hand_tracking": source_file_identity(hand_path),
+            "mps_closed_loop_trajectory": source_file_identity(slam_path),
+            "calibrated_markers": source_file_identity(marker_path),
+            "timestamp_summary": source_file_identity(timestamps_path),
+            "gaze_cache": source_file_identity(gaze_csv),
+            "annotations": (
+                source_file_identity(annotation_path)
+                if annotation_path is not None
+                else None
+            ),
+        },
     )
     atomic_dataframe_csv(master, output_csv, args.overwrite)
     atomic_json(report, report_out, args.overwrite)

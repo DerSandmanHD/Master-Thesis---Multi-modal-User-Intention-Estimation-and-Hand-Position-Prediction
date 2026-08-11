@@ -18,7 +18,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from torch.nn import functional as F
 
 from data import (
     INTENTION_NAMES,
@@ -38,6 +37,11 @@ from live_decision import (
     evaluate_actionability,
 )
 from model import HierarchicalResidualPoseTransformer
+from prediction_utils import (
+    intention_head_mode,
+    intention_predictions,
+    intention_probabilities,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -62,8 +66,10 @@ def intention_id_from_probabilities(probabilities: np.ndarray) -> int:
 
 @dataclass
 class DeploymentArtifacts:
-    intention_model: HierarchicalResidualPoseTransformer
-    pose_model: HierarchicalResidualPoseTransformer
+    model: HierarchicalResidualPoseTransformer
+    checkpoint_path: Path
+    checkpoint_epoch: int
+    checkpoint_selection_metric: str
     normalizer: Normalizer
     feature_columns: list[str]
     window_size: int
@@ -139,7 +145,10 @@ def parse_args() -> argparse.Namespace:
         "--artifacts-dir",
         type=Path,
         default=Path("Training/final_clean_v1_residual_v2_seed44"),
-        help="Directory with both checkpoints, config.json and data_metadata.json.",
+        help=(
+            "Directory with the validation-selected best_intention_model.pt, "
+            "config.json and data_metadata.json. Replay never combines checkpoints."
+        ),
     )
     parser.add_argument("--master-csv", type=Path, required=True)
     parser.add_argument("--output-csv", type=Path, default=None)
@@ -288,8 +297,7 @@ def load_artifacts(
     required = {
         "config": artifacts_dir / "config.json",
         "metadata": artifacts_dir / "data_metadata.json",
-        "intention": artifacts_dir / "best_intention_model.pt",
-        "pose": artifacts_dir / "best_pose_model.pt",
+        "checkpoint": artifacts_dir / "best_intention_model.pt",
     }
     missing = [str(path) for path in required.values() if not path.is_file()]
     if missing:
@@ -310,28 +318,19 @@ def load_artifacts(
         raise ValueError("Normalizer output feature order differs from metadata")
 
     device = choose_device(requested_device)
-    intention_model, intention_checkpoint = load_checkpoint_model(
-        required["intention"], device
-    )
-    pose_model, pose_checkpoint = load_checkpoint_model(required["pose"], device)
-    if intention_checkpoint["selection_metric"] != "validation_intention_macro_f1":
-        raise ValueError("Intention checkpoint was not selected by validation intent F1")
-    if (
-        pose_checkpoint["selection_metric"]
-        != "validation_pose_oracle_position_mae_cm"
-    ):
-        raise ValueError("Pose checkpoint was not selected by validation pose MAE")
+    model, checkpoint = load_checkpoint_model(required["checkpoint"], device)
+    if checkpoint.get("selection_metric") != "validation_intention_macro_f1":
+        raise ValueError(
+            "Deployment checkpoint must be best_intention_model.pt selected by "
+            "validation intention macro-F1; pose-selected checkpoints are diagnostic only"
+        )
 
     window_size = int(config["data"]["window_size"])
     expected_input_dim = len(normalizer.output_feature_names)
-    for name, checkpoint in (
-        ("intention", intention_checkpoint),
-        ("pose", pose_checkpoint),
-    ):
-        if int(checkpoint["window_size"]) != window_size:
-            raise ValueError(f"{name} checkpoint and config window sizes differ")
-        if int(checkpoint["input_dim"]) != expected_input_dim:
-            raise ValueError(f"{name} checkpoint and metadata input dimensions differ")
+    if int(checkpoint["window_size"]) != window_size:
+        raise ValueError("Deployment checkpoint and config window sizes differ")
+    if int(checkpoint["input_dim"]) != expected_input_dim:
+        raise ValueError("Deployment checkpoint and metadata input dimensions differ")
 
     effective_step_size = (
         int(step_size) if step_size is not None else int(config["data"]["stride"])
@@ -340,8 +339,10 @@ def load_artifacts(
         raise ValueError("--step-size must be positive")
     max_gap_seconds = float(config["data"]["max_timestamp_gap_seconds"])
     return DeploymentArtifacts(
-        intention_model=intention_model,
-        pose_model=pose_model,
+        model=model,
+        checkpoint_path=required["checkpoint"],
+        checkpoint_epoch=int(checkpoint["epoch"]),
+        checkpoint_selection_metric=str(checkpoint["selection_metric"]),
         normalizer=normalizer,
         feature_columns=feature_columns,
         window_size=window_size,
@@ -687,23 +688,13 @@ def push_replay_quality_frames(
 
 
 def joint_intention_probabilities(outputs: dict[str, torch.Tensor]) -> np.ndarray:
-    assistance = F.softmax(outputs["assistance_logits"], dim=-1)[0]
-    assistance_type = F.softmax(outputs["assistance_type_logits"], dim=-1)[0]
-    probabilities = torch.stack(
-        (
-            assistance[0],
-            assistance[1] * assistance_type[0],
-            assistance[1] * assistance_type[1],
-        )
-    )
-    return probabilities.detach().cpu().numpy()
+    return intention_probabilities(outputs)[0].detach().cpu().numpy()
 
 
 def hierarchical_intention_id(outputs: dict[str, torch.Tensor]) -> int:
-    assistance = int(outputs["assistance_logits"].argmax(dim=-1).item())
-    if assistance == 0:
-        return 0
-    return int(outputs["assistance_type_logits"].argmax(dim=-1).item()) + 1
+    """Compatibility name for the configured head's actual decision rule."""
+
+    return int(intention_predictions(outputs)[0].item())
 
 
 def quaternion_error_deg(prediction: np.ndarray, target: np.ndarray) -> float:
@@ -778,7 +769,7 @@ def replay(args: argparse.Namespace) -> list[dict]:
             "complete robot-frame hand-reference schema"
         )
     normalized_features = artifacts.normalizer.transform(record.features)
-    if normalized_features.shape[1] != artifacts.intention_model.input_dim:
+    if normalized_features.shape[1] != artifacts.model.input_dim:
         raise ValueError("Normalized replay input dimension differs from checkpoint")
 
     decision_filter = TemporalDecisionFilter(
@@ -855,23 +846,25 @@ def replay(args: argparse.Namespace) -> list[dict]:
         pipeline_timestamps[
             "replay_window_ready_host_ns"
         ] = time.monotonic_ns()
-        pipeline_timestamps[
-            "intention_inference_started_host_ns"
-        ] = time.monotonic_ns()
-        intention_outputs, intention_ms = timed_forward(
-            artifacts.intention_model,
+        inference_started_ns = time.monotonic_ns()
+        pipeline_timestamps["model_inference_started_host_ns"] = inference_started_ns
+        # Compatibility timestamp: all heads are produced by this one model forward.
+        pipeline_timestamps["intention_inference_started_host_ns"] = inference_started_ns
+        outputs, model_ms = timed_forward(
+            artifacts.model,
             feature_tensor,
             reference_tensor,
             artifacts.device,
         )
-        pipeline_timestamps[
-            "intention_inference_ended_host_ns"
-        ] = time.monotonic_ns()
-        probabilities = joint_intention_probabilities(intention_outputs)
+        inference_ended_ns = time.monotonic_ns()
+        pipeline_timestamps["model_inference_ended_host_ns"] = inference_ended_ns
+        pipeline_timestamps["intention_inference_ended_host_ns"] = inference_ended_ns
+        probabilities = joint_intention_probabilities(outputs)
         raw_intention_id = intention_id_from_probabilities(probabilities)
-        hierarchical_raw_intention_id = hierarchical_intention_id(
-            intention_outputs
+        decision_rule_intention_id = hierarchical_intention_id(
+            outputs
         )
+        hierarchical_output = intention_head_mode(outputs) == "hierarchical"
         pipeline_timestamps["raw_decision_host_ns"] = time.monotonic_ns()
         stable_label, stable_confidence, smoothed = decision_filter.update(
             probabilities
@@ -880,27 +873,14 @@ def replay(args: argparse.Namespace) -> list[dict]:
 
         predicted_hand: str | None = None
         predicted_pose: np.ndarray | None = None
-        pose_ms: float | None = None
         pose_reference_valid: bool | None = None
         if stable_label == "handover":
-            pipeline_timestamps[
-                "pose_inference_started_host_ns"
-            ] = time.monotonic_ns()
-            pose_outputs, pose_ms = timed_forward(
-                artifacts.pose_model,
-                feature_tensor,
-                reference_tensor,
-                artifacts.device,
-            )
-            pipeline_timestamps[
-                "pose_inference_ended_host_ns"
-            ] = time.monotonic_ns()
-            hand_id = int(pose_outputs["receiving_hand_logits"].argmax(dim=-1).item())
+            hand_id = int(outputs["receiving_hand_logits"].argmax(dim=-1).item())
             predicted_hand = RECEIVING_HAND_NAMES[hand_id]
             pose_reference_valid = bool(reference_valid[hand_id])
             if pose_reference_valid:
                 predicted_pose = (
-                    pose_outputs["pose_candidates"][0, hand_id].detach().cpu().numpy()
+                    outputs["pose_candidates"][0, hand_id].detach().cpu().numpy()
                 )
 
         quality_decision = evaluate_actionability(
@@ -932,18 +912,41 @@ def replay(args: argparse.Namespace) -> list[dict]:
                 predicted_pose[3:7], target_pose[3:7]
             )
 
+        modality_names = list(
+            getattr(artifacts.model, "modality_names", ())
+        )
+        modality_weights = {
+            name: float(outputs["modality_weights"][0, index])
+            for index, name in enumerate(modality_names)
+        }
+        modality_available = {
+            name: bool(outputs["modality_available"][0, index])
+            for index, name in enumerate(modality_names)
+        }
+
         row = {
             "sequence_id": record.sequence_id,
             "participant": record.participant,
+            "checkpoint_path": str(artifacts.checkpoint_path),
+            "checkpoint_epoch": artifacts.checkpoint_epoch,
+            "checkpoint_selection_metric": artifacts.checkpoint_selection_metric,
             "endpoint_row": endpoint,
             "timestamp_ns": timestamp_ns,
             "elapsed_seconds": (timestamp_ns - int(record.timestamps_ns[0])) / 1e9,
             "target_intention": target_label,
             "raw_intention": INTENTION_NAMES[raw_intention_id],
             "raw_confidence": float(probabilities[raw_intention_id]),
-            "hierarchical_raw_intention": INTENTION_NAMES[
-                hierarchical_raw_intention_id
+            "decision_rule_raw_intention": INTENTION_NAMES[
+                decision_rule_intention_id
             ],
+            "joint_probability_argmax_intention": INTENTION_NAMES[
+                raw_intention_id
+            ],
+            "hierarchical_raw_intention": (
+                INTENTION_NAMES[decision_rule_intention_id]
+                if hierarchical_output
+                else None
+            ),
             "stable_intention": stable_label,
             "stable_confidence": stable_confidence,
             **quality_decision,
@@ -956,8 +959,12 @@ def replay(args: argparse.Namespace) -> list[dict]:
             "p_handover": float(smoothed[2]),
             "predicted_receiving_hand": predicted_hand,
             "predicted_hand_reference_valid": pose_reference_valid,
-            "intention_inference_ms": intention_ms,
-            "pose_inference_ms": pose_ms,
+            "modality_weights": modality_weights,
+            "modality_available": modality_available,
+            "model_inference_ms": model_ms,
+            "intention_inference_ms": model_ms,
+            "pose_inference_ms": None,
+            "pose_reuses_primary_forward": True,
             "target_pose_valid": target_pose_valid,
             "pose_position_error_cm": position_error_cm,
             "pose_orientation_error_deg": orientation_error_deg,
@@ -1001,7 +1008,7 @@ def replay(args: argparse.Namespace) -> list[dict]:
                 f"raw={row['raw_intention']} ({row['raw_confidence']:.3f}) | "
                 f"stable={stable_label} ({stable_confidence:.3f}) | "
                 f"actionable={actionable_intention} | "
-                f"truth={target_label} | intent={intention_ms:.2f} ms"
+                f"truth={target_label} | model={model_ms:.2f} ms"
                 f"{quality_text}"
                 f"{pose_text}"
             )
@@ -1243,7 +1250,7 @@ def print_summary(rows: list[dict], summary: dict | None = None) -> None:
         f"reasons={quality['reason_counts']}"
     )
     print(
-        "Intention inference: "
+        "Single-checkpoint model inference: "
         f"mean={np.mean(intention_times):.2f} ms, "
         f"p95={np.percentile(intention_times, 95):.2f} ms"
     )

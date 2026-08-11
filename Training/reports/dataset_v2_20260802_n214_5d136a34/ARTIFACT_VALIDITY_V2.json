@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "protocol": "thesis_artifact_validity_after_timing_and_reporting_audit_v2",
+  "created_at": "2026-08-11",
+  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "raw_source_policy": {
+    "vrs_and_original_mps_modified": false,
+    "historical_artifacts_deleted": false,
+    "status": "preserved"
+  },
+  "test_split": {
+    "status": "previously_observed_exploratory",
+    "may_be_used_for_future_model_selection": false,
+    "preferred_robustness_protocol": "participant-wise Group-CV plus participant/sequence cluster bootstrap"
+  },
+  "artifact_classes": [
+    {
+      "class": "historical_sensor_only_training_runs",
+      "paths": [
+        "Training/runs/dataset_v2_20260802_n214_5d136a34/benchmark_v2",
+        "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_tuned_v1",
+        "Training/runs/dataset_v2_20260802_n214_5d136a34/modality_ablation_v1"
+      ],
+      "status": "historical_descriptive_only",
+      "reason": "The test split has already been inspected, and historical central tables may combine best-intention classification with pose-selected diagnostics.",
+      "action": "Rerun the predeclared validation-only matrix and report one executable checkpoint per main row."
+    },
+    {
+      "class": "clip_v1_cache_projection_and_visual_models",
+      "paths": [
+        "Data_collection/visual_embeddings/dataset_v2_20260802_n214_5d136a34/clip_vit_b32_openai_5hz",
+        "Training/visual_projections/dataset_v2_20260802_n214_5d136a34/clip_vit_b32_openai_5hz_pca32.npz",
+        "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_screen_v1",
+        "Training/runs/dataset_v2_20260802_n214_5d136a34/visual_embedding_final_v1"
+      ],
+      "status": "invalid_for_corrected_clip_claims",
+      "reason": "Historical video/CLIP time zero was compared directly with START-relative master time and can select systematically shifted RGB frames.",
+      "action": "Rebuild vrs_rgb_device_time_v2 caches, refit train-only PCA, and retrain every CLIP model."
+    },
+    {
+      "class": "historical_qualitative_clip_overlays",
+      "paths": [
+        "Training/reports/dataset_v2_20260802_n214_5d136a34/qualitative_overlay_final"
+      ],
+      "status": "invalid_for_thesis_figures",
+      "reason": "The overlays predate hash-bound VRS-capture/MP4 frame sidecars and corrected CLIP alignment.",
+      "action": "Regenerate good, typical and failure cases from a corrected final checkpoint."
+    },
+    {
+      "class": "historical_terminal_endpose_runs_and_reports",
+      "paths": [
+        "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1",
+        "Training/runs/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v2",
+        "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v1",
+        "Training/reports/dataset_v2_20260802_n214_5d136a34/residual_v2_endpose_v2"
+      ],
+      "status": "invalid_as_corrected_terminal_main_results",
+      "reason": "The old target estimator counted nearest-merged duplicate master rows as independent hand captures and old reports selected/mixed pose-oracle checkpoints.",
+      "action": "Rerun the target audit and terminal experiment with terminal_endpose_unique_hand_capture_v2; retain old values only as explicitly historical negative evidence."
+    }
+  ],
+  "active_artifact_requirements": {
+    "clip_alignment_version": "vrs_rgb_device_time_v2",
+    "terminal_target_version": "terminal_endpose_unique_hand_capture_v2",
+    "cache_and_projection_schema_version": 2,
+    "primary_checkpoint": "best_intention",
+    "primary_pose_semantics": "learned_end_to_end_predicted_receiving_hand_and_reference",
+    "artifact_manifest_protocol": "thesis_artifact_freeze_hash_bound_v1",
+    "test_model_selection_allowed": false
+  },
+  "new_results_available": false
+}

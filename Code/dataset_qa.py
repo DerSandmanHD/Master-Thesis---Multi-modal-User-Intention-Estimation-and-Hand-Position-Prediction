@@ -146,15 +146,30 @@ def read_json(path: Path) -> dict:
 def count_csv_rows(path: Path) -> int | None:
     if not path.exists():
         return None
-    with path.open("r", encoding="utf-8", errors="replace") as handle:
-        row_count = sum(1 for _ in handle)
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            row_count = sum(1 for _ in handle)
+    except OSError:
+        # Network filesystems can invalidate an entry between exists() and open().
+        # Treat that race like a missing artifact instead of aborting the full QA.
+        return None
     return max(row_count - 1, 0)
 
 
-def file_size_mb(path: Path) -> float | None:
+def file_size_bytes(path: Path) -> int | None:
     if not path.exists():
         return None
-    return round(path.stat().st_size / (1024 * 1024), 2)
+    try:
+        return path.stat().st_size
+    except OSError:
+        return None
+
+
+def file_size_mb(path: Path) -> float | None:
+    size = file_size_bytes(path)
+    if size is None:
+        return None
+    return round(size / (1024 * 1024), 2)
 
 
 def wav_duration_seconds(path: Path) -> float | None:
@@ -290,7 +305,7 @@ def hand_tracking_phase_stats(
                 stats["left_valid_rows"] += int(left_valid)
                 stats["right_valid_rows"] += int(right_valid)
                 stats["either_valid_rows"] += int(left_valid or right_valid)
-    except (OSError, TypeError, ValueError):
+    except (OSError, csv.Error, TypeError, ValueError):
         return stats
 
     if stats["rows"]:
@@ -504,7 +519,7 @@ def csv_timestamp_ns_range(path: Path) -> tuple[int, int] | None:
                 maximum = (
                     timestamp_ns if maximum is None else max(maximum, timestamp_ns)
                 )
-    except (OSError, TypeError, ValueError):
+    except (OSError, csv.Error, TypeError, ValueError):
         return None
     if minimum is None or maximum is None:
         return None
@@ -528,7 +543,7 @@ def csv_object_marker_ids(path: Path | None) -> list[int]:
                 marker_id = int(row["marker_id"])
                 if marker_id in range(6, 15):
                     marker_ids.add(marker_id)
-    except (OSError, TypeError, ValueError):
+    except (OSError, csv.Error, TypeError, ValueError):
         return []
     return sorted(marker_ids)
 
@@ -727,8 +742,8 @@ def build_row(
     if not master_path.exists() or not master_report_path.exists():
         warnings.append("missing_master_dataset")
 
-    backup_size = backup_path.stat().st_size if backup_path.exists() else None
-    vrs_size = vrs_path.stat().st_size if vrs_path.exists() else None
+    backup_size = file_size_bytes(backup_path)
+    vrs_size = file_size_bytes(vrs_path)
     backup_size_delta = None
     if backup_size is not None and vrs_size is not None:
         backup_size_delta = vrs_size - backup_size

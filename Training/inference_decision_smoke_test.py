@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 from collections import deque
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -13,6 +15,7 @@ from aria_live_inference import (
     LiveFeatureAssembler,
     TimedSample,
     latest_before_item,
+    prediction_printer,
 )
 import torch
 
@@ -29,6 +32,25 @@ from replay_stream_inference import (
     push_replay_quality_frames,
     replay_quality_diagnostics,
 )
+
+
+def test_raw_prediction_printer_only_reports_label_changes() -> None:
+    emit, close = prediction_printer("raw", None)
+    output = StringIO()
+    base = {
+        "stable_intention": "continue",
+        "actionable_intention": "continue",
+        "perception_workflow": {},
+    }
+    with redirect_stdout(output):
+        emit({**base, "raw_intention": "continue"})
+        emit({**base, "raw_intention": "continue"})
+        emit({**base, "raw_intention": "fetch"})
+    close()
+    assert output.getvalue().splitlines() == [
+        "raw_intention=continue",
+        "raw_intention=fetch",
+    ]
 
 
 def test_only_confident_candidates_count() -> None:
@@ -400,6 +422,7 @@ def test_replay_freshness_is_causal_and_summary_is_layered() -> None:
 
 
 def main() -> int:
+    test_raw_prediction_printer_only_reports_label_changes()
     test_only_confident_candidates_count()
     test_unconfident_prediction_resets_confident_run()
     test_joint_probabilities_define_raw_and_stable_class()

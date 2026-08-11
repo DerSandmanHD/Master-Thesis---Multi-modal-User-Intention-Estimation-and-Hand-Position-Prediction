@@ -185,8 +185,12 @@ def parse_args() -> argparse.Namespace:
 
     parser.add_argument(
         "--print-mode",
-        choices=("changes", "all", "none"),
+        choices=("changes", "all", "raw", "none"),
         default="changes",
+        help=(
+            "Prediction console output: full changes, every full prediction, "
+            "raw-intention changes only, or none. JSONL logging is unaffected."
+        ),
     )
     parser.add_argument(
         "--output-jsonl",
@@ -203,8 +207,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--debug-every-frames",
         type=int,
-        default=30,
+        default=0,
         help="Print feature availability every N assembled frames; 0 disables it.",
+    )
+    parser.add_argument(
+        "--status-interval-seconds",
+        type=float,
+        default=5.0,
+        help="Print stream status every N seconds; 0 disables it.",
     )
 
     return parser.parse_args()
@@ -1913,6 +1923,7 @@ def prediction_printer(
     Callable[[], None],
 ]:
     previous_signature = None
+    previous_raw_intention = None
     handle = None
 
     if output_jsonl is not None:
@@ -1933,7 +1944,7 @@ def prediction_printer(
         )
 
     def emit(prediction: dict) -> None:
-        nonlocal previous_signature
+        nonlocal previous_raw_intention, previous_signature
 
         prediction.setdefault(
             "pipeline_timestamps",
@@ -1959,16 +1970,23 @@ def prediction_printer(
             workflow.get("selected_object_id"),
         )
 
-        should_print = (
-            print_mode == "all"
-            or (
-                print_mode == "changes"
-                and (
-                    signature != previous_signature
-                    or decision_label == "handover"
+        raw_intention = prediction["raw_intention"]
+        if print_mode == "raw":
+            if raw_intention != previous_raw_intention:
+                print(f"raw_intention={raw_intention}")
+                previous_raw_intention = raw_intention
+            should_print = False
+        else:
+            should_print = (
+                print_mode == "all"
+                or (
+                    print_mode == "changes"
+                    and (
+                        signature != previous_signature
+                        or decision_label == "handover"
+                    )
                 )
             )
-        )
 
         if should_print:
             pose = prediction[
@@ -2101,6 +2119,11 @@ def run_live(
     if args.duration_seconds < 0:
         raise ValueError(
             "duration_seconds cannot be negative"
+        )
+
+    if args.status_interval_seconds < 0:
+        raise ValueError(
+            "status_interval_seconds cannot be negative"
         )
 
     if (
@@ -2369,7 +2392,11 @@ def run_live(
         )
 
         started = time.monotonic()
-        next_status = started
+        next_status = (
+            started
+            if args.status_interval_seconds > 0
+            else float("inf")
+        )
 
         while True:
             now = time.monotonic()
@@ -2392,7 +2419,9 @@ def run_live(
                     )
                 )
 
-                next_status = now + 5.0
+                next_status = (
+                    now + args.status_interval_seconds
+                )
 
             time.sleep(0.1)
 

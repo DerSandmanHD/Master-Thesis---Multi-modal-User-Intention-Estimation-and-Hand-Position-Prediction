@@ -328,4 +328,53 @@ Jeder neue Runordner enthält:
 - `W=60`, Stride 10 und der Posehorizont `1.0 s` sind eindeutig konfiguriert; die reale Zeitdauer eines 60-Zeilen-Fensters ist ohne garantierte Abtastrate nicht eindeutig.
 - `F` wird dynamisch aus dem ersten CSV-Header bestimmt. Bei vollständig vorhandenem Profil gilt `F=92` und Modelleingabe `2F=184`; ein reduziertes kompatibles Schema kann weniger Kanäle ergeben.
 - ArUco-IDs 6 bis 14 sind als Markerfeatures definiert. Welche realen Gegenstände diesen IDs zugeordnet sind, ist in den untersuchten Trainingsdateien und Konfigurationen nicht festgelegt.
-ç
+
+
+
+
+
+   Modell         Overallintention    Assistance yes/no    Fetch/Handover      rec. hand
+  ━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━
+   Transformer     89,45 ± 0,39 %        91,70 ± 1,20 %    92,08 ± 3,07 %                 –
+  ─────────────  ─────────────────  ────────────────────  ────────────────  ────────────────
+   GRU             90,16 ± 0,97 %        91,96 ± 0,72 %    93,90 ± 1,01 %                 –
+  ─────────────  ─────────────────  ────────────────────  ────────────────  ────────────────
+   Residual v2     89,84 ± 0,87 %        91,54 ± 0,93 %    94,07 ± 1,03 %    97,66 ± 0,35 %
+  ─────────────  ─────────────────  ────────────────────  ────────────────  ────────────────
+   MLP             86,98 ± 2,26 %        88,54 ± 2,29 %    94,64 ± 0,49 %                 –
+
+
+Optimizer:    AdamW
+Lernrate:     3e-4
+Weight Decay: 1e-4
+Batchgröße:   32
+Gradient Clip: 1.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Frames:     1------------------------------------100
+
+Fenster 1: [1------------------60]
+Fenster 2:       [11-----------------70]
+Fenster 3:             [21-----------------80]
+Fenster 4:                   [31-----------------90]
+Fenster 5:                         [41----------------100]

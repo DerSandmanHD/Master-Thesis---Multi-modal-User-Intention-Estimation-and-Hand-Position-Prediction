@@ -214,6 +214,15 @@ def parse_args() -> argparse.Namespace:
         help="Review only one sequence_id.",
     )
     parser.add_argument(
+        "--participant",
+        action="append",
+        default=[],
+        help=(
+            "Review only this participant. Repeat the option to include multiple "
+            "participants, for example: --participant Isa --participant Paul"
+        ),
+    )
+    parser.add_argument(
         "--include-excluded",
         action="store_true",
         help="Also include rows where include_in_training is False.",
@@ -924,11 +933,15 @@ def review_video(
 
 def filter_rows(rows: List[Dict[str, str]], args: argparse.Namespace) -> List[Dict[str, str]]:
     filtered = []
+    participants = {participant.strip().casefold() for participant in args.participant}
 
     for row in rows:
         seq = row.get("sequence_id", "")
 
         if args.sequence and seq != args.sequence:
+            continue
+
+        if participants and row.get("participant", "").strip().casefold() not in participants:
             continue
 
         if not args.include_excluded:

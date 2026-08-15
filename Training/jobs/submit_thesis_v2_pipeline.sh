@@ -5,6 +5,7 @@ REPO_DIR="${REPO_DIR:-$HOME/Master-Thesis---Multi-modal-User-Intention-Estimatio
 DATASET_TAG="${DATASET_TAG:-dataset_v3_causal_20260815_n214_5d136a34}"
 EXPERIMENT_TAG="${EXPERIMENT_TAG:-thesis_final_v2_validation}"
 REPORT_TAG="${REPORT_TAG:-thesis_final_v2_corrected_alignment}"
+UPSTREAM_MASTER_JOB="${UPSTREAM_MASTER_JOB:-}"
 GROUP_CV_ROOT="Training/reports/${DATASET_TAG}/thesis_v2_group_cv_seed42"
 GROUP_CV_PLAN="${GROUP_CV_ROOT}/group_cv_plan.json"
 
@@ -16,9 +17,14 @@ cd "$REPO_DIR"
 }
 mkdir -p Training/slurm_logs
 
-MASTER_JOB=$(sbatch --parsable \
-  --export=ALL,REPO_DIR="$REPO_DIR",OVERWRITE=1 \
-  singularity/aria_build_master_dataset.sbatch)
+if [[ -n "$UPSTREAM_MASTER_JOB" ]]; then
+  [[ "$UPSTREAM_MASTER_JOB" =~ ^[0-9]+$ ]] || { echo "UPSTREAM_MASTER_JOB must be numeric" >&2; exit 2; }
+  MASTER_JOB="$UPSTREAM_MASTER_JOB"
+else
+  MASTER_JOB=$(sbatch --parsable \
+    --export=ALL,REPO_DIR="$REPO_DIR",OVERWRITE=1 \
+    singularity/aria_build_master_dataset.sbatch)
+fi
 
 CLIP_JOB=$(sbatch --parsable --dependency="afterok:${MASTER_JOB}" \
   --export=ALL,REPO_DIR="$REPO_DIR",DATASET_TAG="$DATASET_TAG" \

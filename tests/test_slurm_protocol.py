@@ -130,6 +130,18 @@ def test_reduced_lopo_plan_and_full_submission_graph_are_predeclared() -> None:
     assert 'afterok:${CLIP_JOB}:${ENDPOSE_AUDIT_JOB}:${SPLIT_AUDIT_JOB}' in submit
 
 
+def test_failed_causal_master_repair_is_targeted_and_fail_closed() -> None:
+    repair = text("thesis_v2_repair_causal_masters.sbatch")
+    submit = text("submit_thesis_v2_pipeline.sh")
+    assert 'r["status"] == "error"' in repair
+    assert "SEQUENCE_ARGS+=(--sequence" in repair
+    assert "--require-semantic-annotations --overwrite" in repair
+    assert "Training/verify_causal_masters.py" in repair
+    assert "--expected-sequence-fingerprint" in repair
+    assert "UPSTREAM_MASTER_JOB" in submit
+    assert '[[ "$UPSTREAM_MASTER_JOB" =~ ^[0-9]+$ ]]' in submit
+
+
 def test_postprocess_requires_authorized_final_test_binding() -> None:
     value = text("thesis_v2_postprocess_selected.sbatch")
     expected_tasks = len(MATRIX["postprocessing"]["required_t1_experiments"]) * len(

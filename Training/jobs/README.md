@@ -37,6 +37,7 @@ verschachtelte Run-Struktur automatisch. SLURM-Ausgaben landen gesammelt unter
 | `thesis_v2_postprocess_selected.sbatch` | Matrix-gesteuertes 3-Seed-Array für den vorab deklarierten primären t+1-Lauf: Prediction-Export, Baselines, gruppierte Bootstrap-Metriken und ggf. Modalitätsgewichte |
 | `thesis_v2_qualitative.sbatch` | hashgebundene VRS/MP4-Sidecars und gute/typische/fehlerhafte qualitative Fälle |
 | `thesis_v2_split_audit.sbatch` | kausaler Preflight und 25-fold Leave-One-Participant-Out-Splitaudit |
+| `thesis_v2_repair_causal_masters.sbatch` | baut nach einem fehlgeschlagenen Vollbatch ausschließlich dessen Fehlersequenzen neu und führt QA plus vollständigen kausalen Preflight aus |
 | `thesis_v2_prepare_group_cv.sbatch` | materialisiert den vorab festgelegten 25-fold-LOPO-Plan ausschließlich für Seed 42 |
 | `thesis_v2_group_cv.sbatch` | ausführbare verschachtelte Leave-One-Participant-Out-CV; Array-Grenzen werden aus dem hashgebundenen Plan gelesen und beim `sbatch`-Aufruf übergeben |
 | `thesis_v2_summarize_group_cv.sbatch` | prüft die Vollständigkeit und Plan-/Checkpoint-Bindings aller äußeren Group-CV-Auswertungen und aggregiert sie |
@@ -97,6 +98,13 @@ Für die vollständige Einreichung nach einem sauberen Checkout genügt:
 
 ```bash
 bash Training/jobs/submit_thesis_v2_pipeline.sh
+```
+
+Nach einem erfolgreichen gezielten Master-Repair kann dessen Job-ID als bereits
+geprüfte Upstream-Abhängigkeit wiederverwendet werden:
+
+```bash
+UPSTREAM_MASTER_JOB=<repair-job-id> bash Training/jobs/submit_thesis_v2_pipeline.sh
 ```
 
 Der separate Gate-Array wertet `residual_modality_gated` und

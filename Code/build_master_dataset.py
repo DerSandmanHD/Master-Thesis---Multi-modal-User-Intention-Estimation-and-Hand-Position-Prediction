@@ -423,6 +423,17 @@ def add_coordinate_transforms(
     output("robot_anchor_interpolated")
     output("robot_static_anchor_samples")[:] = static_anchor_samples
 
+    # Keep the derived schema stable even when an entire sequence has no valid
+    # wrist pose after causal alignment.  Future-target construction indexes
+    # these columns unconditionally; unavailable tracking is represented by
+    # NaN values and must not turn into a batch-level KeyError.
+    for side in ("left", "right"):
+        for frame_name in ("world", "robot"):
+            for axis in "xyz":
+                output(f"{side}_wrist_{frame_name}_{axis}_m")
+            for component in "xyzw":
+                output(f"{side}_wrist_{frame_name}_q{component}")
+
     for object_key in object_keys:
         for frame_name in ("device", "world", "robot"):
             for axis in "xyz":

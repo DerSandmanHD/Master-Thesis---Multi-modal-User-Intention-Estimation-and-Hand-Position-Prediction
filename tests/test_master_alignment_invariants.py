@@ -14,7 +14,11 @@ if str(CODE) not in sys.path:
     sys.path.insert(0, str(CODE))
 
 from build_master_dataset import (  # noqa: E402
+    HAND_COORDINATE_COLUMNS,
+    HAND_QUATERNION_COLUMNS,
     OBSERVATION_ALIGNMENT_VERSION,
+    add_coordinate_transforms,
+    add_future_targets,
     causal_observation_merge,
 )
 
@@ -56,6 +60,62 @@ def test_observation_alignment_does_not_backfill_before_first_capture() -> None:
 
 def test_causal_alignment_version_is_explicit() -> None:
     assert OBSERVATION_ALIGNMENT_VERSION == "causal_backward_device_time_v1"
+
+
+def test_all_invalid_hand_tracking_keeps_wrist_output_schema() -> None:
+    row = {"timestamp_ns": 1_000_000_000}
+    for column in (
+        "slam_tx_world_device",
+        "slam_ty_world_device",
+        "slam_tz_world_device",
+        "slam_qx_world_device",
+        "slam_qy_world_device",
+        "slam_qz_world_device",
+        "slam_qw_world_device",
+        "apriltag_0_tx_camera_m",
+        "apriltag_0_ty_camera_m",
+        "apriltag_0_tz_camera_m",
+        "apriltag_0_qx_camera_marker",
+        "apriltag_0_qy_camera_marker",
+        "apriltag_0_qz_camera_marker",
+        "apriltag_0_qw_camera_marker",
+        "gaze_origin_device_x_m",
+        "gaze_origin_device_y_m",
+        "gaze_origin_device_z_m",
+        "gaze_direction_device_x",
+        "gaze_direction_device_y",
+        "gaze_direction_device_z",
+    ):
+        row[column] = np.nan
+    for side in ("left", "right"):
+        for column in (*HAND_COORDINATE_COLUMNS[side], *HAND_QUATERNION_COLUMNS[side]):
+            row[column] = np.nan
+
+    transformed = add_coordinate_transforms(
+        pd.DataFrame([row]), ["apriltag_0"], np.eye(4, dtype=np.float64)
+    )
+    expected = [
+        f"{side}_wrist_{frame}_{suffix}"
+        for side in ("left", "right")
+        for frame in ("world", "robot")
+        for suffix in (
+            "x_m",
+            "y_m",
+            "z_m",
+            "qx",
+            "qy",
+            "qz",
+            "qw",
+        )
+    ]
+    assert set(expected).issubset(transformed.columns)
+    assert transformed[expected].isna().all().all()
+
+    with_targets = add_future_targets(
+        transformed, horizon_seconds=1.0, tolerance_ms=12.0
+    )
+    assert "future_1s_left_wrist_robot_x_m" in with_targets
+    assert "future_1s_right_wrist_robot_qw" in with_targets
 
 
 def test_training_rejects_master_without_or_with_stale_alignment_version(

@@ -5,25 +5,44 @@
 #SBATCH --mem-per-cpu=4G
 #SBATCH --gres=gpu:1
 #SBATCH --time=03:00:00
-#SBATCH --output=Training/slurm_logs/thesis_v2_postprocess.%j.out
-#SBATCH --error=Training/slurm_logs/thesis_v2_postprocess.%j.err
+#SBATCH --array=0-2%3
+#SBATCH --output=Training/slurm_logs/thesis_v2_postprocess.%A_%a.out
+#SBATCH --error=Training/slurm_logs/thesis_v2_postprocess.%A_%a.err
 
 set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction}"
 IMAGE="${IMAGE:-$HOME/singularity/aria_master.simg}"
-: "${RUN_DIR:?Set RUN_DIR to the validation-frozen selected residual run}"
-: "${FINAL_TEST_JSON:?Set FINAL_TEST_JSON to its completed frozen test evaluation}"
-: "${REPORT_DIR:?Set REPORT_DIR to a unique report directory}"
+MATRIX="${MATRIX:-Training/configs/experiment_matrix_v2.json}"
+DATASET_TAG="${DATASET_TAG:-dataset_v3_causal_20260815_n214_5d136a34}"
+REPORT_TAG="${REPORT_TAG:-thesis_final_v2_corrected_alignment}"
+REPORT_ROOT="${REPORT_ROOT:-Training/reports/${DATASET_TAG}/${REPORT_TAG}}"
+SELECTION_FILE="${SELECTION_FILE:-${REPORT_ROOT}/validation_selection.json}"
+FINAL_TEST_DIR="${FINAL_TEST_DIR:-${REPORT_ROOT}/final_test}"
+POSTPROCESS_ROOT="${POSTPROCESS_ROOT:-${REPORT_ROOT}/postprocess}"
+: "${SLURM_ARRAY_TASK_ID:?This job must run as its declared array}"
 MASTER_DIR="${MASTER_DIR:-Data_collection/master_datasets}"
-PREDICTIONS="$REPORT_DIR/test_predictions.csv"
-PREDICTION_REPORT="$REPORT_DIR/test_predictions.json"
 
 cd "$REPO_DIR"
 [[ -f "$IMAGE" ]] || { echo "Container missing: $IMAGE" >&2; exit 2; }
+[[ -f "$MATRIX" ]] || { echo "Experiment matrix missing: $MATRIX" >&2; exit 2; }
+[[ -f "$SELECTION_FILE" ]] || { echo "Selection missing: $SELECTION_FILE" >&2; exit 2; }
+singularity exec "$IMAGE" python3 Training/experiment_matrix.py --matrix "$MATRIX" --json >/dev/null
+
+mapfile -t FIELDS < <(
+  singularity exec "$IMAGE" python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); s=json.load(open(sys.argv[2])); ids=m["postprocessing"]["required_t1_experiments"]; pairs=[(x,int(seed)) for x in ids for seed in m["seeds"]]; i=int(sys.argv[3]); assert m["postprocessing"]["seed_policy"] == "all_matrix_seeds" and len(pairs) == len(ids)*len(m["seeds"]) and 0 <= i < len(pairs); experiment,seed=pairs[i]; rows=[r for r in s["final_test_runs"] if r["experiment_id"] == experiment and int(r["seed"]) == seed]; assert s["complete"] is True and s["selection_split"] == "validation" and s["test_metrics_read"] is False and len(rows) == 1; print(experiment); print(seed); print(rows[0]["run_dir"]); print(f"{sys.argv[4]}/{experiment}_seed{seed}.json"); print(f"{sys.argv[5]}/{experiment}_seed{seed}")' "$MATRIX" "$SELECTION_FILE" "$SLURM_ARRAY_TASK_ID" "$FINAL_TEST_DIR" "$POSTPROCESS_ROOT"
+)
+EXPERIMENT_ID="${FIELDS[0]}"
+SEED="${FIELDS[1]}"
+RUN_DIR="${FIELDS[2]}"
+FINAL_TEST_JSON="${FIELDS[3]}"
+REPORT_DIR="${FIELDS[4]}"
+PREDICTIONS="$REPORT_DIR/test_predictions.csv"
+PREDICTION_REPORT="$REPORT_DIR/test_predictions.json"
+
 [[ -f "$FINAL_TEST_JSON" ]] || { echo "Final test record missing: $FINAL_TEST_JSON" >&2; exit 2; }
 singularity exec "$IMAGE" python3 Training/artifact_freeze.py "$RUN_DIR/artifact_manifest.json"
-singularity exec "$IMAGE" python3 -c 'import json,pathlib,sys; x=json.load(open(sys.argv[1])); m=json.load(open(sys.argv[3])); assert x["checkpoint"]["name"] == "best_intention"; assert x["test_used_for_model_or_checkpoint_selection"] is False; assert x["matrix_authorization"] is not None; assert pathlib.Path(x["source_run"]).resolve() == pathlib.Path(sys.argv[2]).resolve(); assert x["source_artifact_manifest_fingerprint"] == m["manifest_fingerprint"]; assert x["checkpoint"]["sha256"] == x["matrix_authorization"]["authorized_checkpoint_sha256"]' "$FINAL_TEST_JSON" "$RUN_DIR" "$RUN_DIR/artifact_manifest.json"
+singularity exec "$IMAGE" python3 -c 'import hashlib,json,pathlib,sys; x=json.load(open(sys.argv[1])); m=json.load(open(sys.argv[3])); payload={**x,"report_fingerprint":None}; fp=hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False).encode()).hexdigest(); assert x["schema_version"] == 2 and x["evaluation_protocol"] == "validation_frozen_checkpoint_single_test_v2" and x["report_fingerprint"] == fp; assert x["checkpoint"]["name"] == "best_intention"; assert x["test_used_for_model_or_checkpoint_selection"] is False; assert x["matrix_authorization"] is not None; assert pathlib.Path(x["source_run"]).resolve() == pathlib.Path(sys.argv[2]).resolve(); assert x["source_artifact_manifest_fingerprint"] == m["manifest_fingerprint"]; assert x["checkpoint"]["sha256"] == x["matrix_authorization"]["authorized_checkpoint_sha256"]' "$FINAL_TEST_JSON" "$RUN_DIR" "$RUN_DIR/artifact_manifest.json"
 
 if [[ -e "$PREDICTIONS" || -e "$PREDICTION_REPORT" ]]; then
   echo "Prediction outputs already exist; refusing to overwrite." >&2
@@ -36,6 +55,7 @@ singularity exec --nv "$IMAGE" \
   --checkpoint best_intention_model.pt \
   --master-dir "$MASTER_DIR" \
   --split test \
+  --final-test-report "$FINAL_TEST_JSON" \
   --output-csv "$PREDICTIONS" \
   --report-out "$PREDICTION_REPORT" \
   --device cuda --batch-size 64 --num-workers 2
@@ -62,4 +82,4 @@ else
   echo "Selected model has no modality-wise weights; skipping weight report."
 fi
 
-echo "Postprocessing complete: $REPORT_DIR"
+echo "Postprocessing complete: experiment=$EXPERIMENT_ID seed=$SEED dir=$REPORT_DIR"

@@ -13,6 +13,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MATRIX = Path("Training/configs/experiment_matrix_v2.json")
 EXPECTED_SEEDS = (42, 43, 44)
 REQUIRED_OBSERVATION_ALIGNMENT_VERSION = "causal_backward_device_time_v1"
+REQUIRED_DATASET_CONTRACT = {
+    "expected_selected_sequences": 214,
+    "expected_sequence_fingerprint": (
+        "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd"
+    ),
+}
 
 
 class ExperimentMatrixError(ValueError):
@@ -69,6 +75,10 @@ def validate_matrix(matrix_path: Path) -> dict[str, Any]:
         ):
             raise ExperimentMatrixError(
                 f"{entry['id']} does not require the causal master alignment"
+            )
+        if config["data"].get("dataset_contract") != REQUIRED_DATASET_CONTRACT:
+            raise ExperimentMatrixError(
+                f"{entry['id']} does not bind the active n214 sequence set"
             )
         if int(_nested(config, "training", "seed")) not in EXPECTED_SEEDS:
             raise ExperimentMatrixError(f"Unexpected base seed in {entry['id']}")
@@ -190,6 +200,35 @@ def validate_matrix(matrix_path: Path) -> dict[str, Any]:
         "learned_model_oracle_hand",
     ):
         raise ExperimentMatrixError("The t+1 fair comparison methods are incomplete")
+    if t1.get("primary_comparison") != (
+        "test_predictions.json "
+        "pose_comparison.methods.<method>.fair_common_metrics"
+    ):
+        raise ExperimentMatrixError(
+            "The t+1 primary comparison points to a stale report field"
+        )
+    postprocessing = matrix.get("postprocessing", {})
+    required_t1 = postprocessing.get("required_t1_experiments")
+    if required_t1 != ["residual_current_gate"]:
+        raise ExperimentMatrixError(
+            "The primary t+1 baseline comparison must be predeclared"
+        )
+    if postprocessing.get("seed_policy") != "all_matrix_seeds":
+        raise ExperimentMatrixError("t+1 postprocessing must cover every matrix seed")
+    if postprocessing.get("require_grouped_report_in_authoritative_summary") is not True:
+        raise ExperimentMatrixError(
+            "Authoritative reporting must require the t+1 grouped artifacts"
+        )
+    for experiment_id in required_t1:
+        entry = next((entry for entry in entries if entry["id"] == experiment_id), None)
+        if entry is None or entry.get("entrypoint") != "Training/train_residual.py":
+            raise ExperimentMatrixError(
+                f"t+1 postprocessing target is not a residual model: {experiment_id}"
+            )
+        if float(_nested(configs[experiment_id], "training", "pose_loss_weight")) <= 0.0:
+            raise ExperimentMatrixError(
+                f"t+1 postprocessing target has no learned pose task: {experiment_id}"
+            )
     matrix["_path"] = str(path)
     return matrix
 

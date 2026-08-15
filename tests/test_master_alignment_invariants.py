@@ -63,6 +63,8 @@ def test_training_rejects_master_without_or_with_stale_alignment_version(
 ) -> None:
     path = tmp_path / "P1_0_master.csv"
     synthetic_sequence(path, "P1", 0)
+    frame = pd.read_csv(path).drop(columns=["observation_alignment_version"])
+    frame.to_csv(path, index=False)
     header = pd.read_csv(path, nrows=0).columns.tolist()
     features = select_feature_columns(header, "multimodal_robot_frame_v1")
     kwargs = {

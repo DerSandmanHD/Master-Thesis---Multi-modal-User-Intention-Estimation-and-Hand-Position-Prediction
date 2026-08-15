@@ -11,7 +11,7 @@ from argparse import Namespace
 from pathlib import Path
 
 from annotation_utils import parse_target_object_id, read_review_rows
-from build_master_dataset import build_master
+from build_master_dataset import build_master, source_file_identity
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,6 +26,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--allow-unreviewed-timestamps",
+        action="store_true",
+        help=(
+            "Diagnostic legacy opt-in when timestamps_summary.reviewed.json is "
+            "unavailable. Final thesis builds must not use this option."
+        ),
+    )
     parser.add_argument(
         "--require-semantic-annotations",
         action="store_true",
@@ -88,11 +96,37 @@ def main() -> int:
     args = parse_args()
     data_root = args.data_root.expanduser().resolve()
     manifest_path = (args.manifest or data_root / "dataset_manifest.csv").expanduser().resolve()
+    reviewed_timestamps_path = (
+        data_root / "Data_vrs" / "timestamps_summary.reviewed.json"
+    ).resolve()
+    legacy_timestamps_path = (
+        data_root / "Data_vrs" / "timestamps_summary.json"
+    ).resolve()
     timestamps_path = (
-        args.timestamps or data_root / "Data_vrs" / "timestamps_summary.reviewed.json"
+        args.timestamps or reviewed_timestamps_path
     ).expanduser().resolve()
+    timestamp_review_status = (
+        "reviewed"
+        if timestamps_path == reviewed_timestamps_path
+        else "explicit_override"
+    )
     if not timestamps_path.exists() and args.timestamps is None:
-        timestamps_path = data_root / "Data_vrs" / "timestamps_summary.json"
+        if not args.allow_unreviewed_timestamps:
+            print(
+                "Error: reviewed timestamp summary is required; legacy fallback "
+                "needs --allow-unreviewed-timestamps"
+            )
+            return 2
+        timestamps_path = legacy_timestamps_path
+        timestamp_review_status = "unreviewed_legacy_opt_in"
+    elif timestamps_path == legacy_timestamps_path:
+        if not args.allow_unreviewed_timestamps:
+            print(
+                "Error: explicit legacy timestamp summary requires "
+                "--allow-unreviewed-timestamps"
+            )
+            return 2
+        timestamp_review_status = "unreviewed_legacy_opt_in"
     annotations_path = (
         args.annotations or data_root / "manual_timestamp_review.csv"
     ).expanduser().resolve()
@@ -198,6 +232,12 @@ def main() -> int:
         "manifest": str(manifest_path),
         "timestamps": str(timestamps_path),
         "annotations": str(annotations_path),
+        "input_identities": {
+            "manifest": source_file_identity(manifest_path),
+            "timestamp_summary": source_file_identity(timestamps_path),
+            "annotations": source_file_identity(annotations_path),
+        },
+        "timestamp_review_status": timestamp_review_status,
         "output_dir": str(output_dir),
         "dry_run": args.dry_run,
         "selected": len(selected),

@@ -11,13 +11,26 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SMOKE_TESTS = (
+    "Code/apply_manual_reviews_smoke_test.py",
+    "Code/dataset_qa_smoke_test.py",
+    "tests/integration/static_robot_anchor_smoke.py",
+    "Training/smoke_test.py",
+    "Training/ablation_smoke_test.py",
     "Training/clip_alignment_smoke_test.py",
+    "Training/dataset_snapshot_smoke_test.py",
+    "Training/export_predictions_smoke_test.py",
+    "Training/hyperparameter_search_smoke_test.py",
+    "Training/live_decision_smoke_test.py",
+    "Training/live_validation_smoke_test.py",
     "Training/pose_baselines_smoke_test.py",
     "Training/visual_embedding_smoke_test.py",
     "Training/endpose_smoke_test.py",
     "Training/endpose_v2_smoke_test.py",
     "Training/inference_decision_smoke_test.py",
     "Training/batch_replay_validation_smoke_test.py",
+    "Training/run_discovery_smoke_test.py",
+    "Training/run_layout_smoke_test.py",
+    "Training/run_registry_smoke_test.py",
     "Training/standard_training_smoke_test.py",
     "Training/residual_smoke_test.py",
 )

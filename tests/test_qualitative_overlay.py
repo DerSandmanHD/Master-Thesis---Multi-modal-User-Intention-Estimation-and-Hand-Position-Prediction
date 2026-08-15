@@ -121,7 +121,69 @@ class QualitativeOverlayTests(unittest.TestCase):
             qualitative_frame().to_csv(predictions, index=False)
             import hashlib
 
+            run_dir = root / "run"
+            selection_path = root / "validation_selection.json"
+            selection = {
+                "schema_version": 2,
+                "matrix_id": "synthetic_matrix",
+                "complete": True,
+                "selection_split": "validation",
+                "test_metrics_read": False,
+                "final_test_runs": [
+                    {
+                        "experiment_id": "synthetic_model",
+                        "seed": 42,
+                        "run_dir": str(run_dir),
+                        "checkpoint_name": "best_intention",
+                        "checkpoint_sha256": "a" * 64,
+                        "checkpoint_epoch": 3,
+                        "checkpoint_selection_metric": (
+                            "validation_intention_macro_f1"
+                        ),
+                        "checkpoint_selection_value": 0.5,
+                        "artifact_manifest_fingerprint": "f" * 64,
+                    }
+                ],
+            }
+            selection_path.write_text(json.dumps(selection), encoding="utf-8")
+            matrix_authorization = {
+                "selection_file": str(selection_path),
+                "selection_file_sha256": hashlib.sha256(
+                    selection_path.read_bytes()
+                ).hexdigest(),
+                "matrix_id": "synthetic_matrix",
+                "experiment_id": "synthetic_model",
+                "seed": 42,
+                "authorized_checkpoint_sha256": "a" * 64,
+                "test_metrics_read_during_authorization": False,
+            }
+            final_report_path = root / "final_test.json"
+            final_report = {
+                "schema_version": 2,
+                "evaluation_protocol": (
+                    "validation_frozen_checkpoint_single_test_v2"
+                ),
+                "report_fingerprint": None,
+                "split": "test",
+                "source_run": str(run_dir),
+                "checkpoint": {
+                    "name": "best_intention",
+                    "sha256": "a" * 64,
+                    "epoch": 3,
+                    "selection_metric": "validation_intention_macro_f1",
+                    "selection_value": 0.5,
+                },
+                "source_artifact_manifest_fingerprint": "f" * 64,
+                "matrix_authorization": matrix_authorization,
+                "test_used_for_model_or_checkpoint_selection": False,
+            }
+            final_report["report_fingerprint"] = canonical_json_hash(final_report)
+            final_report_path.write_text(
+                json.dumps(final_report), encoding="utf-8"
+            )
             report = {
+                "schema_version": 3,
+                "report_fingerprint": None,
                 "result_role": "primary_validation_selected_checkpoint",
                 "checkpoint": "missing_checkpoint.pt",
                 "checkpoint_sha256": "a" * 64,
@@ -133,16 +195,50 @@ class QualitativeOverlayTests(unittest.TestCase):
                     predictions.read_bytes()
                 ).hexdigest(),
                 "dataset_content_fingerprint": "dataset",
+                "source_content_fingerprint": "source",
+                "artifact_freeze": {
+                    "manifest": str(root / "artifact_manifest.json"),
+                    "manifest_fingerprint": "f" * 64,
+                },
+                "final_test_authorization": {
+                    "path": str(final_report_path),
+                    "sha256": hashlib.sha256(
+                        final_report_path.read_bytes()
+                    ).hexdigest(),
+                    "report_fingerprint": final_report["report_fingerprint"],
+                    "evaluation_protocol": (
+                        "validation_frozen_checkpoint_single_test_v2"
+                    ),
+                    "matrix_authorization": matrix_authorization,
+                },
+                "visual_artifacts": {"enabled": False},
                 "architecture": {"fusion_mode": "modality_gated"},
+                "split": "test",
+                "full_split_export": True,
+                "sequence_filter": [],
                 "rows": 4,
             }
+            report["report_fingerprint"] = canonical_json_hash(report)
             report_path = root / "predictions.json"
             report_path.write_text(json.dumps(report), encoding="utf-8")
+            artifact = {
+                "manifest_fingerprint": "f" * 64,
+                "dataset": {
+                    "dataset_content_fingerprint": "dataset",
+                    "source_content_fingerprint": "source",
+                },
+                "output_artifacts": {
+                    "checkpoints": {
+                        "best_intention": {"sha256": "a" * 64}
+                    }
+                },
+            }
             validate_prediction_report(
                 report,
                 report_path=report_path,
                 predictions_path=predictions,
                 prediction_rows=4,
+                artifact_validator=lambda _: artifact,
             )
             changed = pd.read_csv(predictions)
             changed.loc[0, "predicted_intention"] = "continue"
@@ -153,6 +249,7 @@ class QualitativeOverlayTests(unittest.TestCase):
                     report_path=report_path,
                     predictions_path=predictions,
                     prediction_rows=4,
+                    artifact_validator=lambda _: artifact,
                 )
 
     def test_nonzero_start_and_known_rgb_mapping_use_absolute_device_time(self) -> None:
@@ -286,7 +383,7 @@ class QualitativeOverlayTests(unittest.TestCase):
             group = qualitative_frame().iloc[:2].copy()
             group["endpoint_timestamp_ns"] = [
                 11_500_000_000,
-                12_500_000_000,
+                11_750_000_000,
             ]
             seen = []
 
@@ -316,11 +413,20 @@ class QualitativeOverlayTests(unittest.TestCase):
                     rgb_capture_timestamps_ns=rgb,
                     alignment_sidecar=sidecar,
                     alignment_sidecar_path=sidecar_path,
-                    requested_stills={},
+                    requested_stills={
+                        "good": {
+                            "sample_key": "a",
+                            "display_rgb_frame_index": 2,
+                            "display_rgb_capture_timestamp_ns": 12_000_000_000,
+                        }
+                    },
                     max_prediction_age_s=1.0,
                     use_transcode=False,
                 )
-            self.assertEqual(seen, [None, None, "a", "b"])
+            # Video frame 2 uses latest causal row b, while the selected still
+            # is deliberately re-annotated with exact case row a.
+            self.assertEqual(seen, [None, None, "b", "a", None])
+            self.assertEqual(report["stills"]["good"]["sample_key"], "a")
             self.assertEqual(report["future_prediction_matches"], 0)
             self.assertIn("endpoint_timestamp_ns", report["alignment_policy"])
 

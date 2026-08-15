@@ -11,6 +11,7 @@ verschachtelte Run-Struktur automatisch. SLURM-Ausgaben landen gesammelt unter
 
 | Job | Zweck |
 |---|---|
+| `../../singularity/aria_build_master_dataset.sbatch` | verlangt reviewed Timestamp-Kommandos samt Hash-Provenienz, migriert Derived Master-CSVs auf kausale Backward-Joins, sichert alte Derived Masters und führt den kausalen Preflight aus |
 | `train_transformer_v1.sbatch` | einzelner Transformer-v1-Lauf |
 | `train_mlp_v1.sbatch` | einzelner MLP-Lauf |
 | `train_gru_v1.sbatch` | einzelner GRU-Lauf |
@@ -31,36 +32,47 @@ verschachtelte Run-Struktur automatisch. SLURM-Ausgaben landen gesammelt unter
 | `train_endpose_v1.sbatch` | separates Endpose-Residual-v2 für Seeds 42/43/44 trainieren und das bestehende t+1-Modell auf denselben terminalen Targets auswerten |
 | `finalize_endpose_v1.sbatch` | Endpose/t+1-Latenz messen sowie CSV/JSON/PNG/PDF/Markdown-Vergleich erzeugen |
 | `thesis_v2_validation_matrix.sbatch` | aktive minimale Matrix: 16 Konfigurationen mal drei Seeds, strikt validation-only |
+| `thesis_v2_select_checkpoints.sbatch` | fail-closed Validation-Auswahl; prüft Schema, Matrix-Hash, Vollständigkeit und verweigert stale Outputs |
 | `thesis_v2_final_test_matrix.sbatch` | lädt ausschließlich eingefrorene Best-Intent-Checkpoints für den finalen Test; kein Retraining |
-| `thesis_v2_postprocess_selected.sbatch` | Prediction-Export, t+1-Baselines, gruppierte Bootstrap-Metriken und ggf. Modalitätsgewichte |
+| `thesis_v2_postprocess_selected.sbatch` | Matrix-gesteuertes 3-Seed-Array für den vorab deklarierten primären t+1-Lauf: Prediction-Export, Baselines, gruppierte Bootstrap-Metriken und ggf. Modalitätsgewichte |
 | `thesis_v2_qualitative.sbatch` | hashgebundene VRS/MP4-Sidecars und gute/typische/fehlerhafte qualitative Fälle |
-| `thesis_v2_group_cv.sbatch` | ausführbare verschachtelte participant-disjoint Group-CV für eine zuvor auf Validation eingefrorene Architektur |
-| `thesis_v2_summarize_matrix.sbatch` | prüft alle 48 autorisierten Testartefakte und erzeugt checkpoint-kohärente Seed- und Aggregate-Tabellen |
+| `thesis_v2_group_cv.sbatch` | ausführbare verschachtelte Leave-One-Participant-Out-CV; Array-Grenzen werden aus dem hashgebundenen Plan gelesen und beim `sbatch`-Aufruf übergeben |
+| `thesis_v2_summarize_group_cv.sbatch` | prüft die Vollständigkeit und Plan-/Checkpoint-Bindings aller äußeren Group-CV-Auswertungen und aggregiert sie |
+| `thesis_v2_summarize_matrix.sbatch` | prüft alle 48 autorisierten Testartefakte sowie die drei verpflichtenden t+1-Postprocess-Artefakte und erzeugt checkpoint-kohärente Seed- und Aggregate-Tabellen |
 
 ## Aktive v2-Reihenfolge
 
 Die `thesis_v2_*`-Jobs gehören zum aktiven Protokoll in
-`../THESIS_FINAL_PROTOCOL_V2.md`. Zuerst laufen der korrigierte CLIP-Neuaufbau
-und der Terminal-Target-Audit, danach das Validation-Array. Anschließend wird
-`select_matrix_checkpoints.py --require-complete` lokal oder im Login-Job
-ausgeführt und geprüft. Erst danach darf das Final-Test-Array laufen; Postprocess
-und qualitative Fälle verwenden ausschließlich dessen eingefrorenen
-Best-Intent-Checkpoint. Das Beispiel in der Protokolldatei enthält die exakten
-`sbatch`-Abhängigkeiten.
+`../THESIS_FINAL_PROTOCOL_V2.md`. Verbindlich ist:
 
-Beispiel für den vollständigen Vergleich:
-
-```bash
-DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
-EXPERIMENT_TAG=benchmark_v2
-
-sbatch --export=ALL,DATASET_TAG="$DATASET_TAG",EXPERIMENT_TAG="$EXPERIMENT_TAG" \
-  Training/jobs/benchmark_models.sbatch
+```text
+Master-Rebuild -> CLIP-Neuaufbau / Terminal-Audit -> Validation
+-> Validation-Selection -> eingefrorener Final-Test
+-> Postprocess / Summary -> qualitative Fälle
 ```
 
-Der Beispieltag ist zu ersetzen. Gültig ist nur ein bereits unter
-`Training/datasets/` dokumentierter Datasetstand. Ein bereits vorhandenes
-Run-Verzeichnis wird von den Trainern nicht überschrieben.
+Der Master-Job erzwingt `causal_backward_device_time_v1`; CLIP und Terminal-
+Audit starten nur nach seinem erfolgreichen Abschluss. Der Selection-Job liest
+ausschließlich Validation-Artefakte. Erst danach darf das Final-Test-Array
+laufen. Postprocess, Summary und qualitative Fälle sind checkpoint- und
+hashgebunden. Die Protokolldatei enthält die exakten `afterok`-Abhängigkeiten.
+
+Beispiel für das aktive Validation-Array, nachdem die beiden Prerequisite-Jobs
+erfolgreich abgeschlossen sind:
+
+```bash
+DATASET_TAG=dataset_v3_causal_20260815_n214_5d136a34
+EXPERIMENT_TAG=thesis_final_v2_validation
+
+sbatch --dependency=afterok:${CLIP_JOB}:${ENDPOSE_AUDIT_JOB} \
+  --export=ALL,DATASET_TAG="$DATASET_TAG",EXPERIMENT_TAG="$EXPERIMENT_TAG" \
+  Training/jobs/thesis_v2_validation_matrix.sbatch
+```
+
+Der Tag ist der aktive **geplante** kausale Stand. Er wird erst ausführbar,
+nachdem der Master-Rebuild und dessen Preflight erfolgreich abgeschlossen sind;
+der Name allein belegt weder vorhandene Derived Artifacts noch Ergebnisse. Ein
+bereits vorhandenes Run-Verzeichnis wird von den Trainern nicht überschrieben.
 
 ## Testsplit-Schutz bei der Modellauswahl
 
@@ -69,11 +81,11 @@ Die Jobs für Hyperparameter- und visuelle Variantensuche übergeben
 enthalten. Erst die jeweiligen `final_evaluate_*.sbatch`-Jobs führen nach der
 Validation-Auswahl die Testauswertung aus.
 
-Der qualitative Exportjob verwendet standardmäßig den validation-ausgewählten
-`best_intention_model.pt` und schreibt `test_predictions.csv` sowie
-`test_predictions.json` direkt in das angegebene Run-Verzeichnis. Ein anderer
-Checkpoint, Split oder Zielpfad muss explizit über `CHECKPOINT`, `SPLIT`,
-`OUTPUT_CSV` beziehungsweise `REPORT_OUT` gesetzt werden.
+Der aktive Export verwendet den validation-ausgewählten
+`best_intention_model.pt`, verlangt auf dem Testsplit zusätzlich das
+autorisierende Final-Test-JSON und schreibt in ein neues explizites
+Report-Verzeichnis. Ein gefilterter Testexport oder das Überschreiben eines
+vorhandenen Exports wird abgewiesen.
 `MASTER_DIR` (standardmäßig `Data_collection/master_datasets`) überschreibt
 zusätzlich einen nicht portablen absoluten Pfad aus der gespeicherten
 Run-Konfiguration.
@@ -85,3 +97,19 @@ fest versionierten Pakete aus `Training/clip_requirements.txt` werden mit
 `--no-deps` in ein isoliertes Verzeichnis installiert und dem CLIP-Job über
 `PYTHONPATH` übergeben. Gewichte und Embeddings liegen in lokalen Caches; es
 werden keine RGB-Frames an einen externen Dienst übertragen.
+
+## Historische visuelle Jobs
+
+`screen_visual_embeddings_residual_v2.sbatch` und
+`final_evaluate_visual_variant.sbatch` gehören **nicht** zum finalen v2-
+Protokoll. Sie bilden einen historischen Visual-Screening-Workflow ab und sind
+für neue Thesis-Ergebnisse fail-closed, solange nicht ausdrücklich
+`ALLOW_LEGACY_EXPERIMENT=1` gesetzt wird. Dieses Opt-in macht Ergebnisse nicht
+automatisch v2-gültig. Für den finalen Vergleich sind ausschließlich die
+beiden korrigierten CLIP-Konfigurationen der Matrix und der autorisierte
+Final-Test-/Postprocess-Pfad zu verwenden.
+
+Auch bei kausalen zeitvariablen Source-Joins bleibt die statische
+`world -> robot`-Transformation eine offline aus der ganzen Sequenz geschätzte
+Kalibrierung. Das aktive Protokoll behauptet daher keine vollständig
+online-kausale Deployment-Ausführung.

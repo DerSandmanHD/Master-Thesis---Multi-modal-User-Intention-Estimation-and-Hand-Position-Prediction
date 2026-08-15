@@ -1,6 +1,15 @@
 # Qualitative Vorhersage-Overlays des finalen Modells
 
-Checkpoint: finales Sensor+CLIP-Modell, Seed 42
+> **Historisch und ungültig für finale Thesis-v2-Abbildungen.** Diese Overlays
+> stammen aus `dataset_v2_20260802_n214_5d136a34`, vor dem kausalen Master-
+> Rebuild, der korrigierten VRS-`DEVICE_TIME`-CLIP-Synchronisation und den
+> hashgebundenen Prediction-/Final-Test-/Video-Sidecars. Die untenstehenden
+> Werte dürfen nur als historische Beschreibung erhalten bleiben. Sie sind
+> keine Ergebnisse für den aktiven geplanten Stand
+> `dataset_v3_causal_20260815_n214_5d136a34` und müssen nach dessen Training
+> neu erzeugt werden.
+
+Historischer Checkpoint: damaliges Sensor+CLIP-Modell, Seed 42
 
 Split: Test (`Edu`, `Jona`, `Mona`)
 

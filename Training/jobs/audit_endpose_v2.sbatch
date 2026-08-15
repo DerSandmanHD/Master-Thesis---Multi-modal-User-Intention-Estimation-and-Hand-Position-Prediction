@@ -11,7 +11,7 @@ set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction}"
 IMAGE="${IMAGE:-$HOME/singularity/aria_master.simg}"
-DATASET_TAG="${DATASET_TAG:-dataset_v2_20260802_n214_5d136a34}"
+DATASET_TAG="${DATASET_TAG:-dataset_v3_causal_20260815_n214_5d136a34}"
 EXPERIMENT_TAG="${EXPERIMENT_TAG:-terminal_endpose_corrected_v2}"
 CONFIG="${CONFIG:-Training/configs/models/residual_transformer_endpose_v2.json}"
 REPORT_DIR="Training/reports/${DATASET_TAG}/${EXPERIMENT_TAG}"

@@ -11,6 +11,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Callable, Mapping
 
 try:
     import cv2
@@ -18,6 +19,9 @@ except ImportError:  # Pure alignment/selection tests do not require OpenCV.
     cv2 = None
 import numpy as np
 import pandas as pd
+
+from artifact_freeze import canonical_json_hash, validate_artifact_freeze
+from select_matrix_checkpoints import validate_embedded_final_test_authorization
 
 from video_alignment import (
     VIDEO_ALIGNMENT_FILE_SUFFIX,
@@ -372,7 +376,14 @@ def validate_prediction_report(
     report_path: Path,
     predictions_path: Path,
     prediction_rows: int,
+    artifact_validator: Callable[[Path], Mapping[str, object]] = (
+        validate_artifact_freeze
+    ),
 ) -> dict:
+    if report.get("schema_version") != 3 or report.get(
+        "report_fingerprint"
+    ) != canonical_json_hash({**report, "report_fingerprint": None}):
+        raise ValueError("Prediction report fingerprint is invalid")
     if report.get("result_role") != "primary_validation_selected_checkpoint":
         raise ValueError(
             "Qualitative main evidence requires the primary validation-selected "
@@ -388,6 +399,10 @@ def validate_prediction_report(
         "checkpoint_epoch",
         "predictions_csv_sha256",
         "dataset_content_fingerprint",
+        "source_content_fingerprint",
+        "artifact_freeze",
+        "final_test_authorization",
+        "visual_artifacts",
         "architecture",
     )
     missing = [name for name in required if report.get(name) in (None, "")]
@@ -398,6 +413,10 @@ def validate_prediction_report(
     predictions_hash = sha256_file(predictions_path)
     if str(report["predictions_csv_sha256"]).lower() != predictions_hash:
         raise ValueError("Prediction report and CSV SHA-256 differ")
+    if report.get("split") != "test" or report.get("full_split_export") is not True:
+        raise ValueError("Qualitative evidence requires the complete frozen test split")
+    if report.get("sequence_filter") not in ([], None):
+        raise ValueError("Qualitative prediction report is a filtered test subset")
     checkpoint_hash = str(report["checkpoint_sha256"]).lower()
     if len(checkpoint_hash) != 64 or any(
         character not in "0123456789abcdef" for character in checkpoint_hash
@@ -411,6 +430,71 @@ def validate_prediction_report(
         if sha256_file(checkpoint_path) != checkpoint_hash:
             raise ValueError("Prediction report checkpoint hash mismatch")
         verification = "matched_local_checkpoint"
+    freeze_binding = report["artifact_freeze"]
+    if not isinstance(freeze_binding, Mapping):
+        raise ValueError("Prediction report artifact_freeze is invalid")
+    manifest_path = Path(str(freeze_binding.get("manifest", ""))).expanduser()
+    if not manifest_path.is_absolute():
+        manifest_path = report_path.parent / manifest_path
+    manifest_path = manifest_path.resolve()
+    manifest = artifact_validator(manifest_path)
+    if manifest.get("manifest_fingerprint") != freeze_binding.get(
+        "manifest_fingerprint"
+    ):
+        raise ValueError("Prediction report artifact freeze fingerprint differs")
+    dataset = manifest.get("dataset")
+    if not isinstance(dataset, Mapping) or dataset.get(
+        "dataset_content_fingerprint"
+    ) != report["dataset_content_fingerprint"] or dataset.get(
+        "source_content_fingerprint"
+    ) != report["source_content_fingerprint"]:
+        raise ValueError("Prediction report dataset/source differs from artifact freeze")
+    frozen_checkpoint = (
+        manifest.get("output_artifacts", {})
+        .get("checkpoints", {})
+        .get("best_intention")
+    )
+    if not isinstance(frozen_checkpoint, Mapping) or frozen_checkpoint.get(
+        "sha256"
+    ) != checkpoint_hash:
+        raise ValueError("Prediction report checkpoint differs from artifact freeze")
+    final_binding = report["final_test_authorization"]
+    if not isinstance(final_binding, Mapping):
+        raise ValueError("Prediction report final-test authorization is invalid")
+    final_path = Path(str(final_binding.get("path", ""))).expanduser()
+    if not final_path.is_absolute():
+        final_path = report_path.parent / final_path
+    final_path = final_path.resolve()
+    if not final_path.is_file() or final_binding.get("sha256") != sha256_file(
+        final_path
+    ):
+        raise ValueError("Prediction report final-test authorization hash differs")
+    final_report = json.loads(final_path.read_text(encoding="utf-8"))
+    if final_report.get("report_fingerprint") != final_binding.get(
+        "report_fingerprint"
+    ) or final_report.get("report_fingerprint") != canonical_json_hash(
+        {**final_report, "report_fingerprint": None}
+    ):
+        raise ValueError("Prediction report final-test fingerprint differs")
+    if (
+        final_report.get("evaluation_protocol")
+        != "validation_frozen_checkpoint_single_test_v2"
+        or final_report.get("checkpoint", {}).get("sha256") != checkpoint_hash
+        or final_report.get("source_artifact_manifest_fingerprint")
+        != freeze_binding.get("manifest_fingerprint")
+    ):
+        raise ValueError("Prediction report final-test authorization is mismatched")
+    validated_authorization = validate_embedded_final_test_authorization(
+        final_report,
+        authorization_base=final_path.parent,
+        project_root=PROJECT_ROOT,
+    )
+    if final_binding.get("matrix_authorization") != validated_authorization.get(
+        "matrix_authorization"
+    ):
+        raise ValueError(
+            "Prediction report embedded matrix authorization differs from final test"
+        )
     return {
         "prediction_report": str(report_path),
         "prediction_report_sha256": sha256_file(report_path),
@@ -424,9 +508,40 @@ def validate_prediction_report(
         "checkpoint_selection_metric": report["checkpoint_selection_metric"],
         "checkpoint_selection_value": report.get("checkpoint_selection_value"),
         "dataset_content_fingerprint": report["dataset_content_fingerprint"],
+        "source_content_fingerprint": report["source_content_fingerprint"],
+        "artifact_manifest": str(manifest_path),
+        "artifact_manifest_fingerprint": freeze_binding[
+            "manifest_fingerprint"
+        ],
+        "final_test_authorization": dict(final_binding),
+        "visual_artifacts": report["visual_artifacts"],
         "architecture": report["architecture"],
         "split": report.get("split"),
     }
+
+
+def validate_visual_artifact_binding(
+    checkpoint_provenance: Mapping[str, object],
+    *,
+    visual_manifest_path: Path,
+    visual_manifest_sha256: str,
+    visual_manifest: Mapping[str, object],
+) -> str:
+    visual = checkpoint_provenance.get("visual_artifacts")
+    if not isinstance(visual, Mapping):
+        raise ValueError("Checkpoint provenance has no visual-artifact declaration")
+    if not visual.get("enabled"):
+        return "alignment_only_sensor_model"
+    if visual.get("cache_manifest_sha256") != visual_manifest_sha256:
+        raise ValueError("Overlay visual cache differs from the model visual cache")
+    if visual.get("alignment_fingerprint") != visual_manifest.get(
+        "alignment_fingerprint"
+    ):
+        raise ValueError("Overlay and model use different visual alignment")
+    declared_path = Path(str(visual.get("cache_manifest_path", ""))).expanduser()
+    if declared_path.is_file() and declared_path.resolve() != visual_manifest_path.resolve():
+        raise ValueError("Overlay visual cache path differs from model provenance")
+    return "model_visual_cache_exact_hash_match"
 
 
 def validate_qualitative_columns(frame: pd.DataFrame) -> None:
@@ -607,7 +722,7 @@ def render_sequence(
     rgb_capture_timestamps_ns: np.ndarray,
     alignment_sidecar: dict,
     alignment_sidecar_path: Path,
-    requested_stills: dict[str, int],
+    requested_stills: dict[str, Mapping[str, object]],
     max_prediction_age_s: float,
     use_transcode: bool,
 ) -> dict:
@@ -656,6 +771,11 @@ def render_sequence(
     group["learned_end_to_end_available"] = as_bool(
         group["learned_end_to_end_available"]
     )
+    if group["sample_key"].astype(str).duplicated().any():
+        raise ValueError(f"Duplicate prediction sample keys: {sequence_id}")
+    rows_by_sample_key = {
+        str(row["sample_key"]): row for _, row in group.iterrows()
+    }
     bounds = pose_bounds(group)
     saved_stills = {}
     ages = []
@@ -683,13 +803,54 @@ def render_sequence(
                 ages.append(age)
         annotated = annotate_frame(frame, row, bounds, prediction_age_s=age if row is not None else None)
         writer.write(annotated)
-        for label, target_timestamp_ns in requested_stills.items():
-            if label not in saved_stills and frame_timestamp_ns >= target_timestamp_ns:
+        for label, request in requested_stills.items():
+            requested_index = int(request["display_rgb_frame_index"])
+            if label not in saved_stills and rendered_frames == requested_index:
+                expected_rgb_timestamp = int(
+                    request["display_rgb_capture_timestamp_ns"]
+                )
+                if frame_timestamp_ns != expected_rgb_timestamp:
+                    raise ValueError(
+                        f"Selected still RGB timestamp changed for {label}"
+                    )
+                requested_sample_key = str(request["sample_key"])
+                if requested_sample_key not in rows_by_sample_key:
+                    raise ValueError(
+                        f"Selected still sample is absent: {requested_sample_key}"
+                    )
+                still_row = rows_by_sample_key[requested_sample_key]
+                still_age_s = (
+                    frame_timestamp_ns
+                    - int(still_row["endpoint_timestamp_ns"])
+                ) / 1e9
+                if still_age_s < 0 or still_age_s > max_prediction_age_s:
+                    raise ValueError(
+                        f"Selected still sample is not causally displayable: {label}"
+                    )
+                # A later prediction endpoint may lie between the selected
+                # endpoint and its first RGB frame. The still is intentionally
+                # re-annotated with the exact selected row; the video itself
+                # retains the latest-causal-row policy.
+                still_annotated = annotate_frame(
+                    frame,
+                    still_row,
+                    bounds,
+                    prediction_age_s=still_age_s,
+                )
                 still_path = (
                     output_dir / f"{sequence_id}_{label}_device_time_v2.png"
                 )
-                cv2.imwrite(str(still_path), annotated)
-                saved_stills[label] = str(still_path)
+                if not cv2.imwrite(str(still_path), still_annotated):
+                    raise RuntimeError(f"Could not write still: {still_path}")
+                saved_stills[label] = {
+                    "path": str(still_path),
+                    "sample_key": requested_sample_key,
+                    "endpoint_timestamp_ns": int(
+                        still_row["endpoint_timestamp_ns"]
+                    ),
+                    "rgb_frame_index": rendered_frames,
+                    "rgb_capture_timestamp_ns": frame_timestamp_ns,
+                }
         rendered_frames += 1
     capture.release()
     writer.release()
@@ -700,6 +861,13 @@ def render_sequence(
         raise ValueError(
             f"Decoded MP4/VRS RGB frame count mismatch for {sequence_id}: "
             f"{rendered_frames} != {len(rgb_capture_timestamps_ns)}"
+        )
+    missing_stills = sorted(set(requested_stills) - set(saved_stills))
+    if missing_stills:
+        temp_path.unlink(missing_ok=True)
+        raise ValueError(
+            "Selected qualitative stills were not rendered: "
+            + ", ".join(missing_stills)
         )
     codec = (
         transcode(temp_path, video_path, output_path)
@@ -766,6 +934,11 @@ def main() -> int:
     vrs_dir = resolve(args.vrs_dir).resolve()
     master_dir = resolve(args.master_dir).resolve()
     output_dir = resolve(args.output_dir).resolve()
+    if output_dir.exists() and any(output_dir.iterdir()):
+        raise FileExistsError(
+            f"Qualitative output directory is not empty: {output_dir}. "
+            "Partial or historical artifacts are never reused."
+        )
     output_dir.mkdir(parents=True, exist_ok=True)
     frame = pd.read_csv(predictions_path)
     validate_qualitative_columns(frame)
@@ -785,6 +958,12 @@ def main() -> int:
         visual_manifest
     )
     visual_manifest_sha256 = sha256_file(visual_manifest_path)
+    visual_binding_status = validate_visual_artifact_binding(
+        checkpoint_provenance,
+        visual_manifest_path=visual_manifest_path,
+        visual_manifest_sha256=visual_manifest_sha256,
+        visual_manifest=visual_manifest,
+    )
     available = set(frame["sequence_id"].astype(str))
     if args.sequence:
         selected = list(dict.fromkeys(args.sequence))
@@ -839,13 +1018,17 @@ def main() -> int:
             )
         )
 
-    stills_by_sequence: dict[str, dict[str, int]] = {
+    stills_by_sequence: dict[str, dict[str, dict[str, object]]] = {
         sequence_id: {} for sequence_id in selected
     }
     for case in qualitative_cases:
-        stills_by_sequence[case["sequence_id"]][case["case"]] = int(
-            case["display_rgb_capture_timestamp_ns"]
-        )
+        stills_by_sequence[case["sequence_id"]][case["case"]] = {
+            "sample_key": case["sample_key"],
+            "display_rgb_frame_index": case["display_rgb_frame_index"],
+            "display_rgb_capture_timestamp_ns": case[
+                "display_rgb_capture_timestamp_ns"
+            ],
+        }
     reports = []
     for sequence_id in selected:
         sidecar, rgb_timestamps, sidecar_path, video_path = alignments[sequence_id]
@@ -873,6 +1056,7 @@ def main() -> int:
         "checkpoint_provenance": checkpoint_provenance,
         "visual_cache_manifest": str(visual_manifest_path),
         "visual_cache_manifest_sha256": visual_manifest_sha256,
+        "visual_model_binding_status": visual_binding_status,
         "clip_alignment_version": alignment_spec["version"],
         "clip_alignment_fingerprint": clip_alignment_fingerprint,
         "time_basis": alignment_spec["time_basis"],
@@ -926,14 +1110,45 @@ def main() -> int:
         for name, value in case["modality_available"].items():
             flat[f"modality_{name}_available"] = value
         flat_cases.append(flat)
-    pd.DataFrame(flat_cases).to_csv(
-        output_dir / "qualitative_cases_device_time_v2.csv", index=False
-    )
-    (output_dir / "overlay_report.json").write_text(
+    cases_csv_path = output_dir / "qualitative_cases_device_time_v2.csv"
+    pd.DataFrame(flat_cases).to_csv(cases_csv_path, index=False)
+    overlay_report_path = output_dir / "overlay_report.json"
+    overlay_report_path.write_text(
         json.dumps(summary, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-    print(f"Overlay report: {output_dir / 'overlay_report.json'}")
+    output_paths = [cases_path, cases_csv_path, overlay_report_path]
+    for video_report in reports:
+        output_paths.append(Path(video_report["output_video"]))
+        output_paths.extend(
+            Path(still["path"])
+            for still in video_report["stills"].values()
+        )
+    artifact_manifest = {
+        "schema_version": "qualitative_artifact_manifest_v1",
+        "manifest_fingerprint": None,
+        "prediction_report_fingerprint": prediction_report[
+            "report_fingerprint"
+        ],
+        "artifact_manifest_fingerprint": checkpoint_provenance[
+            "artifact_manifest_fingerprint"
+        ],
+        "visual_cache_manifest_sha256": visual_manifest_sha256,
+        "outputs": {
+            path.relative_to(output_dir).as_posix(): file_identity(path)
+            for path in output_paths
+        },
+    }
+    artifact_manifest["manifest_fingerprint"] = canonical_json_hash(
+        artifact_manifest
+    )
+    artifact_manifest_path = output_dir / "qualitative_artifact_manifest.json"
+    artifact_manifest_path.write_text(
+        json.dumps(artifact_manifest, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Overlay report: {overlay_report_path}")
+    print(f"Artifact manifest: {artifact_manifest_path}")
     return 0
 
 

@@ -15,6 +15,10 @@
       "allowed_next_actions": ["ready_for_master_merge"],
       "strict": true
     },
+    "dataset_contract": {
+      "expected_selected_sequences": 214,
+      "expected_sequence_fingerprint": "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd"
+    },
     "feature_profile": "multimodal_robot_frame_v1",
     "ablation_exclude_modalities": ["objects"],
     "window_size": 60,

@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "layout": {
     "runs": "Training/runs/<dataset_tag>/<experiment_tag>/<model_tag>/<run_id>",
     "reports": "Training/reports/<dataset_tag>/<experiment_tag>",
@@ -10,16 +10,33 @@
   "active_protocol": {
     "protocol_tag": "thesis_final_v2_corrected_alignment",
     "status": "implementation_ready_no_new_results",
+    "planned_dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
+    "planned_dataset_materialized": false,
+    "dataset_descriptor": null,
     "experiment_matrix": "Training/configs/experiment_matrix_v2.json",
     "implementation_status": "Training/IMPLEMENTATION_STATUS_P0_P5.json",
     "artifact_validity": "Training/reports/dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json",
+    "artifact_validity_role": "historical invalidity inventory; not a descriptor for the planned dataset",
     "selection_split": "validation",
+    "selection_job": "Training/jobs/thesis_v2_select_checkpoints.sbatch",
     "final_test_transition": "Training/evaluate_frozen_run.py",
     "authoritative_summary": "Training/evaluation/summarize_thesis_v2_matrix.py",
     "participant_group_cv": "Training/prepare_group_cv_runs.py",
+    "participant_group_cv_summary": "Training/evaluation/summarize_group_cv.py",
+    "participant_group_cv_protocol": "nested leave-one-participant-out with plan-derived fold-by-seed task count",
+    "required_t1_postprocessing": {
+      "experiments": ["residual_current_gate"],
+      "seed_policy": "all_matrix_seeds",
+      "authoritative_summary_requires_complete_artifacts": true
+    },
     "test_split_status": "previously observed; no longer eligible for architecture or hyperparameter decisions",
+    "required_observation_alignment_version": "causal_backward_device_time_v1",
+    "observation_alignment_rule": "latest source timestamp less than or equal to master timestamp",
+    "static_world_to_robot_calibration": "offline whole-sequence estimate; not fully online-causal",
     "required_clip_alignment_version": "vrs_rgb_device_time_v2",
     "required_terminal_target_version": "terminal_endpose_unique_hand_capture_v2",
+    "required_artifact_freeze_protocol": "thesis_artifact_freeze_hash_bound_v2",
+    "new_results_available": false,
     "main_checkpoint": "best_intention",
     "pose_selected_checkpoint_role": "diagnostic_only"
   },

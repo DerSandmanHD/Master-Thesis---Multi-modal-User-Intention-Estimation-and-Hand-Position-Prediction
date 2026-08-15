@@ -262,50 +262,6 @@ def main() -> int:
             "position_mae_cm"
         ]
 
-        prediction_csv = Path(directory) / "t1_predictions.csv"
-        prediction_report = Path(directory) / "t1_predictions.json"
-        completed = subprocess.run(
-            [
-                sys.executable,
-                str(Path(__file__).with_name("export_residual_predictions.py")),
-                "--run-dir",
-                str(completed_run),
-                "--master-dir",
-                str(master_dir),
-                "--split",
-                "test",
-                "--output-csv",
-                str(prediction_csv),
-                "--report-out",
-                str(prediction_report),
-                "--device",
-                "cpu",
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        assert completed.returncode == 0
-        exported = json.loads(prediction_report.read_text(encoding="utf-8"))
-        assert exported["result_role"] == "primary_validation_selected_checkpoint"
-        comparison = exported["pose_comparison"]
-        assert comparison["fair_common_samples"] > 0
-        assert set(comparison["methods"]) == {
-            "persistence",
-            "constant_velocity",
-            "learned_model_oracle_hand",
-        }
-        common_counts = {
-            values["fair_common_metrics"]["samples"]
-            for values in comparison["methods"].values()
-        }
-        assert common_counts == {comparison["fair_common_samples"]}
-        exported_rows = pd.read_csv(prediction_csv)
-        assert exported_rows["sequence_receiving_hand"].isin(
-            ["left", "right"]
-        ).all()
-        assert exported_rows["target_object_id"].notna().all()
-
         validation_only_run = train(
             SimpleNamespace(
                 config=config_path,
@@ -325,6 +281,47 @@ def main() -> int:
             "best_intention",
             "best_pose",
         }
+        validation_manifest = json.loads(
+            (validation_only_run / "artifact_manifest.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        validation_selection = Path(directory) / "validation_selection.json"
+        validation_selection.write_text(
+            json.dumps(
+                {
+                    "schema_version": 2,
+                    "complete": True,
+                    "selection_split": "validation",
+                    "test_metrics_read": False,
+                    "matrix_id": "residual_smoke",
+                    "final_test_runs": [
+                        {
+                            "experiment_id": "residual_smoke",
+                            "seed": int(config["training"]["seed"]),
+                            "run_dir": str(validation_only_run),
+                            "checkpoint_name": "best_intention",
+                            "checkpoint_sha256": validation_manifest[
+                                "output_artifacts"
+                            ]["checkpoints"]["best_intention"]["sha256"],
+                            "checkpoint_epoch": validation_only_metrics[
+                                "checkpoints"
+                            ]["best_intention"]["epoch"],
+                            "checkpoint_selection_metric": validation_only_metrics[
+                                "checkpoints"
+                            ]["best_intention"]["selection_metric"],
+                            "checkpoint_selection_value": validation_only_metrics[
+                                "checkpoints"
+                            ]["best_intention"]["selection_value"],
+                            "artifact_manifest_fingerprint": validation_manifest[
+                                "manifest_fingerprint"
+                            ],
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
         frozen_test_output = Path(directory) / "frozen_final_test.json"
         frozen_evaluation = subprocess.run(
             [
@@ -334,6 +331,10 @@ def main() -> int:
                 str(validation_only_run),
                 "--master-dir",
                 str(master_dir),
+                "--selection-file",
+                str(validation_selection),
+                "--experiment-id",
+                "residual_smoke",
                 "--output",
                 str(frozen_test_output),
                 "--device",
@@ -351,6 +352,65 @@ def main() -> int:
         assert frozen_test["checkpoint"]["name"] == "best_intention"
         assert frozen_test["test_used_for_model_or_checkpoint_selection"] is False
         assert frozen_test["test_metrics"]["intention"]["samples"] > 0
+
+        prediction_csv = Path(directory) / "t1_predictions.csv"
+        prediction_report = Path(directory) / "t1_predictions.json"
+        completed = subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).with_name("export_residual_predictions.py")),
+                "--run-dir",
+                str(validation_only_run),
+                "--master-dir",
+                str(master_dir),
+                "--split",
+                "test",
+                "--final-test-report",
+                str(frozen_test_output),
+                "--output-csv",
+                str(prediction_csv),
+                "--report-out",
+                str(prediction_report),
+                "--device",
+                "cpu",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert completed.returncode == 0, completed.stdout + completed.stderr
+        exported = json.loads(prediction_report.read_text(encoding="utf-8"))
+        assert exported["schema_version"] == 3
+        assert exported["result_role"] == "primary_validation_selected_checkpoint"
+        assert exported["full_split_export"] is True
+        assert exported["sequence_filter"] == []
+        assert exported["exported_endpoint_count"] == exported[
+            "frozen_split_endpoint_count"
+        ]
+        assert exported["exported_endpoint_fingerprint"] == exported[
+            "frozen_split_endpoint_fingerprint"
+        ]
+        assert exported["artifact_freeze"]["manifest_fingerprint"]
+        assert exported["final_test_authorization"]["report_fingerprint"] == (
+            frozen_test["report_fingerprint"]
+        )
+        comparison = exported["pose_comparison"]
+        assert comparison["fair_common_samples"] > 0
+        assert set(comparison["methods"]) == {
+            "persistence",
+            "constant_velocity",
+            "learned_model_oracle_hand",
+        }
+        common_counts = {
+            values["fair_common_metrics"]["samples"]
+            for values in comparison["methods"].values()
+        }
+        assert common_counts == {comparison["fair_common_samples"]}
+        exported_rows = pd.read_csv(prediction_csv)
+        assert exported_rows["sequence_receiving_hand"].isin(
+            ["left", "right"]
+        ).all()
+        assert exported_rows["target_object_id"].notna().all()
 
         modality_config = json.loads(json.dumps(config))
         modality_config["run_name"] = "residual_modality_smoke"

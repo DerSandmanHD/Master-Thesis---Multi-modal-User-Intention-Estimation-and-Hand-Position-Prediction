@@ -12,7 +12,7 @@ set -euo pipefail
 REPO_DIR="${REPO_DIR:-$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction}"
 IMAGE="${IMAGE:-$HOME/singularity/aria_master.simg}"
 MATRIX="${MATRIX:-Training/configs/experiment_matrix_v2.json}"
-DATASET_TAG="${DATASET_TAG:-dataset_v2_20260802_n214_5d136a34}"
+DATASET_TAG="${DATASET_TAG:-dataset_v3_causal_20260815_n214_5d136a34}"
 REPORT_TAG="${REPORT_TAG:-thesis_final_v2_corrected_alignment}"
 REPORT_ROOT="${REPORT_ROOT:-Training/reports/${DATASET_TAG}/${REPORT_TAG}}"
 SELECTION_FILE="${SELECTION_FILE:-${REPORT_ROOT}/validation_selection.json}"
@@ -25,16 +25,15 @@ cd "$REPO_DIR"
 [[ -f "$MATRIX" ]] || { echo "Experiment matrix missing: $MATRIX" >&2; exit 2; }
 [[ -f "$SELECTION_FILE" ]] || { echo "Validation selection missing: $SELECTION_FILE" >&2; exit 2; }
 [[ -d "$FINAL_TEST_DIR" ]] || { echo "Final-test directory missing: $FINAL_TEST_DIR" >&2; exit 2; }
+[[ -d "$POSTPROCESS_ROOT" ]] || { echo "Required t+1 postprocess directory missing: $POSTPROCESS_ROOT" >&2; exit 2; }
 
 ARGS=(
   --matrix "$MATRIX"
   --selection "$SELECTION_FILE"
   --final-test-dir "$FINAL_TEST_DIR"
+  --postprocess-root "$POSTPROCESS_ROOT"
   --output-dir "$OUTPUT_DIR"
 )
-if [[ -d "$POSTPROCESS_ROOT" ]]; then
-  ARGS+=(--postprocess-root "$POSTPROCESS_ROOT")
-fi
 
 singularity exec "$IMAGE" \
   python3 Training/evaluation/summarize_thesis_v2_matrix.py "${ARGS[@]}"

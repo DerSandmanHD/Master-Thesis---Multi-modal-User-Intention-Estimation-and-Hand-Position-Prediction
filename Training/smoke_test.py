@@ -58,6 +58,9 @@ def synthetic_sequence(path: Path, participant: str, sequence_number: int) -> No
             "sequence_id": [f"{participant}_{sequence_number}"] * rows,
             "participant": [participant] * rows,
             "timestamp_ns": timestamps,
+            "observation_alignment_version": [
+                "causal_backward_device_time_v1"
+            ] * rows,
             "hand_timestamp_ns": timestamps,
             "intent_label": intent_labels,
             "receiving_hand": [receiving_hand] * rows,
@@ -200,9 +203,12 @@ def main() -> int:
             metadata_dir / "data_metadata.json",
         )
         assert (metadata_dir / "dataset_provenance.json").is_file()
+        # Preserve the exact manifest bytes. Path.read_text() performs newline
+        # translation on Windows and would turn a valid CRLF snapshot into a
+        # false negative even though its frozen SHA-256 is unchanged.
         assert (
             metadata_dir / "dataset_manifest_snapshot.csv"
-        ).read_text(encoding="utf-8") == bundle.manifest_snapshot
+        ).read_bytes() == bundle.manifest_snapshot.encode("utf-8")
         assert sha256_file(
             metadata_dir / "dataset_manifest_snapshot.csv"
         ) == provenance["manifest"]["sha256"]

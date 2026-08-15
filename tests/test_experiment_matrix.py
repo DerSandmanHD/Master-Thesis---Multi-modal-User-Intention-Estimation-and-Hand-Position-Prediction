@@ -21,7 +21,9 @@ from experiment_matrix import (  # noqa: E402
 from select_matrix_checkpoints import (  # noqa: E402
     select_candidate,
     validate_candidate_identity,
+    validate_embedded_final_test_authorization,
     validate_final_test_authorization,
+    write_selection_report,
 )
 
 
@@ -51,6 +53,18 @@ def test_matrix_is_minimal_predeclared_and_executable() -> None:
         assert config["data"]["required_observation_alignment_version"] == (
             "causal_backward_device_time_v1"
         )
+        assert config["data"]["dataset_contract"] == {
+            "expected_selected_sequences": 214,
+            "expected_sequence_fingerprint": (
+                "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd"
+            ),
+        }
+    assert matrix["postprocessing"] == {
+        "required_t1_experiments": ["residual_current_gate"],
+        "seed_policy": "all_matrix_seeds",
+        "selection_basis": "predeclared_primary_experiment_not_test_performance",
+        "require_grouped_report_in_authoritative_summary": True,
+    }
 
 
 def test_validation_commands_never_evaluate_test() -> None:
@@ -107,7 +121,10 @@ def test_t1_three_way_matrix_entry_uses_checkpoint_bound_export() -> None:
         "constant_velocity",
         "learned_model_oracle_hand",
     ]
-    assert "fair_common" in entry["primary_comparison"]
+    assert entry["primary_comparison"] == (
+        "test_predictions.json "
+        "pose_comparison.methods.<method>.fair_common_metrics"
+    )
 
 
 def test_seed_checkpoint_selection_uses_validation_tradeoff_only() -> None:
@@ -176,6 +193,79 @@ def test_final_test_authorization_binds_run_seed_and_hash() -> None:
         checkpoint_sha256="abc123",
         artifact_manifest_fingerprint="manifest123",
     ) == windows_row
+
+
+def test_embedded_final_authorization_reloads_exact_selection(tmp_path: Path) -> None:
+    from artifact_freeze import sha256_file
+
+    run_dir = tmp_path / "run"
+    row = {
+        "experiment_id": "model",
+        "seed": 42,
+        "run_dir": str(run_dir),
+        "checkpoint_name": "best_intention",
+        "checkpoint_sha256": "a" * 64,
+        "checkpoint_epoch": 7,
+        "checkpoint_selection_metric": "validation_intention_macro_f1",
+        "checkpoint_selection_value": 0.75,
+        "artifact_manifest_fingerprint": "f" * 64,
+    }
+    selection = {
+        "schema_version": 2,
+        "matrix_id": "matrix",
+        "complete": True,
+        "selection_split": "validation",
+        "test_metrics_read": False,
+        "final_test_runs": [row],
+    }
+    selection_path = tmp_path / "selection.json"
+    selection_path.write_text(json.dumps(selection), encoding="utf-8")
+    authorization = {
+        "selection_file": str(selection_path),
+        "selection_file_sha256": sha256_file(selection_path),
+        "matrix_id": "matrix",
+        "experiment_id": "model",
+        "seed": 42,
+        "authorized_checkpoint_sha256": "a" * 64,
+        "test_metrics_read_during_authorization": False,
+    }
+    report = {
+        "source_run": str(run_dir),
+        "source_artifact_manifest_fingerprint": "f" * 64,
+        "checkpoint": {
+            "sha256": "a" * 64,
+            "epoch": 7,
+            "selection_metric": "validation_intention_macro_f1",
+            "selection_value": 0.75,
+        },
+        "matrix_authorization": authorization,
+    }
+    validated = validate_embedded_final_test_authorization(
+        report, project_root=tmp_path
+    )
+    assert validated["authorized_row"] == row
+    for field, invalid in (
+        ("authorized_checkpoint_sha256", "b" * 64),
+        ("test_metrics_read_during_authorization", True),
+        ("selection_file_sha256", "c" * 64),
+        ("seed", 43),
+        ("experiment_id", "other"),
+    ):
+        tampered = json.loads(json.dumps(report))
+        tampered["matrix_authorization"][field] = invalid
+        with pytest.raises(ValueError):
+            validate_embedded_final_test_authorization(
+                tampered, project_root=tmp_path
+            )
+
+
+def test_selection_manifest_refuses_implicit_overwrite(tmp_path: Path) -> None:
+    output = tmp_path / "selection.json"
+    write_selection_report({"created_at": "first"}, output)
+    with pytest.raises(FileExistsError, match="refusing to overwrite"):
+        write_selection_report({"created_at": "second"}, output)
+    write_selection_report({"created_at": "second"}, output, overwrite=True)
+    assert json.loads(output.read_text(encoding="utf-8"))["created_at"] == "second"
 
 
 def test_matrix_candidate_rejects_wrong_seed_or_source_config(tmp_path: Path) -> None:

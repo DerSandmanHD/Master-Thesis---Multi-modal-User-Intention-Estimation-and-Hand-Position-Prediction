@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from artifact_freeze import sha256_file
+from artifact_freeze import canonical_json_hash, sha256_file
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -59,6 +59,10 @@ def build_group_cv_plan(
         raise ValueError("Split audit has no participant_group_cv folds")
     if cv.get("execution_protocol") is None:
         raise ValueError("Group-CV audit predates the nested executable protocol")
+    if cv.get("participant_balanced_aggregation_identifiable") is not True:
+        raise ValueError(
+            "Executable thesis Group-CV requires leave-one-participant-out folds"
+        )
     executable = entrypoint or infer_entrypoint(base_config)
     if not (PROJECT_ROOT / executable).is_file():
         raise FileNotFoundError(executable)
@@ -73,6 +77,10 @@ def build_group_cv_plan(
             str(value) for value in fold["validation_participants"]
         )
         test = sorted(str(value) for value in fold["test_participants"])
+        if len(test) != 1:
+            raise ValueError(
+                f"Fold {fold['fold']} must contain exactly one outer participant"
+            )
         sets = tuple(map(set, (train, validation, test)))
         if any(sets[left] & sets[right] for left, right in ((0, 1), (0, 2), (1, 2))):
             raise ValueError(f"Fold {fold['fold']} is not participant-disjoint")
@@ -139,9 +147,10 @@ def build_group_cv_plan(
                     "outer_evaluation_command": evaluate_command,
                 }
             )
-    return {
+    plan = {
         "schema_version": 1,
         "protocol": "nested_participant_group_cv_executable_v1",
+        "plan_fingerprint": None,
         "dataset_tag": dataset_tag,
         "experiment_tag": experiment_tag,
         "base_config": portable(base_config_path),
@@ -153,6 +162,8 @@ def build_group_cv_plan(
         "outer_evaluation_used_for_selection": False,
         "runs": rows,
     }
+    plan["plan_fingerprint"] = canonical_json_hash(plan)
+    return plan
 
 
 def parse_args() -> argparse.Namespace:

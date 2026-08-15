@@ -5,7 +5,6 @@
 #SBATCH --mem-per-cpu=4G
 #SBATCH --gres=gpu:1
 #SBATCH --time=06:00:00
-#SBATCH --array=0-14%3
 #SBATCH --output=Training/slurm_logs/thesis_v2_group_cv.%A_%a.out
 #SBATCH --error=Training/slurm_logs/thesis_v2_group_cv.%A_%a.err
 
@@ -14,13 +13,14 @@ set -euo pipefail
 REPO_DIR="${REPO_DIR:-$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction}"
 IMAGE="${IMAGE:-$HOME/singularity/aria_master.simg}"
 : "${GROUP_CV_PLAN:?Set GROUP_CV_PLAN to generated group_cv_plan.json}"
+: "${SLURM_ARRAY_TASK_ID:?Submit with --array=0-<plan_run_count_minus_one>%3}"
 
 cd "$REPO_DIR"
 [[ -f "$IMAGE" ]] || { echo "Container missing: $IMAGE" >&2; exit 2; }
 [[ -f "$GROUP_CV_PLAN" ]] || { echo "Group-CV plan missing: $GROUP_CV_PLAN" >&2; exit 2; }
 
 mapfile -t FIELDS < <(
-  singularity exec "$IMAGE" python3 -c 'import json,sys; p=json.load(open(sys.argv[1])); assert p["protocol"] == "nested_participant_group_cv_executable_v1" and p["outer_evaluation_used_for_selection"] is False and len(p["runs"]) == 15; r=p["runs"][int(sys.argv[2])]; print(r["config"]); print(r["config_sha256"]); print(r["run_dir"]); print(r["outer_evaluation_output"]); print(r["validation_command"].split()[1])' "$GROUP_CV_PLAN" "$SLURM_ARRAY_TASK_ID"
+  singularity exec "$IMAGE" python3 -c 'import hashlib,json,sys; p=json.load(open(sys.argv[1])); payload={**p,"plan_fingerprint":None}; fp=hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False).encode()).hexdigest(); runs=p["runs"]; assert p["protocol"] == "nested_participant_group_cv_executable_v1" and p["plan_fingerprint"] == fp and p["outer_evaluation_used_for_selection"] is False and len(runs) == int(p["fold_count"])*len(p["seeds"]); i=int(sys.argv[2]); assert 0 <= i < len(runs); r=runs[i]; assert len(r["outer_evaluation_participants"]) == 1; print(r["config"]); print(r["config_sha256"]); print(r["run_dir"]); print(r["outer_evaluation_output"]); print(r["validation_command"].split()[1])' "$GROUP_CV_PLAN" "$SLURM_ARRAY_TASK_ID"
 )
 CONFIG="${FIELDS[0]}"
 EXPECTED_CONFIG_SHA256="${FIELDS[1]}"
@@ -45,7 +45,7 @@ if [[ ! -e "$RUN_DIR" ]]; then
 fi
 singularity exec "$IMAGE" python3 Training/artifact_freeze.py "$RUN_DIR/artifact_manifest.json"
 if [[ -e "$OUTPUT" ]]; then
-  singularity exec "$IMAGE" python3 -c 'import json,pathlib,sys; run=pathlib.Path(sys.argv[1]).resolve(); out=json.load(open(sys.argv[2])); freeze=json.load(open(run/"artifact_manifest.json")); metrics=json.load(open(run/"metrics.json")); cp=metrics["checkpoints"]["best_intention"]; frozen=freeze["output_artifacts"]["checkpoints"]["best_intention"]; source=pathlib.Path(out["source_run"]).resolve(); assert source == run; assert out["split"] == "test" and out["evaluation_protocol"] == "validation_frozen_checkpoint_single_test_v1"; assert out["source_artifact_manifest_fingerprint"] == freeze["manifest_fingerprint"]; assert out["checkpoint"]["name"] == "best_intention" and out["checkpoint"]["sha256"] == frozen["sha256"] == cp["sha256"]; assert out["test_used_for_model_or_checkpoint_selection"] is False; assert out.get("matrix_authorization") is None; assert metrics["test_evaluation_skipped"] is True and "test" not in metrics and "test_by_checkpoint" not in metrics' "$RUN_DIR" "$OUTPUT" || {
+  singularity exec "$IMAGE" python3 -c 'import hashlib,json,pathlib,sys; run=pathlib.Path(sys.argv[1]).resolve(); out=json.load(open(sys.argv[2])); freeze=json.load(open(run/"artifact_manifest.json")); metrics=json.load(open(run/"metrics.json")); cp=metrics["checkpoints"]["best_intention"]; frozen=freeze["output_artifacts"]["checkpoints"]["best_intention"]; source=pathlib.Path(out["source_run"]).resolve(); payload={**out,"report_fingerprint":None}; fp=hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False).encode()).hexdigest(); assert source == run; assert out["schema_version"] == 2 and out["split"] == "test" and out["evaluation_protocol"] == "validation_frozen_checkpoint_single_test_v2" and out["report_fingerprint"] == fp; assert out["source_artifact_manifest_fingerprint"] == freeze["manifest_fingerprint"]; assert out["checkpoint"]["name"] == "best_intention" and out["checkpoint"]["sha256"] == frozen["sha256"] == cp["sha256"]; assert out["test_used_for_model_or_checkpoint_selection"] is False; assert out.get("matrix_authorization") is None; assert metrics["test_evaluation_skipped"] is True and "test" not in metrics and "test_by_checkpoint" not in metrics' "$RUN_DIR" "$OUTPUT" || {
     echo "Existing outer evaluation is stale or mismatched: $OUTPUT" >&2
     exit 2
   }

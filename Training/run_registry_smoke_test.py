@@ -21,8 +21,21 @@ def read_json(path: Path) -> dict:
 
 def main() -> int:
     registry = read_json(REGISTRY_PATH)
-    assert registry["schema_version"] == 1
+    assert registry["schema_version"] == 2
     assert registry["layout"]["tag_pattern"] == "^[a-z0-9][a-z0-9_-]*$"
+    active = registry["active_protocol"]
+    assert active["planned_dataset_tag"] == (
+        "dataset_v3_causal_20260815_n214_5d136a34"
+    )
+    assert active["planned_dataset_materialized"] is False
+    assert active["dataset_descriptor"] is None
+    assert active["new_results_available"] is False
+    assert active["required_observation_alignment_version"] == (
+        "causal_backward_device_time_v1"
+    )
+    assert active["required_artifact_freeze_protocol"] == (
+        "thesis_artifact_freeze_hash_bound_v2"
+    )
 
     datasets: dict[str, dict] = {}
     for record in registry["datasets"]:

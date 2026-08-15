@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "matrix_id": "thesis_final_v2_corrected_alignment",
-  "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
   "seeds": [42, 43, 44],
   "validation_experiment_tag": "thesis_final_v2_validation",
   "policy": {
@@ -11,7 +11,14 @@
     "test_already_observed": true,
     "test_interpretation": "historical/exploratory; participant-grouped CV is the preferred robustness analysis",
     "same_budget": true,
-    "same_seed_set": true
+    "same_seed_set": true,
+    "fusion_comparison_interpretation": "The current-vs-simple gate contrast is the closest controlled gate ablation. Modality-gated and temporal-only variants change encoder design/capacity; trainable parameter counts must be reported and those contrasts are not attributed to gating alone."
+  },
+  "postprocessing": {
+    "required_t1_experiments": ["residual_current_gate"],
+    "seed_policy": "all_matrix_seeds",
+    "selection_basis": "predeclared_primary_experiment_not_test_performance",
+    "require_grouped_report_in_authoritative_summary": true
   },
   "training_experiments": [
     {
@@ -166,9 +173,9 @@
   "evaluation_only": [
     {
       "id": "t1_pose_baselines",
-      "command": "python3 Training/export_residual_predictions.py --run-dir <validation_frozen_run> --checkpoint best_intention_model.pt --split test --output-csv <report_dir>/test_predictions.csv --report-out <report_dir>/test_predictions.json",
+      "command": "python3 Training/export_residual_predictions.py --run-dir <validation_frozen_run> --checkpoint best_intention_model.pt --split test --final-test-report <authorized_final_test.json> --output-csv <report_dir>/test_predictions.csv --report-out <report_dir>/test_predictions.json",
       "methods": ["persistence", "constant_velocity", "learned_model_oracle_hand"],
-      "primary_comparison": "test_predictions.json pose_baselines.fair_common_metrics",
+      "primary_comparison": "test_predictions.json pose_comparison.methods.<method>.fair_common_metrics",
       "note": "evaluate_pose_baselines.py remains a model-independent two-baseline diagnostic; the checkpoint-bound export is the authoritative learned three-way comparison"
     },
     {

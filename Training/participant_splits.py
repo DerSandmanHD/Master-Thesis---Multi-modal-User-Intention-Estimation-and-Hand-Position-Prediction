@@ -1167,6 +1167,14 @@ def generate_participant_group_cv(
     warnings.extend(_partition_hand_warnings(summaries, partition))
     return {
         "strategy": "deterministic_label_balanced_participant_group_cv",
+        "outer_evaluation_unit": (
+            "single_participant"
+            if folds == len(participants)
+            else "multi_participant_fold"
+        ),
+        "participant_balanced_aggregation_identifiable": (
+            folds == len(participants)
+        ),
         "execution_protocol": (
             "Each fold uses the held-out partition as outer evaluation, the next "
             "partition as inner validation for checkpoint selection, and all "

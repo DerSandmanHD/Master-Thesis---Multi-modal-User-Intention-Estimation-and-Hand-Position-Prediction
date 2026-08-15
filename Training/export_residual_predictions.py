@@ -38,6 +38,7 @@ from pose_baselines import (
     sample_key_fingerprint,
     single_pose_errors,
 )
+from select_matrix_checkpoints import validate_embedded_final_test_authorization
 from train_residual import RESIDUAL_V2_MODEL_TYPE, build_residual_model
 
 
@@ -200,12 +201,18 @@ def validate_final_test_binding(
         artifact_manifest_fingerprint
     ):
         raise ValueError("Final-test report belongs to another artifact freeze")
+    validated_authorization = validate_embedded_final_test_authorization(
+        report,
+        authorization_base=path.parent,
+        project_root=PROJECT_ROOT,
+    )
     return {
         "path": str(path.resolve()),
         "sha256": sha256_file(path),
         "report_fingerprint": stored_fingerprint,
         "evaluation_protocol": report["evaluation_protocol"],
-        "matrix_authorization": report["matrix_authorization"],
+        "matrix_authorization": validated_authorization["matrix_authorization"],
+        "selection_file_sha256": validated_authorization["selection_sha256"],
     }
 
 
@@ -227,6 +234,8 @@ def main() -> int:
         if args.report_out
         else output_csv.with_suffix(".json")
     )
+    if output_csv == report_path:
+        raise ValueError("Prediction CSV and report must use different paths")
     if output_csv.exists() or report_path.exists():
         raise FileExistsError(
             "Prediction CSV/report already exists; refusing to overwrite a "
@@ -734,7 +743,7 @@ def main() -> int:
             and full_split_export
             and (args.split != "test" or final_test_binding is not None)
         )
-        else "oracle_pose_selected_diagnostic"
+        else "checkpoint_bound_non_primary_diagnostic"
     )
     visual_provenance = bundle.provenance.get("schema", {}).get(
         "visual_features", {"enabled": False}

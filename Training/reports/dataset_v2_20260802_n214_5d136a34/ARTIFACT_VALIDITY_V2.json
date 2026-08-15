@@ -1,8 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "protocol": "thesis_artifact_validity_after_timing_and_reporting_audit_v2",
-  "created_at": "2026-08-11",
+  "created_at": "2026-08-15",
   "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
+  "document_role": "historical invalidity inventory; not an active dataset descriptor",
+  "active_protocol_dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
+  "active_protocol_dataset_materialized": false,
   "raw_source_policy": {
     "vrs_and_original_mps_modified": false,
     "historical_artifacts_deleted": false,
@@ -14,6 +17,15 @@
     "preferred_robustness_protocol": "participant-wise Group-CV plus participant/sequence cluster bootstrap"
   },
   "artifact_classes": [
+    {
+      "class": "historical_pre_causal_master_datasets",
+      "paths": [
+        "Data_collection/master_datasets"
+      ],
+      "status": "invalid_until_causal_rebuild_and_preflight",
+      "reason": "Historical masters may contain nearest, forward or backfilled source joins and do not prove causal_backward_device_time_v1 alignment.",
+      "action": "Preserve the previous derived masters, rebuild them from unchanged VRS/MPS sources, and require verify_causal_masters.py before any v2 cache or training run."
+    },
     {
       "class": "historical_sensor_only_training_runs",
       "paths": [
@@ -60,13 +72,20 @@
     }
   ],
   "active_artifact_requirements": {
+    "dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
+    "observation_alignment_version": "causal_backward_device_time_v1",
+    "observation_alignment_rule": "latest source timestamp less than or equal to master timestamp",
+    "static_world_to_robot_calibration": "offline whole-sequence estimate; not evidence of fully online-causal deployment",
     "clip_alignment_version": "vrs_rgb_device_time_v2",
     "terminal_target_version": "terminal_endpose_unique_hand_capture_v2",
     "cache_and_projection_schema_version": 2,
     "primary_checkpoint": "best_intention",
     "primary_pose_semantics": "learned_end_to_end_predicted_receiving_hand_and_reference",
-    "artifact_manifest_protocol": "thesis_artifact_freeze_hash_bound_v1",
+    "artifact_manifest_protocol": "thesis_artifact_freeze_hash_bound_v2",
+    "prediction_export_schema_version": 3,
+    "final_test_evaluation_protocol": "validation_frozen_checkpoint_single_test_v2",
     "test_model_selection_allowed": false
   },
-  "new_results_available": false
+  "new_results_available": false,
+  "result_claim": "No corrected causal-master, CLIP-v2, terminal-v2, Group-CV or qualitative-v2 result is claimed by this document."
 }

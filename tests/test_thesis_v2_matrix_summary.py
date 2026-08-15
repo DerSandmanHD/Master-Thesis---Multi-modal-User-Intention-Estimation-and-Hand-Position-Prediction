@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import sys
 from pathlib import Path
 
@@ -14,6 +15,10 @@ EVALUATION = TRAINING / "evaluation"
 for path in (TRAINING, EVALUATION):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
+
+TEST_ENDPOINT_FINGERPRINT = hashlib.sha256(
+    "\n".join(f"S1:{index}" for index in range(1, 6)).encode("utf-8")
+).hexdigest()
 
 from artifact_freeze import canonical_json_hash, sha256_file  # noqa: E402
 from experiment_matrix import run_directory  # noqa: E402
@@ -210,9 +215,9 @@ def build_fixture(tmp_path: Path) -> dict:
                     "source_content_fingerprint": "shared-source-content",
                     "window_eligibility": {
                         "endpoint_fingerprints": {
-                            "test": "e" * 64,
+                            "test": TEST_ENDPOINT_FINGERPRINT,
                         },
-                        "endpoint_counts": {"test": 12},
+                        "endpoint_counts": {"test": 5},
                     },
                 },
                 "output_artifacts": {
@@ -334,17 +339,17 @@ def add_grouped_report(fixture: dict, experiment_id: str, seed: int) -> Path:
     report_dir.mkdir(parents=True)
     predictions = report_dir / "test_predictions.csv"
     predictions.write_text(
-        "participant,sequence_id,sample_key,target_intention_id,"
+        "participant,sequence_id,endpoint_timestamp_ns,sample_key,target_intention_id,"
         "predicted_intention_id,target_receiving_hand,predicted_receiving_hand,"
         "pose_valid,fair_common,oracle_position_error_cm,"
         "oracle_orientation_error_deg,persistence_position_error_cm,"
         "persistence_orientation_error_deg,constant_velocity_position_error_cm,"
         "constant_velocity_orientation_error_deg\n"
-        "P1,S1,a,2,2,left,left,true,true,5,15,7,17,6,16\n"
-        "P1,S1,b,2,2,left,left,true,true,6,16,8,18,7,17\n"
-        "P1,S1,c,2,2,left,left,true,true,7,17,9,19,8,18\n"
-        "P1,S1,d,2,2,left,left,true,true,6,16,8,18,7,17\n"
-        "P1,S1,e,2,2,left,left,true,false,10,20,10,20,,\n",
+        "P1,S1,1,a,2,2,left,left,true,true,5,15,7,17,6,16\n"
+        "P1,S1,2,b,2,2,left,left,true,true,6,16,8,18,7,17\n"
+        "P1,S1,3,c,2,2,left,left,true,true,7,17,9,19,8,18\n"
+        "P1,S1,4,d,2,2,left,left,true,true,6,16,8,18,7,17\n"
+        "P1,S1,5,e,2,2,left,left,true,false,10,20,10,20,,\n",
         encoding="utf-8",
     )
     predictions_hash = sha256_file(predictions)
@@ -354,9 +359,11 @@ def add_grouped_report(fixture: dict, experiment_id: str, seed: int) -> Path:
     )["pose_fair_common"]
     identity = fixture["identities"][(experiment_id, seed)]
     sidecar = report_dir / "test_predictions.json"
-    sidecar.write_text(
-        json.dumps(
-            {
+    final_report_path = fixture["reports"][(experiment_id, seed)]
+    final_report = json.loads(final_report_path.read_text(encoding="utf-8"))
+    sidecar_payload = {
+                "schema_version": 3,
+                "report_fingerprint": None,
                 "result_role": "primary_validation_selected_checkpoint",
                 "checkpoint": "best_intention_model.pt",
                 "checkpoint_sha256": identity["hash"],
@@ -369,6 +376,25 @@ def add_grouped_report(fixture: dict, experiment_id: str, seed: int) -> Path:
                 "rows": 5,
                 "split": "test",
                 "dataset_content_fingerprint": "dataset-content",
+                "source_content_fingerprint": "shared-source-content",
+                "artifact_freeze": {
+                    "manifest_fingerprint": identity["fingerprint"],
+                },
+                "final_test_authorization": {
+                    "path": str(final_report_path),
+                    "sha256": sha256_file(final_report_path),
+                    "report_fingerprint": final_report["report_fingerprint"],
+                    "evaluation_protocol": FINAL_TEST_PROTOCOL,
+                    "matrix_authorization": final_report[
+                        "matrix_authorization"
+                    ],
+                },
+                "full_split_export": True,
+                "sequence_filter": [],
+                "frozen_split_endpoint_fingerprint": TEST_ENDPOINT_FINGERPRINT,
+                "exported_endpoint_fingerprint": TEST_ENDPOINT_FINGERPRINT,
+                "frozen_split_endpoint_count": 5,
+                "exported_endpoint_count": 5,
                 "pose_comparison": {
                     "fair_common_sample_key_fingerprint": (
                         sample_key_fingerprint(["a", "b", "c", "d"])
@@ -381,9 +407,8 @@ def add_grouped_report(fixture: dict, experiment_id: str, seed: int) -> Path:
                     "timestamp_basis": "hand_timestamp_ns source captures",
                 },
             }
-        ),
-        encoding="utf-8",
-    )
+    sidecar_payload["report_fingerprint"] = canonical_json_hash(sidecar_payload)
+    sidecar.write_text(json.dumps(sidecar_payload), encoding="utf-8")
     sidecar_hash = sha256_file(sidecar)
     report = {
         "schema_version": "grouped_prediction_evaluation_v1",
@@ -503,6 +528,34 @@ def test_authoritative_summary_keeps_seed_rows_and_aggregates_separate(
     with pytest.raises(FileExistsError, match="Refusing to overwrite"):
         write_outputs(summary, output)
     write_outputs(summary, output, overwrite=True)
+
+
+def test_required_t1_postprocessing_is_complete_or_summary_fails(
+    tmp_path: Path,
+) -> None:
+    fixture = build_fixture(tmp_path)
+    fixture["matrix"]["postprocessing"] = {
+        "required_t1_experiments": ["primary_model"],
+        "seed_policy": "all_matrix_seeds",
+        "require_grouped_report_in_authoritative_summary": True,
+    }
+    with pytest.raises(MatrixSummaryError, match="no postprocess root"):
+        summarize(fixture)
+    postprocess = add_grouped_report(fixture, "primary_model", 42)
+    with pytest.raises(MatrixSummaryError, match="primary_model seed 43"):
+        summarize(fixture, postprocess)
+    add_grouped_report(fixture, "primary_model", 43)
+    summary = summarize(fixture, postprocess)
+    required = [
+        row
+        for row in summary["seed_rows"]
+        if row["experiment_id"] == "primary_model"
+    ]
+    assert len(required) == 2
+    assert all(
+        row["t1_fair_common_status"] == "available_checkpoint_bound"
+        for row in required
+    )
 
 
 def test_pose_loss_off_excludes_untrained_pose_head_from_main_results(
@@ -802,4 +855,28 @@ def test_grouped_binding_requires_exact_dataset_and_actual_row_count(
     grouped["prediction_rows"] = 999
     grouped_path.write_text(json.dumps(grouped), encoding="utf-8")
     with pytest.raises(MatrixSummaryError, match="row count differs"):
+        summarize(fixture, postprocess)
+
+
+def test_grouped_primary_rejects_filtered_test_export(tmp_path: Path) -> None:
+    fixture = build_fixture(tmp_path)
+    postprocess = add_grouped_report(fixture, "primary_model", 42)
+    grouped_path = postprocess / "primary_model_seed42" / "grouped_metrics.json"
+    grouped = json.loads(grouped_path.read_text(encoding="utf-8"))
+    sidecar_path = Path(
+        grouped["checkpoint_binding"]["source_prediction_report"]
+    )
+    sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    sidecar["full_split_export"] = False
+    sidecar["sequence_filter"] = ["S1"]
+    sidecar["report_fingerprint"] = canonical_json_hash(
+        {**sidecar, "report_fingerprint": None}
+    )
+    sidecar_path.write_text(json.dumps(sidecar), encoding="utf-8")
+    grouped["checkpoint_binding"]["source_prediction_report_sha256"] = (
+        sha256_file(sidecar_path)
+    )
+    grouped_path.write_text(json.dumps(grouped), encoding="utf-8")
+
+    with pytest.raises(MatrixSummaryError, match="filtered test subset"):
         summarize(fixture, postprocess)

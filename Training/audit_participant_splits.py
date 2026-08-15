@@ -74,7 +74,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--validation-fraction", type=float, default=0.12)
     parser.add_argument("--test-fraction", type=float, default=0.12)
-    parser.add_argument("--group-cv-folds", type=int, default=5)
+    group_cv = parser.add_mutually_exclusive_group()
+    group_cv.add_argument("--group-cv-folds", type=int, default=5)
+    group_cv.add_argument(
+        "--leave-one-participant-out",
+        action="store_true",
+        help=(
+            "Generate one outer participant per fold. This is the required "
+            "protocol for participant-balanced Group-CV aggregation."
+        ),
+    )
     parser.add_argument("--restarts", type=int, default=256)
     parser.add_argument(
         "--strict-manifest",
@@ -236,10 +245,12 @@ def build_report(args: argparse.Namespace) -> dict:
             test_fraction=args.test_fraction,
             restarts=args.restarts,
         )
-    if args.group_cv_folds:
+    leave_one_out = bool(getattr(args, "leave_one_participant_out", False))
+    group_cv_folds = len({item.participant for item in summaries}) if leave_one_out else args.group_cv_folds
+    if group_cv_folds:
         report["participant_group_cv"] = generate_participant_group_cv(
             summaries,
-            folds=args.group_cv_folds,
+            folds=group_cv_folds,
             seed=args.seed,
             restarts=args.restarts,
         )

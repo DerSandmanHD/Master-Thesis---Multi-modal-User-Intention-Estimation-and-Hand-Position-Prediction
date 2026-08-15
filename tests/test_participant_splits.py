@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -329,7 +330,7 @@ class ParticipantSplitTests(unittest.TestCase):
 
     def test_group_cv_plan_materializes_executable_nested_configs(self) -> None:
         cv = generate_participant_group_cv(
-            balanced_summaries(), folds=4, seed=23, restarts=32
+            balanced_summaries(), folds=12, seed=23, restarts=32
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -353,8 +354,10 @@ class ParticipantSplitTests(unittest.TestCase):
                 experiment_tag="group_cv",
                 seeds=[42, 43],
             )
-            self.assertEqual(len(plan["runs"]), 8)
+            self.assertEqual(len(plan["runs"]), 24)
             self.assertFalse(plan["outer_evaluation_used_for_selection"])
+            self.assertIsInstance(plan["plan_fingerprint"], str)
+            self.assertEqual(len(plan["plan_fingerprint"]), 64)
             for row in plan["runs"]:
                 config = json.loads(Path(row["config"]).read_text(encoding="utf-8"))
                 self.assertEqual(
@@ -373,6 +376,40 @@ class ParticipantSplitTests(unittest.TestCase):
                 self.assertIn(
                     "evaluate_frozen_run.py", row["outer_evaluation_command"]
                 )
+
+    def test_leave_one_participant_out_is_singleton_and_aggregatable(self) -> None:
+        summaries = balanced_summaries()
+        args = SimpleNamespace(
+            summary_csv=None,
+            annotations=None,
+            master_dir=None,
+            manifest=None,
+            config=None,
+            strict_manifest=True,
+            balanced_candidate=False,
+            seed=42,
+            validation_fraction=0.2,
+            test_fraction=0.2,
+            group_cv_folds=5,
+            leave_one_participant_out=True,
+            restarts=32,
+        )
+        with patch(
+            "audit_participant_splits.load_inputs",
+            return_value=(summaries, None, {"source": "synthetic"}),
+        ):
+            report = build_report(args)
+        cv = report["participant_group_cv"]
+        self.assertEqual(cv["fold_count"], 12)
+        self.assertEqual(cv["outer_evaluation_unit"], "single_participant")
+        self.assertTrue(cv["participant_balanced_aggregation_identifiable"])
+        self.assertEqual(
+            {fold["outer_evaluation_participants"][0] for fold in cv["folds"]},
+            {item.participant for item in summaries},
+        )
+        self.assertTrue(
+            all(len(fold["outer_evaluation_participants"]) == 1 for fold in cv["folds"])
+        )
 
     def test_cli_report_exposes_static_limitations_and_test_identity(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

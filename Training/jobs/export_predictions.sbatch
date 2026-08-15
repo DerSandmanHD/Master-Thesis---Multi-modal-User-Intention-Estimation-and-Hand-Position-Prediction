@@ -10,8 +10,8 @@
 
 set -euo pipefail
 
-REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
-IMAGE="$HOME/singularity/aria_master.simg"
+REPO_DIR="${REPO_DIR:-$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction}"
+IMAGE="${IMAGE:-$HOME/singularity/aria_master.simg}"
 : "${RUN_DIR:?Set RUN_DIR to the exact training run to export}"
 CHECKPOINT="${CHECKPOINT:-best_intention_model.pt}"
 SPLIT="${SPLIT:-test}"
@@ -19,6 +19,11 @@ BATCH_SIZE="${BATCH_SIZE:-64}"
 MASTER_DIR="${MASTER_DIR:-Data_collection/master_datasets}"
 OUTPUT_CSV="${OUTPUT_CSV:-${RUN_DIR}/${SPLIT}_predictions.csv}"
 REPORT_OUT="${REPORT_OUT:-${RUN_DIR}/${SPLIT}_predictions.json}"
+EXTRA_ARGS=()
+if [[ "$SPLIT" == "test" ]]; then
+    : "${FINAL_TEST_REPORT:?Set FINAL_TEST_REPORT for a hash-bound test export}"
+    EXTRA_ARGS+=(--final-test-report "$FINAL_TEST_REPORT")
+fi
 
 cd "$REPO_DIR"
 singularity exec --nv "$IMAGE" \
@@ -29,6 +34,7 @@ singularity exec --nv "$IMAGE" \
     --split "$SPLIT" \
     --output-csv "$OUTPUT_CSV" \
     --report-out "$REPORT_OUT" \
+    "${EXTRA_ARGS[@]}" \
     --device cuda \
     --batch-size "$BATCH_SIZE" \
     --num-workers 2

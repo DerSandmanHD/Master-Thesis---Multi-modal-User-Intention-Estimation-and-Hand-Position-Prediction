@@ -11,6 +11,13 @@
 
 set -euo pipefail
 
+if [[ "${ALLOW_LEGACY_EXPERIMENT:-0}" != "1" ]]; then
+    echo "Historical visual-screening job: not authorized by thesis protocol v2." >&2
+    echo "Use Training/jobs/thesis_v2_validation_matrix.sbatch for final experiments." >&2
+    echo "Set ALLOW_LEGACY_EXPERIMENT=1 only for an explicitly historical diagnostic." >&2
+    exit 2
+fi
+
 REPO_DIR="$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction"
 IMAGE="$HOME/singularity/aria_master.simg"
 : "${DATASET_TAG:?Set DATASET_TAG to an immutable dataset version}"

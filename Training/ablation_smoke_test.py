@@ -68,6 +68,9 @@ def main() -> int:
             data_config = dict(config["data"])
             data_config["master_dir"] = str(master_dir)
             data_config.pop("manifest_filter")
+            # The fixture intentionally contains six synthetic sequences, not
+            # the frozen n214 thesis cohort bound by the production config.
+            data_config.pop("dataset_contract")
             data_config.update(
                 {
                     "window_size": 20,

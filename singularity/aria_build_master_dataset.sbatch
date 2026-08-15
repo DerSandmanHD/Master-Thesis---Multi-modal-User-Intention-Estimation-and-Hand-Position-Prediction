@@ -4,13 +4,13 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=4G
 #SBATCH --time=12:00:00
-#SBATCH --output=aria_master_ds.%J.out
-#SBATCH --error=aria_master_ds.%J.err
+#SBATCH --output=Training/slurm_logs/aria_master_ds.%j.out
+#SBATCH --error=Training/slurm_logs/aria_master_ds.%j.err
 
 set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-$HOME/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction}"
-IMAGE="$HOME/singularity/aria_master.simg"
+IMAGE="${IMAGE:-$HOME/singularity/aria_master.simg}"
 
 DATA_DIR="$REPO_DIR/Data_collection"
 MASTER_DIR="$DATA_DIR/master_datasets"
@@ -24,9 +24,11 @@ BATCH_REPORT="$MASTER_DIR/master_batch_report.json"
 # because those are the useful training candidates.
 REQUIRE_SEMANTIC_ANNOTATIONS="${REQUIRE_SEMANTIC_ANNOTATIONS:-1}"
 
-# Resume mode by default: existing *_master.csv + *_master_report.json are skipped.
-# Set OVERWRITE=1 only when intentionally rebuilding existing master datasets.
-OVERWRITE="${OVERWRITE:-0}"
+# Causal alignment is a schema migration. The active thesis-v2 job rebuilds
+# all selected derived masters by default, but first snapshots the previous
+# derived directory. Raw VRS/MPS inputs are never modified.
+OVERWRITE="${OVERWRITE:-1}"
+ALLOW_UNREVIEWED_TIMESTAMPS="${ALLOW_UNREVIEWED_TIMESTAMPS:-0}"
 
 # Optional debugging controls:
 #   LIMIT=5 sbatch ...
@@ -37,7 +39,7 @@ DRY_RUN="${DRY_RUN:-0}"
 SCRATCH_DIR="/scratch/$SLURM_JOB_ID"
 export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 
-mkdir -p "$MASTER_DIR" "$SCRATCH_DIR"
+mkdir -p "$MASTER_DIR" "$SCRATCH_DIR" "$REPO_DIR/Training/slurm_logs"
 
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $(hostname)"
@@ -50,6 +52,7 @@ echo "Annotations: $ANNOTATIONS"
 echo "Reviewed timestamps: $TIMESTAMPS"
 echo "Require semantic annotations: $REQUIRE_SEMANTIC_ANNOTATIONS"
 echo "Overwrite: $OVERWRITE"
+echo "Allow unreviewed timestamps: $ALLOW_UNREVIEWED_TIMESTAMPS"
 echo "Limit: ${LIMIT:-all}"
 echo "Dry run only: $DRY_RUN"
 echo "Started: $(date)"
@@ -84,14 +87,31 @@ fi
 if [ -f "$TIMESTAMPS" ]; then
     TIMESTAMPS_TO_USE="$TIMESTAMPS"
 elif [ -f "$FALLBACK_TIMESTAMPS" ]; then
+    if [ "$ALLOW_UNREVIEWED_TIMESTAMPS" != "1" ]; then
+        echo "ERROR: Reviewed timestamps are required for the active thesis pipeline: $TIMESTAMPS" >&2
+        echo "Legacy diagnostics may opt in with ALLOW_UNREVIEWED_TIMESTAMPS=1." >&2
+        exit 2
+    fi
     TIMESTAMPS_TO_USE="$FALLBACK_TIMESTAMPS"
-    echo "WARNING: Reviewed timestamps not found. Falling back to: $TIMESTAMPS_TO_USE"
+    echo "WARNING: Explicit legacy diagnostic uses unreviewed timestamps: $TIMESTAMPS_TO_USE"
 else
     echo "ERROR: No timestamp summary found." >&2
     exit 2
 fi
 
 cd "$REPO_DIR"
+
+if [ "$DRY_RUN" != "1" ] && [ "$OVERWRITE" = "1" ] && find "$MASTER_DIR" -maxdepth 1 -type f \( -name "*_master.csv" -o -name "*_master_report.json" \) -print -quit | grep -q .; then
+    HISTORY_STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+    HISTORY_DIR="$DATA_DIR/master_datasets_history/${HISTORY_STAMP}_pre_causal_rebuild_job${SLURM_JOB_ID}"
+    mkdir -p "$HISTORY_DIR"
+    find "$MASTER_DIR" -maxdepth 1 -type f \( -name "*_master.csv" -o -name "*_master_report.json" -o -name "master_batch_report.json" \) -exec cp -p {} "$HISTORY_DIR" \;
+    echo "Preserved previous derived masters in: $HISTORY_DIR"
+fi
+
+TIMESTAMPS_SHA256=$(singularity exec "$IMAGE" python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$TIMESTAMPS_TO_USE")
+echo "Timestamp source used: $TIMESTAMPS_TO_USE"
+echo "Timestamp source SHA-256: $TIMESTAMPS_SHA256"
 
 echo "============================================================"
 echo "1) Input overview"
@@ -136,6 +156,10 @@ fi
 
 if [ "$OVERWRITE" = "1" ]; then
     BUILD_ARGS+=(--overwrite)
+fi
+
+if [ "$ALLOW_UNREVIEWED_TIMESTAMPS" = "1" ]; then
+    BUILD_ARGS+=(--allow-unreviewed-timestamps)
 fi
 
 if [ -n "$LIMIT" ]; then
@@ -204,6 +228,18 @@ if qa_report.exists():
 else:
     print("  missing")
 PY
+
+echo
+echo "============================================================"
+echo "6) Verify causal master-source joins"
+echo "============================================================"
+
+CAUSAL_REPORT="$MASTER_DIR/causal_master_preflight.job${SLURM_JOB_ID}.json"
+singularity exec "$IMAGE" python3 Training/verify_causal_masters.py \
+    --master-dir "$MASTER_DIR" \
+    --manifest "$MANIFEST" \
+    --expected-alignment-version causal_backward_device_time_v1 \
+    --output "$CAUSAL_REPORT"
 
 echo
 echo "Finished: $(date)"

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import statistics
@@ -47,6 +48,7 @@ from experiment_matrix import (  # noqa: E402
 )
 from select_matrix_checkpoints import (  # noqa: E402
     validate_final_test_authorization,
+    validate_embedded_final_test_authorization,
 )
 from grouped_metrics import (  # noqa: E402
     discover_pose_methods,
@@ -81,8 +83,9 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help=(
-            "Optional root containing <experiment>_seed<seed>/grouped_metrics.json "
-            "or <experiment>_seed<seed>_grouped_metrics.json."
+            "Root containing <experiment>_seed<seed>/grouped_metrics.json or "
+            "<experiment>_seed<seed>_grouped_metrics.json. It is mandatory when "
+            "the matrix declares required t+1 postprocessing."
         ),
     )
     parser.add_argument("--output-dir", type=Path, default=None)
@@ -686,6 +689,13 @@ def _grouped_t1_fields(
     *,
     checkpoint_sha256: str,
     dataset_content_fingerprint: str | None,
+    source_content_fingerprint: str,
+    artifact_manifest_fingerprint: str,
+    test_endpoint_fingerprint: str,
+    test_endpoint_count: int,
+    final_test_report_sha256: str,
+    final_test_report_fingerprint: str,
+    project_root: Path,
 ) -> dict[str, Any]:
     empty: dict[str, Any] = {
         "t1_fair_common_status": "not_available",
@@ -777,6 +787,10 @@ def _grouped_t1_fields(
             "Grouped checkpoint binding has a stale prediction sidecar hash"
         )
     sidecar = read_object(sidecar_path)
+    if sidecar.get("schema_version") != 3 or sidecar.get(
+        "report_fingerprint"
+    ) != canonical_json_hash({**sidecar, "report_fingerprint": None}):
+        raise MatrixSummaryError("Prediction sidecar fingerprint is invalid")
     if sidecar.get("result_role") != "primary_validation_selected_checkpoint":
         raise MatrixSummaryError("Prediction sidecar is not a primary result")
     if str(sidecar.get("checkpoint_sha256", "")).lower() != checkpoint_sha256.lower():
@@ -793,6 +807,92 @@ def _grouped_t1_fields(
         raise MatrixSummaryError("Grouped report and prediction sidecar row counts differ")
     if sidecar.get("dataset_content_fingerprint") != dataset_content_fingerprint:
         raise MatrixSummaryError("Prediction sidecar uses another dataset fingerprint")
+    if sidecar.get("source_content_fingerprint") != source_content_fingerprint:
+        raise MatrixSummaryError("Prediction sidecar uses another source fingerprint")
+    freeze_binding = sidecar.get("artifact_freeze")
+    if not isinstance(freeze_binding, Mapping) or freeze_binding.get(
+        "manifest_fingerprint"
+    ) != artifact_manifest_fingerprint:
+        raise MatrixSummaryError("Prediction sidecar uses another artifact freeze")
+    if sidecar.get("full_split_export") is not True or sidecar.get(
+        "sequence_filter"
+    ) not in ([], None):
+        raise MatrixSummaryError("Grouped primary predictions are a filtered test subset")
+    if sidecar.get("frozen_split_endpoint_fingerprint") != test_endpoint_fingerprint:
+        raise MatrixSummaryError("Prediction sidecar uses another frozen endpoint set")
+    if sidecar.get("exported_endpoint_fingerprint") != test_endpoint_fingerprint:
+        raise MatrixSummaryError("Prediction sidecar did not export the full endpoint set")
+    if int(sidecar.get("frozen_split_endpoint_count", -1)) != test_endpoint_count:
+        raise MatrixSummaryError("Prediction sidecar frozen endpoint count differs")
+    if int(sidecar.get("exported_endpoint_count", -1)) != test_endpoint_count:
+        raise MatrixSummaryError("Prediction sidecar is not a complete test export")
+    endpoint_frame = pd.read_csv(predictions_path)
+    if not {"sequence_id", "endpoint_timestamp_ns"}.issubset(
+        endpoint_frame.columns
+    ):
+        raise MatrixSummaryError("Prediction CSV lacks endpoint identity columns")
+    endpoint_payload = "\n".join(
+        f"{sequence_id}:{int(timestamp)}"
+        for sequence_id, timestamp in zip(
+            endpoint_frame["sequence_id"].astype(str),
+            pd.to_numeric(
+                endpoint_frame["endpoint_timestamp_ns"], errors="raise"
+            ),
+        )
+    )
+    if hashlib.sha256(endpoint_payload.encode("utf-8")).hexdigest() != (
+        test_endpoint_fingerprint
+    ):
+        raise MatrixSummaryError("Prediction CSV endpoint fingerprint differs")
+    final_binding = sidecar.get("final_test_authorization")
+    if not isinstance(final_binding, Mapping) or final_binding.get(
+        "evaluation_protocol"
+    ) != FINAL_TEST_PROTOCOL:
+        raise MatrixSummaryError("Prediction sidecar lacks final-test authorization")
+    final_path_value = final_binding.get("path")
+    if not isinstance(final_path_value, str) or not final_path_value:
+        raise MatrixSummaryError("Prediction sidecar has no final-test report path")
+    final_path = Path(final_path_value).expanduser()
+    if not final_path.is_absolute():
+        final_path = sidecar_path.parent / final_path
+    final_path = final_path.resolve()
+    if not final_path.is_file() or final_binding.get("sha256") != sha256_file(
+        final_path
+    ):
+        raise MatrixSummaryError("Prediction sidecar final-test report hash is stale")
+    final_report = read_object(final_path)
+    if final_report.get("report_fingerprint") != final_binding.get(
+        "report_fingerprint"
+    ) or final_report.get("report_fingerprint") != canonical_json_hash(
+        {**final_report, "report_fingerprint": None}
+    ):
+        raise MatrixSummaryError("Prediction sidecar final-test fingerprint is invalid")
+    if final_binding.get("sha256") != final_test_report_sha256 or final_binding.get(
+        "report_fingerprint"
+    ) != final_test_report_fingerprint:
+        raise MatrixSummaryError(
+            "Prediction sidecar is not bound to this seed's validated final report"
+        )
+    if str(final_report.get("checkpoint", {}).get("sha256", "")).lower() != (
+        checkpoint_sha256.lower()
+    ):
+        raise MatrixSummaryError("Prediction sidecar final test used another checkpoint")
+    try:
+        validated_authorization = validate_embedded_final_test_authorization(
+            final_report,
+            authorization_base=final_path.parent,
+            project_root=project_root,
+        )
+    except (OSError, TypeError, ValueError) as exc:
+        raise MatrixSummaryError(
+            f"Prediction sidecar final-test authorization is invalid: {exc}"
+        ) from exc
+    if final_binding.get("matrix_authorization") != validated_authorization.get(
+        "matrix_authorization"
+    ):
+        raise MatrixSummaryError(
+            "Prediction sidecar matrix authorization differs from final test"
+        )
     pose_comparison = sidecar.get("pose_comparison")
     baseline_policy = sidecar.get("baseline_policy")
     if not isinstance(pose_comparison, Mapping) or not isinstance(
@@ -1246,9 +1346,13 @@ def _seed_row(
                     "coverage_denominator_pose_targets"
                 ),
             )
-        if fixed_shared != pose_samples_for_validation or fixed_denominator != denominator:
+        if fixed_denominator != denominator:
             raise MatrixSummaryError(
-                "Fixed pose cohort identity differs from main pose fields"
+                "Fixed pose cohort denominator differs from main pose coverage"
+            )
+        if fixed_shared != pose_samples_for_validation:
+            raise MatrixSummaryError(
+                "Fixed pose cohort sample count differs from main pose fields"
             )
     row.update(
         {
@@ -1287,7 +1391,28 @@ def _seed_row(
                 values, expected_pose_target_denominator=denominator
             )
         )
-        row.update(_grouped_t1_fields(None, checkpoint_sha256=identity["checkpoint_sha256"], dataset_content_fingerprint=report.get("dataset_content_fingerprint")))
+        row.update(
+            _grouped_t1_fields(
+                None,
+                checkpoint_sha256=identity["checkpoint_sha256"],
+                dataset_content_fingerprint=report.get(
+                    "dataset_content_fingerprint"
+                ),
+                source_content_fingerprint=identity[
+                    "source_content_fingerprint"
+                ],
+                artifact_manifest_fingerprint=identity[
+                    "artifact_manifest_fingerprint"
+                ],
+                test_endpoint_fingerprint=identity[
+                    "test_window_endpoint_fingerprint"
+                ],
+                test_endpoint_count=identity["test_window_endpoint_count"],
+                final_test_report_sha256=sha256_file(report_path),
+                final_test_report_fingerprint=str(report["report_fingerprint"]),
+                project_root=project_root,
+            )
+        )
     else:
         if identity["future_pose_loss_enabled"]:
             row.update(
@@ -1295,6 +1420,23 @@ def _seed_row(
                     grouped_path,
                     checkpoint_sha256=identity["checkpoint_sha256"],
                     dataset_content_fingerprint=report.get("dataset_content_fingerprint"),
+                    source_content_fingerprint=identity[
+                        "source_content_fingerprint"
+                    ],
+                    artifact_manifest_fingerprint=identity[
+                        "artifact_manifest_fingerprint"
+                    ],
+                    test_endpoint_fingerprint=identity[
+                        "test_window_endpoint_fingerprint"
+                    ],
+                    test_endpoint_count=identity[
+                        "test_window_endpoint_count"
+                    ],
+                    final_test_report_sha256=sha256_file(report_path),
+                    final_test_report_fingerprint=str(
+                        report["report_fingerprint"]
+                    ),
+                    project_root=project_root,
                 )
             )
         else:
@@ -1303,6 +1445,23 @@ def _seed_row(
                     None,
                     checkpoint_sha256=identity["checkpoint_sha256"],
                     dataset_content_fingerprint=report.get("dataset_content_fingerprint"),
+                    source_content_fingerprint=identity[
+                        "source_content_fingerprint"
+                    ],
+                    artifact_manifest_fingerprint=identity[
+                        "artifact_manifest_fingerprint"
+                    ],
+                    test_endpoint_fingerprint=identity[
+                        "test_window_endpoint_fingerprint"
+                    ],
+                    test_endpoint_count=identity[
+                        "test_window_endpoint_count"
+                    ],
+                    final_test_report_sha256=sha256_file(report_path),
+                    final_test_report_fingerprint=str(
+                        report["report_fingerprint"]
+                    ),
+                    project_root=project_root,
                 )
             )
             row["t1_fair_common_status"] = (
@@ -1334,6 +1493,16 @@ def build_matrix_summary(
         matrix_path=matrix_path.resolve(),
         project_root=project_root,
     )
+    postprocessing = matrix.get("postprocessing", {})
+    required_t1 = {
+        str(value)
+        for value in postprocessing.get("required_t1_experiments", [])
+    }
+    if required_t1 and postprocess_root is None:
+        raise MatrixSummaryError(
+            "Matrix requires checkpoint-bound t+1 postprocessing, but no "
+            "postprocess root was provided"
+        )
     expected_names = {
         f"{entry['id']}_seed{int(seed)}.json"
         for entry in matrix["training_experiments"]
@@ -1375,6 +1544,11 @@ def build_matrix_summary(
                         f"Multiple grouped reports for {experiment['id']} seed {seed}"
                     )
                 grouped_path = candidates[0] if candidates else None
+            if str(experiment["id"]) in required_t1 and grouped_path is None:
+                raise MatrixSummaryError(
+                    "Missing required t+1 grouped report for "
+                    f"{experiment['id']} seed {seed}"
+                )
             experiment_rows.append(
                 _seed_row(
                     read_object(report_path),
@@ -1419,6 +1593,17 @@ def build_matrix_summary(
         for row in rows
         if row.get("t1_fair_common_status") == "available_checkpoint_bound"
     ]
+    expected_required_grouped = len(required_t1) * len(matrix["seeds"])
+    actual_required_grouped = sum(
+        row.get("experiment_id") in required_t1
+        and row.get("t1_fair_common_status") == "available_checkpoint_bound"
+        for row in rows
+    )
+    if actual_required_grouped != expected_required_grouped:
+        raise MatrixSummaryError(
+            "Required t+1 postprocessing is incomplete: "
+            f"{actual_required_grouped}/{expected_required_grouped}"
+        )
     if grouped_rows:
         grouped_sample_fingerprints = {
             str(row["t1_fair_sample_key_fingerprint"]) for row in grouped_rows

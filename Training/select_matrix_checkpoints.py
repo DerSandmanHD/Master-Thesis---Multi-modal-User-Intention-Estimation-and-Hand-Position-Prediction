@@ -11,9 +11,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from artifact_freeze import MANIFEST_NAME, sha256_file, validate_artifact_freeze
 from experiment_matrix import DEFAULT_MATRIX, run_directory, validate_matrix
@@ -38,6 +39,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--matrix", type=Path, default=DEFAULT_MATRIX)
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--require-complete", action="store_true")
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help=(
+            "Explicitly replace an existing selection manifest. This invalidates "
+            "all final-test reports bound to its previous SHA-256."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -220,6 +229,128 @@ def validate_final_test_authorization(
     return row
 
 
+def validate_embedded_final_test_authorization(
+    report: Mapping[str, Any],
+    *,
+    authorization_base: Path | None = None,
+    project_root: Path = PROJECT_ROOT,
+) -> dict[str, Any]:
+    """Validate a final report against the exact immutable selection file.
+
+    This is intentionally usable by prediction export, qualitative rendering,
+    and aggregate reporting. A self-consistent final-test JSON is insufficient:
+    the referenced validation-selection manifest must still exist, match its
+    stored hash, and contain the exact run/checkpoint authorization row.
+    """
+
+    authorization = report.get("matrix_authorization")
+    if not isinstance(authorization, Mapping):
+        raise ValueError("Final-test report has no matrix authorization")
+    checkpoint = report.get("checkpoint")
+    if not isinstance(checkpoint, Mapping):
+        raise ValueError("Final-test report has no checkpoint identity")
+    checkpoint_hash = str(checkpoint.get("sha256", "")).lower()
+    if authorization.get("authorized_checkpoint_sha256") != checkpoint_hash:
+        raise ValueError("Authorized checkpoint hash differs from final report")
+    if authorization.get("test_metrics_read_during_authorization") is not False:
+        raise ValueError("Final-test authorization read test metrics")
+
+    selection_value = authorization.get("selection_file")
+    if not isinstance(selection_value, str) or not selection_value.strip():
+        raise ValueError("Final-test authorization has no selection file")
+    selection_path = Path(selection_value).expanduser()
+    if not selection_path.is_absolute():
+        selection_path = (authorization_base or project_root) / selection_path
+    selection_path = selection_path.resolve()
+    if not selection_path.is_file():
+        raise ValueError(f"Final-test selection file is unavailable: {selection_path}")
+    selection_hash = sha256_file(selection_path)
+    if str(authorization.get("selection_file_sha256", "")).lower() != selection_hash:
+        raise ValueError("Final-test selection file hash differs")
+    selection = read(selection_path)
+    if selection.get("schema_version") != 2:
+        raise ValueError("Unsupported validation-selection schema")
+    if selection.get("matrix_id") != authorization.get("matrix_id"):
+        raise ValueError("Final-test authorization matrix differs from selection")
+
+    experiment_id = authorization.get("experiment_id")
+    if not isinstance(experiment_id, str) or not experiment_id:
+        raise ValueError("Final-test authorization has no experiment id")
+    try:
+        seed = int(authorization.get("seed"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Final-test authorization has an invalid seed") from exc
+    matching_rows = [
+        row
+        for row in selection.get("final_test_runs", [])
+        if isinstance(row, Mapping)
+        and row.get("experiment_id") == experiment_id
+        and int(row.get("seed", -1)) == seed
+    ]
+    if len(matching_rows) != 1:
+        raise ValueError("Selection does not contain one exact experiment/seed row")
+    planned_run = str(matching_rows[0].get("run_dir", ""))
+    authorized = validate_final_test_authorization(
+        selection,
+        experiment_id=experiment_id,
+        seed=seed,
+        run_dir=planned_run,
+        checkpoint_sha256=checkpoint_hash,
+        artifact_manifest_fingerprint=str(
+            report.get("source_artifact_manifest_fingerprint", "")
+        ),
+    )
+
+    def resolved_run(value: object) -> Path:
+        path = Path(str(value)).expanduser()
+        return path.resolve() if path.is_absolute() else (project_root / path).resolve()
+
+    if resolved_run(report.get("source_run", "")) != resolved_run(planned_run):
+        raise ValueError("Final-test source run differs from validation selection")
+    if int(checkpoint.get("epoch", -1)) != int(
+        authorized.get("checkpoint_epoch", -2)
+    ):
+        raise ValueError("Final-test checkpoint epoch differs from selection")
+    if checkpoint.get("selection_metric") != authorized.get(
+        "checkpoint_selection_metric"
+    ):
+        raise ValueError("Final-test checkpoint metric differs from selection")
+    try:
+        same_selection_value = math.isclose(
+            float(checkpoint.get("selection_value")),
+            float(authorized.get("checkpoint_selection_value")),
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        )
+    except (TypeError, ValueError):
+        same_selection_value = False
+    if not same_selection_value:
+        raise ValueError("Final-test checkpoint value differs from selection")
+    return {
+        "selection_path": selection_path,
+        "selection_sha256": selection_hash,
+        "selection": selection,
+        "authorized_row": dict(authorized),
+        "matrix_authorization": dict(authorization),
+    }
+
+
+def write_selection_report(
+    report: Mapping[str, Any], output: Path, *, overwrite: bool = False
+) -> None:
+    output = Path(output)
+    if output.exists() and not overwrite:
+        raise FileExistsError(
+            "Validation selection already exists; refusing to overwrite hash-bound "
+            f"authorization: {output}"
+        )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> int:
     args = parse_args()
     matrix_path = resolve(args.matrix)
@@ -293,11 +424,7 @@ def main() -> int:
         "final_test_runs": candidates,
         "candidates": candidates,
     }
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(
-        json.dumps(report, indent=2, ensure_ascii=False, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
+    write_selection_report(report, output, overwrite=args.overwrite)
     print(f"Validation selection complete={complete}: {output}")
     if args.require_complete and not complete:
         return 2

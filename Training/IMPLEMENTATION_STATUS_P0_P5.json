@@ -1,7 +1,10 @@
 {
   "schema_version": 1,
-  "created_at": "2026-08-11",
+  "created_at": "2026-08-15",
   "scope": "implementation audit for thesis protocol v2; statuses do not claim new experimental results",
+  "active_dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
+  "active_dataset_materialized": false,
+  "required_artifact_freeze_protocol": "thesis_artifact_freeze_hash_bound_v2",
   "status_definitions": {
     "PASS": "implemented and locally verified to the extent possible without protected external artifacts",
     "PARTIAL": "a scoped implementation exists but a required local verification is incomplete",
@@ -9,6 +12,17 @@
     "NOT_APPLICABLE": "explicitly outside this work package"
   },
   "requirements": [
+    {
+      "id": "P0.causal_master_observation_alignment",
+      "status": "PASS",
+      "evidence": ["Code/build_master_dataset.py", "Code/build_master_dataset_batch.py", "Training/verify_causal_masters.py", "singularity/aria_build_master_dataset.sbatch", "tests/test_master_alignment_invariants.py", "tests/test_causal_master_preflight.py", "tests/test_slurm_protocol.py"]
+    },
+    {
+      "id": "P0.causal_master_dataset_rebuild",
+      "status": "BLOCKED",
+      "reason": "The unchanged raw VRS/MPS inputs, complete manifest and cluster container are absent locally; the rebuild and preflight job are ready.",
+      "evidence": ["singularity/aria_build_master_dataset.sbatch", "Training/verify_causal_masters.py"]
+    },
     {
       "id": "P0.clip_device_time_alignment",
       "status": "PASS",
@@ -28,7 +42,7 @@
     {
       "id": "P0.one_checkpoint_per_main_result",
       "status": "PASS",
-      "evidence": ["Training/evaluation/checkpoint_semantics.py", "Training/evaluate_frozen_run.py", "tests/test_checkpoint_reporting_semantics.py"]
+      "evidence": ["Training/evaluation/checkpoint_semantics.py", "Training/evaluate_frozen_run.py", "Training/export_residual_predictions.py", "Training/evaluation/summarize_thesis_v2_matrix.py", "tests/test_checkpoint_reporting_semantics.py", "tests/test_thesis_v2_matrix_summary.py"]
     },
     {
       "id": "P1.timestamp_aware_persistence",
@@ -44,6 +58,11 @@
       "id": "P1.learned_three_way_fair_common_evaluation",
       "status": "PASS",
       "evidence": ["Training/export_residual_predictions.py", "Training/evaluation/grouped_metrics.py", "tests/test_grouped_evaluation.py"]
+    },
+    {
+      "id": "P1.automatic_primary_t1_postprocessing",
+      "status": "PASS",
+      "evidence": ["Training/configs/experiment_matrix_v2.json", "Training/jobs/thesis_v2_postprocess_selected.sbatch", "Training/jobs/thesis_v2_summarize_matrix.sbatch", "Training/evaluation/summarize_thesis_v2_matrix.py", "tests/test_slurm_protocol.py", "tests/test_thesis_v2_matrix_summary.py"]
     },
     {
       "id": "P1.new_t1_results",
@@ -73,7 +92,8 @@
     {
       "id": "P3.executable_nested_participant_group_cv",
       "status": "PASS",
-      "evidence": ["Training/prepare_group_cv_runs.py", "Training/jobs/thesis_v2_group_cv.sbatch", "tests/test_participant_splits.py", "tests/test_slurm_protocol.py"]
+      "reason": "The executable protocol uses one outer participant per fold, all matrix seeds, and a plan-derived SLURM array; multi-participant outer folds are rejected for participant-balanced aggregation.",
+      "evidence": ["Training/prepare_group_cv_runs.py", "Training/jobs/thesis_v2_group_cv.sbatch", "Training/evaluation/summarize_group_cv.py", "Training/jobs/thesis_v2_summarize_group_cv.sbatch", "tests/test_participant_splits.py", "tests/test_group_cv_summary.py", "tests/test_slurm_protocol.py"]
     },
     {
       "id": "P3.group_cv_results",
@@ -118,12 +138,17 @@
     {
       "id": "P5.artifact_freeze_and_invalidation",
       "status": "PASS",
-      "evidence": ["Training/artifact_freeze.py", "tests/test_artifact_freeze.py"]
+      "evidence": ["Training/artifact_freeze.py", "Training/export_residual_predictions.py", "tests/test_artifact_freeze.py", "tests/test_thesis_v2_matrix_summary.py"]
+    },
+    {
+      "id": "P5.active_dataset_sequence_contract",
+      "status": "PASS",
+      "evidence": ["Training/configs/experiment_matrix_v2.json", "Training/experiment_matrix.py", "Training/data.py", "tests/test_experiment_matrix.py"]
     },
     {
       "id": "P5.validation_only_matrix_and_final_authorization",
       "status": "PASS",
-      "evidence": ["Training/experiment_matrix.py", "Training/select_matrix_checkpoints.py", "Training/evaluate_frozen_run.py", "tests/test_experiment_matrix.py"]
+      "evidence": ["Training/experiment_matrix.py", "Training/select_matrix_checkpoints.py", "Training/evaluate_frozen_run.py", "Training/export_residual_predictions.py", "Training/render_prediction_overlay.py", "Training/jobs/thesis_v2_select_checkpoints.sbatch", "tests/test_experiment_matrix.py", "tests/test_qualitative_overlay.py", "tests/test_slurm_protocol.py"]
     },
     {
       "id": "P5.authoritative_checkpoint_coherent_summary",
@@ -133,7 +158,7 @@
     {
       "id": "P5.slurm_workflow",
       "status": "PASS",
-      "evidence": ["Training/jobs/thesis_v2_validation_matrix.sbatch", "Training/jobs/thesis_v2_final_test_matrix.sbatch", "Training/jobs/thesis_v2_group_cv.sbatch", "tests/test_slurm_protocol.py"]
+      "evidence": ["singularity/aria_build_master_dataset.sbatch", "Training/jobs/prepare_clip_embeddings.sbatch", "Training/jobs/thesis_v2_validation_matrix.sbatch", "Training/jobs/thesis_v2_select_checkpoints.sbatch", "Training/jobs/thesis_v2_final_test_matrix.sbatch", "Training/jobs/thesis_v2_postprocess_selected.sbatch", "Training/jobs/thesis_v2_group_cv.sbatch", "tests/test_slurm_protocol.py"]
     },
     {
       "id": "P5.slurm_runtime_execution",

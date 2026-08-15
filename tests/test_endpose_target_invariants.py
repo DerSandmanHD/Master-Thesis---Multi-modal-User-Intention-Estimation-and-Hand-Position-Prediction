@@ -179,3 +179,94 @@ def test_auxiliary_availability_is_independent_of_terminal_target_validity() -> 
     assert "auxiliary_pose_sample_weight" in item
     assert int(item["auxiliary_pose_target_timestamp_ns"]) == 300_000_000
     assert not bool(record.pose_valid[1])
+
+
+def test_task_specific_pose_weights_correct_sequence_sampler_proposal() -> None:
+    def record(primary_offsets_s: list[float]) -> SimpleNamespace:
+        count = 6
+        timestamps = np.arange(count, dtype=np.int64) * 1_000_000_000
+        poses = np.zeros((count, 2, 7), dtype=np.float32)
+        poses[:, :, 6] = 1.0
+        targets = timestamps.copy()
+        for index, offset in enumerate(primary_offsets_s):
+            targets[index] = timestamps[index] + int(offset * 1e9)
+        return SimpleNamespace(
+            timestamps_ns=timestamps,
+            hand_timestamps_ns=timestamps.copy(),
+            hand_pose_valid=np.ones((count, 2), dtype=bool),
+            hand_poses=poses,
+            intentions=np.full(count, 2, dtype=np.int64),
+            receiving_hand_ids=np.ones(count, dtype=np.int64),
+            pose_valid=np.ones(count, dtype=bool),
+            pose_target_timestamp_ns=targets,
+        )
+
+    records = [
+        record([0.25, 0.25, 1.5, 1.5]),
+        record([0.25, 1.5]),
+    ]
+    indices = [(0, index) for index in range(4)] + [
+        (1, index) for index in range(2)
+    ]
+    primary_valid = [True, True, False, True, True, True]
+
+    class FakeBase:
+        def __init__(self) -> None:
+            self.records = records
+            self.indices = indices
+
+        def __len__(self) -> int:
+            return len(self.indices)
+
+        def __getitem__(self, index: int) -> dict:
+            receiving_reference_valid = primary_valid[index]
+            return {
+                "receiving_hand": torch.tensor(1),
+                "hand_reference_valid": torch.tensor(
+                    [True, receiving_reference_valid]
+                ),
+                "hand_reference_pose": torch.zeros((2, 7)),
+                "residual_pose_valid": torch.tensor(primary_valid[index]),
+            }
+
+    dataset = EndposeV2Dataset(
+        FakeBase(),
+        {
+            "mode": "future_offset",
+            "target_definition_version": AUXILIARY_TARGET_DEFINITION_VERSION,
+            "capture_timestamp_basis": "hand_timestamp_ns",
+            "future_horizon_seconds": 1.0,
+            "maximum_target_gap_seconds": 0.01,
+        },
+    )
+    proposal = dataset.sequence_sampling_weights().numpy()
+    primary_weights = np.asarray(
+        [float(dataset[index]["primary_pose_sample_weight"]) for index in range(6)]
+    )
+    primary_groups = {
+        "r0_short": [0, 1],
+        "r0_long": [3],
+        "r1_short": [4],
+        "r1_long": [5],
+    }
+    primary_masses = [
+        float(np.sum(proposal[rows] * primary_weights[rows]))
+        for rows in primary_groups.values()
+    ]
+    assert np.allclose(primary_masses, primary_masses[0])
+
+    auxiliary_weights = np.asarray(
+        [
+            float(dataset[index]["auxiliary_pose_sample_weight"])
+            for index in range(6)
+        ]
+    )
+    # Terminal short/long bins do not affect fixed-horizon auxiliary weights.
+    assert np.isclose(auxiliary_weights[0], auxiliary_weights[1])
+    assert np.isclose(auxiliary_weights[1], auxiliary_weights[3])
+    auxiliary_sequence_masses = [
+        float(np.sum(proposal[[0, 1, 3]] * auxiliary_weights[[0, 1, 3]])),
+        float(np.sum(proposal[[4, 5]] * auxiliary_weights[[4, 5]])),
+    ]
+    assert np.allclose(auxiliary_sequence_masses, auxiliary_sequence_masses[0])
+    assert not bool(dataset[2]["auxiliary_residual_pose_valid"])

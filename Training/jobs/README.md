@@ -36,9 +36,12 @@ verschachtelte Run-Struktur automatisch. SLURM-Ausgaben landen gesammelt unter
 | `thesis_v2_final_test_matrix.sbatch` | lädt ausschließlich eingefrorene Best-Intent-Checkpoints für den finalen Test; kein Retraining |
 | `thesis_v2_postprocess_selected.sbatch` | Matrix-gesteuertes 3-Seed-Array für den vorab deklarierten primären t+1-Lauf: Prediction-Export, Baselines, gruppierte Bootstrap-Metriken und ggf. Modalitätsgewichte |
 | `thesis_v2_qualitative.sbatch` | hashgebundene VRS/MP4-Sidecars und gute/typische/fehlerhafte qualitative Fälle |
+| `thesis_v2_split_audit.sbatch` | kausaler Preflight und 25-fold Leave-One-Participant-Out-Splitaudit |
+| `thesis_v2_prepare_group_cv.sbatch` | materialisiert den vorab festgelegten 25-fold-LOPO-Plan ausschließlich für Seed 42 |
 | `thesis_v2_group_cv.sbatch` | ausführbare verschachtelte Leave-One-Participant-Out-CV; Array-Grenzen werden aus dem hashgebundenen Plan gelesen und beim `sbatch`-Aufruf übergeben |
 | `thesis_v2_summarize_group_cv.sbatch` | prüft die Vollständigkeit und Plan-/Checkpoint-Bindings aller äußeren Group-CV-Auswertungen und aggregiert sie |
 | `thesis_v2_summarize_matrix.sbatch` | prüft alle 48 autorisierten Testartefakte sowie die drei verpflichtenden t+1-Postprocess-Artefakte und erzeugt checkpoint-kohärente Seed- und Aggregate-Tabellen |
+| `submit_thesis_v2_pipeline.sh` | reicht den vollständigen Dependency-Graph inklusive Gate-Reports und 25 LOPO-Runs ein |
 
 ## Aktive v2-Reihenfolge
 
@@ -89,6 +92,17 @@ vorhandenen Exports wird abgewiesen.
 `MASTER_DIR` (standardmäßig `Data_collection/master_datasets`) überschreibt
 zusätzlich einen nicht portablen absoluten Pfad aus der gespeicherten
 Run-Konfiguration.
+
+Für die vollständige Einreichung nach einem sauberen Checkout genügt:
+
+```bash
+bash Training/jobs/submit_thesis_v2_pipeline.sh
+```
+
+Der separate Gate-Array wertet `residual_modality_gated` und
+`visual_corrected_clip_modality_gate` für alle drei Matrix-Seeds aus. LOPO wird
+hingegen bewusst nur mit Seed 42 ausgeführt (25 statt 75 Läufe), weil dort die
+Streuung über die äußeren Teilnehmer-Folds die primäre Robustheitsanalyse ist.
 
 ## CLIP-Abhängigkeiten
 

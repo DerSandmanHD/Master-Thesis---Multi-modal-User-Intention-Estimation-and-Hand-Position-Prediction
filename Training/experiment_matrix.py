@@ -87,7 +87,6 @@ def validate_matrix(matrix_path: Path) -> dict[str, Any]:
         "residual_current_gate": ("temporal_channel_gated", "hierarchical"),
         "residual_simple_gate": ("temporal_channel_simple", "hierarchical"),
         "residual_modality_gated": ("modality_gated", "hierarchical"),
-        "residual_temporal_only": ("temporal_only", "hierarchical"),
         "residual_flat": ("temporal_channel_gated", "flat"),
     }
     for experiment_id, (fusion, head) in expected_modes.items():
@@ -132,6 +131,7 @@ def validate_matrix(matrix_path: Path) -> dict[str, Any]:
     for experiment_id in (
         "visual_corrected_clip_current_gate",
         "visual_corrected_clip_modality_gate",
+        "visual_corrected_random_current_gate",
     ):
         visual = _nested(configs[experiment_id], "data", "visual_embeddings")
         if not visual.get("enabled"):
@@ -156,9 +156,9 @@ def validate_matrix(matrix_path: Path) -> dict[str, Any]:
             )
         visual_model = dict(configs[experiment_id]["model"])
         expected_fusion = (
-            "temporal_channel_gated"
-            if experiment_id == "visual_corrected_clip_current_gate"
-            else "modality_gated"
+            "modality_gated"
+            if experiment_id == "visual_corrected_clip_modality_gate"
+            else "temporal_channel_gated"
         )
         if visual_model.pop("fusion_mode") != expected_fusion:
             raise ExperimentMatrixError(
@@ -170,6 +170,19 @@ def validate_matrix(matrix_path: Path) -> dict[str, Any]:
             raise ExperimentMatrixError(
                 f"Visual comparison changes backbone capacity: {experiment_id}"
             )
+        expected_mode = (
+            "random_control"
+            if experiment_id == "visual_corrected_random_current_gate"
+            else "append"
+        )
+        if visual.get("mode") != expected_mode:
+            raise ExperimentMatrixError(
+                f"Unexpected visual embedding mode in {experiment_id}"
+            )
+        if expected_mode == "random_control" and not isinstance(
+            visual.get("random_seed"), int
+        ):
+            raise ExperimentMatrixError("Random visual control needs a fixed seed")
 
     terminal_target = _nested(
         configs["terminal_endpose_learned"], "data", "pose_target"

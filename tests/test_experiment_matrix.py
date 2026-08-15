@@ -41,7 +41,7 @@ def test_matrix_is_minimal_predeclared_and_executable() -> None:
         "residual_current_gate",
         "residual_simple_gate",
         "residual_modality_gated",
-        "residual_temporal_only",
+        "visual_corrected_random_current_gate",
         "residual_flat",
         "residual_without_pose_aux",
         "visual_corrected_clip_current_gate",
@@ -107,6 +107,17 @@ def test_sensor_only_is_an_alias_not_a_duplicate_run() -> None:
     }
     assert aliases["modality_no_clip_sensor_only"] == "residual_current_gate"
     assert aliases["baseline_residual_transformer"] == "residual_current_gate"
+
+
+def test_visual_random_control_matches_clip_budget_and_shape() -> None:
+    matrix = validate_matrix(MATRIX)
+    entries = {entry["id"]: entry for entry in matrix["training_experiments"]}
+    clip = json.loads((ROOT / entries["visual_corrected_clip_current_gate"]["config"]).read_text(encoding="utf-8"))
+    random = json.loads((ROOT / entries["visual_corrected_random_current_gate"]["config"]).read_text(encoding="utf-8"))
+    assert random["data"]["visual_embeddings"]["mode"] == "random_control"
+    assert random["data"]["visual_embeddings"]["expected_output_dim"] == clip["data"]["visual_embeddings"]["expected_output_dim"]
+    assert random["model"] == clip["model"]
+    assert random["training"] == clip["training"]
 
 
 def test_t1_three_way_matrix_entry_uses_checkpoint_bound_export() -> None:

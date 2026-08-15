@@ -117,6 +117,19 @@ def test_group_cv_summary_job_is_fail_closed_and_cpu_only() -> None:
     assert "--gres=gpu" not in value
 
 
+def test_reduced_lopo_plan_and_full_submission_graph_are_predeclared() -> None:
+    plan = text("thesis_v2_prepare_group_cv.sbatch")
+    submit = text("submit_thesis_v2_pipeline.sh")
+    assert "--leave-one-participant-out" in text("thesis_v2_split_audit.sbatch")
+    assert "--seeds 42" in plan
+    assert 'p["fold_count"] == 25' in plan
+    assert 'p["seeds"] == [42]' in plan
+    assert "--array=0-24%3" in submit
+    assert "GROUP_CV_PLAN_JOB" in submit
+    assert "POSTPROCESS_EXPERIMENTS=residual_modality_gated:visual_corrected_clip_modality_gate" in submit
+    assert 'afterok:${CLIP_JOB}:${ENDPOSE_AUDIT_JOB}:${SPLIT_AUDIT_JOB}' in submit
+
+
 def test_postprocess_requires_authorized_final_test_binding() -> None:
     value = text("thesis_v2_postprocess_selected.sbatch")
     expected_tasks = len(MATRIX["postprocessing"]["required_t1_experiments"]) * len(

@@ -20,6 +20,7 @@ REPORT_ROOT="${REPORT_ROOT:-Training/reports/${DATASET_TAG}/${REPORT_TAG}}"
 SELECTION_FILE="${SELECTION_FILE:-${REPORT_ROOT}/validation_selection.json}"
 FINAL_TEST_DIR="${FINAL_TEST_DIR:-${REPORT_ROOT}/final_test}"
 POSTPROCESS_ROOT="${POSTPROCESS_ROOT:-${REPORT_ROOT}/postprocess}"
+POSTPROCESS_EXPERIMENTS="${POSTPROCESS_EXPERIMENTS:-}"
 : "${SLURM_ARRAY_TASK_ID:?This job must run as its declared array}"
 MASTER_DIR="${MASTER_DIR:-Data_collection/master_datasets}"
 
@@ -30,7 +31,7 @@ cd "$REPO_DIR"
 singularity exec "$IMAGE" python3 Training/experiment_matrix.py --matrix "$MATRIX" --json >/dev/null
 
 mapfile -t FIELDS < <(
-  singularity exec "$IMAGE" python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); s=json.load(open(sys.argv[2])); ids=m["postprocessing"]["required_t1_experiments"]; pairs=[(x,int(seed)) for x in ids for seed in m["seeds"]]; i=int(sys.argv[3]); assert m["postprocessing"]["seed_policy"] == "all_matrix_seeds" and len(pairs) == len(ids)*len(m["seeds"]) and 0 <= i < len(pairs); experiment,seed=pairs[i]; rows=[r for r in s["final_test_runs"] if r["experiment_id"] == experiment and int(r["seed"]) == seed]; assert s["complete"] is True and s["selection_split"] == "validation" and s["test_metrics_read"] is False and len(rows) == 1; print(experiment); print(seed); print(rows[0]["run_dir"]); print(f"{sys.argv[4]}/{experiment}_seed{seed}.json"); print(f"{sys.argv[5]}/{experiment}_seed{seed}")' "$MATRIX" "$SELECTION_FILE" "$SLURM_ARRAY_TASK_ID" "$FINAL_TEST_DIR" "$POSTPROCESS_ROOT"
+  singularity exec "$IMAGE" python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); s=json.load(open(sys.argv[2])); override=[x for x in sys.argv[6].split(":") if x]; ids=override or m["postprocessing"]["required_t1_experiments"]; known={e["id"] for e in m["training_experiments"]}; allowed={"residual_modality_gated","visual_corrected_clip_modality_gate"}; assert set(ids) <= known and (not override or set(ids) <= allowed); pairs=[(x,int(seed)) for x in ids for seed in m["seeds"]]; i=int(sys.argv[3]); assert m["postprocessing"]["seed_policy"] == "all_matrix_seeds" and len(pairs) == len(ids)*len(m["seeds"]) and 0 <= i < len(pairs); experiment,seed=pairs[i]; rows=[r for r in s["final_test_runs"] if r["experiment_id"] == experiment and int(r["seed"]) == seed]; assert s["complete"] is True and s["selection_split"] == "validation" and s["test_metrics_read"] is False and len(rows) == 1; print(experiment); print(seed); print(rows[0]["run_dir"]); print(f"{sys.argv[4]}/{experiment}_seed{seed}.json"); print(f"{sys.argv[5]}/{experiment}_seed{seed}")' "$MATRIX" "$SELECTION_FILE" "$SLURM_ARRAY_TASK_ID" "$FINAL_TEST_DIR" "$POSTPROCESS_ROOT" "$POSTPROCESS_EXPERIMENTS"
 )
 EXPERIMENT_ID="${FIELDS[0]}"
 SEED="${FIELDS[1]}"

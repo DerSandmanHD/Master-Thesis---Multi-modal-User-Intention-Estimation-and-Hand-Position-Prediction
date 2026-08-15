@@ -23,7 +23,9 @@
     "authoritative_summary": "Training/evaluation/summarize_thesis_v2_matrix.py",
     "participant_group_cv": "Training/prepare_group_cv_runs.py",
     "participant_group_cv_summary": "Training/evaluation/summarize_group_cv.py",
-    "participant_group_cv_protocol": "nested leave-one-participant-out with plan-derived fold-by-seed task count",
+    "participant_group_cv_protocol": "nested 25-fold leave-one-participant-out with the single predeclared seed 42",
+    "participant_group_cv_seed_policy": "single_predeclared_seed_42",
+    "pipeline_submission": "Training/jobs/submit_thesis_v2_pipeline.sh",
     "required_t1_postprocessing": {
       "experiments": ["residual_current_gate"],
       "seed_policy": "all_matrix_seeds",

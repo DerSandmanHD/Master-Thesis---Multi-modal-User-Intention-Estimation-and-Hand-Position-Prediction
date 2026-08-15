@@ -92,7 +92,7 @@
     {
       "id": "P3.executable_nested_participant_group_cv",
       "status": "PASS",
-      "reason": "The executable protocol uses one outer participant per fold, all matrix seeds, and a plan-derived SLURM array; multi-participant outer folds are rejected for participant-balanced aggregation.",
+      "reason": "The executable protocol uses one outer participant per fold and the single predeclared seed 42, yielding 25 LOPO runs; multi-participant outer folds are rejected for participant-balanced aggregation and redundant three-seed LOPO is intentionally omitted.",
       "evidence": ["Training/prepare_group_cv_runs.py", "Training/jobs/thesis_v2_group_cv.sbatch", "Training/evaluation/summarize_group_cv.py", "Training/jobs/thesis_v2_summarize_group_cv.sbatch", "tests/test_participant_splits.py", "tests/test_group_cv_summary.py", "tests/test_slurm_protocol.py"]
     },
     {

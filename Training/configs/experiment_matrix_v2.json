@@ -12,7 +12,8 @@
     "test_interpretation": "historical/exploratory; participant-grouped CV is the preferred robustness analysis",
     "same_budget": true,
     "same_seed_set": true,
-    "fusion_comparison_interpretation": "The current-vs-simple gate contrast is the closest controlled gate ablation. Modality-gated and temporal-only variants change encoder design/capacity; trainable parameter counts must be reported and those contrasts are not attributed to gating alone."
+    "fusion_comparison_interpretation": "The current-vs-simple gate contrast is the closest controlled gate ablation. The modality-gated variant changes encoder design/capacity; trainable parameter counts must be reported and that contrast is not attributed to gating alone.",
+    "group_cv_seed_policy": "single_predeclared_seed_42"
   },
   "postprocessing": {
     "required_t1_experiments": ["residual_current_gate"],
@@ -70,12 +71,13 @@
       "config": "Training/configs/architecture/residual_v2_modality_gated.json"
     },
     {
-      "id": "residual_temporal_only",
-      "family": "architecture_ablation",
-      "factor": "fusion",
-      "variant": "temporal_only",
+      "id": "visual_corrected_random_current_gate",
+      "family": "visual",
+      "factor": "visual_control",
+      "variant": "sensor_plus_deterministic_random_same_timestamps_and_dimension",
       "entrypoint": "Training/train_residual.py",
-      "config": "Training/configs/architecture/residual_v2_temporal_only.json"
+      "config": "Training/configs/visual/residual_v2_sensor_plus_random_corrected.json",
+      "requires": ["corrected_clip_cache_v2", "train_only_pca_v2"]
     },
     {
       "id": "residual_flat",

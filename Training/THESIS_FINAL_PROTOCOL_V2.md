@@ -108,13 +108,13 @@ Die maschinenlesbare Matrix ist
 trainierende Konfigurationen × drei Seeds = 48 Validation-Läufe:
 
 - Baselines: MLP, GRU, Transformer, Residual Transformer;
-- Fusion: aktuelles Temporal/Channel-Gate, simple Fusion, modality-wise Gate,
-  temporal-only;
+- Fusion: aktuelles Temporal/Channel-Gate, simple Fusion und modality-wise Gate;
 - Intention: hierarchisch gegen flat;
 - Multi-Task: mit und ohne t+1-Pose-Loss;
 - Modalitäten: no gaze, no hands, no objects, no direct VIO;
 - visuell: Sensor + korrigiertes CLIP mit aktuellem beziehungsweise
-  modality-wise Gate;
+  modality-wise Gate sowie ein deterministischer Random-Feature-Control mit
+  identischen Zeitstempeln und identischer Dimensionalität;
 - sekundär: ein korrigierter gelernter Terminal-Endpose-Lauf.
 
 Residual-Baseline, Sensor-only/no-CLIP und Terminal-Persistence werden als
@@ -168,14 +168,14 @@ python3 Training/select_matrix_checkpoints.py --require-complete
 python3 Training/prepare_group_cv_runs.py \
   --split-audit Training/reports/dataset_v3_causal_20260815_n214_5d136a34/split_confounding_v2/split_audit.json \
   --base-config Training/configs/models/residual_transformer_v2.json \
-  --output-dir Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv \
+  --output-dir Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42 \
   --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 \
-  --experiment-tag thesis_v2_group_cv --seeds 42 43 44
+  --experiment-tag thesis_v2_group_cv_seed42 --seeds 42
 
-# Nach Abschluss aller participant_count * 3 äußeren Fold/Seed-Auswertungen
+# Nach Abschluss aller 25 äußeren Leave-One-Participant-Out-Auswertungen
 python3 Training/evaluation/summarize_group_cv.py \
-  --plan Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv/group_cv_plan.json \
-  --output-dir Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv/summary
+  --plan Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/group_cv_plan.json \
+  --output-dir Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/summary
 
 # 7. Finaler Test eines bereits eingefrorenen Laufs
 python3 Training/evaluate_frozen_run.py \
@@ -300,7 +300,7 @@ Die verschachtelte Group-CV verwendet innere Validation für Checkpoints und
 den äußeren Participant-Fold ausschließlich zur Evaluation:
 
 ```bash
-GROUP_CV_PLAN=Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv/group_cv_plan.json
+GROUP_CV_PLAN=Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/group_cv_plan.json
 GROUP_CV_TASKS=$(singularity exec "${IMAGE:-$HOME/singularity/aria_master.simg}" \
   python3 -c 'import json,sys; p=json.load(open(sys.argv[1])); n=len(p["runs"]); assert n == int(p["fold_count"])*len(p["seeds"]); print(n)' \
   "$GROUP_CV_PLAN")
@@ -308,13 +308,13 @@ GROUP_CV_LAST_INDEX=$((GROUP_CV_TASKS - 1))
 
 GROUP_CV_JOB=$(sbatch --parsable \
   --array=0-${GROUP_CV_LAST_INDEX}%3 \
-  --dependency=afterok:${SELECTION_JOB} \
+  --dependency=afterok:${GROUP_CV_PLAN_JOB} \
   --export=ALL,GROUP_CV_PLAN=${GROUP_CV_PLAN} \
   Training/jobs/thesis_v2_group_cv.sbatch)
 
 GROUP_CV_SUMMARY_JOB=$(sbatch --parsable \
   --dependency=afterok:${GROUP_CV_JOB} \
-  --export=ALL,GROUP_CV_PLAN=Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv/group_cv_plan.json,GROUP_CV_SUMMARY_DIR=Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv/summary \
+  --export=ALL,GROUP_CV_PLAN=Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/group_cv_plan.json,GROUP_CV_SUMMARY_DIR=Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/summary \
   Training/jobs/thesis_v2_summarize_group_cv.sbatch)
 ```
 
@@ -323,9 +323,26 @@ deklarierte Primärkonfiguration
 `residual_transformer_v2.json`; es findet keine nachträgliche Wahl anhand des
 äußeren Folds oder historischer Testwerte statt. Der äußere Participant-Fold
 darf weder Architektur noch Checkpoint auswählen. Ergebnisse existieren erst,
-wenn alle `participant_count * seed_count` autorisierten Fold/Seed-Auswertungen
+wenn alle 25 autorisierten LOPO-Auswertungen mit dem vorab festgelegten Seed 42
 vollständig vorliegen und der separate Group-CV-Summary
 deren Plan- und Report-Bindings geprüft hat.
+
+Die drei Matrix-Seeds bleiben für die kompakte Hauptmatrix erhalten. Für LOPO
+wird bewusst nur Seed 42 verwendet: Die 25 voneinander disjunkten äußeren
+Teilnehmer-Folds liefern bereits die relevante Between-Participant-Streuung;
+eine Verdreifachung auf 75 Trainingsläufe wäre für diese Robustheitsaussage
+weitgehend redundant. Die drei bisherigen `temporal_only`-Läufe wurden durch
+den wissenschaftlich aussagekräftigeren Random-Visual-Control ersetzt.
+
+Die vollständige, fail-closed verkettete Einreichung ist ausführbar mit:
+
+```bash
+bash Training/jobs/submit_thesis_v2_pipeline.sh
+```
+
+Sie reicht Master-Rebuild, CLIP, Terminal- und Split-Audit, 48 Validation-
+Läufe, eingefrorene Testauswertung, primäres Postprocessing, Gate-Reports,
+qualitative Overlays und 25-fold LOPO mitsamt Abhängigkeiten ein.
 
 Qualitative Videos werden erst aus diesem checkpoint-gebundenen Export erzeugt:
 

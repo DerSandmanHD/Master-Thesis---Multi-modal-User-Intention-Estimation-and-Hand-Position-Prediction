@@ -4,7 +4,9 @@
 #SBATCH --cpus-per-task=6
 #SBATCH --mem-per-cpu=4G
 #SBATCH --gres=gpu:1
-#SBATCH --time=04:00:00
+# The full n214 VRS decode takes more than four hours on the current TCML
+# nodes.  Extraction is resumable: validated per-sequence caches are skipped.
+#SBATCH --time=12:00:00
 #SBATCH --output=Training/slurm_logs/prepare_clip_embeddings.%j.out
 #SBATCH --error=Training/slurm_logs/prepare_clip_embeddings.%j.err
 

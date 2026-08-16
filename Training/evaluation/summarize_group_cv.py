@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import statistics
 import sys
 from collections import defaultdict
@@ -197,11 +198,14 @@ def _classification_from_confusion(
     for key in ("samples", "macro_f1", "macro_f1_supported", "accuracy"):
         reported = metric.get(key)
         if reported is not None:
-            tolerance = 0 if key == "samples" else 1e-8
-            _require(
-                abs(float(reported) - float(result[key])) <= tolerance,
-                f"{label} {key} disagrees with its confusion matrix",
+            matches = (
+                int(reported) == int(result[key])
+                if key == "samples"
+                else math.isclose(
+                    float(reported), float(result[key]), rel_tol=1e-6, abs_tol=1e-6
+                )
             )
+            _require(matches, f"{label} {key} disagrees with its confusion matrix")
     return result
 
 

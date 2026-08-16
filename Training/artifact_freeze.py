@@ -627,8 +627,15 @@ def validate_artifact_freeze(
     manifest_path: Path,
     *,
     require_complete: bool = True,
+    require_current_git_state: bool = True,
 ) -> dict[str, Any]:
-    """Recompute all frozen run-local hashes and validate scientific fields."""
+    """Recompute frozen hashes and validate scientific fields.
+
+    ``require_current_git_state=False`` is intended for retrospective readers
+    of immutable run artifacts.  The training commit remains recorded and
+    fingerprint-bound in the manifest, while a later reporting-only checkout
+    is allowed to validate the run-local inputs and outputs.
+    """
 
     manifest_path = Path(manifest_path).expanduser().resolve()
     manifest = _read_json(manifest_path)
@@ -671,7 +678,8 @@ def validate_artifact_freeze(
         raise ArtifactFreezeError("Checkpoint selection is not validation-only")
 
     run_dir = manifest_path.parent
-    _validate_git_state(manifest.get("git", {}))
+    if require_current_git_state:
+        _validate_git_state(manifest.get("git", {}))
     configuration = manifest.get("configuration", {})
     _validate_identity(configuration.get("source"), run_dir=run_dir, label="source config")
     _validate_identity(configuration.get("resolved"), run_dir=run_dir, label="resolved config")

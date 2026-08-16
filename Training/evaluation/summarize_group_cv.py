@@ -46,6 +46,12 @@ class GroupCVSummaryError(ValueError):
     """Raised when Group-CV completeness or provenance cannot be proved."""
 
 
+def validate_historical_artifact_freeze(path: Path) -> Mapping[str, Any]:
+    """Validate an immutable run without requiring its historical checkout."""
+
+    return validate_artifact_freeze(path, require_current_git_state=False)
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -235,7 +241,7 @@ def validate_outer_report(
     row: Mapping[str, Any],
     *,
     plan: Mapping[str, Any],
-    freeze_validator: Callable[[Path], Mapping[str, Any]] = validate_artifact_freeze,
+    freeze_validator: Callable[[Path], Mapping[str, Any]] = validate_historical_artifact_freeze,
 ) -> dict[str, Any]:
     config_path = _resolve(str(row["config"]))
     run_dir = _resolve(str(row["run_dir"]))
@@ -410,7 +416,7 @@ def _participant_csv_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, A
     return result
 
 
-def build_summary(plan_path: Path, *, freeze_validator: Callable[[Path], Mapping[str, Any]] = validate_artifact_freeze) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+def build_summary(plan_path: Path, *, freeze_validator: Callable[[Path], Mapping[str, Any]] = validate_historical_artifact_freeze) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
     plan_path = plan_path.expanduser().resolve()
     plan = _read_json(plan_path)
     runs = validate_plan(plan)

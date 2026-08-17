@@ -13,6 +13,15 @@ Velocity, modality-wise Fusion, gruppierte Auswertung und einen vollständigen
 Artifact Freeze. Die maschinenlesbare minimale Matrix steht in
 `configs/experiment_matrix_v2.json`.
 
+Ausführungsstand vom 2026-08-17: Der kausale v3-Datasetstand ist auf dem
+Cluster für 214 Sequenzen materialisiert. Korrigierter CLIP-Cache (214/214),
+48 Validation-Läufe, Validation-only-Checkpointauswahl, 48 autorisierte
+Final-Tests und 25 LOPO-Läufe samt Zusammenfassung sind abgeschlossen.
+Alle neun Postprocessing-Tasks sind ebenfalls abgeschlossen. Autoritativer
+Gesamtbericht und qualitative Ausgabe sind noch durch zwei dokumentierte
+Validierungsprobleme blockiert. Der genaue Job- und Artefaktstand steht in
+`IMPLEMENTATION_STATUS_P0_P5.json` und `run_registry.json`.
+
 Alle nachfolgend dokumentierten n214-Ergebniszahlen sind historische,
 bereits beobachtete Resultate. Sie sind keine Resultate des korrigierten
 Protokolls. Insbesondere historische CLIP-, qualitative und Terminal-Endpose-

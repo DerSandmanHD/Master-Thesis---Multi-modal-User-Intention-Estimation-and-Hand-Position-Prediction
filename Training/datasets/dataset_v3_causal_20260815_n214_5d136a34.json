@@ -1,0 +1,40 @@
+{
+  "dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
+  "status": "materialized_cluster_hash_bound",
+  "created_at": "2026-08-15",
+  "verified_at": "2026-08-16",
+  "storage_scope": "cluster; large masters and raw VRS/MPS artifacts are not expected in a normal Git checkout",
+  "master_dir": "Data_collection/master_datasets",
+  "manifest": "Data_collection/dataset_manifest.csv",
+  "selected_sequences": 214,
+  "split_sequences": {
+    "train": 170,
+    "validation": 21,
+    "test": 23
+  },
+  "split_participants": {
+    "train": ["Angelina", "Berat", "David", "Felix", "Florian", "Isa", "Jan", "Jola", "Julienco", "Leys", "Maria", "Melih", "Miro", "Paul", "Suthan", "Tarik", "Test", "Urim", "Yuzhi"],
+    "validation": ["Atilla", "Ermal", "Vanessa"],
+    "test": ["Edu", "Jona", "Mona"]
+  },
+  "sequence_fingerprint": "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd",
+  "dataset_content_fingerprint": "339c313d56c7be8564a3035cd8334bad103e15659315c33135e96b95e820245a",
+  "source_content_fingerprint": "b2cfd10991c5638277795aadcabfd322d3e9eb41dffb70696b63dc657f5f22cb",
+  "builder_version": "training_data_pipeline_v3_modality_ablation",
+  "required_observation_alignment_version": "causal_backward_device_time_v1",
+  "clip_alignment_version": "vrs_rgb_device_time_v2",
+  "clip_cache": {
+    "sequences": 214,
+    "errors": 0,
+    "sampling_hz": 5,
+    "projection_components": 32,
+    "projection_fit_split": "train_only",
+    "explained_variance_ratio": 0.7900,
+    "slurm_job_id": 2228708
+  },
+  "notes": [
+    "Every active training config additionally binds expected_selected_sequences=214 and the full sequence fingerprint.",
+    "The causal master preflight verified all selected sequences before corrected training.",
+    "The static world-to-robot calibration is an offline whole-sequence estimate and therefore does not establish a fully online-causal deployment pipeline."
+  ]
+}

@@ -9,10 +9,10 @@
   },
   "active_protocol": {
     "protocol_tag": "thesis_final_v2_corrected_alignment",
-    "status": "implementation_ready_no_new_results",
+    "status": "core_and_postprocessing_complete_final_reports_blocked",
     "planned_dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
-    "planned_dataset_materialized": false,
-    "dataset_descriptor": null,
+    "planned_dataset_materialized": true,
+    "dataset_descriptor": "Training/datasets/dataset_v3_causal_20260815_n214_5d136a34.json",
     "experiment_matrix": "Training/configs/experiment_matrix_v2.json",
     "implementation_status": "Training/IMPLEMENTATION_STATUS_P0_P5.json",
     "artifact_validity": "Training/reports/dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json",
@@ -38,7 +38,20 @@
     "required_clip_alignment_version": "vrs_rgb_device_time_v2",
     "required_terminal_target_version": "terminal_endpose_unique_hand_capture_v2",
     "required_artifact_freeze_protocol": "thesis_artifact_freeze_hash_bound_v2",
-    "new_results_available": false,
+    "new_results_available": true,
+    "execution_snapshot_updated_at": "2026-08-17",
+    "execution_snapshot": {
+      "causal_master_preflight": "completed_214_of_214",
+      "corrected_clip_cache": "completed_214_of_214_zero_errors",
+      "terminal_target_audit": "completed_183_of_214_accepted",
+      "validation_matrix": "completed_48_of_48",
+      "checkpoint_selection": "completed",
+      "authorized_final_test": "completed_48_of_48",
+      "participant_group_cv": "completed_25_of_25_and_summarized",
+      "postprocessing": "completed_9_of_9_jobs_2239359_2239360",
+      "authoritative_summary": "failed_job_2239361_historical_checkout_validation",
+      "qualitative_rendering": "failed_job_2239362_jona_7_mp4_vrs_frame_count_mismatch"
+    },
     "main_checkpoint": "best_intention",
     "pose_selected_checkpoint_role": "diagnostic_only"
   },
@@ -50,9 +63,52 @@
     {
       "dataset_tag": "dataset_v2_20260802_n214_5d136a34",
       "descriptor": "Training/datasets/dataset_v2_20260802_n214_5d136a34.json"
+    },
+    {
+      "dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
+      "descriptor": "Training/datasets/dataset_v3_causal_20260815_n214_5d136a34.json"
     }
   ],
   "experiments": [
+    {
+      "experiment_tag": "thesis_final_v2_corrected_alignment",
+      "dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
+      "kind": "causal_corrected_thesis_matrix",
+      "status": "core_and_postprocessing_complete_final_reports_blocked",
+      "models": ["three_backbone_baselines", "primary_residual_t_plus_1", "fusion_and_modality_ablations", "corrected_clip_controls", "secondary_terminal_endpose"],
+      "seeds": [42, 43, 44],
+      "validation_run_count": 48,
+      "final_test_run_count": 48,
+      "group_cv_run_count": 25,
+      "run_root": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation",
+      "comparison_report": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment",
+      "group_cv_report": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/summary/group_cv_summary.json",
+      "slurm_jobs": {
+        "clip": 2228708,
+        "terminal_audit": 2228709,
+        "validation_matrix": 2228711,
+        "checkpoint_selection": 2228712,
+        "final_test_matrix": 2228713,
+        "group_cv_summary": 2228718,
+        "postprocess_resume": [2239359, 2239360],
+        "authoritative_summary": 2239361,
+        "qualitative": 2239362
+      },
+      "result_status": {
+        "corrected_clip_sequences": 214,
+        "corrected_clip_errors": 0,
+        "validation_complete": true,
+        "final_test_complete": true,
+        "group_cv_complete": true,
+        "postprocessing_complete": true,
+        "authoritative_summary_complete": false,
+        "authoritative_summary_blocker": "job 2239361 rejected historical training Git checkout",
+        "qualitative_complete": false,
+        "qualitative_blocker": "job 2239362: Jona_7 MP4/VRS frame count 1165 != 1166"
+      },
+      "selection_split": "validation",
+      "test_metrics_used_for_selection": false
+    },
     {
       "experiment_tag": "benchmark_v2",
       "dataset_tag": "dataset_v2_20260802_n214_5d136a34",

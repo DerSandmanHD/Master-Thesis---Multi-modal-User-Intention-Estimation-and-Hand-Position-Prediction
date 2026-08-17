@@ -1,19 +1,26 @@
 # Finales Thesis-Protokoll v2
 
-Dieses Protokoll ist der aktive, noch **nicht ausgeführte** Experimentstand für
+Dieses Protokoll ist der aktive Experimentstand für
 „Multi-modal User Intention Estimation and Hand Position Prediction“. Es ersetzt
 keine historischen Artefakte. Deren wissenschaftliche Verwendbarkeit steht im
 historischen Invaliditätsinventar
 `Training/reports/dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json`.
-Der aktive, kausal neu aufzubauende Datasetstand ist
-`dataset_v3_causal_20260815_n214_5d136a34`; er besitzt noch keine behaupteten
-Trainings- oder Testergebnisse.
+Der aktive kausale Datasetstand
+`dataset_v3_causal_20260815_n214_5d136a34` wurde auf dem Cluster materialisiert
+und für 214 Sequenzen hashgebunden verifiziert. Der korrigierte CLIP-Cache,
+48 Validation-Läufe, die Validation-only-Auswahl, 48 autorisierte Final-Tests
+und 25 LOPO-Läufe samt participant-balanced Summary sind abgeschlossen.
+Alle neun Postprocessing-Tasks sind ebenfalls abgeschlossen. Der autoritative
+Gesamtbericht und die qualitative Ausgabe benötigen zum Statuszeitpunkt
+2026-08-17 noch gezielte Wiederholungen: Der Summary-Job lehnte den neueren
+Reporting-Checkout ab; die qualitative Pipeline fand für
+`Jona_7_20260616_182214` 1165 MP4- gegenüber 1166 VRS-RGB-Frames.
 Alle 16 aktiven Matrix-Configs erzwingen vor dem Training zusätzlich exakt 214
 ausgewählte Sequenzen und den vollständigen Sequenz-Fingerprint
 `5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd`.
 Der Tag allein wird daher nicht als Datasetnachweis akzeptiert.
-Es wurden in diesem Arbeitsstand keine Resultate erfunden oder aus fehlenden
-Trainingsläufen extrapoliert.
+Ergebniszahlen dürfen erst aus den maschinenlesbaren v3-Berichten übernommen
+werden; laufende oder fehlende Aggregate werden nicht extrapoliert.
 
 ## Forschungsaufgaben
 
@@ -374,11 +381,11 @@ Der maschinenlesbare Implementierungs-/Blockerstatus steht in
 `IMPLEMENTATION_STATUS_P0_P5.json`. `PASS` bezeichnet dort verifizierten Code,
 nicht einen bereits ausgeführten vollständigen Trainingslauf.
 
-## Aktuell lokal blockiert
+## Lokaler Checkout und Clusterstatus
 
-Im lokalen `Data_collection/` liegt nur `manual_timestamp_review.csv`. Deshalb
-sind Full-Dataset-Audit, CLIP-Neuaufbau, PCA, Training, echte Testauswertung,
-MP4-Sidecars und qualitative Videos hier nicht ausführbar. Benötigt werden die
-unveränderten Raw-VRS/MPS-Dateien, Master-CSVs samt Manifest, MP4-Dateien, der
-Singularity-Container und für Training/CLIP eine GPU. Alle Codepfade und
-Kommandos sind vorbereitet; der Status enthält bewusst keine neuen Metriken.
+Ein normaler lokaler Git-Checkout enthält nicht die großen Raw-VRS/MPS-Dateien,
+Master-CSVs, CLIP-Caches, Checkpoints und vollständigen Reports. Diese liegen
+auf dem TCML-Cluster. Der Clusterlauf hat die Kernstufen bereits abgeschlossen;
+der genaue maschinenlesbare Zwischenstand steht in
+`IMPLEMENTATION_STATUS_P0_P5.json` und `run_registry.json`. Lokal fehlende
+Großartefakte bedeuten daher nicht mehr, dass das Experiment unausgeführt ist.

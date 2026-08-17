@@ -1,8 +1,13 @@
-# Technische Dokumentation: Entwicklungsstand Framework zur multimodalen Intentionsschätzung
+# Historische technische Dokumentation: Entwicklungsstand Framework zur multimodalen Intentionsschätzung
 
 **Dokument aktualisiert:** 4. Juli 2026
 
 **Dokumentierter Entwicklungsstand:** 4. Juli 2026
+
+> Historischer Zwischenstand. Dieses Dokument beschreibt bewusst den Stand vom
+> 4. Juli 2026 und ist kein aktueller Thesis-Status. Der aktive kausale
+> v3-Protokollstand steht in `Training/THESIS_FINAL_PROTOCOL_V2.md`,
+> `Training/run_registry.json` und `Training/IMPLEMENTATION_STATUS_P0_P5.json`.
 
 ## 1. System-Architektur & Infrastruktur
 

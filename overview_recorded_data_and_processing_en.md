@@ -57,7 +57,8 @@ The absolute SLAM pose is mainly required to transform hand, gaze, and object po
 
 The RGB camera provides 2D egocentric images.
 
-The images are currently not passed directly to the model as pixels or image embeddings. They are used for:
+The sensor baseline does not receive RGB pixels or image embeddings directly.
+RGB is used for:
 
 - visual inspection of recordings,
 - manual annotation,
@@ -249,11 +250,13 @@ At the end of the pipeline, each recording is represented as a synchronized time
 - intention labels,
 - future hand poses as regression targets.
 
-The data are therefore predominantly **3D geometric data**. The original RGB images are 2D, but they are currently used only for marker extraction and manual review.
+The sensor baseline data are therefore predominantly **3D geometric data**.
+The original RGB images are additionally used for marker extraction and manual review;
+separate visual ablations use time-aligned CLIP embeddings.
 
 The model inputs consist of temporal windows of these synchronized features. Missing measurements are represented using additional observation masks, allowing the model to distinguish between a missing value and a true numerical value.
 
-The current feature profile mainly uses gaze angles and robot-relative gaze direction, robot-relative wrist poses, hand confidence values, SLAM velocities, SLAM quality, robot-relative object positions, gaze-object angles, gaze-object distances, and visibility flags. Full hand landmarks, RGB pixels, CLIP embeddings, absolute SLAM world poses, and marker reprojection errors are not currently used as direct model inputs.
+The sensor baseline feature profile mainly uses gaze angles and robot-relative gaze direction, robot-relative wrist poses, hand confidence values, SLAM velocities, SLAM quality, robot-relative object positions, gaze-object angles, gaze-object distances, and visibility flags. Full hand landmarks, RGB pixels, absolute SLAM world poses, and marker reprojection errors are not direct sensor-baseline inputs. Separate visual ablations append time-aligned CLIP embeddings.
 
 ## Compact Overview
 

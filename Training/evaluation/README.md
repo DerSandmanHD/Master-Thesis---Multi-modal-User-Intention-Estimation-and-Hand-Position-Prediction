@@ -37,8 +37,9 @@ python3 Training/evaluation/generate_training_diagrams.py
 ```
 
 Dieser Befehl reproduziert den Legacy-Stand `final_clean_v1` und schreibt wie
-bisher nach `Training/evaluation/generated/`. Für einen neuen Benchmark werden
-Dataset und Experiment explizit angegeben:
+bisher nach `Training/evaluation/generated/`. Das folgende Beispiel verwendet
+einen historischen Tag; für aktive v3-Auswertungen müssen Dataset und
+Experiment explizit aus `Training/run_registry.json` angegeben werden:
 
 ```bash
 DATASET_TAG=dataset_v2_20260815_n180_ab12cd34

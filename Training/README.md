@@ -202,14 +202,16 @@ abgelehnt und neu erzeugt. Deshalb sind alle historischen visuellen v1-Caches,
 PCA-Projektionen und Sensor+CLIP-Checkpoints nur historische Artefakte und
 duerfen nicht als korrigierte Ergebnisse berichtet werden.
 
-Der reproduzierbare Neuaufbau ist:
+Ein reproduzierbarer Neuaufbau des CLIP-Caches ist:
 
 ```bash
 sbatch Training/jobs/prepare_clip_embeddings.sbatch
 ```
 
-Danach muessen CLIP-only und Sensor+CLIP neu trainiert werden. Die drei
-Sensor+CLIP-Configs verweisen ausschliesslich auf die versionierten v2-Pfade.
+Nach einem Neuaufbau müssen die betroffenen visuellen Varianten erneut trainiert
+werden. Die aktiven Sensor+CLIP-, Modality-Gate- und Random-Control-Configs
+verweisen auf die versionierten v3-Pfade; historische v2-Configs und Ergebnisse
+bleiben getrennt. Der Ausführungsstatus steht in `run_registry.json`.
 
 ## Checkpoint-kohaerente Ergebniszeilen
 
@@ -288,7 +290,8 @@ python3 Training/train.py \
   --experiment-tag local_smoke
 ```
 
-Separate GPU-Jobs:
+Historische Beispiel-GPU-Jobs (der unten verwendete Tag ist nicht der aktive
+Thesis-Datasetstand):
 
 ```bash
 DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
@@ -343,8 +346,8 @@ zusaetzlich `best_pose_model.pt` nach Validation-Positions-MAE. Residual v2
 behaelt analog getrennte Intent- und Pose-Checkpoints. Dadurch werden Intent-
 und Poseergebnisse nicht nach dem Testset ausgewaehlt.
 
-Ein-Epochen-Cluster-Smoke-Tests koennen ohne Aenderung der Konfiguration
-gestartet werden:
+Historische Ein-Epochen-Cluster-Smoke-Tests koennen ohne Aenderung der
+Konfiguration gestartet werden:
 
 ```bash
 DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
@@ -368,7 +371,7 @@ python3 Training/train_residual.py \
   --epochs 1
 ```
 
-Residual-v2-GPU-Job:
+Historische Residual-v2-GPU-Jobs:
 
 ```bash
 DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
@@ -690,7 +693,7 @@ sbatch --export=ALL,RUN_DIR=Training/runs/hierarchical_baseline_20260712_101448 
   Training/jobs/export_predictions.sbatch
 ```
 
-Neuer Transformer-GPU-Job auf dem Cluster:
+Historischer Transformer-GPU-Job auf dem Cluster:
 
 ```bash
 DATASET_TAG=dataset_v2_20260815_n180_ab12cd34

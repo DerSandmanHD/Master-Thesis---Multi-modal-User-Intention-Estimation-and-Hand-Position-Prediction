@@ -341,7 +341,8 @@ eine Verdreifachung auf 75 Trainingsläufe wäre für diese Robustheitsaussage
 weitgehend redundant. Die drei bisherigen `temporal_only`-Läufe wurden durch
 den wissenschaftlich aussagekräftigeren Random-Visual-Control ersetzt.
 
-Die vollständige, fail-closed verkettete Einreichung ist ausführbar mit:
+Die vollständige, fail-closed verkettete Einreichung ist aus einem sauberen
+Git-Checkout ausführbar mit:
 
 ```bash
 bash Training/jobs/submit_thesis_v2_pipeline.sh
@@ -378,8 +379,11 @@ ausgegeben und summieren sich dort zu eins. Sie sind interne Modellkonditionieru
 und dürfen nicht als kausale Wichtigkeit interpretiert werden.
 
 Der maschinenlesbare Implementierungs-/Blockerstatus steht in
-`IMPLEMENTATION_STATUS_P0_P5.json`. `PASS` bezeichnet dort verifizierten Code,
-nicht einen bereits ausgeführten vollständigen Trainingslauf.
+`IMPLEMENTATION_STATUS_P0_P5.json`. `PASS` bezeichnet dort implementierte und
+verifizierte Anforderungen; die jeweilige Evidenz zeigt, ob dies lokal oder
+durch abgeschlossene hashgebundene Clusterartefakte belegt ist. Der
+Ausführungsstatus eines gesamten Experiments steht zusätzlich in
+`run_registry.json`.
 
 ## Lokaler Checkout und Clusterstatus
 

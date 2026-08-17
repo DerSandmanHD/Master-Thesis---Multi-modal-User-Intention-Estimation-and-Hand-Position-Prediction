@@ -188,7 +188,7 @@ Das MP4 dient aktuell:
 - der Annotation der empfangenden Hand,
 - der visuellen technischen Review.
 
-**Wichtig:** Das MP4 oder ein visueller Encoder wie CLIP ist im aktuellen Featureprofil `multimodal_robot_frame_v1` noch **kein Eingabefeature des neuronalen Netzes**. RGB wird zur Markerextraktion und zur manuellen Qualitätssicherung genutzt, aber nicht als gelernter Bildfeature-Vektor in das Baseline-Modell eingespeist.
+**Wichtig:** Das MP4 oder ein visueller Encoder wie CLIP ist im Sensorbaseline-Featureprofil `multimodal_robot_frame_v1` kein Eingabefeature des neuronalen Netzes. RGB wird dort zur Markerextraktion und zur manuellen Qualitätssicherung genutzt; separate visuelle Ablationen verwenden zeitlich ausgerichtete CLIP-Features.
 
 ## 5. Gaze-Daten
 
@@ -1142,7 +1142,8 @@ Folgende Daten sind vorhanden oder ableitbar, werden in der aktuellen Baseline a
 
 | Information | Aktueller Status |
 |---|---|
-| RGB-Bild oder CLIP-Embedding | nicht im Modellinput |
+| RGB-Bild | nicht im Sensorbaseline-Modellinput |
+| CLIP-Embedding | nur in separaten visuellen Ablationen |
 | Audio-Embedding oder Sprache | nur zur Labelsegmentierung |
 | vollständige 21-Hand-Landmarks | im Master, nicht im Featureprofil |
 | Palm-/Wrist-Normalen | im Master, nicht im Featureprofil |
@@ -1428,9 +1429,9 @@ sbatch --export=ALL,OVERWRITE=1 \
 
 Robot-relative Posen beziehen sich auf AprilTag 0. Der feste Offset zur echten Roboterbasis ist noch nicht angewendet.
 
-### 20.2 RGB ist noch keine gelernte Modalität
+### 20.2 RGB in Sensorbaseline und visuellen Ablationen
 
-Obwohl RGB aufgenommen wird, verarbeitet die Baseline keine CLIP- oder CNN-Features. Aussagen über "multimodal" beziehen sich aktuell auf Gaze, Hand/Wrist, Kopfbewegung/SLAM und geometrische Objektinformationen.
+Obwohl RGB aufgenommen wird, verarbeitet die Sensorbaseline keine CLIP- oder CNN-Features. Separate visuelle Ablationen verwenden zeitlich ausgerichtete CLIP-Embeddings; sie sind vom Sensorbaseline-Profil zu unterscheiden. Aussagen über "multimodal" in der Sensorbaseline beziehen sich auf Gaze, Hand/Wrist, Kopfbewegung/SLAM und geometrische Objektinformationen.
 
 ### 20.3 Handlandmarks werden noch nicht ausgeschöpft
 

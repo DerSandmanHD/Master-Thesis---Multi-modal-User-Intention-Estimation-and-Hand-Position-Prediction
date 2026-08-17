@@ -6,7 +6,7 @@ Die unten dokumentierten Completed Results stammen aus dem vor der Korrektur
 ausgeführten Endpose-v2-Strang. Sie bleiben als historische Evidenz erhalten,
 sind aber wegen der alten Capture-Duplizierung und früheren
 Checkpoint-/Oracle-Semantik keine Ergebnisse des korrigierten Protokolls.
-Neue Terminal-Läufe verwenden `terminal_endpose_physical_capture_v2`, einen
+Neue Terminal-Läufe verwenden `terminal_endpose_unique_hand_capture_v2`, einen
 einzigen validation-ausgewählten Hauptcheckpoint und werden getrennt vom
 primären t+1-Strang berichtet; siehe `THESIS_FINAL_PROTOCOL_V2.md`.
 

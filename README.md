@@ -146,8 +146,10 @@ python3 Training/train_residual.py \
   --config Training/configs/models/residual_transformer_v2.json
 ```
 
-Cluster-Training für einen zuvor unter `Training/datasets/` eingefrorenen
-Datasetstand:
+Historische Beispielbefehle für einen zuvor unter `Training/datasets/`
+eingefrorenen Datasetstand (der unten verwendete Tag ist nicht der aktive
+Thesis-Datasetstand; für aktive Läufe den in `Training/run_registry.json`
+registrierten v3-Tag verwenden):
 
 ```bash
 DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
@@ -162,7 +164,7 @@ sbatch --export=ALL,DATASET_TAG="$DATASET_TAG" \
   Training/jobs/train_residual_v2.sbatch
 ```
 
-Finaler, manifestgefilterter Vergleich mit vier Modellen und drei Seeds:
+Historischer, manifestgefilterter Vergleich mit vier Modellen und drei Seeds:
 
 ```bash
 DATASET_TAG=dataset_v2_20260815_n180_ab12cd34
@@ -179,11 +181,12 @@ python3 Training/compare_final_runs.py \
 
 ## Dokumentation
 
+- **Aktueller Thesis-Status:** [`THESIS_CURRENT_STATUS.md`](THESIS_CURRENT_STATUS.md)
 - Neue VRS- und MPS-Aufnahmen verarbeiten:
   [`NEW_RECORDINGS_PIPELINE.md`](NEW_RECORDINGS_PIPELINE.md)
 - Rohdaten, Einheiten und Transformationen:
   [`Thesis/raw_data_and_processing.md`](Thesis/raw_data_and_processing.md)
-- Aktueller technischer Projektstand: [`Thesis/status.md`](Thesis/status.md)
+- Historischer technischer Projektstand (4. Juli 2026): [`Thesis/status.md`](Thesis/status.md)
 - Akzeptierte hierarchische Baseline:
   [`Thesis/status_testing_hierarchical_tracking_baseline_v1.md`](Thesis/status_testing_hierarchical_tracking_baseline_v1.md)
 - Trainingspipeline: [`Training/README.md`](Training/README.md)

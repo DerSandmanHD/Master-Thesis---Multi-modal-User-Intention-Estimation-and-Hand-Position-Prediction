@@ -20,10 +20,13 @@ Die vorhandenen Dateien `final_clean_v1_comparison.*` sind unveränderte
 Legacy-Reports. Auch `Training/evaluation/generated/` bleibt als historischer
 Diagrammstand bestehen.
 
-Der aktive geplante Protokollstand ist
-`dataset_v3_causal_20260815_n214_5d136a34`. Solange Master-Rebuild, CLIP-v2,
-Training und autorisierte Evaluation nicht tatsächlich gelaufen sind, gibt es
-unter diesem Tag keine behaupteten Resultate. Der Report
+Der aktive Protokollstand ist
+`dataset_v3_causal_20260815_n214_5d136a34`. Laut
+`Training/run_registry.json` sind kausaler Master-Rebuild, korrigierter
+CLIP-Cache, Validation, autorisierte Final-Tests, LOPO und Postprocessing
+abgeschlossen. Der autoritative Gesamtbericht und die qualitative Ausgabe sind
+noch blockiert; unter diesem Tag werden deshalb keine finalen Ergebniszahlen
+behauptet. Der Report
 `dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json` ist ein
 historisches Invaliditätsinventar: Er beschreibt, warum alte CLIP-, zentrale
 Checkpoint-, Terminal- und qualitative Artefakte nicht als finale v2-

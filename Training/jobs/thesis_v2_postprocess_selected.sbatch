@@ -4,7 +4,9 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=4G
 #SBATCH --gres=gpu:1
-#SBATCH --time=03:00:00
+# A grouped 10,000-sample bootstrap can approach three hours.  Every stage is
+# resumable and hash-validated, but leave enough headroom for a cold run.
+#SBATCH --time=08:00:00
 #SBATCH --array=0-2%3
 #SBATCH --output=Training/slurm_logs/thesis_v2_postprocess.%A_%a.out
 #SBATCH --error=Training/slurm_logs/thesis_v2_postprocess.%A_%a.err
@@ -40,45 +42,81 @@ FINAL_TEST_JSON="${FIELDS[3]}"
 REPORT_DIR="${FIELDS[4]}"
 PREDICTIONS="$REPORT_DIR/test_predictions.csv"
 PREDICTION_REPORT="$REPORT_DIR/test_predictions.json"
+GROUPED_REPORT="$REPORT_DIR/grouped_metrics.json"
+GROUPED_TABLE="$REPORT_DIR/grouped_metrics.csv"
+BASELINE_REPORT="$REPORT_DIR/t1_pose_baselines.json"
+BASELINE_TABLE="$REPORT_DIR/t1_pose_baselines.csv"
 
 [[ -f "$FINAL_TEST_JSON" ]] || { echo "Final test record missing: $FINAL_TEST_JSON" >&2; exit 2; }
 singularity exec "$IMAGE" python3 Training/artifact_freeze.py "$RUN_DIR/artifact_manifest.json"
 singularity exec "$IMAGE" python3 -c 'import hashlib,json,pathlib,sys; x=json.load(open(sys.argv[1])); m=json.load(open(sys.argv[3])); payload={**x,"report_fingerprint":None}; fp=hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False).encode()).hexdigest(); assert x["schema_version"] == 2 and x["evaluation_protocol"] == "validation_frozen_checkpoint_single_test_v2" and x["report_fingerprint"] == fp; assert x["checkpoint"]["name"] == "best_intention"; assert x["test_used_for_model_or_checkpoint_selection"] is False; assert x["matrix_authorization"] is not None; assert pathlib.Path(x["source_run"]).resolve() == pathlib.Path(sys.argv[2]).resolve(); assert x["source_artifact_manifest_fingerprint"] == m["manifest_fingerprint"]; assert x["checkpoint"]["sha256"] == x["matrix_authorization"]["authorized_checkpoint_sha256"]' "$FINAL_TEST_JSON" "$RUN_DIR" "$RUN_DIR/artifact_manifest.json"
 
-if [[ -e "$PREDICTIONS" || -e "$PREDICTION_REPORT" ]]; then
-  echo "Prediction outputs already exist; refusing to overwrite." >&2
+if [[ -f "$PREDICTIONS" && -f "$PREDICTION_REPORT" ]]; then
+  singularity exec "$IMAGE" python3 Training/validate_postprocess_resume.py prediction \
+    --csv "$PREDICTIONS" --report "$PREDICTION_REPORT" --run-dir "$RUN_DIR"
+elif [[ -e "$PREDICTIONS" || -e "$PREDICTION_REPORT" ]]; then
+  echo "Incomplete prediction-output pair; refusing unsafe resume." >&2
   exit 2
+else
+  mkdir -p "$REPORT_DIR"
+  singularity exec --nv "$IMAGE" \
+    python3 Training/export_residual_predictions.py \
+    --run-dir "$RUN_DIR" \
+    --checkpoint best_intention_model.pt \
+    --master-dir "$MASTER_DIR" \
+    --split test \
+    --final-test-report "$FINAL_TEST_JSON" \
+    --output-csv "$PREDICTIONS" \
+    --report-out "$PREDICTION_REPORT" \
+    --device cuda --batch-size 64 --num-workers 2
 fi
-mkdir -p "$REPORT_DIR"
-singularity exec --nv "$IMAGE" \
-  python3 Training/export_residual_predictions.py \
-  --run-dir "$RUN_DIR" \
-  --checkpoint best_intention_model.pt \
-  --master-dir "$MASTER_DIR" \
-  --split test \
-  --final-test-report "$FINAL_TEST_JSON" \
-  --output-csv "$PREDICTIONS" \
-  --report-out "$PREDICTION_REPORT" \
-  --device cuda --batch-size 64 --num-workers 2
 
-singularity exec "$IMAGE" \
-  python3 Training/evaluation/evaluate_grouped_predictions.py \
-  --predictions "$PREDICTIONS" \
-  --prediction-report "$PREDICTION_REPORT" \
-  --report-out "$REPORT_DIR/grouped_metrics.json" \
-  --table-out "$REPORT_DIR/grouped_metrics.csv" \
-  --bootstrap-iterations 10000 --bootstrap-seed 42 --sequence-bootstrap
+if [[ -f "$GROUPED_REPORT" && -f "$GROUPED_TABLE" ]]; then
+  singularity exec "$IMAGE" python3 Training/validate_postprocess_resume.py grouped \
+    --csv "$PREDICTIONS" --prediction-report "$PREDICTION_REPORT" \
+    --report "$GROUPED_REPORT" --table "$GROUPED_TABLE"
+elif [[ -e "$GROUPED_REPORT" || -e "$GROUPED_TABLE" ]]; then
+  echo "Incomplete grouped-output pair; refusing unsafe resume." >&2
+  exit 2
+else
+  singularity exec "$IMAGE" \
+    python3 Training/evaluation/evaluate_grouped_predictions.py \
+    --predictions "$PREDICTIONS" \
+    --prediction-report "$PREDICTION_REPORT" \
+    --report-out "$GROUPED_REPORT" \
+    --table-out "$GROUPED_TABLE" \
+    --bootstrap-iterations 10000 --bootstrap-seed 42 --sequence-bootstrap
+fi
 
-singularity exec "$IMAGE" \
-  python3 Training/evaluate_pose_baselines.py \
-  --config "$RUN_DIR/config.json" \
-  --report-out "$REPORT_DIR/t1_pose_baselines.json" \
-  --details-out "$REPORT_DIR/t1_pose_baselines.csv"
+if [[ -f "$BASELINE_REPORT" && -f "$BASELINE_TABLE" ]]; then
+  singularity exec "$IMAGE" python3 Training/validate_postprocess_resume.py baseline \
+    --report "$BASELINE_REPORT" --table "$BASELINE_TABLE" \
+    --config "$RUN_DIR/config.json"
+elif [[ -e "$BASELINE_REPORT" || -e "$BASELINE_TABLE" ]]; then
+  echo "Incomplete baseline-output pair; refusing unsafe resume." >&2
+  exit 2
+else
+  singularity exec "$IMAGE" \
+    python3 Training/evaluate_pose_baselines.py \
+    --config "$RUN_DIR/config.json" \
+    --report-out "$BASELINE_REPORT" \
+    --details-out "$BASELINE_TABLE"
+fi
 
 if singularity exec "$IMAGE" python3 -c 'import pandas as pd,sys; x=pd.read_csv(sys.argv[1],nrows=1); assert any(c.startswith("modality_") and c.endswith("_weight") for c in x.columns)' "$PREDICTIONS"; then
-  singularity exec "$IMAGE" \
-    python3 Training/evaluation/summarize_modality_weights.py \
-    --predictions "$PREDICTIONS" --output-dir "$REPORT_DIR/modality_weights"
+  WEIGHT_REPORT="$REPORT_DIR/modality_weights/summary.json"
+  WEIGHT_TABLE="$REPORT_DIR/modality_weights/modality_weights_by_window.csv"
+  if [[ -f "$WEIGHT_REPORT" && -f "$WEIGHT_TABLE" ]]; then
+    singularity exec "$IMAGE" python3 Training/validate_postprocess_resume.py modality \
+      --csv "$PREDICTIONS" --report "$WEIGHT_REPORT" --table "$WEIGHT_TABLE"
+  elif [[ -e "$WEIGHT_REPORT" || -e "$WEIGHT_TABLE" ]]; then
+    echo "Incomplete modality-weight output pair; refusing unsafe resume." >&2
+    exit 2
+  else
+    singularity exec "$IMAGE" \
+      python3 Training/evaluation/summarize_modality_weights.py \
+      --predictions "$PREDICTIONS" --output-dir "$REPORT_DIR/modality_weights"
+  fi
 else
   echo "Selected model has no modality-wise weights; skipping weight report."
 fi

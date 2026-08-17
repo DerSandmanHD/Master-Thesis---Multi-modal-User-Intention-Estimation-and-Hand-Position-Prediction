@@ -48,7 +48,8 @@ BASELINE_REPORT="$REPORT_DIR/t1_pose_baselines.json"
 BASELINE_TABLE="$REPORT_DIR/t1_pose_baselines.csv"
 
 [[ -f "$FINAL_TEST_JSON" ]] || { echo "Final test record missing: $FINAL_TEST_JSON" >&2; exit 2; }
-singularity exec "$IMAGE" python3 Training/artifact_freeze.py "$RUN_DIR/artifact_manifest.json"
+singularity exec "$IMAGE" python3 Training/artifact_freeze.py \
+  "$RUN_DIR/artifact_manifest.json" --allow-historical-checkout
 singularity exec "$IMAGE" python3 -c 'import hashlib,json,pathlib,sys; x=json.load(open(sys.argv[1])); m=json.load(open(sys.argv[3])); payload={**x,"report_fingerprint":None}; fp=hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False).encode()).hexdigest(); assert x["schema_version"] == 2 and x["evaluation_protocol"] == "validation_frozen_checkpoint_single_test_v2" and x["report_fingerprint"] == fp; assert x["checkpoint"]["name"] == "best_intention"; assert x["test_used_for_model_or_checkpoint_selection"] is False; assert x["matrix_authorization"] is not None; assert pathlib.Path(x["source_run"]).resolve() == pathlib.Path(sys.argv[2]).resolve(); assert x["source_artifact_manifest_fingerprint"] == m["manifest_fingerprint"]; assert x["checkpoint"]["sha256"] == x["matrix_authorization"]["authorized_checkpoint_sha256"]' "$FINAL_TEST_JSON" "$RUN_DIR" "$RUN_DIR/artifact_manifest.json"
 
 if [[ -f "$PREDICTIONS" && -f "$PREDICTION_REPORT" ]]; then

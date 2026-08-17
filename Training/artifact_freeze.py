@@ -747,10 +747,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--allow-running", action="store_true")
+    parser.add_argument(
+        "--allow-historical-checkout",
+        action="store_true",
+        help=(
+            "Validate immutable run artifacts from a later reporting checkout; "
+            "the training Git identity remains fingerprint-bound in the manifest."
+        ),
+    )
     args = parser.parse_args()
     try:
         manifest = validate_artifact_freeze(
-            args.manifest, require_complete=not args.allow_running
+            args.manifest,
+            require_complete=not args.allow_running,
+            require_current_git_state=not args.allow_historical_checkout,
         )
     except (ArtifactFreezeError, FileNotFoundError, OSError, ValueError) as exc:
         print(f"ERROR: {type(exc).__name__}: {exc}")

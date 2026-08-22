@@ -55,6 +55,15 @@ for sequence_id in "${SELECTED_SEQUENCES[@]}"; do
       --frame-exclusion-reason "Reviewed MP4 ends one RGB frame before the VRS stream; the unmatched final VRS record is excluded explicitly."
     )
   fi
+  if [[ "$sequence_id" == "Edu_3_20260604_170622" ]]; then
+    # This reviewed MP4 also ends one frame before the source VRS RGB stream.
+    # Preserve the original DEVICE_TIME mapping for every retained frame and
+    # record the exceptional final source frame explicitly.
+    FRAME_EXCLUSION_ARGS+=(
+      --exclude-vrs-rgb-frame Edu_3_20260604_170622:856
+      --frame-exclusion-reason "Reviewed MP4 ends one RGB frame before the VRS stream; the unmatched final VRS record is excluded explicitly."
+    )
+  fi
 done
 
 singularity exec "$IMAGE" \

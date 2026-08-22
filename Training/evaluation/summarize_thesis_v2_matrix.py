@@ -225,7 +225,15 @@ def _validate_source_manifest_binding(
     }
 
 
-def _same_number(left: Any, right: Any, *, tolerance: float = 1e-8) -> bool:
+def _same_number(left: Any, right: Any, *, tolerance: float = 1e-6) -> bool:
+    """Compare persisted metrics while accepting expected Float32 rounding.
+
+    Final-test metrics are emitted by PyTorch as Float32 values, whereas the
+    summary recomputes classification rates from integer confusion matrices in
+    Python Float64.  A 1e-6 tolerance is far below any reportable metric
+    precision, but comfortably exceeds one Float32 unit in the last place for
+    probabilities near one.
+    """
     if left is None or right is None:
         return left is right
     return math.isclose(float(left), float(right), rel_tol=tolerance, abs_tol=tolerance)

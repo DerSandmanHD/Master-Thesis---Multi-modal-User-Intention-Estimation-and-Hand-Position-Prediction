@@ -43,8 +43,18 @@ mapfile -t SELECTED_SEQUENCES < <(
 )
 [[ "${#SELECTED_SEQUENCES[@]}" -gt 0 ]] || { echo "No qualitative sequences selected" >&2; exit 2; }
 SIDECAR_SEQUENCE_ARGS=()
+FRAME_EXCLUSION_ARGS=()
 for sequence_id in "${SELECTED_SEQUENCES[@]}"; do
   SIDECAR_SEQUENCE_ARGS+=(--sequence "$sequence_id")
+  if [[ "$sequence_id" == "Jona_7_20260616_182214" ]]; then
+    # This reviewed MP4 ends one frame before the source VRS RGB stream.
+    # Keep the exception explicit and sidecar-hash-bound; never truncate frames
+    # generically or apply it if this sequence was not selected.
+    FRAME_EXCLUSION_ARGS+=(
+      --exclude-vrs-rgb-frame Jona_7_20260616_182214:1165
+      --frame-exclusion-reason "Reviewed MP4 ends one RGB frame before the VRS stream; the unmatched final VRS record is excluded explicitly."
+    )
+  fi
 done
 
 singularity exec "$IMAGE" \
@@ -54,6 +64,7 @@ singularity exec "$IMAGE" \
   --video-dir Data_collection/Data_mp4 \
   --master-dir Data_collection/master_datasets \
   --output-dir "$ALIGNMENT_DIR" \
+  "${FRAME_EXCLUSION_ARGS[@]}" \
   "${SIDECAR_SEQUENCE_ARGS[@]}"
 
 singularity exec "$IMAGE" \

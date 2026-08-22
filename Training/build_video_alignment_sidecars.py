@@ -14,6 +14,7 @@ from video_alignment import (
     VIDEO_ALIGNMENT_FILE_SUFFIX,
     build_video_alignment_sidecar,
     file_identity,
+    map_vrs_rgb_frames_to_video,
     sha256_file,
     validate_video_alignment_sidecar,
     validate_visual_manifest,
@@ -38,8 +39,38 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--sequence", action="append", default=[])
+    parser.add_argument(
+        "--exclude-vrs-rgb-frame",
+        action="append",
+        default=[],
+        metavar="SEQUENCE_ID:FRAME_INDEX",
+        help=(
+            "Reviewed VRS RGB ordinal with no MP4 counterpart. This is explicit "
+            "rather than a silent frame-count truncation."
+        ),
+    )
+    parser.add_argument(
+        "--frame-exclusion-reason",
+        default=None,
+        help="Required review note when --exclude-vrs-rgb-frame is used.",
+    )
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
+
+
+def parse_frame_exclusions(values: list[str]) -> dict[str, tuple[int, ...]]:
+    exclusions: dict[str, list[int]] = {}
+    for value in values:
+        sequence_id, separator, index_text = value.rpartition(":")
+        if not separator or not sequence_id or not index_text.isdigit():
+            raise ValueError(
+                "--exclude-vrs-rgb-frame must be SEQUENCE_ID:FRAME_INDEX"
+            )
+        exclusions.setdefault(sequence_id, []).append(int(index_text))
+    parsed = {key: tuple(sorted(indices)) for key, indices in exclusions.items()}
+    if any(len(indices) != len(set(indices)) for indices in parsed.values()):
+        raise ValueError("Duplicate VRS RGB frame exclusion")
+    return parsed
 
 
 def vrs_rgb_timestamps(vrs_path: Path, rgb_stream_id: str) -> np.ndarray:
@@ -90,6 +121,17 @@ def main() -> int:
     selected = list(dict.fromkeys(args.sequence)) if args.sequence else sorted(entries)
     if not selected:
         raise ValueError("No visual-cache sequences selected")
+    exclusions = parse_frame_exclusions(args.exclude_vrs_rgb_frame)
+    if exclusions and not args.frame_exclusion_reason:
+        raise ValueError(
+            "--frame-exclusion-reason is required with --exclude-vrs-rgb-frame"
+        )
+    unknown_exclusions = sorted(set(exclusions) - set(selected))
+    if unknown_exclusions:
+        raise ValueError(
+            "VRS RGB frame exclusions refer to unselected sequences: "
+            + ", ".join(unknown_exclusions)
+        )
 
     for sequence_id in selected:
         if sequence_id not in entries:
@@ -100,21 +142,25 @@ def main() -> int:
             "mp4": video_dir / f"{sequence_id}.mp4",
         }
         source_files = {name: file_identity(path) for name, path in paths.items()}
-        timestamps = vrs_rgb_timestamps(
+        source_timestamps = vrs_rgb_timestamps(
             paths["vrs"], str(alignment["rgb_stream_id"])
         )
         video_frames = reported_video_frame_count(paths["mp4"])
-        if video_frames != len(timestamps):
-            raise ValueError(
-                f"MP4/VRS RGB frame count mismatch for {sequence_id}: "
-                f"{video_frames} != {len(timestamps)}"
-            )
+        excluded = exclusions.get(sequence_id, ())
+        timestamps = map_vrs_rgb_frames_to_video(
+            source_timestamps,
+            video_frame_count=video_frames,
+            excluded_vrs_rgb_frame_indices=excluded,
+        )
         sidecar = build_video_alignment_sidecar(
             sequence_id=sequence_id,
             rgb_capture_timestamps_ns=timestamps,
             source_files=source_files,
             visual_manifest=manifest,
             visual_manifest_sha256=manifest_sha256,
+            source_vrs_rgb_frame_count=len(source_timestamps),
+            excluded_vrs_rgb_frame_indices=excluded,
+            frame_exclusion_reason=(args.frame_exclusion_reason if excluded else None),
         )
         output_path = output_dir / f"{sequence_id}{VIDEO_ALIGNMENT_FILE_SUFFIX}"
         if output_path.exists() and not args.overwrite:

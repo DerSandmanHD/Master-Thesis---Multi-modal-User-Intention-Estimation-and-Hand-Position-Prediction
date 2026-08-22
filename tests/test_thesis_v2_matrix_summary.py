@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 import pandas as pd
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,6 +28,7 @@ from summarize_thesis_v2_matrix import (  # noqa: E402
     MatrixSummaryError,
     _classification_fields,
     build_matrix_summary,
+    validate_historical_artifact_freeze,
     write_outputs,
 )
 from grouped_metrics import (  # noqa: E402
@@ -448,6 +450,14 @@ def summarize(fixture: dict, postprocess_root: Path | None = None) -> dict:
             path.read_text(encoding="utf-8")
         ),
     )
+
+
+def test_historical_artifact_validator_does_not_require_training_checkout() -> None:
+    manifest = Path("historical/artifact_manifest.json")
+    with patch("summarize_thesis_v2_matrix.validate_artifact_freeze") as validate:
+        validate.return_value = {"status": "complete"}
+        assert validate_historical_artifact_freeze(manifest) == {"status": "complete"}
+        validate.assert_called_once_with(manifest, require_current_git_state=False)
 
 
 def test_authoritative_summary_keeps_seed_rows_and_aggregates_separate(

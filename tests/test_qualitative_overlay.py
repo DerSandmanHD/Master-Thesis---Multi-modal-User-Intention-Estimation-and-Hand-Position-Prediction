@@ -40,6 +40,7 @@ from video_alignment import (  # noqa: E402
     build_video_alignment_sidecar,
     first_rgb_frame_at_or_after,
     load_video_alignment_sidecar,
+    map_vrs_rgb_frames_to_video,
     prediction_indices_for_rgb_frames,
     validate_video_alignment_sidecar,
 )
@@ -303,6 +304,42 @@ class QualitativeOverlayTests(unittest.TestCase):
                 sequence_id="S",
                 expected_source_files=source_files(),
                 visual_manifest=manifest,
+                visual_manifest_sha256="c" * 64,
+            )
+
+    def test_explicit_vrs_frame_exclusion_is_hash_bound(self) -> None:
+        original = np.asarray([10, 11, 12, 13], dtype=np.int64) * 1_000_000_000
+        timestamps = map_vrs_rgb_frames_to_video(
+            original,
+            video_frame_count=3,
+            excluded_vrs_rgb_frame_indices=(3,),
+        )
+        sidecar = build_video_alignment_sidecar(
+            sequence_id="S",
+            rgb_capture_timestamps_ns=timestamps,
+            source_files=source_files(),
+            visual_manifest=visual_manifest(),
+            visual_manifest_sha256="c" * 64,
+            source_vrs_rgb_frame_count=4,
+            excluded_vrs_rgb_frame_indices=(3,),
+            frame_exclusion_reason="Reviewed MP4 truncation.",
+        )
+        validated = validate_video_alignment_sidecar(
+            sidecar,
+            sequence_id="S",
+            expected_source_files=source_files(),
+            visual_manifest=visual_manifest(),
+            visual_manifest_sha256="c" * 64,
+        )
+        self.assertTrue(np.array_equal(validated, original[:3]))
+        self.assertEqual(sidecar["excluded_vrs_rgb_frame_indices"], [3])
+        sidecar["excluded_vrs_rgb_frame_indices"] = [2]
+        with self.assertRaises(ValueError):
+            validate_video_alignment_sidecar(
+                sidecar,
+                sequence_id="S",
+                expected_source_files=source_files(),
+                visual_manifest=visual_manifest(),
                 visual_manifest_sha256="c" * 64,
             )
 

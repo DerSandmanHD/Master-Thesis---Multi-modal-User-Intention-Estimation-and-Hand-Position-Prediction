@@ -7,7 +7,7 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Mapping
+from typing import Mapping, Sequence
 
 import numpy as np
 
@@ -20,10 +20,11 @@ from clip_alignment import (
 )
 
 
-VIDEO_ALIGNMENT_SCHEMA_VERSION = "rgb_mp4_device_time_alignment_v1"
+VIDEO_ALIGNMENT_SCHEMA_VERSION = "rgb_mp4_device_time_alignment_v2"
 VIDEO_ALIGNMENT_FILE_SUFFIX = ".rgb_device_time_v2.json"
 VIDEO_MAPPING_POLICY = (
-    "MP4 frame ordinal equals VRS RGB stream record ordinal; frame counts are "
+    "MP4 frame ordinal equals the ordinal of the retained VRS RGB stream record; "
+    "any excluded VRS records are explicit, hash-bound, and frame counts are "
     "validated before and after rendering"
 )
 
@@ -67,6 +68,40 @@ def _sidecar_fingerprint(sidecar: Mapping[str, object]) -> str:
     return canonical_json_hash(payload)
 
 
+def map_vrs_rgb_frames_to_video(
+    rgb_capture_timestamps_ns: np.ndarray,
+    *,
+    video_frame_count: int,
+    excluded_vrs_rgb_frame_indices: Sequence[int] = (),
+) -> np.ndarray:
+    """Return VRS timestamps that have an explicit ordinal match in the MP4.
+
+    A count mismatch is never repaired implicitly.  A reviewed source-video
+    truncation may be represented only by naming every omitted VRS RGB ordinal.
+    The returned timestamps then retain their original DEVICE_TIME values.
+    """
+
+    timestamps = validate_strict_timestamps(
+        rgb_capture_timestamps_ns, name="VRS RGB capture"
+    )
+    if isinstance(video_frame_count, bool) or int(video_frame_count) <= 0:
+        raise ValueError("video_frame_count must be a positive integer")
+    if int(video_frame_count) != video_frame_count:
+        raise ValueError("video_frame_count must be an integer")
+    excluded = tuple(int(index) for index in excluded_vrs_rgb_frame_indices)
+    if len(set(excluded)) != len(excluded) or tuple(sorted(excluded)) != excluded:
+        raise ValueError("Excluded VRS RGB frame indices must be sorted and unique")
+    if any(index < 0 or index >= len(timestamps) for index in excluded):
+        raise ValueError("Excluded VRS RGB frame index lies outside the VRS stream")
+    if len(timestamps) - len(excluded) != int(video_frame_count):
+        raise ValueError(
+            "MP4/VRS RGB frame count mismatch: "
+            f"{video_frame_count} != {len(timestamps)} after explicit exclusions "
+            f"{list(excluded)}"
+        )
+    return np.delete(timestamps, excluded)
+
+
 def build_video_alignment_sidecar(
     *,
     sequence_id: str,
@@ -74,6 +109,9 @@ def build_video_alignment_sidecar(
     source_files: dict,
     visual_manifest: Mapping[str, object],
     visual_manifest_sha256: str,
+    source_vrs_rgb_frame_count: int | None = None,
+    excluded_vrs_rgb_frame_indices: Sequence[int] = (),
+    frame_exclusion_reason: str | None = None,
 ) -> dict:
     timestamps = validate_strict_timestamps(
         rgb_capture_timestamps_ns, name="VRS RGB capture"
@@ -98,6 +136,24 @@ def build_video_alignment_sidecar(
     timestamp_digest = hashlib.sha256(
         timestamps.astype("<i8", copy=False).tobytes()
     ).hexdigest()
+    source_count = (
+        len(timestamps)
+        if source_vrs_rgb_frame_count is None
+        else int(source_vrs_rgb_frame_count)
+    )
+    excluded = tuple(int(index) for index in excluded_vrs_rgb_frame_indices)
+    if source_count < len(timestamps):
+        raise ValueError("Source VRS RGB frame count is smaller than mapped timestamps")
+    if len(set(excluded)) != len(excluded) or tuple(sorted(excluded)) != excluded:
+        raise ValueError("Excluded VRS RGB frame indices must be sorted and unique")
+    if any(index < 0 or index >= source_count for index in excluded):
+        raise ValueError("Excluded VRS RGB frame index lies outside the source stream")
+    if source_count - len(excluded) != len(timestamps):
+        raise ValueError("Source VRS count, exclusions, and mapped timestamps disagree")
+    if excluded and not isinstance(frame_exclusion_reason, str):
+        raise ValueError("Explicit VRS RGB frame exclusions require a review reason")
+    if not excluded and frame_exclusion_reason is not None:
+        raise ValueError("A frame exclusion reason requires an explicit exclusion")
     sidecar = {
         "schema_version": VIDEO_ALIGNMENT_SCHEMA_VERSION,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -109,6 +165,9 @@ def build_video_alignment_sidecar(
         "rgb_stream_id": alignment.get("rgb_stream_id"),
         "rgb_timestamp_source": "VRS image_record.capture_timestamp_ns",
         "mapping_policy": VIDEO_MAPPING_POLICY,
+        "source_vrs_rgb_frame_count": source_count,
+        "excluded_vrs_rgb_frame_indices": list(excluded),
+        "frame_exclusion_reason": frame_exclusion_reason,
         "frame_count": int(len(timestamps)),
         "first_capture_timestamp_ns": int(timestamps[0]),
         "last_capture_timestamp_ns": int(timestamps[-1]),
@@ -152,6 +211,27 @@ def validate_video_alignment_sidecar(
     )
     if int(sidecar.get("frame_count", -1)) != len(timestamps):
         raise ValueError("Video sidecar frame count does not match timestamps")
+    source_count = sidecar.get("source_vrs_rgb_frame_count")
+    excluded_value = sidecar.get("excluded_vrs_rgb_frame_indices")
+    if isinstance(source_count, bool) or not isinstance(source_count, int):
+        raise ValueError("Video sidecar source VRS RGB frame count is invalid")
+    if not isinstance(excluded_value, list) or any(
+        isinstance(index, bool) or not isinstance(index, int)
+        for index in excluded_value
+    ):
+        raise ValueError("Video sidecar excluded VRS RGB frame indices are invalid")
+    excluded = tuple(excluded_value)
+    if len(set(excluded)) != len(excluded) or tuple(sorted(excluded)) != excluded:
+        raise ValueError("Video sidecar excluded VRS RGB frame indices are invalid")
+    if any(index < 0 or index >= source_count for index in excluded):
+        raise ValueError("Video sidecar excluded VRS RGB frame index is invalid")
+    if source_count - len(excluded) != len(timestamps):
+        raise ValueError("Video sidecar source VRS RGB frame count is inconsistent")
+    reason = sidecar.get("frame_exclusion_reason")
+    if excluded and (not isinstance(reason, str) or not reason.strip()):
+        raise ValueError("Video sidecar has unexplained VRS RGB frame exclusions")
+    if not excluded and reason is not None:
+        raise ValueError("Video sidecar has an unexpected frame exclusion reason")
     timestamp_digest = hashlib.sha256(
         timestamps.astype("<i8", copy=False).tobytes()
     ).hexdigest()

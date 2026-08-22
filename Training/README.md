@@ -13,6 +13,9 @@ Velocity, modality-wise Fusion, gruppierte Auswertung und einen vollständigen
 Artifact Freeze. Die maschinenlesbare minimale Matrix steht in
 `configs/experiment_matrix_v2.json`.
 
+Eine kurze Einordnung der aktiven Python-Entry-Points, Hilfsmodule und
+historischen Werkzeuge steht in `SCRIPT_GUIDE.md`.
+
 Ausführungsstand vom 2026-08-17: Der kausale v3-Datasetstand ist auf dem
 Cluster für 214 Sequenzen materialisiert. Korrigierter CLIP-Cache (214/214),
 48 Validation-Läufe, Validation-only-Checkpointauswahl, 48 autorisierte

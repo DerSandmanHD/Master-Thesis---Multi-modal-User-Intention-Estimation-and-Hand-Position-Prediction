@@ -73,6 +73,19 @@ class MatrixSummaryError(ValueError):
     """Raised when a final result cannot prove its immutable provenance."""
 
 
+def validate_historical_artifact_freeze(manifest_path: Path) -> dict[str, Any]:
+    """Validate immutable run artifacts from a later reporting checkout.
+
+    The training Git identity is already fingerprint-bound in the manifest.
+    Reporting must therefore validate the recorded run inputs and outputs, not
+    require the report generator to be checked out at the old training commit.
+    """
+
+    return validate_artifact_freeze(
+        manifest_path, require_current_git_state=False
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--matrix", type=Path, default=DEFAULT_MATRIX)
@@ -1479,7 +1492,7 @@ def build_matrix_summary(
     postprocess_root: Path | None = None,
     project_root: Path = PROJECT_ROOT,
     artifact_validator: Callable[[Path], Mapping[str, Any]] = (
-        validate_artifact_freeze
+        validate_historical_artifact_freeze
     ),
 ) -> dict[str, Any]:
     """Validate all matrix cells and return seed plus aggregate result objects."""

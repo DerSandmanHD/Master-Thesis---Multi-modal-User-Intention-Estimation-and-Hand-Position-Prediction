@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-08-16T08:49:30.525136+00:00",
+  "status": "passed",
+  "training_started": false,
+  "test_metrics_computed": false,
+  "dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
+  "experiment_tag": "terminal_endpose_corrected_v2",
+  "config": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/configs/models/residual_transformer_endpose_v2.json",
+  "config_sha256": "71059f97f4c637b810e3d78f1afc5042d39808638c3cf17b7d3149e8bf0b93cd",
+  "audit_report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/terminal_endpose_corrected_v2/audit/endpose_target_audit.json",
+  "audit_report_sha256": "d8ece9a59882e840e51cf9f30c60857f3d2c9def6ed4390294ca57b9aa512704",
+  "selected_sequences": 214,
+  "sequence_fingerprint": "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd",
+  "source_content_fingerprint": "b2cfd10991c5638277795aadcabfd322d3e9eb41dffb70696b63dc657f5f22cb",
+  "split_participants": {
+    "train": [
+      "Angelina",
+      "Berat",
+      "David",
+      "Felix",
+      "Florian",
+      "Isa",
+      "Jan",
+      "Jola",
+      "Julienco",
+      "Leys",
+      "Maria",
+      "Melih",
+      "Miro",
+      "Paul",
+      "Suthan",
+      "Tarik",
+      "Test",
+      "Urim",
+      "Yuzhi"
+    ],
+    "validation": [
+      "Atilla",
+      "Ermal",
+      "Vanessa"
+    ],
+    "test": [
+      "Edu",
+      "Jona",
+      "Mona"
+    ]
+  },
+  "windows": {
+    "train": 15189,
+    "validation": 1978,
+    "test": 2199
+  },
+  "terminal_target_windows": {
+    "train": 2717,
+    "validation": 295,
+    "test": 257
+  },
+  "auxiliary_t1_target_windows": {
+    "train": 2445,
+    "validation": 250,
+    "test": 222
+  },
+  "resolved_position_scale_m": [
+    0.23242485471994254,
+    0.11748612634395067,
+    0.08252817010922685
+  ],
+  "resolved_auxiliary_position_scale_m": [
+    0.12069557421103723,
+    0.08343117797564745,
+    0.06908492422727082
+  ],
+  "sequence_sampling_mass_min": 89.34705882352917,
+  "sequence_sampling_mass_max": 89.34705882352964,
+  "trainable_parameters": 65860,
+  "model_forward_checked": true,
+  "loss_forward_checked": true,
+  "selection_split": "validation",
+  "test_forbidden_during_search": true,
+  "planned_search_trials": 12,
+  "planned_confirmation_runs": 9,
+  "planned_final_seeds": [
+    42,
+    43,
+    44
+  ],
+  "errors": []
+}

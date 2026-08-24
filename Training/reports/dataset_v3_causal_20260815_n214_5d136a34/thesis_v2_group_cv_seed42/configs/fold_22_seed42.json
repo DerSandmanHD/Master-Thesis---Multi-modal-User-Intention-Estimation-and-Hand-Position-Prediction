@@ -1,0 +1,128 @@
+{
+  "run_name": "group_cv_fold22",
+  "model_type": "hierarchical_residual_pose_transformer_v2",
+  "data": {
+    "master_dir": "Data_collection/master_datasets",
+    "required_observation_alignment_version": "causal_backward_device_time_v1",
+    "manifest_filter": {
+      "path": "dataset_manifest.csv",
+      "allowed_statuses": [
+        "valid"
+      ],
+      "allowed_next_actions": [
+        "ready_for_master_merge"
+      ],
+      "strict": true
+    },
+    "dataset_contract": {
+      "expected_selected_sequences": 214,
+      "expected_sequence_fingerprint": "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd"
+    },
+    "feature_profile": "multimodal_robot_frame_v1",
+    "window_size": 60,
+    "stride": 10,
+    "future_horizon_seconds": 1.0,
+    "pose_intent_ids": [
+      2
+    ],
+    "include_hand_references": true,
+    "max_hand_reference_age_seconds": 0.25,
+    "minimum_observed_fraction": 0.05,
+    "max_timestamp_gap_seconds": 0.2,
+    "validation_fraction": 0.2,
+    "test_fraction": 0.2,
+    "validation_participants": [
+      "Vanessa"
+    ],
+    "test_participants": [
+      "Urim"
+    ],
+    "train_participants": [
+      "Angelina",
+      "Atilla",
+      "Berat",
+      "David",
+      "Edu",
+      "Ermal",
+      "Felix",
+      "Florian",
+      "Isa",
+      "Jan",
+      "Jola",
+      "Jona",
+      "Julienco",
+      "Leys",
+      "Maria",
+      "Melih",
+      "Miro",
+      "Mona",
+      "Paul",
+      "Suthan",
+      "Tarik",
+      "Test",
+      "Yuzhi"
+    ]
+  },
+  "model": {
+    "fusion_mode": "temporal_channel_gated",
+    "intention_head_mode": "hierarchical",
+    "d_model": 64,
+    "nhead": 4,
+    "num_layers": 2,
+    "dim_feedforward": 128,
+    "dropout": 0.15
+  },
+  "training": {
+    "seed": 42,
+    "epochs": 20,
+    "batch_size": 32,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "assistance_loss_weight": 1.0,
+    "assistance_type_loss_weight": 1.0,
+    "receiving_hand_loss_weight": 1.0,
+    "pose_loss_weight": 1.0,
+    "orientation_loss_weight": 0.25,
+    "gradient_clip_norm": 1.0,
+    "early_stopping_patience": 7,
+    "num_workers": 2
+  },
+  "group_cv": {
+    "protocol": "Each fold uses the held-out partition as outer evaluation, the next partition as inner validation for checkpoint selection, and all remaining participants for training. Outer metrics are never used for checkpoint or architecture selection.",
+    "split_fingerprint_sha256": "54437368fac762a7f479ea70f5741d9c3cd635b3cb8591053d19d87ebf67d872",
+    "fold": 22,
+    "train_participants": [
+      "Angelina",
+      "Atilla",
+      "Berat",
+      "David",
+      "Edu",
+      "Ermal",
+      "Felix",
+      "Florian",
+      "Isa",
+      "Jan",
+      "Jola",
+      "Jona",
+      "Julienco",
+      "Leys",
+      "Maria",
+      "Melih",
+      "Miro",
+      "Mona",
+      "Paul",
+      "Suthan",
+      "Tarik",
+      "Test",
+      "Yuzhi"
+    ],
+    "validation_participants": [
+      "Vanessa"
+    ],
+    "outer_evaluation_participants": [
+      "Urim"
+    ],
+    "checkpoint_selection_split": "validation",
+    "outer_evaluation_used_for_selection": false
+  }
+}

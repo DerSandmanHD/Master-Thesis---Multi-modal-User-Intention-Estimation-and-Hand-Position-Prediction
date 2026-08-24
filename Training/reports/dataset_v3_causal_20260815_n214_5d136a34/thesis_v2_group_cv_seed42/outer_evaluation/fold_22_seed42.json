@@ -1,0 +1,880 @@
+{
+  "schema_version": 2,
+  "evaluation_protocol": "validation_frozen_checkpoint_single_test_v2",
+  "report_fingerprint": "fc1115536f3ae288b2edd48fa7826ac4b96d81cf5406983f63c2f5280fc08357",
+  "split": "test",
+  "source_run": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_22_seed42",
+  "source_artifact_manifest": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_22_seed42/artifact_manifest.json",
+  "source_artifact_manifest_fingerprint": "6d38c234160cb4f8f411a09389086e50b1b6e67c77710c891b61e75d4b249b98",
+  "dataset_identifier": "dataset_v3_causal_20260815_n214_5d136a34",
+  "dataset_content_fingerprint": "339c313d56c7be8564a3035cd8334bad103e15659315c33135e96b95e820245a",
+  "source_content_fingerprint": "b2cfd10991c5638277795aadcabfd322d3e9eb41dffb70696b63dc657f5f22cb",
+  "model_type": "hierarchical_residual_pose_transformer_v2",
+  "trainable_parameters": 184015,
+  "training_task_semantics": {
+    "future_pose_loss_enabled": true,
+    "future_pose_loss_weight": 1.0,
+    "auxiliary_pose_loss_enabled": false,
+    "auxiliary_pose_loss_weight": 0.0,
+    "pose_metrics_role": "main_learned_output"
+  },
+  "checkpoint": {
+    "name": "best_intention",
+    "path": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_22_seed42/best_intention_model.pt",
+    "sha256": "8eb2709eeabc95472ea6f48a1b77ed2b9cd992c1fc36d7e52f1a82702466fc64",
+    "epoch": 12,
+    "selection_split": "validation",
+    "selection_metric": "validation_intention_macro_f1",
+    "selection_value": 0.7956449246746904
+  },
+  "matrix_authorization": null,
+  "test_metrics": {
+    "loss": {
+      "total": 0.6298014581003246,
+      "intention": 0.47617959524710574,
+      "assistance": 0.31384188184591916,
+      "assistance_type": 0.16233771281716552,
+      "receiving_hand": 0.14712550868109153,
+      "position": 0.0010120866274268463,
+      "orientation": 0.021937061036969054,
+      "auxiliary_position": 0.0,
+      "auxiliary_orientation": 0.0
+    },
+    "intention": {
+      "accuracy": 0.8945615887641907,
+      "macro_f1": 0.8584112441938405,
+      "macro_f1_supported": 0.8584112441938405,
+      "per_class_precision": [
+        0.8894080996884736,
+        0.8410596026490066,
+        1.0
+      ],
+      "per_class_recall": [
+        0.976068376068376,
+        0.7341040462427746,
+        0.7552447552447552
+      ],
+      "per_class_f1": [
+        0.9307253463732681,
+        0.7839506172839507,
+        0.8605577689243028
+      ],
+      "support": [
+        585,
+        173,
+        143
+      ],
+      "confusion_matrix": [
+        [
+          571,
+          14,
+          0
+        ],
+        [
+          46,
+          127,
+          0
+        ],
+        [
+          25,
+          10,
+          108
+        ]
+      ],
+      "samples": 901,
+      "class_names": [
+        "continue",
+        "fetch",
+        "handover"
+      ]
+    },
+    "assistance": {
+      "accuracy": 0.9056603908538818,
+      "macro_f1": 0.8914496297083732,
+      "macro_f1_supported": 0.8914496297083732,
+      "per_class_precision": [
+        0.8894080996884736,
+        0.9459459459459459
+      ],
+      "per_class_recall": [
+        0.976068376068376,
+        0.7753164556962026
+      ],
+      "per_class_f1": [
+        0.9307253463732681,
+        0.8521739130434782
+      ],
+      "support": [
+        585,
+        316
+      ],
+      "confusion_matrix": [
+        [
+          571,
+          14
+        ],
+        [
+          71,
+          245
+        ]
+      ],
+      "samples": 901,
+      "class_names": [
+        "continue",
+        "assistance"
+      ]
+    },
+    "assistance_type": {
+      "accuracy": 0.9177215099334717,
+      "macro_f1": 0.9156086938658121,
+      "macro_f1_supported": 0.9156086938658121,
+      "per_class_precision": [
+        0.8808290155440415,
+        0.975609756097561
+      ],
+      "per_class_recall": [
+        0.9826589595375722,
+        0.8391608391608392
+      ],
+      "per_class_f1": [
+        0.9289617486338798,
+        0.9022556390977443
+      ],
+      "support": [
+        173,
+        143
+      ],
+      "confusion_matrix": [
+        [
+          170,
+          3
+        ],
+        [
+          23,
+          120
+        ]
+      ],
+      "samples": 316,
+      "class_names": [
+        "fetch",
+        "handover"
+      ]
+    },
+    "receiving_hand": {
+      "accuracy": 0.9370629191398621,
+      "macro_f1": 0.48375451263537905,
+      "macro_f1_supported": 0.9675090252707581,
+      "per_class_precision": [
+        0.0,
+        1.0
+      ],
+      "per_class_recall": [
+        0.0,
+        0.9370629370629371
+      ],
+      "per_class_f1": [
+        0.0,
+        0.9675090252707581
+      ],
+      "support": [
+        0,
+        143
+      ],
+      "confusion_matrix": [
+        [
+          0,
+          0
+        ],
+        [
+          9,
+          134
+        ]
+      ],
+      "samples": 143,
+      "class_names": [
+        "left",
+        "right"
+      ]
+    },
+    "pose_oracle": {
+      "samples": 101,
+      "position_mean_euclidean_error_cm": 10.502653121948242,
+      "position_mae_cm": 10.502653121948242,
+      "position_root_mean_square_euclidean_error_cm": 12.447724342346191,
+      "position_rmse_cm": 12.447724342346191,
+      "position_median_cm": 9.088395118713379,
+      "orientation_mean_deg": 31.26515007019043,
+      "orientation_median_deg": 25.450925827026367,
+      "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+      "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+    },
+    "pose_end_to_end": {
+      "samples": 101,
+      "position_mean_euclidean_error_cm": 10.53702163696289,
+      "position_mae_cm": 10.53702163696289,
+      "position_root_mean_square_euclidean_error_cm": 12.526276588439941,
+      "position_rmse_cm": 12.526276588439941,
+      "position_median_cm": 9.088395118713379,
+      "orientation_mean_deg": 33.536800384521484,
+      "orientation_median_deg": 25.450925827026367,
+      "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+      "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+    },
+    "last_observation_oracle": {
+      "samples": 101,
+      "position_mean_euclidean_error_cm": 9.371777534484863,
+      "position_mae_cm": 9.371777534484863,
+      "position_root_mean_square_euclidean_error_cm": 14.502538681030273,
+      "position_rmse_cm": 14.502538681030273,
+      "position_median_cm": 2.108285427093506,
+      "orientation_mean_deg": 34.92401123046875,
+      "orientation_median_deg": 5.043623924255371,
+      "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+      "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+    },
+    "pose_fair_common": {
+      "comparison_role": "Exact model-independent paired comparison on valid targets where both left and right reference poses are available; learned oracle-hand, learned predicted-hand and ground-truth-hand persistence are therefore executable for every model",
+      "cohort_definition": "pose_target_valid_and_both_hand_references_valid",
+      "cohort_model_dependent": false,
+      "sample_key_fingerprint": "cab16f2e0853348b02b5cdda99178a204e6a63e54047c4382613a62f53a1ac45",
+      "receiving_hand_context": {
+        "learned_oracle_hand": "ground-truth receiving hand",
+        "learned_end_to_end": "predicted receiving hand",
+        "persistence": "ground-truth receiving hand"
+      },
+      "shared_samples": 101,
+      "coverage_denominator_pose_targets": 101,
+      "methods": {
+        "learned_oracle_hand": {
+          "samples": 101,
+          "position_mean_euclidean_error_cm": 10.502653121948242,
+          "position_mae_cm": 10.502653121948242,
+          "position_root_mean_square_euclidean_error_cm": 12.447724342346191,
+          "position_rmse_cm": 12.447724342346191,
+          "position_median_cm": 9.088395118713379,
+          "orientation_mean_deg": 31.26515007019043,
+          "orientation_median_deg": 25.450925827026367,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "learned_end_to_end": {
+          "samples": 101,
+          "position_mean_euclidean_error_cm": 10.53702163696289,
+          "position_mae_cm": 10.53702163696289,
+          "position_root_mean_square_euclidean_error_cm": 12.526276588439941,
+          "position_rmse_cm": 12.526276588439941,
+          "position_median_cm": 9.088395118713379,
+          "orientation_mean_deg": 33.536800384521484,
+          "orientation_median_deg": 25.450925827026367,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "persistence": {
+          "samples": 101,
+          "position_mean_euclidean_error_cm": 9.371777534484863,
+          "position_mae_cm": 9.371777534484863,
+          "position_root_mean_square_euclidean_error_cm": 14.502538681030273,
+          "position_rmse_cm": 14.502538681030273,
+          "position_median_cm": 2.108285427093506,
+          "orientation_mean_deg": 34.92401123046875,
+          "orientation_median_deg": 5.043623924255371,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      }
+    },
+    "pose_by_terminal_target_regime": {
+      "strictly_before_aggregation": {
+        "interpretation": "pure future terminal forecast",
+        "shared_samples": 0,
+        "coverage_denominator_pose_targets": 0,
+        "methods": {
+          "learned_oracle_hand": {
+            "samples": 0,
+            "position_mean_euclidean_error_cm": null,
+            "position_root_mean_square_euclidean_error_cm": null,
+            "position_mae_cm": null,
+            "position_rmse_cm": null,
+            "position_median_cm": null,
+            "orientation_mean_deg": null,
+            "orientation_median_deg": null,
+            "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+            "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+          },
+          "learned_end_to_end": {
+            "samples": 0,
+            "position_mean_euclidean_error_cm": null,
+            "position_root_mean_square_euclidean_error_cm": null,
+            "position_mae_cm": null,
+            "position_rmse_cm": null,
+            "position_median_cm": null,
+            "orientation_mean_deg": null,
+            "orientation_median_deg": null,
+            "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+            "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+          },
+          "persistence": {
+            "samples": 0,
+            "position_mean_euclidean_error_cm": null,
+            "position_root_mean_square_euclidean_error_cm": null,
+            "position_mae_cm": null,
+            "position_rmse_cm": null,
+            "position_median_cm": null,
+            "orientation_mean_deg": null,
+            "orientation_median_deg": null,
+            "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+            "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+          }
+        }
+      },
+      "partially_overlapping_aggregation": {
+        "interpretation": "terminal-state estimation with partial target evidence",
+        "shared_samples": 0,
+        "coverage_denominator_pose_targets": 0,
+        "methods": {
+          "learned_oracle_hand": {
+            "samples": 0,
+            "position_mean_euclidean_error_cm": null,
+            "position_root_mean_square_euclidean_error_cm": null,
+            "position_mae_cm": null,
+            "position_rmse_cm": null,
+            "position_median_cm": null,
+            "orientation_mean_deg": null,
+            "orientation_median_deg": null,
+            "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+            "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+          },
+          "learned_end_to_end": {
+            "samples": 0,
+            "position_mean_euclidean_error_cm": null,
+            "position_root_mean_square_euclidean_error_cm": null,
+            "position_mae_cm": null,
+            "position_rmse_cm": null,
+            "position_median_cm": null,
+            "orientation_mean_deg": null,
+            "orientation_median_deg": null,
+            "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+            "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+          },
+          "persistence": {
+            "samples": 0,
+            "position_mean_euclidean_error_cm": null,
+            "position_root_mean_square_euclidean_error_cm": null,
+            "position_mae_cm": null,
+            "position_rmse_cm": null,
+            "position_median_cm": null,
+            "orientation_mean_deg": null,
+            "orientation_median_deg": null,
+            "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+            "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+          }
+        }
+      }
+    },
+    "pose_coverage": {
+      "pose_targets": 101,
+      "future_targets": 101,
+      "oracle_reference_valid": 101,
+      "predicted_reference_valid": 101,
+      "fixed_both_references_valid": 101
+    },
+    "auxiliary_t_plus_1": {
+      "pose_oracle": {
+        "samples": 0,
+        "position_mean_euclidean_error_cm": null,
+        "position_root_mean_square_euclidean_error_cm": null,
+        "position_mae_cm": null,
+        "position_rmse_cm": null,
+        "position_median_cm": null,
+        "orientation_mean_deg": null,
+        "orientation_median_deg": null,
+        "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+        "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+      },
+      "pose_end_to_end": {
+        "samples": 0,
+        "position_mean_euclidean_error_cm": null,
+        "position_root_mean_square_euclidean_error_cm": null,
+        "position_mae_cm": null,
+        "position_rmse_cm": null,
+        "position_median_cm": null,
+        "orientation_mean_deg": null,
+        "orientation_median_deg": null,
+        "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+        "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+      },
+      "last_observation_oracle": {
+        "samples": 0,
+        "position_mean_euclidean_error_cm": null,
+        "position_root_mean_square_euclidean_error_cm": null,
+        "position_mae_cm": null,
+        "position_rmse_cm": null,
+        "position_median_cm": null,
+        "orientation_mean_deg": null,
+        "orientation_median_deg": null,
+        "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+        "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+      },
+      "coverage": {
+        "pose_targets": 0,
+        "oracle_reference_valid": 0,
+        "predicted_reference_valid": 0
+      }
+    },
+    "pose_by_handover_progress": {
+      "0-25%": {
+        "pose_oracle": {
+          "samples": 36,
+          "position_mean_euclidean_error_cm": 15.209213256835938,
+          "position_mae_cm": 15.209213256835938,
+          "position_root_mean_square_euclidean_error_cm": 17.124553680419922,
+          "position_rmse_cm": 17.124553680419922,
+          "position_median_cm": 13.575078964233398,
+          "orientation_mean_deg": 48.2833251953125,
+          "orientation_median_deg": 39.28157424926758,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 36,
+          "position_mean_euclidean_error_cm": 15.305633544921875,
+          "position_mae_cm": 15.305633544921875,
+          "position_root_mean_square_euclidean_error_cm": 17.284507751464844,
+          "position_rmse_cm": 17.284507751464844,
+          "position_median_cm": 13.575078964233398,
+          "orientation_mean_deg": 54.65657424926758,
+          "orientation_median_deg": 45.93291091918945,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 36,
+          "position_mean_euclidean_error_cm": 22.907941818237305,
+          "position_mae_cm": 22.907941818237305,
+          "position_root_mean_square_euclidean_error_cm": 23.905437469482422,
+          "position_rmse_cm": 23.905437469482422,
+          "position_median_cm": 24.82169532775879,
+          "orientation_mean_deg": 87.796875,
+          "orientation_median_deg": 94.72772979736328,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      },
+      "25-50%": {
+        "pose_oracle": {
+          "samples": 31,
+          "position_mean_euclidean_error_cm": 6.568454742431641,
+          "position_mae_cm": 6.568454742431641,
+          "position_root_mean_square_euclidean_error_cm": 7.606456279754639,
+          "position_rmse_cm": 7.606456279754639,
+          "position_median_cm": 5.456684589385986,
+          "orientation_mean_deg": 18.601667404174805,
+          "orientation_median_deg": 15.581595420837402,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 31,
+          "position_mean_euclidean_error_cm": 6.568454742431641,
+          "position_mae_cm": 6.568454742431641,
+          "position_root_mean_square_euclidean_error_cm": 7.606456279754639,
+          "position_rmse_cm": 7.606456279754639,
+          "position_median_cm": 5.456684589385986,
+          "orientation_mean_deg": 18.601667404174805,
+          "orientation_median_deg": 15.581595420837402,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 31,
+          "position_mean_euclidean_error_cm": 3.258620500564575,
+          "position_mae_cm": 3.258620500564575,
+          "position_root_mean_square_euclidean_error_cm": 4.588834285736084,
+          "position_rmse_cm": 4.588834285736084,
+          "position_median_cm": 2.108285427093506,
+          "orientation_mean_deg": 9.787063598632812,
+          "orientation_median_deg": 4.338684558868408,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      },
+      "50-75%": {
+        "pose_oracle": {
+          "samples": 29,
+          "position_mean_euclidean_error_cm": 9.084628105163574,
+          "position_mae_cm": 9.084628105163574,
+          "position_root_mean_square_euclidean_error_cm": 9.82979679107666,
+          "position_rmse_cm": 9.82979679107666,
+          "position_median_cm": 8.782061576843262,
+          "orientation_mean_deg": 24.325199127197266,
+          "orientation_median_deg": 23.01412582397461,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 29,
+          "position_mean_euclidean_error_cm": 9.084628105163574,
+          "position_mae_cm": 9.084628105163574,
+          "position_root_mean_square_euclidean_error_cm": 9.82979679107666,
+          "position_rmse_cm": 9.82979679107666,
+          "position_median_cm": 8.782061576843262,
+          "orientation_mean_deg": 24.325199127197266,
+          "orientation_median_deg": 23.01412582397461,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 29,
+          "position_mean_euclidean_error_cm": 0.6619855761528015,
+          "position_mae_cm": 0.6619855761528015,
+          "position_root_mean_square_euclidean_error_cm": 0.7507814764976501,
+          "position_rmse_cm": 0.7507814764976501,
+          "position_median_cm": 0.6137762665748596,
+          "orientation_mean_deg": 1.838084101676941,
+          "orientation_median_deg": 1.7318470478057861,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      },
+      "75-100%": {
+        "pose_oracle": {
+          "samples": 5,
+          "position_mean_euclidean_error_cm": 9.232029914855957,
+          "position_mae_cm": 9.232029914855957,
+          "position_root_mean_square_euclidean_error_cm": 9.967856407165527,
+          "position_rmse_cm": 9.967856407165527,
+          "position_median_cm": 7.778805732727051,
+          "orientation_mean_deg": 27.499595642089844,
+          "orientation_median_deg": 25.81942367553711,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 5,
+          "position_mean_euclidean_error_cm": 9.232029914855957,
+          "position_mae_cm": 9.232029914855957,
+          "position_root_mean_square_euclidean_error_cm": 9.967856407165527,
+          "position_rmse_cm": 9.967856407165527,
+          "position_median_cm": 7.778805732727051,
+          "orientation_mean_deg": 27.499595642089844,
+          "orientation_median_deg": 25.81942367553711,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 5,
+          "position_mean_euclidean_error_cm": 0.32974866032600403,
+          "position_mae_cm": 0.32974866032600403,
+          "position_root_mean_square_euclidean_error_cm": 0.3591558337211609,
+          "position_rmse_cm": 0.3591558337211609,
+          "position_median_cm": 0.31506097316741943,
+          "orientation_mean_deg": 1.9868398904800415,
+          "orientation_median_deg": 2.17716908454895,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      }
+    },
+    "pose_by_time_to_sequence_end": {
+      "0-0.5s": {
+        "pose_oracle": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      },
+      "0.5-1s": {
+        "pose_oracle": {
+          "samples": 101,
+          "position_mean_euclidean_error_cm": 10.502653121948242,
+          "position_mae_cm": 10.502653121948242,
+          "position_root_mean_square_euclidean_error_cm": 12.447724342346191,
+          "position_rmse_cm": 12.447724342346191,
+          "position_median_cm": 9.088395118713379,
+          "orientation_mean_deg": 31.26515007019043,
+          "orientation_median_deg": 25.450925827026367,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 101,
+          "position_mean_euclidean_error_cm": 10.53702163696289,
+          "position_mae_cm": 10.53702163696289,
+          "position_root_mean_square_euclidean_error_cm": 12.526276588439941,
+          "position_rmse_cm": 12.526276588439941,
+          "position_median_cm": 9.088395118713379,
+          "orientation_mean_deg": 33.536800384521484,
+          "orientation_median_deg": 25.450925827026367,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 101,
+          "position_mean_euclidean_error_cm": 9.371777534484863,
+          "position_mae_cm": 9.371777534484863,
+          "position_root_mean_square_euclidean_error_cm": 14.502538681030273,
+          "position_rmse_cm": 14.502538681030273,
+          "position_median_cm": 2.108285427093506,
+          "orientation_mean_deg": 34.92401123046875,
+          "orientation_median_deg": 5.043623924255371,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      },
+      "1-2s": {
+        "pose_oracle": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      },
+      "2-3s": {
+        "pose_oracle": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      },
+      ">=3s": {
+        "pose_oracle": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      }
+    },
+    "pose_by_receiving_hand": {
+      "left": {
+        "pose_oracle": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 0,
+          "position_mean_euclidean_error_cm": null,
+          "position_root_mean_square_euclidean_error_cm": null,
+          "position_mae_cm": null,
+          "position_rmse_cm": null,
+          "position_median_cm": null,
+          "orientation_mean_deg": null,
+          "orientation_median_deg": null,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      },
+      "right": {
+        "pose_oracle": {
+          "samples": 101,
+          "position_mean_euclidean_error_cm": 10.502653121948242,
+          "position_mae_cm": 10.502653121948242,
+          "position_root_mean_square_euclidean_error_cm": 12.447724342346191,
+          "position_rmse_cm": 12.447724342346191,
+          "position_median_cm": 9.088395118713379,
+          "orientation_mean_deg": 31.26515007019043,
+          "orientation_median_deg": 25.450925827026367,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "pose_end_to_end": {
+          "samples": 101,
+          "position_mean_euclidean_error_cm": 10.53702163696289,
+          "position_mae_cm": 10.53702163696289,
+          "position_root_mean_square_euclidean_error_cm": 12.526276588439941,
+          "position_rmse_cm": 12.526276588439941,
+          "position_median_cm": 9.088395118713379,
+          "orientation_mean_deg": 33.536800384521484,
+          "orientation_median_deg": 25.450925827026367,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        },
+        "last_observation_oracle": {
+          "samples": 101,
+          "position_mean_euclidean_error_cm": 9.371777534484863,
+          "position_mae_cm": 9.371777534484863,
+          "position_root_mean_square_euclidean_error_cm": 14.502538681030273,
+          "position_rmse_cm": 14.502538681030273,
+          "position_median_cm": 2.108285427093506,
+          "orientation_mean_deg": 34.92401123046875,
+          "orientation_median_deg": 5.043623924255371,
+          "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+          "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+        }
+      }
+    },
+    "fusion": {
+      "mode": "temporal_channel_gated",
+      "mean_weights": {
+        "temporal": 0.9458498358726501,
+        "channel": 0.05415014922618866
+      },
+      "modality_mean_weights_when_available": {},
+      "modality_availability": {},
+      "weight_interpretation": "learned internal conditioning weights; not causal modality effects"
+    },
+    "mean_gate": {
+      "temporal": 0.9458498358726501,
+      "channel": 0.05415014922618866
+    }
+  },
+  "test_used_for_model_or_checkpoint_selection": false,
+  "runtime": {
+    "started_at": "2026-08-15T19:49:07.113632+00:00",
+    "completed_at": "2026-08-15T19:50:20.520426+00:00",
+    "wall_seconds": 73.40680210990831,
+    "device": "cuda",
+    "command": [
+      "/opt/aria_env/bin/python3",
+      "Training/evaluate_frozen_run.py",
+      "--run-dir",
+      "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_22_seed42",
+      "--checkpoint",
+      "best_intention",
+      "--output",
+      "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_22_seed42.json"
+    ]
+  }
+}

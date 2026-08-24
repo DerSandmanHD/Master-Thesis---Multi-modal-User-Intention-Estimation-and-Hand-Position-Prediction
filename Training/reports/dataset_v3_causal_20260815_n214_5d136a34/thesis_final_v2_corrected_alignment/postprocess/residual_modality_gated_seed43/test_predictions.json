@@ -1,0 +1,389 @@
+{
+  "schema_version": 3,
+  "report_fingerprint": "9f2a8cb49e5c5c1da13b0e191812afd781a3673c24de33a622f54dd4d23be9fd",
+  "task": {
+    "name": "primary_t_plus_1_future_receiving_wrist_pose",
+    "future_horizon_seconds": 1.0,
+    "terminal_endpose": false
+  },
+  "result_role": "primary_validation_selected_checkpoint",
+  "predictions_csv": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/postprocess/residual_modality_gated_seed43/test_predictions.csv",
+  "predictions_csv_sha256": "3aee8465a00d0cc000a9768b3f73d418f992c5e0ec927a80bd378ac80263fec8",
+  "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_modality_gated/residual_modality_gated_seed43",
+  "checkpoint": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_modality_gated/residual_modality_gated_seed43/best_intention_model.pt",
+  "checkpoint_sha256": "ea845302ba8b70e335b7fa89002869a7d76a3d309cc19d702c4f2a3e20a88883",
+  "checkpoint_epoch": 5,
+  "checkpoint_selection_split": "validation",
+  "checkpoint_selection_metric": "validation_intention_macro_f1",
+  "checkpoint_selection_value": 0.8922673295068809,
+  "architecture": {
+    "fusion_mode": "modality_gated",
+    "intention_head_mode": "hierarchical",
+    "modality_names": [
+      "gaze",
+      "hands",
+      "objects",
+      "vio"
+    ],
+    "modality_schema_fingerprint": "78903d8693323ce3762258bfefb5fd083c5ca7519726323779cf3cfc796e4e9b"
+  },
+  "dataset_content_fingerprint": "339c313d56c7be8564a3035cd8334bad103e15659315c33135e96b95e820245a",
+  "source_content_fingerprint": "b2cfd10991c5638277795aadcabfd322d3e9eb41dffb70696b63dc657f5f22cb",
+  "artifact_freeze": {
+    "manifest": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_modality_gated/residual_modality_gated_seed43/artifact_manifest.json",
+    "manifest_sha256": "00f0bd509073cee0c306e198dd6147e269442c6e669471e775134469f645b336",
+    "manifest_fingerprint": "6e0ff48f3e3d588c5c8aad2d84559e93a9ff7f836f72f1804f8d9c0967c49e37",
+    "protocol": "thesis_artifact_freeze_hash_bound_v2"
+  },
+  "final_test_authorization": {
+    "path": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/final_test/residual_modality_gated_seed43.json",
+    "sha256": "75368b3a288a44b24054007e6e98bdf69d163c2cf50eda03b9f7afb952f0433e",
+    "report_fingerprint": "d564e545cc2677f64ee1ca16e15ac6ab1efe4b02ec74a617feeeccf6d2571ddf",
+    "evaluation_protocol": "validation_frozen_checkpoint_single_test_v2",
+    "matrix_authorization": {
+      "selection_file": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/validation_selection.json",
+      "selection_file_sha256": "a87834b20f7275293e3cba47e96565ef55f27895dff49dc82499d5a20efe4d21",
+      "matrix_id": "thesis_final_v2_corrected_alignment",
+      "experiment_id": "residual_modality_gated",
+      "seed": 43,
+      "authorized_checkpoint_sha256": "ea845302ba8b70e335b7fa89002869a7d76a3d309cc19d702c4f2a3e20a88883",
+      "test_metrics_read_during_authorization": false
+    },
+    "selection_file_sha256": "a87834b20f7275293e3cba47e96565ef55f27895dff49dc82499d5a20efe4d21"
+  },
+  "visual_artifacts": {
+    "enabled": false
+  },
+  "future_pose_loss_enabled": true,
+  "split": "test",
+  "full_split_export": true,
+  "frozen_split_endpoint_fingerprint": "e65fda6e350b016156730a27eefd2764798e605c4bfcbe5ed08d2653b912df3c",
+  "frozen_split_endpoint_count": 2199,
+  "exported_endpoint_fingerprint": "e65fda6e350b016156730a27eefd2764798e605c4bfcbe5ed08d2653b912df3c",
+  "exported_endpoint_count": 2199,
+  "sequence_filter": [],
+  "device": "cuda",
+  "rows": 2199,
+  "sequences": {
+    "Edu_10_20260616_150412": {
+      "windows": 87,
+      "intention_accuracy": 0.632183908045977,
+      "pose_windows": 16,
+      "learned_oracle_pose_mean_error_cm": 23.305326920199015,
+      "first_video_time_s": 1.968029587,
+      "last_video_time_s": 32.634693587
+    },
+    "Edu_2_20260604_170420": {
+      "windows": 62,
+      "intention_accuracy": 0.9838709677419355,
+      "pose_windows": 5,
+      "learned_oracle_pose_mean_error_cm": 15.460376125633076,
+      "first_video_time_s": 1.976161511,
+      "last_video_time_s": 23.642825511
+    },
+    "Edu_3_20260604_170622": {
+      "windows": 73,
+      "intention_accuracy": 1.0,
+      "pose_windows": 8,
+      "learned_oracle_pose_mean_error_cm": 10.774445512932147,
+      "first_video_time_s": 1.996160643,
+      "last_video_time_s": 26.996157643
+    },
+    "Edu_4_20260604_170837": {
+      "windows": 94,
+      "intention_accuracy": 0.9680851063829787,
+      "pose_windows": 9,
+      "learned_oracle_pose_mean_error_cm": 11.561921377227394,
+      "first_video_time_s": 1.974825587,
+      "last_video_time_s": 33.641488587
+    },
+    "Edu_5_20260604_170944": {
+      "windows": 93,
+      "intention_accuracy": 0.978494623655914,
+      "pose_windows": 12,
+      "learned_oracle_pose_mean_error_cm": 12.790759538911699,
+      "first_video_time_s": 1.993491589,
+      "last_video_time_s": 33.660154589
+    },
+    "Edu_6_20260616_145740": {
+      "windows": 91,
+      "intention_accuracy": 0.9120879120879121,
+      "pose_windows": 27,
+      "learned_oracle_pose_mean_error_cm": 16.789960725458794,
+      "first_video_time_s": 1.982700469,
+      "last_video_time_s": 33.316030469
+    },
+    "Edu_7_20260616_145927": {
+      "windows": 72,
+      "intention_accuracy": 0.9027777777777778,
+      "pose_windows": 8,
+      "learned_oracle_pose_mean_error_cm": 23.604381767020435,
+      "first_video_time_s": 1.977366505,
+      "last_video_time_s": 27.310696505
+    },
+    "Edu_8_20260616_150108": {
+      "windows": 62,
+      "intention_accuracy": 1.0,
+      "pose_windows": 9,
+      "learned_oracle_pose_mean_error_cm": 23.877862441866764,
+      "first_video_time_s": 1.981365727,
+      "last_video_time_s": 24.314696727
+    },
+    "Edu_9_20260616_150247": {
+      "windows": 69,
+      "intention_accuracy": 0.17391304347826086,
+      "pose_windows": 0,
+      "learned_oracle_pose_mean_error_cm": null,
+      "first_video_time_s": 1.980030553,
+      "last_video_time_s": 25.980028553
+    },
+    "Jona_1_20260616_181413": {
+      "windows": 54,
+      "intention_accuracy": 0.9259259259259259,
+      "pose_windows": 10,
+      "learned_oracle_pose_mean_error_cm": 8.23751767985279,
+      "first_video_time_s": 1.975066227,
+      "last_video_time_s": 22.975064227
+    },
+    "Jona_2_20260616_181551": {
+      "windows": 108,
+      "intention_accuracy": 0.9444444444444444,
+      "pose_windows": 8,
+      "learned_oracle_pose_mean_error_cm": 16.94465892428314,
+      "first_video_time_s": 1.987065499,
+      "last_video_time_s": 41.653728499
+    },
+    "Jona_3_20260616_181717": {
+      "windows": 119,
+      "intention_accuracy": 0.8571428571428571,
+      "pose_windows": 8,
+      "learned_oracle_pose_mean_error_cm": 11.862707766967432,
+      "first_video_time_s": 1.991064171,
+      "last_video_time_s": 44.991060171
+    },
+    "Jona_4_20260616_181855": {
+      "windows": 97,
+      "intention_accuracy": 0.7422680412371134,
+      "pose_windows": 9,
+      "learned_oracle_pose_mean_error_cm": 9.663850426445022,
+      "first_video_time_s": 1.968397227,
+      "last_video_time_s": 37.968393227
+    },
+    "Jona_5_20260616_182002": {
+      "windows": 107,
+      "intention_accuracy": 0.9158878504672897,
+      "pose_windows": 8,
+      "learned_oracle_pose_mean_error_cm": 12.590458121056809,
+      "first_video_time_s": 1.987062935,
+      "last_video_time_s": 40.320391935
+    },
+    "Jona_6_20260616_182111": {
+      "windows": 87,
+      "intention_accuracy": 0.8850574712643678,
+      "pose_windows": 9,
+      "learned_oracle_pose_mean_error_cm": 6.68923649341701,
+      "first_video_time_s": 1.992395067,
+      "last_video_time_s": 34.325725067
+    },
+    "Jona_7_20260616_182214": {
+      "windows": 95,
+      "intention_accuracy": 0.7684210526315789,
+      "pose_windows": 9,
+      "learned_oracle_pose_mean_error_cm": 8.789026787892055,
+      "first_video_time_s": 1.975061013,
+      "last_video_time_s": 36.975058013
+    },
+    "Mona_1_20260624_123312": {
+      "windows": 94,
+      "intention_accuracy": 0.8723404255319149,
+      "pose_windows": 15,
+      "learned_oracle_pose_mean_error_cm": 18.56915417263719,
+      "first_video_time_s": 1.986299255,
+      "last_video_time_s": 34.319633255
+    },
+    "Mona_3_20260624_123548": {
+      "windows": 105,
+      "intention_accuracy": 0.8095238095238095,
+      "pose_windows": 10,
+      "learned_oracle_pose_mean_error_cm": 18.04513803254456,
+      "first_video_time_s": 1.994299179,
+      "last_video_time_s": 37.994299179
+    },
+    "Mona_4_20260624_123706": {
+      "windows": 109,
+      "intention_accuracy": 0.926605504587156,
+      "pose_windows": 7,
+      "learned_oracle_pose_mean_error_cm": 8.406707246965691,
+      "first_video_time_s": 1.983633103,
+      "last_video_time_s": 39.983633103
+    },
+    "Mona_5_20260624_123814": {
+      "windows": 125,
+      "intention_accuracy": 0.968,
+      "pose_windows": 7,
+      "learned_oracle_pose_mean_error_cm": 21.815669637526774,
+      "first_video_time_s": 1.991633143,
+      "last_video_time_s": 44.991633143
+    },
+    "Mona_6_20260624_123930": {
+      "windows": 124,
+      "intention_accuracy": 0.9354838709677419,
+      "pose_windows": 7,
+      "learned_oracle_pose_mean_error_cm": 22.31558720009465,
+      "first_video_time_s": 1.978300137,
+      "last_video_time_s": 44.978300137
+    },
+    "Mona_7_20260624_124051": {
+      "windows": 123,
+      "intention_accuracy": 0.9186991869918699,
+      "pose_windows": 7,
+      "learned_oracle_pose_mean_error_cm": 9.348819338995586,
+      "first_video_time_s": 1.998300359,
+      "last_video_time_s": 44.331633359
+    },
+    "Mona_8_20260624_124414": {
+      "windows": 149,
+      "intention_accuracy": 0.8456375838926175,
+      "pose_windows": 9,
+      "learned_oracle_pose_mean_error_cm": 18.937871542998025,
+      "first_video_time_s": 1.984966143,
+      "last_video_time_s": 52.318299143
+    }
+  },
+  "pose_comparison": {
+    "receiving_hand_context": "ground-truth receiving hand for persistence, constant velocity, and learned candidate selection; the learned residual itself remains conditioned on predicted-hand probabilities",
+    "primary_sample_set": "fair_common",
+    "valid_target_denominator": 217,
+    "fair_common_samples": 213,
+    "fair_common_coverage": 0.9815668202764977,
+    "fair_common_sample_key_fingerprint": "e872d791bc71d09c7e494216ff9808761760d830dcfee58506f3833e7f29a9f7",
+    "methods": {
+      "persistence": {
+        "native_metrics": {
+          "samples": 214,
+          "position_mean_euclidean_error_cm": 14.965275549312453,
+          "position_median_euclidean_error_cm": 6.707455036400161,
+          "position_root_mean_square_euclidean_error_cm": 22.50912885096108,
+          "position_mae_cm": 14.965275549312453,
+          "position_rmse_cm": 22.50912885096108,
+          "orientation_mean_deg": 42.4043839226949,
+          "orientation_median_deg": 15.658195619648684,
+          "coverage_numerator": 214,
+          "coverage_denominator": 217,
+          "coverage": 0.9861751152073732,
+          "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+          "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+        },
+        "fair_common_metrics": {
+          "samples": 213,
+          "position_mean_euclidean_error_cm": 14.80422205700099,
+          "position_median_euclidean_error_cm": 6.342896434320831,
+          "position_root_mean_square_euclidean_error_cm": 22.30791016833363,
+          "position_mae_cm": 14.80422205700099,
+          "position_rmse_cm": 22.30791016833363,
+          "orientation_mean_deg": 42.04896856236211,
+          "orientation_median_deg": 15.505820107708042,
+          "coverage_numerator": 213,
+          "coverage_denominator": 217,
+          "coverage": 0.9815668202764977,
+          "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+          "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+        },
+        "native_sample_key_fingerprint": "f2fa9086240fcdfbca948b68444f14f17e414c4df1407c36365302c229dbde82"
+      },
+      "constant_velocity": {
+        "native_metrics": {
+          "samples": 213,
+          "position_mean_euclidean_error_cm": 33.49035494558316,
+          "position_median_euclidean_error_cm": 28.088438737903104,
+          "position_root_mean_square_euclidean_error_cm": 47.923339307254395,
+          "position_mae_cm": 33.49035494558316,
+          "position_rmse_cm": 47.923339307254395,
+          "orientation_mean_deg": 42.04896856236211,
+          "orientation_median_deg": 15.505820107708042,
+          "coverage_numerator": 213,
+          "coverage_denominator": 217,
+          "coverage": 0.9815668202764977,
+          "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+          "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+        },
+        "fair_common_metrics": {
+          "samples": 213,
+          "position_mean_euclidean_error_cm": 33.49035494558316,
+          "position_median_euclidean_error_cm": 28.088438737903104,
+          "position_root_mean_square_euclidean_error_cm": 47.923339307254395,
+          "position_mae_cm": 33.49035494558316,
+          "position_rmse_cm": 47.923339307254395,
+          "orientation_mean_deg": 42.04896856236211,
+          "orientation_median_deg": 15.505820107708042,
+          "coverage_numerator": 213,
+          "coverage_denominator": 217,
+          "coverage": 0.9815668202764977,
+          "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+          "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+        },
+        "native_sample_key_fingerprint": "e872d791bc71d09c7e494216ff9808761760d830dcfee58506f3833e7f29a9f7"
+      },
+      "learned_model_oracle_hand": {
+        "native_metrics": {
+          "samples": 214,
+          "position_mean_euclidean_error_cm": 15.395036346007979,
+          "position_median_euclidean_error_cm": 10.162010846980051,
+          "position_root_mean_square_euclidean_error_cm": 19.521272805477135,
+          "position_mae_cm": 15.395036346007979,
+          "position_rmse_cm": 19.521272805477135,
+          "orientation_mean_deg": 38.0727225477075,
+          "orientation_median_deg": 20.590982901967926,
+          "coverage_numerator": 214,
+          "coverage_denominator": 217,
+          "coverage": 0.9861751152073732,
+          "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+          "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+        },
+        "fair_common_metrics": {
+          "samples": 213,
+          "position_mean_euclidean_error_cm": 15.303106379588847,
+          "position_median_euclidean_error_cm": 10.039980556645794,
+          "position_root_mean_square_euclidean_error_cm": 19.419728940560496,
+          "position_mae_cm": 15.303106379588847,
+          "position_rmse_cm": 19.419728940560496,
+          "orientation_mean_deg": 37.86299117725116,
+          "orientation_median_deg": 20.01006250789648,
+          "coverage_numerator": 213,
+          "coverage_denominator": 217,
+          "coverage": 0.9815668202764977,
+          "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+          "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+        },
+        "native_sample_key_fingerprint": "f2fa9086240fcdfbca948b68444f14f17e414c4df1407c36365302c229dbde82"
+      }
+    }
+  },
+  "learned_end_to_end_diagnostic": {
+    "samples": 216,
+    "position_mean_euclidean_error_cm": 15.260574917635909,
+    "position_median_euclidean_error_cm": 10.344373689369235,
+    "position_root_mean_square_euclidean_error_cm": 19.19082499217146,
+    "position_mae_cm": 15.260574917635909,
+    "position_rmse_cm": 19.19082499217146,
+    "orientation_mean_deg": 41.98119980677219,
+    "orientation_median_deg": 21.21937243843893,
+    "coverage_numerator": 216,
+    "coverage_denominator": 217,
+    "coverage": 0.9953917050691244,
+    "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+    "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+  },
+  "baseline_policy": {
+    "fallbacks": "none",
+    "maximum_observation_age_seconds": 0.25,
+    "velocity_lookback_seconds": 0.5,
+    "minimum_velocity_fit_span_seconds": 0.1,
+    "timestamp_basis": "hand_timestamp_ns source captures",
+    "constant_velocity_prediction_horizon": "endpoint timestamp_ns + future_horizon_seconds; the future target capture timestamp is evaluation metadata only",
+    "constant_velocity_orientation": "zero angular velocity; latest valid quaternion is held"
+  },
+  "probability_definition": "continue=P(no assistance), fetch=P(assistance)*P(fetch|assistance), handover=P(assistance)*P(handover|assistance)",
+  "modality_weight_interpretation": "per-window learned internal conditioning weights; not causal modality contributions",
+  "timestamp_alignment": "pose baselines use absolute device timestamps; video_time_s is only the master START-relative display time and is not CLIP alignment"
+}

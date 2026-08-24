@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "rows": 2199,
+  "modality_names": [
+    "gaze",
+    "hands",
+    "objects",
+    "vio"
+  ],
+  "weight_semantics": "learned internal per-window conditioning weights; not causal modality effects",
+  "invariants": {
+    "unavailable_weight_zero": true,
+    "available_weights_sum_to_one": true
+  },
+  "by_target_and_prediction": [
+    {
+      "target_intention": "continue",
+      "predicted_intention": "continue",
+      "windows": 1341,
+      "gaze_available_windows": 1339,
+      "gaze_mean_weight_when_available": 0.300903111573829,
+      "hands_available_windows": 1341,
+      "hands_mean_weight_when_available": 0.32224920887630615,
+      "objects_available_windows": 854,
+      "objects_mean_weight_when_available": 0.18378855137970185,
+      "vio_available_windows": 1341,
+      "vio_mean_weight_when_available": 0.26025288700390714
+    },
+    {
+      "target_intention": "continue",
+      "predicted_intention": "fetch",
+      "windows": 121,
+      "gaze_available_windows": 121,
+      "gaze_mean_weight_when_available": 0.333593538354251,
+      "hands_available_windows": 104,
+      "hands_mean_weight_when_available": 0.30284398020460057,
+      "objects_available_windows": 70,
+      "objects_mean_weight_when_available": 0.1666179175887789,
+      "vio_available_windows": 121,
+      "vio_mean_weight_when_available": 0.30972028160390774
+    },
+    {
+      "target_intention": "continue",
+      "predicted_intention": "handover",
+      "windows": 90,
+      "gaze_available_windows": 90,
+      "gaze_mean_weight_when_available": 0.3894846941033999,
+      "hands_available_windows": 64,
+      "hands_mean_weight_when_available": 0.3269872365053743,
+      "objects_available_windows": 55,
+      "objects_mean_weight_when_available": 0.1630131231112913,
+      "vio_available_windows": 90,
+      "vio_mean_weight_when_available": 0.278371920188268
+    },
+    {
+      "target_intention": "fetch",
+      "predicted_intention": "continue",
+      "windows": 33,
+      "gaze_available_windows": 33,
+      "gaze_mean_weight_when_available": 0.29177596939332556,
+      "hands_available_windows": 30,
+      "hands_mean_weight_when_available": 0.3640553032358487,
+      "objects_available_windows": 15,
+      "objects_mean_weight_when_available": 0.1716080456972122,
+      "vio_available_windows": 33,
+      "vio_mean_weight_when_available": 0.29926100012027856
+    },
+    {
+      "target_intention": "fetch",
+      "predicted_intention": "fetch",
+      "windows": 287,
+      "gaze_available_windows": 287,
+      "gaze_mean_weight_when_available": 0.3017088635354092,
+      "hands_available_windows": 281,
+      "hands_mean_weight_when_available": 0.2876907448645588,
+      "objects_available_windows": 195,
+      "objects_mean_weight_when_available": 0.1710494232483399,
+      "vio_available_windows": 287,
+      "vio_mean_weight_when_available": 0.3003965821311864
+    },
+    {
+      "target_intention": "fetch",
+      "predicted_intention": "handover",
+      "windows": 23,
+      "gaze_available_windows": 23,
+      "gaze_mean_weight_when_available": 0.45884838700294495,
+      "hands_available_windows": 13,
+      "hands_mean_weight_when_available": 0.3208218950491685,
+      "objects_available_windows": 5,
+      "objects_mean_weight_when_available": 0.16031546890735626,
+      "vio_available_windows": 23,
+      "vio_mean_weight_when_available": 0.32496630108874774
+    },
+    {
+      "target_intention": "handover",
+      "predicted_intention": "continue",
+      "windows": 1,
+      "gaze_available_windows": 1,
+      "gaze_mean_weight_when_available": 0.2374830693006515,
+      "hands_available_windows": 1,
+      "hands_mean_weight_when_available": 0.2800196409225464,
+      "objects_available_windows": 1,
+      "objects_mean_weight_when_available": 0.2643291056156158,
+      "vio_available_windows": 1,
+      "vio_mean_weight_when_available": 0.2181682139635086
+    },
+    {
+      "target_intention": "handover",
+      "predicted_intention": "fetch",
+      "windows": 20,
+      "gaze_available_windows": 20,
+      "gaze_mean_weight_when_available": 0.3394092731177807,
+      "hands_available_windows": 15,
+      "hands_mean_weight_when_available": 0.3669223189353943,
+      "objects_available_windows": 12,
+      "objects_mean_weight_when_available": 0.17385804653167722,
+      "vio_available_windows": 20,
+      "vio_mean_weight_when_available": 0.2810841575264931
+    },
+    {
+      "target_intention": "handover",
+      "predicted_intention": "handover",
+      "windows": 283,
+      "gaze_available_windows": 283,
+      "gaze_mean_weight_when_available": 0.2473958022497568,
+      "hands_available_windows": 277,
+      "hands_mean_weight_when_available": 0.3897499648134631,
+      "objects_available_windows": 178,
+      "objects_mean_weight_when_available": 0.159138359380572,
+      "vio_available_windows": 283,
+      "vio_mean_weight_when_available": 0.2710233895707046
+    }
+  ]
+}

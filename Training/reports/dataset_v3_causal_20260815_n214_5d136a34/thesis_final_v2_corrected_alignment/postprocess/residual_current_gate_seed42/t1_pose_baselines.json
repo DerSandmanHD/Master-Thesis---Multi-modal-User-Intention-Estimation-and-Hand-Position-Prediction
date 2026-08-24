@@ -1,0 +1,396 @@
+{
+  "schema_version": 2,
+  "task": {
+    "name": "primary_t_plus_1_future_receiving_wrist_pose",
+    "pose_target_mode": "future_offset",
+    "future_horizon_seconds": 1.0,
+    "coordinate_frame": "static robot-marker frame"
+  },
+  "config": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed42/config.json",
+  "master_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/master_datasets",
+  "seed": 42,
+  "oracle_receiving_hand": true,
+  "receiving_hand_context": "ground-truth receiving hand is shared by both pose baselines",
+  "timestamp_policy": {
+    "observation_time": "real hand_timestamp_ns; repeated merge-asof captures are deduplicated",
+    "causality": "captures after the master endpoint are excluded",
+    "target_measurement_time": "hand_timestamp_ns at the master row referenced by future_target_timestamp_ns",
+    "constant_velocity_prediction_horizon": "endpoint timestamp_ns + future_horizon_seconds; future target capture jitter is never exposed to the baseline"
+  },
+  "baseline_policy": {
+    "fallbacks": "none",
+    "maximum_observation_age_seconds": 0.25,
+    "velocity_lookback_seconds": 0.5,
+    "minimum_velocity_fit_span_seconds": 0.1,
+    "constant_velocity_orientation": "zero angular velocity; hold latest valid normalized quaternion",
+    "primary_comparison": "fair_common_metrics"
+  },
+  "split_participants": {
+    "train": [
+      "Angelina",
+      "Berat",
+      "David",
+      "Felix",
+      "Florian",
+      "Isa",
+      "Jan",
+      "Jola",
+      "Julienco",
+      "Leys",
+      "Maria",
+      "Melih",
+      "Miro",
+      "Paul",
+      "Suthan",
+      "Tarik",
+      "Test",
+      "Urim",
+      "Yuzhi"
+    ],
+    "validation": [
+      "Atilla",
+      "Ermal",
+      "Vanessa"
+    ],
+    "test": [
+      "Edu",
+      "Jona",
+      "Mona"
+    ]
+  },
+  "splits": {
+    "train": {
+      "handover_windows": 3404,
+      "valid_pose_targets": 2411,
+      "valid_target_coverage": 0.7082843713278496,
+      "coverage_denominator_definition": "handover windows with a finite, valid t+1 receiving-wrist target",
+      "fair_common": {
+        "samples": 2366,
+        "coverage_denominator": 2411,
+        "coverage": 0.9813355454168395,
+        "sample_key_fingerprint": "cf6433c599936ab938e1ffd917d6f3fcd6acb774cd1718da4cd2fc0d5296c1f6",
+        "definition": "intersection of valid t+1 targets for which pure persistence and pure constant velocity are both available"
+      },
+      "target_timing": {
+        "nominal_definition": "endpoint timestamp_ns + future horizon",
+        "aligned_master_error": {
+          "samples": 2411,
+          "mean_ms": -2.0323517212774787e-05,
+          "median_ms": 0.0,
+          "minimum_ms": -0.001,
+          "maximum_ms": 0.001,
+          "maximum_absolute_ms": 0.001
+        },
+        "actual_hand_capture_error": {
+          "samples": 2411,
+          "mean_ms": -7.064501866445459,
+          "median_ms": -8.293,
+          "minimum_ms": -8.31,
+          "maximum_ms": -0.03,
+          "maximum_absolute_ms": 8.31
+        }
+      },
+      "baselines": {
+        "persistence": {
+          "native_metrics": {
+            "samples": 2374,
+            "position_mean_euclidean_error_cm": 8.465462104731383,
+            "position_median_euclidean_error_cm": 1.0625725640324881,
+            "position_root_mean_square_euclidean_error_cm": 16.225067990170565,
+            "position_mae_cm": 8.465462104731383,
+            "position_rmse_cm": 16.225067990170565,
+            "orientation_mean_deg": 27.17789276845982,
+            "orientation_median_deg": 3.5849027707678576,
+            "coverage_numerator": 2374,
+            "coverage_denominator": 2411,
+            "coverage": 0.984653670676068,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "fair_common_metrics": {
+            "samples": 2366,
+            "position_mean_euclidean_error_cm": 8.42695292573603,
+            "position_median_euclidean_error_cm": 1.0508486803888863,
+            "position_root_mean_square_euclidean_error_cm": 16.205540178901014,
+            "position_mae_cm": 8.42695292573603,
+            "position_rmse_cm": 16.205540178901014,
+            "orientation_mean_deg": 27.02473458242609,
+            "orientation_median_deg": 3.552823794193797,
+            "coverage_numerator": 2366,
+            "coverage_denominator": 2411,
+            "coverage": 0.9813355454168395,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "availability_reasons": {
+            "available": 2374,
+            "no_valid_observation": 23,
+            "stale_latest_observation": 14
+          },
+          "native_sample_key_fingerprint": "4de107be924493fdd9ffc7fc17b32f5651f1cd5974f039501a830ffc2618426e"
+        },
+        "constant_velocity": {
+          "native_metrics": {
+            "samples": 2366,
+            "position_mean_euclidean_error_cm": 15.712381177228968,
+            "position_median_euclidean_error_cm": 3.1003367149658247,
+            "position_root_mean_square_euclidean_error_cm": 26.550663689572183,
+            "position_mae_cm": 15.712381177228968,
+            "position_rmse_cm": 26.550663689572183,
+            "orientation_mean_deg": 27.02473458242609,
+            "orientation_median_deg": 3.552823794193797,
+            "coverage_numerator": 2366,
+            "coverage_denominator": 2411,
+            "coverage": 0.9813355454168395,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "fair_common_metrics": {
+            "samples": 2366,
+            "position_mean_euclidean_error_cm": 15.712381177228968,
+            "position_median_euclidean_error_cm": 3.1003367149658247,
+            "position_root_mean_square_euclidean_error_cm": 26.550663689572183,
+            "position_mae_cm": 15.712381177228968,
+            "position_rmse_cm": 26.550663689572183,
+            "orientation_mean_deg": 27.02473458242609,
+            "orientation_median_deg": 3.552823794193797,
+            "coverage_numerator": 2366,
+            "coverage_denominator": 2411,
+            "coverage": 0.9813355454168395,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "availability_reasons": {
+            "available": 2366,
+            "insufficient_fit_span": 5,
+            "insufficient_unique_observations": 3,
+            "no_valid_observation": 23,
+            "stale_latest_observation": 14
+          },
+          "native_sample_key_fingerprint": "cf6433c599936ab938e1ffd917d6f3fcd6acb774cd1718da4cd2fc0d5296c1f6"
+        }
+      }
+    },
+    "validation": {
+      "handover_windows": 330,
+      "valid_pose_targets": 247,
+      "valid_target_coverage": 0.7484848484848485,
+      "coverage_denominator_definition": "handover windows with a finite, valid t+1 receiving-wrist target",
+      "fair_common": {
+        "samples": 241,
+        "coverage_denominator": 247,
+        "coverage": 0.9757085020242915,
+        "sample_key_fingerprint": "e0353cad56b6ba6ae373fb168268086aa39e19cd5cdd20965ccc9b66192dbff7",
+        "definition": "intersection of valid t+1 targets for which pure persistence and pure constant velocity are both available"
+      },
+      "target_timing": {
+        "nominal_definition": "endpoint timestamp_ns + future horizon",
+        "aligned_master_error": {
+          "samples": 247,
+          "mean_ms": -9.31174089068826e-05,
+          "median_ms": 0.0,
+          "minimum_ms": -0.001,
+          "maximum_ms": 0.0,
+          "maximum_absolute_ms": 0.001
+        },
+        "actual_hand_capture_error": {
+          "samples": 247,
+          "mean_ms": -6.627246963562753,
+          "median_ms": -7.892,
+          "minimum_ms": -8.309,
+          "maximum_ms": -0.267,
+          "maximum_absolute_ms": 8.309
+        }
+      },
+      "baselines": {
+        "persistence": {
+          "native_metrics": {
+            "samples": 243,
+            "position_mean_euclidean_error_cm": 7.380553952796707,
+            "position_median_euclidean_error_cm": 1.0322630866363065,
+            "position_root_mean_square_euclidean_error_cm": 13.287658727698116,
+            "position_mae_cm": 7.380553952796707,
+            "position_rmse_cm": 13.287658727698116,
+            "orientation_mean_deg": 22.563970793623984,
+            "orientation_median_deg": 3.09843454428491,
+            "coverage_numerator": 243,
+            "coverage_denominator": 247,
+            "coverage": 0.9838056680161943,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "fair_common_metrics": {
+            "samples": 241,
+            "position_mean_euclidean_error_cm": 7.349670763898395,
+            "position_median_euclidean_error_cm": 0.9734604958363317,
+            "position_root_mean_square_euclidean_error_cm": 13.287304517610066,
+            "position_mae_cm": 7.349670763898395,
+            "position_rmse_cm": 13.287304517610066,
+            "orientation_mean_deg": 22.399472817710823,
+            "orientation_median_deg": 3.096414743633232,
+            "coverage_numerator": 241,
+            "coverage_denominator": 247,
+            "coverage": 0.9757085020242915,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "availability_reasons": {
+            "available": 243,
+            "stale_latest_observation": 4
+          },
+          "native_sample_key_fingerprint": "d850f032597156fbc315fad63f6ccd2fd7d583cd9fd64978c35646d494113144"
+        },
+        "constant_velocity": {
+          "native_metrics": {
+            "samples": 241,
+            "position_mean_euclidean_error_cm": 14.401151453265868,
+            "position_median_euclidean_error_cm": 3.0420538307212084,
+            "position_root_mean_square_euclidean_error_cm": 24.15147168614031,
+            "position_mae_cm": 14.401151453265868,
+            "position_rmse_cm": 24.15147168614031,
+            "orientation_mean_deg": 22.399472817710823,
+            "orientation_median_deg": 3.096414743633232,
+            "coverage_numerator": 241,
+            "coverage_denominator": 247,
+            "coverage": 0.9757085020242915,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "fair_common_metrics": {
+            "samples": 241,
+            "position_mean_euclidean_error_cm": 14.401151453265868,
+            "position_median_euclidean_error_cm": 3.0420538307212084,
+            "position_root_mean_square_euclidean_error_cm": 24.15147168614031,
+            "position_mae_cm": 14.401151453265868,
+            "position_rmse_cm": 24.15147168614031,
+            "orientation_mean_deg": 22.399472817710823,
+            "orientation_median_deg": 3.096414743633232,
+            "coverage_numerator": 241,
+            "coverage_denominator": 247,
+            "coverage": 0.9757085020242915,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "availability_reasons": {
+            "available": 241,
+            "insufficient_fit_span": 1,
+            "insufficient_unique_observations": 1,
+            "stale_latest_observation": 4
+          },
+          "native_sample_key_fingerprint": "e0353cad56b6ba6ae373fb168268086aa39e19cd5cdd20965ccc9b66192dbff7"
+        }
+      }
+    },
+    "test": {
+      "handover_windows": 304,
+      "valid_pose_targets": 217,
+      "valid_target_coverage": 0.7138157894736842,
+      "coverage_denominator_definition": "handover windows with a finite, valid t+1 receiving-wrist target",
+      "fair_common": {
+        "samples": 213,
+        "coverage_denominator": 217,
+        "coverage": 0.9815668202764977,
+        "sample_key_fingerprint": "e872d791bc71d09c7e494216ff9808761760d830dcfee58506f3833e7f29a9f7",
+        "definition": "intersection of valid t+1 targets for which pure persistence and pure constant velocity are both available"
+      },
+      "target_timing": {
+        "nominal_definition": "endpoint timestamp_ns + future horizon",
+        "aligned_master_error": {
+          "samples": 217,
+          "mean_ms": -6.912442396313364e-05,
+          "median_ms": 0.0,
+          "minimum_ms": -0.001,
+          "maximum_ms": 0.0,
+          "maximum_absolute_ms": 0.001
+        },
+        "actual_hand_capture_error": {
+          "samples": 217,
+          "mean_ms": -7.334069124423963,
+          "median_ms": -8.306,
+          "minimum_ms": -8.31,
+          "maximum_ms": -0.068,
+          "maximum_absolute_ms": 8.31
+        }
+      },
+      "baselines": {
+        "persistence": {
+          "native_metrics": {
+            "samples": 214,
+            "position_mean_euclidean_error_cm": 14.965275549312453,
+            "position_median_euclidean_error_cm": 6.707455036400161,
+            "position_root_mean_square_euclidean_error_cm": 22.50912885096108,
+            "position_mae_cm": 14.965275549312453,
+            "position_rmse_cm": 22.50912885096108,
+            "orientation_mean_deg": 42.4043839226949,
+            "orientation_median_deg": 15.658195619648684,
+            "coverage_numerator": 214,
+            "coverage_denominator": 217,
+            "coverage": 0.9861751152073732,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "fair_common_metrics": {
+            "samples": 213,
+            "position_mean_euclidean_error_cm": 14.80422205700099,
+            "position_median_euclidean_error_cm": 6.342896434320831,
+            "position_root_mean_square_euclidean_error_cm": 22.30791016833363,
+            "position_mae_cm": 14.80422205700099,
+            "position_rmse_cm": 22.30791016833363,
+            "orientation_mean_deg": 42.04896856236211,
+            "orientation_median_deg": 15.505820107708042,
+            "coverage_numerator": 213,
+            "coverage_denominator": 217,
+            "coverage": 0.9815668202764977,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "availability_reasons": {
+            "available": 214,
+            "no_valid_observation": 1,
+            "stale_latest_observation": 2
+          },
+          "native_sample_key_fingerprint": "f2fa9086240fcdfbca948b68444f14f17e414c4df1407c36365302c229dbde82"
+        },
+        "constant_velocity": {
+          "native_metrics": {
+            "samples": 213,
+            "position_mean_euclidean_error_cm": 33.49035494558316,
+            "position_median_euclidean_error_cm": 28.088438737903104,
+            "position_root_mean_square_euclidean_error_cm": 47.923339307254395,
+            "position_mae_cm": 33.49035494558316,
+            "position_rmse_cm": 47.923339307254395,
+            "orientation_mean_deg": 42.04896856236211,
+            "orientation_median_deg": 15.505820107708042,
+            "coverage_numerator": 213,
+            "coverage_denominator": 217,
+            "coverage": 0.9815668202764977,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "fair_common_metrics": {
+            "samples": 213,
+            "position_mean_euclidean_error_cm": 33.49035494558316,
+            "position_median_euclidean_error_cm": 28.088438737903104,
+            "position_root_mean_square_euclidean_error_cm": 47.923339307254395,
+            "position_mae_cm": 33.49035494558316,
+            "position_rmse_cm": 47.923339307254395,
+            "orientation_mean_deg": 42.04896856236211,
+            "orientation_median_deg": 15.505820107708042,
+            "coverage_numerator": 213,
+            "coverage_denominator": 217,
+            "coverage": 0.9815668202764977,
+            "position_error_definition": "Euclidean norm of the 3D position error in centimetres",
+            "orientation_error_definition": "sign-invariant geodesic quaternion error in degrees"
+          },
+          "availability_reasons": {
+            "available": 213,
+            "insufficient_fit_span": 1,
+            "no_valid_observation": 1,
+            "stale_latest_observation": 2
+          },
+          "native_sample_key_fingerprint": "e872d791bc71d09c7e494216ff9808761760d830dcfee58506f3833e7f29a9f7"
+        }
+      }
+    }
+  }
+}

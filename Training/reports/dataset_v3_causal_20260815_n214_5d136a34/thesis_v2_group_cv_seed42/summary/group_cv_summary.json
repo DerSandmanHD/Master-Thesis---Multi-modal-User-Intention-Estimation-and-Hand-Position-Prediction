@@ -1,0 +1,404 @@
+{
+  "schema_version": 1,
+  "protocol": "complete_participant_balanced_nested_group_cv_v1",
+  "created_at": "2026-08-16T08:54:07.693392+00:00",
+  "report_fingerprint": "713bf82820653a9acabf4aa9622d3527a06992e9ba7b3f8973455cd275b39b9f",
+  "plan": {
+    "path": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/group_cv_plan.json",
+    "sha256": "b8f265cf085a152f2f61b63ef9bbc1f6fa948249cfb970f485550b36d31d5dbe",
+    "plan_fingerprint": "aaf694c9da8ff9207faec5e87a20d0bb8262a4ce4545d5090b388dea10f23e5f",
+    "split_fingerprint_sha256": "54437368fac762a7f479ea70f5741d9c3cd635b3cb8591053d19d87ebf67d872",
+    "dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
+    "experiment_tag": "thesis_v2_group_cv_seed42",
+    "common_source_content_fingerprint": "b2cfd10991c5638277795aadcabfd322d3e9eb41dffb70696b63dc657f5f22cb"
+  },
+  "completeness": {
+    "status": "complete",
+    "expected_outer_evaluations": 25,
+    "validated_outer_evaluations": 25,
+    "participants": [
+      "Angelina",
+      "Atilla",
+      "Berat",
+      "David",
+      "Edu",
+      "Ermal",
+      "Felix",
+      "Florian",
+      "Isa",
+      "Jan",
+      "Jola",
+      "Jona",
+      "Julienco",
+      "Leys",
+      "Maria",
+      "Melih",
+      "Miro",
+      "Mona",
+      "Paul",
+      "Suthan",
+      "Tarik",
+      "Test",
+      "Urim",
+      "Vanessa",
+      "Yuzhi"
+    ],
+    "seeds": [
+      42
+    ],
+    "one_outer_participant_per_fold": true
+  },
+  "selection_discipline": {
+    "checkpoint": "best_intention",
+    "checkpoint_selection_split": "inner_validation",
+    "outer_evaluation_used_for_selection": false,
+    "all_reports_artifact_frozen": true,
+    "all_report_fingerprints_verified": true
+  },
+  "aggregation": {
+    "participant_balance": "equal weight per held-out participant within each seed",
+    "seed_summary": "arithmetic mean and sample SD across seed-level participant-balanced estimates",
+    "seed_sd_is_population_uncertainty": false,
+    "window_counts_are_not_used_as_participant_weights": true,
+    "metrics_recomputed_from_confusion_matrices": true
+  },
+  "seed_metric_summary": {
+    "intention_accuracy": {
+      "mean_across_seed_participant_balanced_estimates": 0.8628765579392019,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "intention_macro_f1": {
+      "mean_across_seed_participant_balanced_estimates": 0.8152311633520648,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "continue_precision": {
+      "mean_across_seed_participant_balanced_estimates": 0.9241223797782249,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "continue_recall": {
+      "mean_across_seed_participant_balanced_estimates": 0.9022812733688003,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "continue_f1": {
+      "mean_across_seed_participant_balanced_estimates": 0.9074324195560161,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "fetch_precision": {
+      "mean_across_seed_participant_balanced_estimates": 0.7094353248196529,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "fetch_recall": {
+      "mean_across_seed_participant_balanced_estimates": 0.7399375749137438,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "fetch_f1": {
+      "mean_across_seed_participant_balanced_estimates": 0.6866031556274913,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "handover_precision": {
+      "mean_across_seed_participant_balanced_estimates": 0.866285166921514,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "handover_recall": {
+      "mean_across_seed_participant_balanced_estimates": 0.8519985082725394,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "handover_f1": {
+      "mean_across_seed_participant_balanced_estimates": 0.851657914872687,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    },
+    "receiving_hand_macro_f1": {
+      "mean_across_seed_participant_balanced_estimates": 0.6010507785630727,
+      "sample_sd_across_seeds": null,
+      "seed_count": 1
+    }
+  },
+  "validated_reports": [
+    {
+      "fold": 0,
+      "seed": 42,
+      "participant": "Angelina",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_00_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_00_seed42.json",
+      "report_sha256": "a371776c956953d2948cd9bbe82123dea207325e745c8b8fc2d4763c13618d3d",
+      "report_fingerprint": "ea812867b2489ba29f0049e3e1e6e2c6964c536c1789fcfc7bf26a2c5f893c3e",
+      "artifact_manifest_fingerprint": "c18c1e9259c70d2ce98ef066c77424723cde7569326b1a4db2b4b009e62503a6",
+      "checkpoint_sha256": "cacdf5dee162769fc718144ca075b2ba71f798857e28203245b23fc32e6a8f35"
+    },
+    {
+      "fold": 1,
+      "seed": 42,
+      "participant": "Atilla",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_01_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_01_seed42.json",
+      "report_sha256": "1bfec7cc775261b8ef2378c993601b80bd7a1347baffdc6094b1c150f7e2a01f",
+      "report_fingerprint": "598e43fd63b55c56568ad708363050edee4cf2f84082330ca79241dd0232c87b",
+      "artifact_manifest_fingerprint": "87b4470aa10d12723a1968ac118b8c527d28feb0b7d14911642a93981ea69a85",
+      "checkpoint_sha256": "20237d4ad4bd84849c8d6780affc43a489ab24399f99141df6c73e79fdfc0784"
+    },
+    {
+      "fold": 2,
+      "seed": 42,
+      "participant": "Berat",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_02_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_02_seed42.json",
+      "report_sha256": "9062a5ba8ba6fd9f31900d526a9b4558ec7465d6a79aadd2ebc659002c89942d",
+      "report_fingerprint": "e203d1a8b1b38a696cb57c3902dd59a757b625b1fa83ca91e6b2460f8aaf327e",
+      "artifact_manifest_fingerprint": "e43913d08a46c607a4424f95e76fbe9a89d8d56fb0aa8d2a982b7960f7f0ddfd",
+      "checkpoint_sha256": "a1c9d79ee40c0380173faa438d546e74772ef92aa4d57a3c5acc2512a5d019ba"
+    },
+    {
+      "fold": 3,
+      "seed": 42,
+      "participant": "David",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_03_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_03_seed42.json",
+      "report_sha256": "bb7f9a8b429e726acafffc4df71fe97ba4dfa123c669228ea81a7260e0dcc455",
+      "report_fingerprint": "dbe0a00b631c6d6f06a1de51826ae14d9feb74224ae8af5615a8f06f6845f84f",
+      "artifact_manifest_fingerprint": "99077bcbd7d3ba0669fdb7f963f645b832fb1dfcff73573b9bde3e4c3a252c24",
+      "checkpoint_sha256": "49dd3e1adcaa7011fe4369a54050ff790dacb613f0cf74c846aba3a7d1065103"
+    },
+    {
+      "fold": 4,
+      "seed": 42,
+      "participant": "Edu",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_04_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_04_seed42.json",
+      "report_sha256": "c66c0835fbf04c89ba03edb2a431b5d3d9a868263198b313d0b95e692e5f3adf",
+      "report_fingerprint": "5b6d83b457da3d2757c892ca387c68f42d174b3f5de582b56234965fc6781bd3",
+      "artifact_manifest_fingerprint": "a98723d897f1250cad4797413bc0169f00cc897da2193cefb093dc987b2f2e16",
+      "checkpoint_sha256": "45f0925823db5999f40a6a644bbafaad53f5a9be1d1ccba8170c55e4d5219dfd"
+    },
+    {
+      "fold": 5,
+      "seed": 42,
+      "participant": "Ermal",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_05_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_05_seed42.json",
+      "report_sha256": "1f4abef8b26a849021f2b9df873a05eee0dd48956087a0f45585765fe38ab6f7",
+      "report_fingerprint": "e7cb1f3935bff8b36a56527488f03de809e27b60e4aacbfc348f4b30dcc606b9",
+      "artifact_manifest_fingerprint": "38d6b4b0ea54d43a4070a423f16c299656e04e365aea965961a2908b2e3270a1",
+      "checkpoint_sha256": "3faad0e80e71eece527ed1c59d39c35ec329781591a970a404734b802285aed2"
+    },
+    {
+      "fold": 6,
+      "seed": 42,
+      "participant": "Felix",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_06_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_06_seed42.json",
+      "report_sha256": "40c08833746e684632c8f2a424ec229a59e040a193ff39287ba7a1fa668a9e56",
+      "report_fingerprint": "ec60cfbfff124a65a0e632bb3fab5a4893a60fd62968cd639d675e5014c0b05c",
+      "artifact_manifest_fingerprint": "d9963dd69159994a70dc49c2a1787730c4cfaf1eda06afe8d1ec171ba8a66483",
+      "checkpoint_sha256": "2f05be69ef65c0fa3068ee3e29818c06c5d50b9355b27339220f57111ac8b23b"
+    },
+    {
+      "fold": 7,
+      "seed": 42,
+      "participant": "Florian",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_07_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_07_seed42.json",
+      "report_sha256": "c7673f1576bf2719b66d26cffd7e1431def5fb27680fd941afd90436a9536beb",
+      "report_fingerprint": "6365093206f752d351e66dbe1ce5d2eb2ccbee39329764e9fb2aa1eb6b4d796b",
+      "artifact_manifest_fingerprint": "6b0253f548e31a0814026305add0741334423f61f6842ad11a9427d4f89fc94f",
+      "checkpoint_sha256": "6775c93909ca64ad32f6a1e337efdd02f6cd6b2c9f0e21cab61a659dcbdd5565"
+    },
+    {
+      "fold": 8,
+      "seed": 42,
+      "participant": "Isa",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_08_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_08_seed42.json",
+      "report_sha256": "a608898c62584d251e24048eb7f54c1fb1e2ae062fbc2afd59555f861f0eaf65",
+      "report_fingerprint": "42b989b63571163e6df2238a3cbf6957e7d1419726dd7cc0dd161e406dd61afd",
+      "artifact_manifest_fingerprint": "7f0cae0a157ea28e2e26d4ae465211fdb8bf6c8153c442641abe2b123b7b8ad4",
+      "checkpoint_sha256": "2d9b115822ee2b7e213933421866d8f355361e468a879da20e808f081f929438"
+    },
+    {
+      "fold": 9,
+      "seed": 42,
+      "participant": "Jan",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_09_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_09_seed42.json",
+      "report_sha256": "e6002e4e6fb4046665002a4b56373cb36f17996baf56852d4c527036f0b66934",
+      "report_fingerprint": "9e1a04b7992a2506a601ed1ea16092c20dad23f0b5d97e6c87ccbd5e1f41e939",
+      "artifact_manifest_fingerprint": "a17a5b56fbb668cbe9347a336fa2dc516a1befb417215a02552f00c8017bc4de",
+      "checkpoint_sha256": "53e17cbab34214d4628a4bbf44db096ce20ddab74827b0a6617d64814e7befab"
+    },
+    {
+      "fold": 10,
+      "seed": 42,
+      "participant": "Jola",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_10_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_10_seed42.json",
+      "report_sha256": "656a930fabcc626a880a8808464da98c59286ce0c5a52a228f06ad769fe24336",
+      "report_fingerprint": "66613c5f254dd4a8bfa2195108bebd2e96713f52f17f7de884793feda94bb1ca",
+      "artifact_manifest_fingerprint": "e99814394aa1a180514896a79812611826384bee93abf6e52f9c165f3eadb31c",
+      "checkpoint_sha256": "b74cd0554a6692445ee49dbc1de09c73d4e9a54caafde780875357d352b51dba"
+    },
+    {
+      "fold": 11,
+      "seed": 42,
+      "participant": "Jona",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_11_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_11_seed42.json",
+      "report_sha256": "425baf478a04b1ad559409d970c00ae4fe62a80dcad74e1b95385f68d5757e5a",
+      "report_fingerprint": "b90150cf35c68e48976624537ad7783d360c859c5fa3b4cb288a6ba20b0d4cc8",
+      "artifact_manifest_fingerprint": "abe774c74d604f46b9569ec575e0249b2ba639b3d8e90d0ba4ffa8e482c9e8c6",
+      "checkpoint_sha256": "06fb4c5c8bcced58d41ffb07df6a4cc804156fbe2afdf149da0491bb8e0eb42c"
+    },
+    {
+      "fold": 12,
+      "seed": 42,
+      "participant": "Julienco",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_12_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_12_seed42.json",
+      "report_sha256": "82ea41c20c90bbd471664793e57662fa9c5619fe05fbbf5b54278977493cc426",
+      "report_fingerprint": "f4b8f759fd4dad5db3d47ee616ee9e999db68e6480fc2e901f60b4d4e704d75f",
+      "artifact_manifest_fingerprint": "dcf4d8e094ddb7f9c5a98fdd88497693fc2559f632bcbe3ca401be71b345ab14",
+      "checkpoint_sha256": "700fbbd5093d951de574fca2689109eed68d3183df35b4d4978401e269af8604"
+    },
+    {
+      "fold": 13,
+      "seed": 42,
+      "participant": "Leys",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_13_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_13_seed42.json",
+      "report_sha256": "767629f8a2a27ae17dda855c7747c49883e0fcb94ca43307b46b8bbeacf32ff4",
+      "report_fingerprint": "0beeed425bbe3be754a38e88672477484278943eefe8b02ad93c0ac70cf3fcd3",
+      "artifact_manifest_fingerprint": "09de9f2740e875fae9505b280b61b6d4004545af1a72fcec2240a17d1c3d9fd2",
+      "checkpoint_sha256": "026865c524cc46640fedcd7086e5a6b0aa8cf7a8a4845d2d1df0e4540f9f3338"
+    },
+    {
+      "fold": 14,
+      "seed": 42,
+      "participant": "Maria",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_14_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_14_seed42.json",
+      "report_sha256": "baacf432d70fef5ae8c44a52a8074545c253cb70b65c54abcab7bb639c60b794",
+      "report_fingerprint": "23b29dabcf3bbaf5f44778205aaadee496e66cc94171bb5f25f8b30a89af428c",
+      "artifact_manifest_fingerprint": "7f324bde50d73ae3ef5012cd26f2d9314f5700bf3167db3f8bb7500d6c58e414",
+      "checkpoint_sha256": "dc37998d7146d5987f7ef3dd6cc1a4647d1d64c653a10136a77035ea4bdd6513"
+    },
+    {
+      "fold": 15,
+      "seed": 42,
+      "participant": "Melih",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_15_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_15_seed42.json",
+      "report_sha256": "40e017a03aa37766e3e0befa1fb69ee31bdcbb2d0f08860296d63ad5ba6ab06c",
+      "report_fingerprint": "dc0550457c2c5e977ca9225d1b73e31a9fec6ccadb323f21defbc37299812d44",
+      "artifact_manifest_fingerprint": "a144f02f1dfe0083ecabe6235daeb41d9988409e23cefa4f86bd51eeae1045ad",
+      "checkpoint_sha256": "9286a27c8d9e89c10fe8c22b8e12a4487ac7daa1220169ca18b36ff35676b2b9"
+    },
+    {
+      "fold": 16,
+      "seed": 42,
+      "participant": "Miro",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_16_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_16_seed42.json",
+      "report_sha256": "dc0868e5718df3419af7738b8d6960578003a6c835f0a44c1c5001aa36d30e6f",
+      "report_fingerprint": "bf6279dcfe751662bda3deaee6da3afd20563c34f4771d83aa2c74f40a06735d",
+      "artifact_manifest_fingerprint": "5fc1f48c67dc9f71b47b495b936a186b42db980b10f8ed06a9aa883766d52307",
+      "checkpoint_sha256": "0a7806f0d19e2b750bf10437df117843ba8e750c0e6831cb80a5ea11c4f600ca"
+    },
+    {
+      "fold": 17,
+      "seed": 42,
+      "participant": "Mona",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_17_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_17_seed42.json",
+      "report_sha256": "82b64ebebd5dc7943056bd8a83e1be11b0ca16eb37ace0f50f1bd49821ede14e",
+      "report_fingerprint": "21b92b7ed135b351c4125f96d104c952e7020881e10cb9c3456d68034457936a",
+      "artifact_manifest_fingerprint": "e15d6feba4b50336a5fa4ae59a3c9daaa4156fd6f672bda259f9552d534f316e",
+      "checkpoint_sha256": "be561d158b53e9a41cbda888876415563caa47fb6da6bf365894c7d63d543775"
+    },
+    {
+      "fold": 18,
+      "seed": 42,
+      "participant": "Paul",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_18_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_18_seed42.json",
+      "report_sha256": "bcba21f3bbb0ecb5c2baf96533bff1860f972f3ad55b65788a074afb27457563",
+      "report_fingerprint": "e391c8175692c1e5265055d8d05b3e6deb1b560ae58a5a300e2cf0a212cdd56c",
+      "artifact_manifest_fingerprint": "e42dbb2ac705fd97309ebe2bb5c495e524db2336f468b822867232f889f275c0",
+      "checkpoint_sha256": "a7f1c8704bbbff101175d56d109d906659841a0fa0c0e9c16b397c789489aa05"
+    },
+    {
+      "fold": 19,
+      "seed": 42,
+      "participant": "Suthan",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_19_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_19_seed42.json",
+      "report_sha256": "e96635ce3a942a1306ff5439da4775c466bf0ea575bd2a8c46eeeb0d4a947fa9",
+      "report_fingerprint": "6abb2f306bf56303dc49401a50a1073986c2c592cce055e4f43a855db524a0eb",
+      "artifact_manifest_fingerprint": "6609d0b26fbf51c6ff81c2f5bf8abd7af9e65911a1aee3dbaf6691961ccc0d99",
+      "checkpoint_sha256": "3cfe6a24c432bf687f4eb5235d5b50d0c2c4f1a0a492106a6a311006f18999e5"
+    },
+    {
+      "fold": 20,
+      "seed": 42,
+      "participant": "Tarik",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_20_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_20_seed42.json",
+      "report_sha256": "7f6079eb91e729d824cdfb28ce976233cc5226740a31935f741f93a930235e9c",
+      "report_fingerprint": "fff34ce00c52a6f5f2dc7bd6f9fe9e04136b4d1d393bd4d9f36592b44ec06145",
+      "artifact_manifest_fingerprint": "50b58e45728dc82fdbcb5dba9440d9c09c502982e06e8e80404bc30ae80b3e90",
+      "checkpoint_sha256": "3be2f0f1c4c4e54c6a0c27957e2f3af8ab873fb0f65b37978e1bbcc11166c01c"
+    },
+    {
+      "fold": 21,
+      "seed": 42,
+      "participant": "Test",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_21_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_21_seed42.json",
+      "report_sha256": "cffc21bfdb4b58f4ba045f979aa7bf76820ef885b376bca72be8b2eddd43c71c",
+      "report_fingerprint": "724e5e078064ab09459580123c876aa9e8c79cc06ba876d0933080fdda711a41",
+      "artifact_manifest_fingerprint": "991e830738b2077fee4b059ef621c34ed6fb047ad2752bc5aa7c3cfb3336a263",
+      "checkpoint_sha256": "f3e2eaf6d37a455c654c79ac88c02cb5900e891a2e8cebadf4b758414c8e9bff"
+    },
+    {
+      "fold": 22,
+      "seed": 42,
+      "participant": "Urim",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_22_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_22_seed42.json",
+      "report_sha256": "ebff71d26ef245bc73e527167ad2520165da5bb94a9cad0f554d946e9dadd43e",
+      "report_fingerprint": "fc1115536f3ae288b2edd48fa7826ac4b96d81cf5406983f63c2f5280fc08357",
+      "artifact_manifest_fingerprint": "6d38c234160cb4f8f411a09389086e50b1b6e67c77710c891b61e75d4b249b98",
+      "checkpoint_sha256": "8eb2709eeabc95472ea6f48a1b77ed2b9cd992c1fc36d7e52f1a82702466fc64"
+    },
+    {
+      "fold": 23,
+      "seed": 42,
+      "participant": "Vanessa",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_23_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_23_seed42.json",
+      "report_sha256": "527895403cacbd5cb7b5f581c493a4b941394ea33cd203d15c5f49f7e5485c31",
+      "report_fingerprint": "90f365274c1a95ecb706dfa06ef53570ee2ccd3d0c66e2d73c11c5857b3e95a9",
+      "artifact_manifest_fingerprint": "724d0b6d604afb4aba803623d074b8a3ad02aeeaa37ce187464fb733afa676a9",
+      "checkpoint_sha256": "5a86799610cd67eef96ec4cf32c8950beb65ee10b9c311959e179b4c59ac9555"
+    },
+    {
+      "fold": 24,
+      "seed": 42,
+      "participant": "Yuzhi",
+      "run_dir": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_24_seed42",
+      "report": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_24_seed42.json",
+      "report_sha256": "03c849b0b4bfd121bbf6ee41a6f0b61eee11f4dd1be4e019cb72a097c748211a",
+      "report_fingerprint": "12997ba5c7b0f77a4d43db113105f383c6d1d1a72b40900fc0827cd30e1a89e2",
+      "artifact_manifest_fingerprint": "dd984e694acb04a9cc616c7f53422bbd964f80f9c6fb0f62abe891e1d0daf85d",
+      "checkpoint_sha256": "82c32bb9895ac3e2d0dd6479cf5eb2c86e2b70ae0cf1004199703ba0c887fb8b"
+    }
+  ]
+}

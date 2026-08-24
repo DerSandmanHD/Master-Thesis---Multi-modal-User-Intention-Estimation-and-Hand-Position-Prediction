@@ -1,0 +1,262 @@
+{
+  "schema_version": 2,
+  "evaluation_protocol": "validation_frozen_checkpoint_single_test_v2",
+  "report_fingerprint": "422753dfead75464276102d059e9492293523071ab871e57869122babdea1c7f",
+  "split": "test",
+  "source_run": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/baseline_gru/baseline_gru_seed44",
+  "source_artifact_manifest": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/baseline_gru/baseline_gru_seed44/artifact_manifest.json",
+  "source_artifact_manifest_fingerprint": "fe4421682c9e0467e241b3bf156e0fead341b1566db6c70ec6509fd1c1f12336",
+  "dataset_identifier": "dataset_v3_causal_20260815_n214_5d136a34",
+  "dataset_content_fingerprint": "339c313d56c7be8564a3035cd8334bad103e15659315c33135e96b95e820245a",
+  "source_content_fingerprint": "b2cfd10991c5638277795aadcabfd322d3e9eb41dffb70696b63dc657f5f22cb",
+  "model_type": "hierarchical_gru",
+  "trainable_parameters": 190413,
+  "training_task_semantics": {
+    "future_pose_loss_enabled": true,
+    "future_pose_loss_weight": 1.0,
+    "auxiliary_pose_loss_enabled": false,
+    "auxiliary_pose_loss_weight": 0.0,
+    "pose_metrics_role": "main_learned_output"
+  },
+  "checkpoint": {
+    "name": "best_intention",
+    "path": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/baseline_gru/baseline_gru_seed44/best_model.pt",
+    "sha256": "aba5095247beb226aee8042728368160b7d106586497287ce891e87b493d0e27",
+    "epoch": 14,
+    "selection_split": "validation",
+    "selection_metric": "validation_intention_macro_f1",
+    "selection_value": 0.9120515275547381
+  },
+  "matrix_authorization": {
+    "selection_file": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/validation_selection.json",
+    "selection_file_sha256": "a87834b20f7275293e3cba47e96565ef55f27895dff49dc82499d5a20efe4d21",
+    "matrix_id": "thesis_final_v2_corrected_alignment",
+    "experiment_id": "baseline_gru",
+    "seed": 44,
+    "authorized_checkpoint_sha256": "aba5095247beb226aee8042728368160b7d106586497287ce891e87b493d0e27",
+    "test_metrics_read_during_authorization": false
+  },
+  "test_metrics": {
+    "loss": {
+      "total": 0.9762026172945126,
+      "assistance": 0.5040667767335185,
+      "assistance_type": 0.28587082963314436,
+      "receiving_hand": 0.1705201948528723,
+      "position": 0.002707641602129392,
+      "orientation": 0.05214869719255122
+    },
+    "intention": {
+      "accuracy": 0.8708503842353821,
+      "macro_f1": 0.8211865264313052,
+      "macro_f1_supported": 0.8211865264313052,
+      "per_class_precision": [
+        0.9594121763470959,
+        0.6535796766743649,
+        0.7744807121661721
+      ],
+      "per_class_recall": [
+        0.8833762886597938,
+        0.8250728862973761,
+        0.8585526315789473
+      ],
+      "per_class_f1": [
+        0.9198255618919825,
+        0.729381443298969,
+        0.8143525741029641
+      ],
+      "support": [
+        1552,
+        343,
+        304
+      ],
+      "confusion_matrix": [
+        [
+          1371,
+          126,
+          55
+        ],
+        [
+          39,
+          283,
+          21
+        ],
+        [
+          19,
+          24,
+          261
+        ]
+      ],
+      "samples": 2199,
+      "class_names": [
+        "continue",
+        "fetch",
+        "handover"
+      ]
+    },
+    "assistance": {
+      "accuracy": 0.8913142085075378,
+      "macro_f1": 0.8755796828514253,
+      "macro_f1_supported": 0.8755796828514253,
+      "per_class_precision": [
+        0.9594121763470959,
+        0.7649350649350649
+      ],
+      "per_class_recall": [
+        0.8833762886597938,
+        0.910355486862442
+      ],
+      "per_class_f1": [
+        0.9198255618919825,
+        0.8313338038108681
+      ],
+      "support": [
+        1552,
+        647
+      ],
+      "confusion_matrix": [
+        [
+          1371,
+          181
+        ],
+        [
+          58,
+          589
+        ]
+      ],
+      "samples": 2199,
+      "class_names": [
+        "continue",
+        "assistance"
+      ]
+    },
+    "assistance_type": {
+      "accuracy": 0.9072642922401428,
+      "macro_f1": 0.9066378066378067,
+      "macro_f1_supported": 0.9066378066378067,
+      "per_class_precision": [
+        0.896358543417367,
+        0.9206896551724137
+      ],
+      "per_class_recall": [
+        0.9329446064139941,
+        0.8782894736842105
+      ],
+      "per_class_f1": [
+        0.9142857142857143,
+        0.898989898989899
+      ],
+      "support": [
+        343,
+        304
+      ],
+      "confusion_matrix": [
+        [
+          320,
+          23
+        ],
+        [
+          37,
+          267
+        ]
+      ],
+      "samples": 647,
+      "class_names": [
+        "fetch",
+        "handover"
+      ]
+    },
+    "receiving_hand": {
+      "accuracy": 0.9177631735801697,
+      "macro_f1": 0.89176101972513,
+      "macro_f1_supported": 0.89176101972513,
+      "per_class_precision": [
+        1.0,
+        0.895397489539749
+      ],
+      "per_class_recall": [
+        0.7222222222222222,
+        1.0
+      ],
+      "per_class_f1": [
+        0.8387096774193549,
+        0.9448123620309051
+      ],
+      "support": [
+        90,
+        214
+      ],
+      "confusion_matrix": [
+        [
+          65,
+          25
+        ],
+        [
+          0,
+          214
+        ]
+      ],
+      "samples": 304,
+      "class_names": [
+        "left",
+        "right"
+      ]
+    },
+    "pose": {
+      "samples": 217,
+      "position_mean_euclidean_error_cm": 19.67789649963379,
+      "position_mae_cm": 19.67789649963379,
+      "position_root_mean_square_euclidean_error_cm": 21.63095474243164,
+      "position_rmse_cm": 21.63095474243164,
+      "position_median_cm": 19.08353042602539,
+      "orientation_mean_deg": 49.87445068359375,
+      "orientation_median_deg": 35.60970687866211,
+      "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+      "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres"
+    },
+    "pose_fixed_both_references": {
+      "samples": 181,
+      "position_mean_euclidean_error_cm": 19.581893920898438,
+      "position_mae_cm": 19.581893920898438,
+      "position_root_mean_square_euclidean_error_cm": 21.53879165649414,
+      "position_rmse_cm": 21.53879165649414,
+      "position_median_cm": 18.513996124267578,
+      "orientation_mean_deg": 43.792938232421875,
+      "orientation_median_deg": 30.444988250732422,
+      "position_error_definition": "mean Euclidean norm of the 3D position error, in centimetres",
+      "position_rmse_definition": "root mean square of the Euclidean 3D position-error norm, in centimetres",
+      "cohort_definition": "pose_target_valid_and_both_hand_references_valid",
+      "cohort_model_dependent": false,
+      "coverage_denominator_pose_targets": 217,
+      "sample_key_fingerprint": "c1b6f47c13c119afe8a5cab1fe3c4cecf0df3e5792e49c305ae52aa13d266288"
+    },
+    "pose_coverage": {
+      "pose_targets": 217,
+      "future_targets": 217,
+      "predicted_pose_valid": 217,
+      "coverage": 1.0,
+      "receiving_hand_context": "legacy parallel single-pose baseline head; receiving-hand is predicted by a separate classification head"
+    },
+    "mean_gate": null
+  },
+  "test_used_for_model_or_checkpoint_selection": false,
+  "runtime": {
+    "started_at": "2026-08-16T14:26:57.628922+00:00",
+    "completed_at": "2026-08-16T14:27:44.605143+00:00",
+    "wall_seconds": 46.97622505109757,
+    "device": "cuda",
+    "command": [
+      "/opt/aria_env/bin/python3",
+      "Training/evaluate_frozen_run.py",
+      "--run-dir",
+      "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/baseline_gru/baseline_gru_seed44",
+      "--checkpoint",
+      "best_intention",
+      "--selection-file",
+      "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/validation_selection.json",
+      "--experiment-id",
+      "baseline_gru",
+      "--output",
+      "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/final_test/baseline_gru_seed44.json"
+    ]
+  }
+}

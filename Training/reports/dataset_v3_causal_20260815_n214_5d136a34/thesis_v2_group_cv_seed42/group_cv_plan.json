@@ -1,0 +1,1043 @@
+{
+  "schema_version": 1,
+  "protocol": "nested_participant_group_cv_executable_v1",
+  "plan_fingerprint": "aaf694c9da8ff9207faec5e87a20d0bb8262a4ce4545d5090b388dea10f23e5f",
+  "dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
+  "experiment_tag": "thesis_v2_group_cv_seed42",
+  "base_config": "Training/configs/models/residual_transformer_v2.json",
+  "base_config_sha256": "4198532117166171fce044b4860fc2319c627a86f69c2744f00647f38470f3aa",
+  "split_fingerprint_sha256": "54437368fac762a7f479ea70f5741d9c3cd635b3cb8591053d19d87ebf67d872",
+  "fold_count": 25,
+  "seeds": [
+    42
+  ],
+  "checkpoint_selection_split": "inner_validation",
+  "outer_evaluation_used_for_selection": false,
+  "runs": [
+    {
+      "fold": 0,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_00_seed42.json",
+      "config_sha256": "3f6a06934d92b085e5881519bca34374b648331401d4a60b2fac2ef5df4ab085",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_00_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_00_seed42.json",
+      "train_participants": [
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Atilla"
+      ],
+      "outer_evaluation_participants": [
+        "Angelina"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_00_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_00_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_00_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_00_seed42.json"
+    },
+    {
+      "fold": 1,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_01_seed42.json",
+      "config_sha256": "dd9d7c16a2512eee822294dd45c69ab68e2c7296f7151b0ed816ad3fbc40ee8d",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_01_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_01_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Berat"
+      ],
+      "outer_evaluation_participants": [
+        "Atilla"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_01_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_01_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_01_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_01_seed42.json"
+    },
+    {
+      "fold": 2,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_02_seed42.json",
+      "config_sha256": "b3dcfe34f9d1e54235f98676388fa25edf670011ae7bb1efc69f9b325bb0bcb6",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_02_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_02_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "David"
+      ],
+      "outer_evaluation_participants": [
+        "Berat"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_02_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_02_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_02_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_02_seed42.json"
+    },
+    {
+      "fold": 3,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_03_seed42.json",
+      "config_sha256": "9fd0de7aa76e930fcb89ac18cf868c3b682c082896960a539ffa93da16c0df53",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_03_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_03_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Edu"
+      ],
+      "outer_evaluation_participants": [
+        "David"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_03_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_03_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_03_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_03_seed42.json"
+    },
+    {
+      "fold": 4,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_04_seed42.json",
+      "config_sha256": "6d9ef52cc27ce3aadda687e3b44f2403f344963938124de742c88652cc5fbee5",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_04_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_04_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Ermal"
+      ],
+      "outer_evaluation_participants": [
+        "Edu"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_04_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_04_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_04_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_04_seed42.json"
+    },
+    {
+      "fold": 5,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_05_seed42.json",
+      "config_sha256": "35ed88e493b1cb69b77dc0cdcd67ab29b5111963b57905dd1f39a0510f087444",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_05_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_05_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Felix"
+      ],
+      "outer_evaluation_participants": [
+        "Ermal"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_05_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_05_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_05_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_05_seed42.json"
+    },
+    {
+      "fold": 6,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_06_seed42.json",
+      "config_sha256": "742af776f67648cc90c82932f98b89f1038e19062886bf166e8c6a5c5c5f8ee2",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_06_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_06_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Florian"
+      ],
+      "outer_evaluation_participants": [
+        "Felix"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_06_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_06_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_06_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_06_seed42.json"
+    },
+    {
+      "fold": 7,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_07_seed42.json",
+      "config_sha256": "951327f97db9a867263adb48d3598669db63c0570f379485b16126a95278ab1f",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_07_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_07_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Isa"
+      ],
+      "outer_evaluation_participants": [
+        "Florian"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_07_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_07_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_07_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_07_seed42.json"
+    },
+    {
+      "fold": 8,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_08_seed42.json",
+      "config_sha256": "48083a91244e2ede758025fabc722e4404a0394e8ee8ff846c918e681ce21415",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_08_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_08_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Jan"
+      ],
+      "outer_evaluation_participants": [
+        "Isa"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_08_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_08_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_08_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_08_seed42.json"
+    },
+    {
+      "fold": 9,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_09_seed42.json",
+      "config_sha256": "62b0c42c2ffb4bedda8b917c430d4362e116778852e0cc1ba8cf7b99a634bd75",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_09_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_09_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Jola"
+      ],
+      "outer_evaluation_participants": [
+        "Jan"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_09_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_09_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_09_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_09_seed42.json"
+    },
+    {
+      "fold": 10,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_10_seed42.json",
+      "config_sha256": "a79a0325f53ea2b3e978ea85306ac7b34bfdacae73648f05885649308d5c1da6",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_10_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_10_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Jona"
+      ],
+      "outer_evaluation_participants": [
+        "Jola"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_10_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_10_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_10_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_10_seed42.json"
+    },
+    {
+      "fold": 11,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_11_seed42.json",
+      "config_sha256": "27b725984e8677c78a485f20988effb32f821f777f3bf93a9c5ea7da0f2aafac",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_11_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_11_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Julienco"
+      ],
+      "outer_evaluation_participants": [
+        "Jona"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_11_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_11_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_11_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_11_seed42.json"
+    },
+    {
+      "fold": 12,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_12_seed42.json",
+      "config_sha256": "65395be71abe76bee5e0a5fb896925cb11b543548d4bc3c5db85dbac7766c24c",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_12_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_12_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Leys"
+      ],
+      "outer_evaluation_participants": [
+        "Julienco"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_12_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_12_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_12_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_12_seed42.json"
+    },
+    {
+      "fold": 13,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_13_seed42.json",
+      "config_sha256": "74f86df77f21d56d73151ed7744491c0b1b4af2d7fd3617b1908664545cc94be",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_13_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_13_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Maria"
+      ],
+      "outer_evaluation_participants": [
+        "Leys"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_13_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_13_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_13_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_13_seed42.json"
+    },
+    {
+      "fold": 14,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_14_seed42.json",
+      "config_sha256": "a5b0a0600d2c5c21db5d296544eaa333ab5b981fe2348fd0cddec176ec1fce11",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_14_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_14_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Melih"
+      ],
+      "outer_evaluation_participants": [
+        "Maria"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_14_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_14_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_14_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_14_seed42.json"
+    },
+    {
+      "fold": 15,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_15_seed42.json",
+      "config_sha256": "8d796420ffe376ff7ce08b353afa497a1b2acade94511c5291b7b43691a0a15f",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_15_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_15_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Miro"
+      ],
+      "outer_evaluation_participants": [
+        "Melih"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_15_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_15_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_15_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_15_seed42.json"
+    },
+    {
+      "fold": 16,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_16_seed42.json",
+      "config_sha256": "03ae7de98ff0d8e37ea8d6e5f4f878d24fb1acb8f5cd3753ee9a6fbb63b6586c",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_16_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_16_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Mona"
+      ],
+      "outer_evaluation_participants": [
+        "Miro"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_16_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_16_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_16_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_16_seed42.json"
+    },
+    {
+      "fold": 17,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_17_seed42.json",
+      "config_sha256": "6d9dc86df140806eb0f1bae7353583ad9f5885044c085a61c6abd81297f1deb0",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_17_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_17_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Paul"
+      ],
+      "outer_evaluation_participants": [
+        "Mona"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_17_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_17_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_17_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_17_seed42.json"
+    },
+    {
+      "fold": 18,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_18_seed42.json",
+      "config_sha256": "1bb1c23f60c23123c58062703a2989964e2020c9493c04a7b1a76f4301288966",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_18_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_18_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Suthan"
+      ],
+      "outer_evaluation_participants": [
+        "Paul"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_18_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_18_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_18_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_18_seed42.json"
+    },
+    {
+      "fold": 19,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_19_seed42.json",
+      "config_sha256": "d0262168e91e7b1e506f57c7ab6813d903dd39eed2ba152c6ebea808aa9438d0",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_19_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_19_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Test",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Tarik"
+      ],
+      "outer_evaluation_participants": [
+        "Suthan"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_19_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_19_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_19_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_19_seed42.json"
+    },
+    {
+      "fold": 20,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_20_seed42.json",
+      "config_sha256": "90207aa743523a1bf34f83d0868ffe95cbadcdc5e27aaf20dbbe499d83ebbe86",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_20_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_20_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Urim",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Test"
+      ],
+      "outer_evaluation_participants": [
+        "Tarik"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_20_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_20_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_20_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_20_seed42.json"
+    },
+    {
+      "fold": 21,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_21_seed42.json",
+      "config_sha256": "243a21baab17dfa396c26cd9563c11c43b49db545f43ef043ee77e103396719e",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_21_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_21_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Vanessa",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Urim"
+      ],
+      "outer_evaluation_participants": [
+        "Test"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_21_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_21_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_21_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_21_seed42.json"
+    },
+    {
+      "fold": 22,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_22_seed42.json",
+      "config_sha256": "9ffb4bcb936ff1db220d0d27d0e6de7710bf2ca6215f946c7cf84809ad0cfc61",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_22_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_22_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Yuzhi"
+      ],
+      "validation_participants": [
+        "Vanessa"
+      ],
+      "outer_evaluation_participants": [
+        "Urim"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_22_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_22_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_22_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_22_seed42.json"
+    },
+    {
+      "fold": 23,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_23_seed42.json",
+      "config_sha256": "a39111329cedee936416463950f6f6b9044117decbe96322e422dcf5504e7c5d",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_23_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_23_seed42.json",
+      "train_participants": [
+        "Angelina",
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim"
+      ],
+      "validation_participants": [
+        "Yuzhi"
+      ],
+      "outer_evaluation_participants": [
+        "Vanessa"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_23_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_23_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_23_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_23_seed42.json"
+    },
+    {
+      "fold": 24,
+      "seed": 42,
+      "config": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_24_seed42.json",
+      "config_sha256": "0385dc30d759aceafe1218a1487eb3566ae8c3183193d68b442d67c5755b6bdb",
+      "run_dir": "Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_24_seed42",
+      "outer_evaluation_output": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_24_seed42.json",
+      "train_participants": [
+        "Atilla",
+        "Berat",
+        "David",
+        "Edu",
+        "Ermal",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Jona",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Mona",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Vanessa"
+      ],
+      "validation_participants": [
+        "Angelina"
+      ],
+      "outer_evaluation_participants": [
+        "Yuzhi"
+      ],
+      "validation_command": "python3 Training/train_residual.py --config Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/configs/fold_24_seed42.json --dataset-tag dataset_v3_causal_20260815_n214_5d136a34 --experiment-tag thesis_v2_group_cv_seed42 --seed 42 --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_24_seed42 --skip-test-evaluation",
+      "outer_evaluation_command": "python3 Training/evaluate_frozen_run.py --run-dir Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/fold_24_seed42 --checkpoint best_intention --output Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/outer_evaluation/fold_24_seed42.json"
+    }
+  ]
+}

@@ -48,6 +48,16 @@ QUALITATIVE_SELECTION_VERSION = "qualitative_good_typical_failure_v1"
 POSE_COMPONENTS = ("x_m", "y_m", "z_m", "qx", "qy", "qz", "qw")
 
 
+def validate_historical_artifact_freeze(
+    manifest_path: Path,
+) -> dict[str, object]:
+    """Validate an immutable training run from a later reporting checkout."""
+
+    return validate_artifact_freeze(
+        manifest_path, require_current_git_state=False
+    )
+
+
 def require_opencv() -> None:
     if cv2 is None:
         raise RuntimeError(
@@ -377,7 +387,7 @@ def validate_prediction_report(
     predictions_path: Path,
     prediction_rows: int,
     artifact_validator: Callable[[Path], Mapping[str, object]] = (
-        validate_artifact_freeze
+        validate_historical_artifact_freeze
     ),
 ) -> dict:
     if report.get("schema_version") != 3 or report.get(

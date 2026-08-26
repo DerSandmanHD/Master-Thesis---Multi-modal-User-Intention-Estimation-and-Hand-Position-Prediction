@@ -32,6 +32,7 @@ from render_prediction_overlay import (  # noqa: E402
     pose_bounds,
     qualitative_case_record,
     render_sequence,
+    validate_historical_artifact_freeze,
     validate_prediction_report,
     validate_qualitative_columns,
 )
@@ -115,6 +116,18 @@ def qualitative_frame() -> pd.DataFrame:
 
 
 class QualitativeOverlayTests(unittest.TestCase):
+    def test_historical_artifact_validator_ignores_reporting_checkout(self) -> None:
+        manifest = Path("historical/artifact_manifest.json")
+        with patch("render_prediction_overlay.validate_artifact_freeze") as validate:
+            validate.return_value = {"status": "complete"}
+            self.assertEqual(
+                validate_historical_artifact_freeze(manifest),
+                {"status": "complete"},
+            )
+            validate.assert_called_once_with(
+                manifest, require_current_git_state=False
+            )
+
     def test_prediction_sidecar_binds_csv_content_not_only_row_count(self) -> None:
         with tempfile.TemporaryDirectory(prefix="qualitative_binding_") as directory:
             root = Path(directory)

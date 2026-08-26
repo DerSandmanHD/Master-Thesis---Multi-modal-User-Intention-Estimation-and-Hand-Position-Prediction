@@ -10,17 +10,27 @@ Der aktive kausale Datasetstand
 und für 214 Sequenzen hashgebunden verifiziert. Der korrigierte CLIP-Cache,
 48 Validation-Läufe, die Validation-only-Auswahl, 48 autorisierte Final-Tests
 und 25 LOPO-Läufe samt participant-balanced Summary sind abgeschlossen.
-Alle neun Postprocessing-Tasks sind ebenfalls abgeschlossen. Der autoritative
-Gesamtbericht und die qualitative Ausgabe benötigen zum Statuszeitpunkt
-2026-08-17 noch gezielte Wiederholungen: Der Summary-Job lehnte den neueren
-Reporting-Checkout ab; die qualitative Pipeline fand für
-`Jona_7_20260616_182214` 1165 MP4- gegenüber 1166 VRS-RGB-Frames.
+Alle neun Postprocessing-Tasks sind ebenfalls abgeschlossen. Die historischen
+Reporting- und Frame-Mismatch-Blocker wurden ohne Retraining behoben: Der
+autoritative Summary-Job 2246329 und der qualitative Job 2246134 wurden
+erfolgreich abgeschlossen. Die drei Overlays verwenden explizite
+Device-Time-Sidecars; der jeweils einzige terminale VRS-RGB-Record ohne
+MP4-Gegenstück wird dokumentiert ausgeschlossen. Der autoritative
+Report-Fingerprint ist
+`ec078d5ed0d1eda3c2b009b92b3575da57f45cd2a3bbaa2ceca1154544184b9c`.
 Alle 16 aktiven Matrix-Configs erzwingen vor dem Training zusätzlich exakt 214
 ausgewählte Sequenzen und den vollständigen Sequenz-Fingerprint
 `5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd`.
 Der Tag allein wird daher nicht als Datasetnachweis akzeptiert.
-Ergebniszahlen dürfen erst aus den maschinenlesbaren v3-Berichten übernommen
-werden; laufende oder fehlende Aggregate werden nicht extrapoliert.
+Ergebniszahlen dürfen ausschließlich aus dem maschinenlesbaren v3-Summary
+unter
+`Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/final_summary/`
+übernommen werden; laufende oder fehlende Aggregate werden nicht extrapoliert.
+Der Projektverfasser bestätigte am 2026-08-26, dass `Test` ein echtes
+Teilnehmerpseudonym ist. Damit bleiben 214 Sequenzen von 25 Teilnehmenden
+korrekt; Dataset und Ergebnisse ändern sich nicht. Die datierte Auflösung steht
+in
+`Training/reports/dataset_v3_causal_20260815_n214_5d136a34/IDENTITY_PROVENANCE_RESOLUTION_20260826.md`.
 
 ## Forschungsaufgaben
 
@@ -182,7 +192,7 @@ python3 Training/prepare_group_cv_runs.py \
 # Nach Abschluss aller 25 äußeren Leave-One-Participant-Out-Auswertungen
 python3 Training/evaluation/summarize_group_cv.py \
   --plan Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/group_cv_plan.json \
-  --output-dir Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/summary
+  --output-dir Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/summary_v2
 
 # 7. Finaler Test eines bereits eingefrorenen Laufs
 python3 Training/evaluate_frozen_run.py \
@@ -198,6 +208,13 @@ python3 Training/evaluation/summarize_thesis_v2_matrix.py \
   --selection Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/validation_selection.json \
   --final-test-dir Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/final_test \
   --postprocess-root Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/postprocess \
+  --dataset-descriptor Training/datasets/dataset_v3_causal_20260815_n214_5d136a34.json \
+  --split-audit Training/reports/dataset_v3_causal_20260815_n214_5d136a34/split_confounding_v2/split_audit.json \
+  --group-cv-summary Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/summary_v2/group_cv_summary.json \
+  --intention-baselines Training/reports/dataset_v3_causal_20260815_n214_5d136a34/causal_intention_baselines_v1/intention_baselines.json \
+  --sampling-audit Training/reports/dataset_v3_causal_20260815_n214_5d136a34/sampling_window_audit_v1/sampling_window_audit.json \
+  --pose-learning-diagnosis Training/reports/dataset_v3_causal_20260815_n214_5d136a34/pose_learning_diagnosis_v1/pose_learning_diagnosis.json \
+  --qualitative-manifest Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/qualitative/qualitative_artifact_manifest.json \
   --output-dir Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/final_summary
 ```
 
@@ -373,6 +390,11 @@ und Nennern ausgegeben. Für Terminal-Endpose sind Persistence und das gelernte
 Modell verpflichtend. Hauptreports enthalten Intent/Assistance/Fetch/Handover,
 Receiving Hand, Pose, Orientierung, Coverage, Samplezahlen, Confusion Matrices,
 per-class Metriken sowie Window-, Sequence-, Participant- und per-hand-Ebenen.
+Die primäre Systemdarstellung enthält zusätzlich `Success@5/10/15/20 cm` auf
+einer festen Kaskadenkohorte. Receiving-Hand-LOPO wird gleichzeitig als feste
+Zwei-Klassen-Metrik über alle Teilnehmenden, supported-class-Metrik und
+Zwei-Klassen-Metrik über Mixed-Hand-Teilnehmende berichtet. Fixed Test und LOPO
+sind getrennte Evidenz und werden nicht gepoolt.
 
 Modality-Gewichte werden pro Window nur für tatsächlich verfügbare Modalitäten
 ausgegeben und summieren sich dort zu eins. Sie sind interne Modellkonditionierung
@@ -388,8 +410,10 @@ Ausführungsstatus eines gesamten Experiments steht zusätzlich in
 ## Lokaler Checkout und Clusterstatus
 
 Ein normaler lokaler Git-Checkout enthält nicht die großen Raw-VRS/MPS-Dateien,
-Master-CSVs, CLIP-Caches, Checkpoints und vollständigen Reports. Diese liegen
-auf dem TCML-Cluster. Der Clusterlauf hat die Kernstufen bereits abgeschlossen;
-der genaue maschinenlesbare Zwischenstand steht in
-`IMPLEMENTATION_STATUS_P0_P5.json` und `run_registry.json`. Lokal fehlende
-Großartefakte bedeuten daher nicht mehr, dass das Experiment unausgeführt ist.
+Master-CSVs, CLIP-Caches und Checkpoints. Diese liegen auf dem TCML-Cluster.
+Die für Thesis-Zahlen erforderlichen kompakten Reports und drei qualitativen
+Videos wurden in diesen Checkout synchronisiert. Der Clusterlauf hat Training,
+autorisierte Auswertung, Postprocessing und Reporting abgeschlossen; der
+genaue maschinenlesbare Stand steht in `IMPLEMENTATION_STATUS_P0_P5.json` und
+`run_registry.json`. Lokal fehlende Großartefakte bedeuten daher nicht, dass
+das Experiment unausgeführt ist.

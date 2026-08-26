@@ -1,0 +1,384 @@
+{
+  "schema_version": "primary_t1_pose_learning_curve_diagnosis_v1",
+  "created_at": "2026-08-25T17:48:37.001598+00:00",
+  "report_fingerprint": "e4ea1ac972bf7bf48f810439744f445e52924cc8d707ee1a7baf9ddb487dddae",
+  "scope": {
+    "dataset": "dataset_v3_causal_20260815_n214_5d136a34",
+    "experiment": "residual_current_gate",
+    "target": "receiving-wrist pose at t+1 s",
+    "endpose_included": false,
+    "retrospective_only": true,
+    "new_training_started": false
+  },
+  "runs": [
+    {
+      "seed": 42,
+      "epochs_observed": 14,
+      "position_loss": {
+        "type": "smooth_l1_meters",
+        "beta_m": 1.0,
+        "explicit_config_block": false,
+        "pose_loss_weight": 1.0,
+        "orientation_loss_weight": 0.25
+      },
+      "checkpoints": {
+        "best_intention_epoch": 7,
+        "best_pose_epoch": 13,
+        "best_intention_validation_macro_f1": 0.8759980963152763,
+        "best_intention_validation_position_error_cm": 8.89947509765625,
+        "best_pose_validation_position_error_cm": 7.837098121643066,
+        "pose_improvement_after_best_intention_cm": 1.0623769760131836,
+        "later_pose_optimum_than_intention": true
+      },
+      "trajectories": {
+        "train_position_loss": {
+          "first": 0.003859330135900037,
+          "last": 0.003203168932166974,
+          "minimum": 0.0031957709731183347,
+          "minimum_epoch": 13,
+          "absolute_change_first_to_last": -0.0006561612037330631,
+          "relative_change_first_to_last": -0.17001945431652982,
+          "least_squares_slope_per_epoch": -2.6824840482729705e-05,
+          "decreasing_step_fraction": 0.46153846153846156
+        },
+        "validation_position_loss": {
+          "first": 0.0011410799164760618,
+          "last": 0.0011610132585760326,
+          "minimum": 0.000720910152238268,
+          "minimum_epoch": 13,
+          "absolute_change_first_to_last": 1.993334209997072e-05,
+          "relative_change_first_to_last": 0.01746883965982841,
+          "least_squares_slope_per_epoch": -1.7661161848774497e-05,
+          "decreasing_step_fraction": 0.5384615384615384
+        },
+        "train_orientation_loss": {
+          "first": 0.07483341079049033,
+          "last": 0.053558827631610545,
+          "minimum": 0.05227156804114776,
+          "minimum_epoch": 13,
+          "absolute_change_first_to_last": -0.021274583158879784,
+          "relative_change_first_to_last": -0.2842925764594885,
+          "least_squares_slope_per_epoch": -0.001056687852875973,
+          "decreasing_step_fraction": 0.6153846153846154
+        },
+        "validation_orientation_loss": {
+          "first": 0.023391700034300165,
+          "last": 0.015602984540765323,
+          "minimum": 0.015023484465575988,
+          "minimum_epoch": 13,
+          "absolute_change_first_to_last": -0.007788715493534841,
+          "relative_change_first_to_last": -0.3329691934367294,
+          "least_squares_slope_per_epoch": -0.000644817732407661,
+          "decreasing_step_fraction": 0.5384615384615384
+        },
+        "train_position_error_cm": {
+          "first": 9.514193534851074,
+          "last": 8.953546524047852,
+          "minimum": 8.953546524047852,
+          "minimum_epoch": 14,
+          "absolute_change_first_to_last": -0.5606470108032227,
+          "relative_change_first_to_last": -0.058927433917497926,
+          "least_squares_slope_per_epoch": -0.0454723400074047,
+          "decreasing_step_fraction": 0.46153846153846156
+        },
+        "validation_position_error_cm": {
+          "first": 10.13525390625,
+          "last": 12.185098648071289,
+          "minimum": 7.837098121643066,
+          "minimum_epoch": 13,
+          "absolute_change_first_to_last": 2.049844741821289,
+          "relative_change_first_to_last": 0.20224897775449246,
+          "least_squares_slope_per_epoch": 0.05365229805747232,
+          "decreasing_step_fraction": 0.5384615384615384
+        },
+        "train_intention_macro_f1": {
+          "first": 0.7917051999266311,
+          "last": 0.9669421521289817,
+          "minimum": 0.7917051999266311,
+          "minimum_epoch": 1,
+          "absolute_change_first_to_last": 0.17523695220235058,
+          "relative_change_first_to_last": 0.22134116615451072,
+          "least_squares_slope_per_epoch": 0.009697450350975786,
+          "decreasing_step_fraction": 0.0
+        },
+        "validation_intention_macro_f1": {
+          "first": 0.781627055868,
+          "last": 0.8393923253700083,
+          "minimum": 0.781627055868,
+          "minimum_epoch": 1,
+          "absolute_change_first_to_last": 0.05776526950200833,
+          "relative_change_first_to_last": 0.07390387662292443,
+          "least_squares_slope_per_epoch": 0.001881759468373621,
+          "decreasing_step_fraction": 0.6153846153846154
+        }
+      },
+      "input_artifacts": {
+        "metrics": {
+          "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed42/metrics.json",
+          "sha256": "7399cf6a3e4d7ae8e75483f439b572df1242e69c79184bf0f2ff13ca60047120",
+          "size_bytes": 1208676
+        },
+        "config": {
+          "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed42/config.json",
+          "sha256": "eaa5a5f7e17428fe2ccc572fef2cf3d84c6c032fb11a12e20710d3121161c6db",
+          "size_bytes": 2830
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "epochs_observed": 10,
+      "position_loss": {
+        "type": "smooth_l1_meters",
+        "beta_m": 1.0,
+        "explicit_config_block": false,
+        "pose_loss_weight": 1.0,
+        "orientation_loss_weight": 0.25
+      },
+      "checkpoints": {
+        "best_intention_epoch": 3,
+        "best_pose_epoch": 5,
+        "best_intention_validation_macro_f1": 0.8721469364142983,
+        "best_intention_validation_position_error_cm": 9.386329650878906,
+        "best_pose_validation_position_error_cm": 7.866043567657471,
+        "pose_improvement_after_best_intention_cm": 1.5202860832214355,
+        "later_pose_optimum_than_intention": true
+      },
+      "trajectories": {
+        "train_position_loss": {
+          "first": 0.003823598835915618,
+          "last": 0.003202727371849745,
+          "minimum": 0.003202727371849745,
+          "minimum_epoch": 10,
+          "absolute_change_first_to_last": -0.0006208714640658732,
+          "relative_change_first_to_last": -0.1623788191987971,
+          "least_squares_slope_per_epoch": -4.8574165196089256e-05,
+          "decreasing_step_fraction": 0.6666666666666666
+        },
+        "validation_position_loss": {
+          "first": 0.0010167400107621365,
+          "last": 0.0008787222500212656,
+          "minimum": 0.0007999582809838278,
+          "minimum_epoch": 7,
+          "absolute_change_first_to_last": -0.00013801776074087095,
+          "relative_change_first_to_last": -0.13574538159210872,
+          "least_squares_slope_per_epoch": -1.3751500388871683e-05,
+          "decreasing_step_fraction": 0.6666666666666666
+        },
+        "train_orientation_loss": {
+          "first": 0.07076253013244192,
+          "last": 0.05389363642634922,
+          "minimum": 0.05375361458324876,
+          "minimum_epoch": 9,
+          "absolute_change_first_to_last": -0.0168688937060927,
+          "relative_change_first_to_last": -0.23838737357921233,
+          "least_squares_slope_per_epoch": -0.0013947467732991856,
+          "decreasing_step_fraction": 0.5555555555555556
+        },
+        "validation_orientation_loss": {
+          "first": 0.02016879593570446,
+          "last": 0.022125219171416136,
+          "minimum": 0.015239274746084946,
+          "minimum_epoch": 5,
+          "absolute_change_first_to_last": 0.0019564232357116747,
+          "relative_change_first_to_last": 0.09700248056197809,
+          "least_squares_slope_per_epoch": -8.937761429146491e-05,
+          "decreasing_step_fraction": 0.5555555555555556
+        },
+        "train_position_error_cm": {
+          "first": 9.43067455291748,
+          "last": 9.277612686157227,
+          "minimum": 9.090204238891602,
+          "minimum_epoch": 6,
+          "absolute_change_first_to_last": -0.1530618667602539,
+          "relative_change_first_to_last": -0.01623021406383943,
+          "least_squares_slope_per_epoch": -0.02124376008004853,
+          "decreasing_step_fraction": 0.5555555555555556
+        },
+        "validation_position_error_cm": {
+          "first": 9.18995475769043,
+          "last": 8.592276573181152,
+          "minimum": 7.866043567657471,
+          "minimum_epoch": 5,
+          "absolute_change_first_to_last": -0.5976781845092773,
+          "relative_change_first_to_last": -0.06503603121757724,
+          "least_squares_slope_per_epoch": -0.05324639118078983,
+          "decreasing_step_fraction": 0.5555555555555556
+        },
+        "train_intention_macro_f1": {
+          "first": 0.7964323001852529,
+          "last": 0.9527788476880931,
+          "minimum": 0.7964323001852529,
+          "minimum_epoch": 1,
+          "absolute_change_first_to_last": 0.15634654750284016,
+          "relative_change_first_to_last": 0.19630864728423672,
+          "least_squares_slope_per_epoch": 0.013424437876299064,
+          "decreasing_step_fraction": 0.0
+        },
+        "validation_intention_macro_f1": {
+          "first": 0.8585249377289653,
+          "last": 0.8590534102711005,
+          "minimum": 0.8452631504938674,
+          "minimum_epoch": 8,
+          "absolute_change_first_to_last": 0.0005284725421351721,
+          "relative_change_first_to_last": 0.0006155587553847037,
+          "least_squares_slope_per_epoch": -0.0014602165117519332,
+          "decreasing_step_fraction": 0.4444444444444444
+        }
+      },
+      "input_artifacts": {
+        "metrics": {
+          "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed43/metrics.json",
+          "sha256": "c1534f613621d6ab2a8f549c87ff1611337ef2799bb0efc88689cf984746f13f",
+          "size_bytes": 887952
+        },
+        "config": {
+          "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed43/config.json",
+          "sha256": "7c2bc6644eb2151c7dde4b4501e4fc68da72866bdbde405ed27436ed69d22f84",
+          "size_bytes": 2830
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "epochs_observed": 17,
+      "position_loss": {
+        "type": "smooth_l1_meters",
+        "beta_m": 1.0,
+        "explicit_config_block": false,
+        "pose_loss_weight": 1.0,
+        "orientation_loss_weight": 0.25
+      },
+      "checkpoints": {
+        "best_intention_epoch": 10,
+        "best_pose_epoch": 10,
+        "best_intention_validation_macro_f1": 0.8755179451412558,
+        "best_intention_validation_position_error_cm": 7.575098514556885,
+        "best_pose_validation_position_error_cm": 7.575098514556885,
+        "pose_improvement_after_best_intention_cm": 0.0,
+        "later_pose_optimum_than_intention": false
+      },
+      "trajectories": {
+        "train_position_loss": {
+          "first": 0.003972918955593118,
+          "last": 0.0036027829587271156,
+          "minimum": 0.003235935246377362,
+          "minimum_epoch": 14,
+          "absolute_change_first_to_last": -0.0003701359968660027,
+          "relative_change_first_to_last": -0.09316474889197557,
+          "least_squares_slope_per_epoch": -1.8905758822089666e-05,
+          "decreasing_step_fraction": 0.5
+        },
+        "validation_position_loss": {
+          "first": 0.0008680201002378806,
+          "last": 0.0007618472879673186,
+          "minimum": 0.0007014139182208437,
+          "minimum_epoch": 10,
+          "absolute_change_first_to_last": -0.00010617281227056198,
+          "relative_change_first_to_last": -0.12231607567781595,
+          "least_squares_slope_per_epoch": -5.851084068898516e-06,
+          "decreasing_step_fraction": 0.5625
+        },
+        "train_orientation_loss": {
+          "first": 0.07189433453825156,
+          "last": 0.0547568472271393,
+          "minimum": 0.05249257404369449,
+          "minimum_epoch": 14,
+          "absolute_change_first_to_last": -0.01713748731111226,
+          "relative_change_first_to_last": -0.2383704838660718,
+          "least_squares_slope_per_epoch": -0.000838181744911708,
+          "decreasing_step_fraction": 0.4375
+        },
+        "validation_orientation_loss": {
+          "first": 0.017960675443793015,
+          "last": 0.017650101994795185,
+          "minimum": 0.014974433040591859,
+          "minimum_epoch": 11,
+          "absolute_change_first_to_last": -0.00031057344899783,
+          "relative_change_first_to_last": -0.01729185797993807,
+          "least_squares_slope_per_epoch": 1.4574535184229627e-05,
+          "decreasing_step_fraction": 0.5625
+        },
+        "train_position_error_cm": {
+          "first": 9.426279067993164,
+          "last": 9.20290470123291,
+          "minimum": 8.920586585998535,
+          "minimum_epoch": 11,
+          "absolute_change_first_to_last": -0.2233743667602539,
+          "relative_change_first_to_last": -0.02369698214417599,
+          "least_squares_slope_per_epoch": -0.024345863099191702,
+          "decreasing_step_fraction": 0.4375
+        },
+        "validation_position_error_cm": {
+          "first": 7.59661340713501,
+          "last": 7.664611339569092,
+          "minimum": 7.575098514556885,
+          "minimum_epoch": 10,
+          "absolute_change_first_to_last": 0.06799793243408203,
+          "relative_change_first_to_last": 0.008951085015095799,
+          "least_squares_slope_per_epoch": 0.02366887003767724,
+          "decreasing_step_fraction": 0.5
+        },
+        "train_intention_macro_f1": {
+          "first": 0.7970800620576952,
+          "last": 0.969290807201508,
+          "minimum": 0.7970800620576952,
+          "minimum_epoch": 1,
+          "absolute_change_first_to_last": 0.17221074514381274,
+          "relative_change_first_to_last": 0.21605200448652995,
+          "least_squares_slope_per_epoch": 0.007502940967743716,
+          "decreasing_step_fraction": 0.0625
+        },
+        "validation_intention_macro_f1": {
+          "first": 0.8275493734909186,
+          "last": 0.8497221698223226,
+          "minimum": 0.8275493734909186,
+          "minimum_epoch": 1,
+          "absolute_change_first_to_last": 0.02217279633140401,
+          "relative_change_first_to_last": 0.026793321391653895,
+          "least_squares_slope_per_epoch": 0.0014031581532097342,
+          "decreasing_step_fraction": 0.4375
+        }
+      },
+      "input_artifacts": {
+        "metrics": {
+          "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed44/metrics.json",
+          "sha256": "0bd88fe635d994647e8118a3f3bb5473760a3a58cdd4d77a9d593d3a3f870b86",
+          "size_bytes": 1449097
+        },
+        "config": {
+          "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed44/config.json",
+          "sha256": "34d0b0a83b7f0b510f865fc204ad74f56ac08340b82a6a56a7810bfb2083307f",
+          "size_bytes": 2830
+        }
+      }
+    }
+  ],
+  "decision": {
+    "checklist_case_a_underfitting_signal": false,
+    "underfitting_warning_threshold_cm": 14.0,
+    "final_train_position_error_cm": [
+      8.953546524047852,
+      9.277612686157227,
+      9.20290470123291
+    ],
+    "minimum_train_position_error_cm": [
+      8.953546524047852,
+      9.090204238891602,
+      8.920586585998535
+    ],
+    "selection_timing_signal": true,
+    "selection_timing_seeds": [
+      42,
+      43
+    ],
+    "normalized_smooth_l1_sensitivity_run_recommended": false,
+    "conclusion": "The checklist's 14–15 cm train-underfitting trigger is not met. Existing curves do not justify a new normalized-loss run; checkpoint-selection timing explains part of the pose gap where the validation pose optimum occurs after best_intention.",
+    "guardrail": "Any normalized-loss run initiated after final-test inspection must be labelled post-hoc sensitivity analysis, never the original primary model."
+  },
+  "interpretation": {
+    "position_loss_scale": "smooth_l1_meters with beta_m=1.0 operates in the quadratic region for sub-metre residuals; its scalar magnitude is not itself evidence of a negligible parameter gradient.",
+    "pose_loss_composition": "position loss + orientation_loss_weight × orientation loss, then multiplied by pose_loss_weight in the multitask objective.",
+    "train_validation_comparability": "Training and validation summaries have different sample mixtures and training uses dropout while validation uses evaluation mode; their raw loss levels must not be interpreted as paired measurements."
+  }
+}

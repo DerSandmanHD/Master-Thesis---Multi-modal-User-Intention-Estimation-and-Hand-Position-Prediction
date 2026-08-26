@@ -1,5 +1,15 @@
 # Technisches Audit der Trainings- und Live-Inferenzpipeline
 
+> **Historisches Audit, nicht der aktuelle Thesis-Stand.** Dieser Bericht ist
+> an den unten genannten Commit vom 28. Juli 2026 gebunden. Insbesondere seine
+> Aussagen zu 156 Sequenzen, beidseitigem Nearest-Neighbor-Merging und den
+> damaligen v1/v2-Ergebnissen sind durch
+> `dataset_v3_causal_20260815_n214_5d136a34`,
+> `causal_backward_device_time_v1` und den aktiven autoritativen v3-Report
+> überholt. Aktuelle Quellen sind `THESIS_CURRENT_STATUS.md`,
+> `Training/THESIS_FINAL_PROTOCOL_V2.md`, `Training/run_registry.json` und
+> `Training/IMPLEMENTATION_STATUS_P0_P5.json`.
+
 **Auditstand:** 28. Juli 2026  
 **Geprüfter Git-Stand:** `eef6d2eebc421e744d9f48bf9f8cc4b3b3dad0ae`  
 **Gegenstand:** Datenerfassung, Master-Dataset-Erstellung, Datenfilterung, Training, Evaluation, Replay- und Aria-Live-Inferenz  

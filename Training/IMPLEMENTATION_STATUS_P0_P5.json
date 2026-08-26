@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "created_at": "2026-08-15",
-  "updated_at": "2026-08-17",
+  "updated_at": "2026-08-26",
   "scope": "implementation and cluster-execution audit for thesis protocol v2; runtime claims cite completed hash-bound artifacts or explicit in-progress jobs",
   "active_dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34",
   "active_dataset_materialized": true,
   "active_dataset_descriptor": "Training/datasets/dataset_v3_causal_20260815_n214_5d136a34.json",
   "runtime_snapshot": {
-    "status": "core_training_evaluation_and_postprocessing_complete_final_reports_blocked",
+    "status": "authoritative_reporting_freeze_identity_and_git_merge_complete_tag_pending",
     "causal_master_sequences_verified": 214,
     "corrected_clip_sequences": 214,
     "validation_runs_completed": 48,
@@ -18,15 +18,29 @@
     "postprocessing_total_tasks": 9,
     "postprocessing_jobs": [2239359, 2239360],
     "postprocessing_complete": true,
-    "failed_summary_job": 2239361,
-    "summary_blocker": "historical artifact validation still required the training Git checkout",
-    "failed_qualitative_job": 2239362,
-    "qualitative_blocker": "MP4/VRS RGB frame-count mismatch for Jona_7_20260616_182214: 1165 != 1166"
+    "posthoc_reporting_job": 2246132,
+    "authoritative_summary_job": 2246329,
+    "authoritative_summary_complete": true,
+    "authoritative_report_fingerprint": "ec078d5ed0d1eda3c2b009b92b3575da57f45cd2a3bbaa2ceca1154544184b9c",
+    "qualitative_job": 2246134,
+    "qualitative_complete": true,
+    "qualitative_manifest_fingerprint": "3d1673d12bc5d189de72905d0746164aa18a46292b9798fca0cb63e3b8cac650",
+    "resolved_failed_summary_jobs": [2239361, 2246320],
+    "resolved_failed_qualitative_job": 2239362,
+    "unit_tests": "174 passed on cluster Linux at 2026-08-26",
+    "scientific_smoke_tests": "22 of 22 passed on cluster Linux at 2026-08-26",
+    "causal_master_reverification": "214 of 214 passed at 2026-08-26",
+    "summary_and_qualitative_manifest_hashes_verified": true,
+    "all_48_training_artifact_freezes": "48 of 48 valid at 2026-08-26",
+    "identity_provenance_complete": true,
+    "confirmed_participant_pseudonym": "Test",
+    "participant_count": 25,
+    "identity_provenance_resolution": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/IDENTITY_PROVENANCE_RESOLUTION_20260826.md"
   },
   "required_artifact_freeze_protocol": "thesis_artifact_freeze_hash_bound_v2",
   "status_definitions": {
     "PASS": "implemented and verified locally or by completed hash-bound cluster artifacts",
-    "PARTIAL": "a scoped implementation exists but a required local verification is incomplete",
+    "PARTIAL": "a scoped implementation exists but a required verification or external provenance confirmation is incomplete",
     "BLOCKED": "execution requires data, hardware, container software or artifacts absent from this checkout",
     "NOT_APPLICABLE": "explicitly outside this work package"
   },
@@ -85,8 +99,27 @@
     },
     {
       "id": "P1.new_t1_results",
-      "status": "PARTIAL",
-      "reason": "All 48 validation runs, validation-only checkpoint selection, all 48 authorized final-test evaluations and all nine required postprocessing tasks completed. The authoritative summary must be rerun after its historical-checkout validation blocker is corrected."
+      "status": "PASS",
+      "reason": "All 48 validation runs, validation-only checkpoint selection, 48 authorized final-test evaluations and nine required postprocessing tasks are bound into the authoritative report produced by job 2246329.",
+      "evidence": ["Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/final_summary/summary_artifact_manifest.json"]
+    },
+    {
+      "id": "P1.system_success_cascade",
+      "status": "PASS",
+      "reason": "Success@5/10/15/20 cm and all preceding intention/receiving-hand cascade stages are reported for one fixed t+1-evaluable cohort.",
+      "evidence": ["Training/evaluation/grouped_metrics.py", "tests/test_grouped_evaluation.py", "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/final_summary/FINAL_MATRIX_SUMMARY.md"]
+    },
+    {
+      "id": "P1.causal_intention_baselines_and_sampling_audit",
+      "status": "PASS",
+      "reason": "Train-fitted majority, elapsed-time and last-frame logistic controls plus the empirical 214-sequence sampling/window audit completed without neural retraining in job 2246132.",
+      "evidence": ["Training/evaluation/evaluate_causal_intention_baselines.py", "Training/evaluation/audit_sampling_window_duration.py", "tests/test_causal_intention_baselines.py", "tests/test_sampling_window_audit.py"]
+    },
+    {
+      "id": "P1.pose_loss_learning_curve_decision",
+      "status": "PASS",
+      "reason": "The measured final train position errors are below the checklist's 14–15 cm trigger; no normalized-Smooth-L1 sensitivity run is recommended or started.",
+      "evidence": ["Training/evaluation/diagnose_pose_learning_curves.py", "tests/test_pose_learning_diagnosis.py", "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/pose_learning_diagnosis_v1/pose_learning_diagnosis.json"]
     },
     {
       "id": "P2.modality_wise_learned_fusion",
@@ -100,8 +133,8 @@
     },
     {
       "id": "P2.ablation_training_results",
-      "status": "PARTIAL",
-      "reason": "All predeclared architecture, modality, auxiliary-loss and corrected-CLIP variants completed for seeds 42/43/44 in validation and authorized final test; all gate postprocessing tasks completed. The authoritative aggregate remains blocked by historical-checkout validation."
+      "status": "PASS",
+      "reason": "All predeclared architecture, modality, auxiliary-loss and corrected-CLIP variants completed for seeds 42/43/44 and are present in the checkpoint-coherent authoritative aggregate."
     },
     {
       "id": "P3.participant_hand_object_phase_audit",
@@ -117,8 +150,14 @@
     {
       "id": "P3.group_cv_results",
       "status": "PASS",
-      "reason": "All 25 predeclared seed-42 outer LOPO runs completed and the participant-balanced summary was validated by job 2228718.",
-      "evidence": ["Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/summary/group_cv_summary.json"]
+      "reason": "All 25 predeclared seed-42 outer LOPO runs completed; the updated summary reports fixed-label, supported-class and mixed-hand receiving-hand views.",
+      "evidence": ["Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/summary_v2/group_cv_summary.json"]
+    },
+    {
+      "id": "P3.participant_identifier_Test_provenance",
+      "status": "PASS",
+      "reason": "The project author directly confirmed on 2026-08-26 that 'Test' is a pseudonym for a real participant. The six selected training sequences remain valid; the frozen study therefore remains 214 sequences from 25 participants and requires no rebuild or retraining.",
+      "evidence": ["Training/reports/dataset_v3_causal_20260815_n214_5d136a34/split_confounding_v2/split_audit.json", "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/IDENTITY_PROVENANCE_RESOLUTION_20260826.md"]
     },
     {
       "id": "P3.window_sequence_participant_hand_evaluation",
@@ -152,8 +191,9 @@
     },
     {
       "id": "P4.qualitative_video_rendering",
-      "status": "PARTIAL",
-      "reason": "Corrected prediction exports exist and primary postprocessing completed. Qualitative job 2239362 failed on an explicit MP4/VRS RGB frame-count mismatch for Jona_7_20260616_182214 (1165 vs 1166); no overlay is claimed complete."
+      "status": "PASS",
+      "reason": "Job 2246134 rendered good, typical and failure cases using hash-bound Device-Time sidecars. The single unmatched terminal VRS-RGB record in each source is explicitly excluded without changing MP4/VRS inputs.",
+      "evidence": ["Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/qualitative/qualitative_artifact_manifest.json"]
     },
     {
       "id": "P5.artifact_freeze_and_invalidation",
@@ -173,7 +213,8 @@
     {
       "id": "P5.authoritative_checkpoint_coherent_summary",
       "status": "PASS",
-      "evidence": ["Training/evaluation/summarize_thesis_v2_matrix.py", "tests/test_thesis_v2_matrix_summary.py"]
+      "reason": "Job 2246329 completed the 48-row active-v3 report; all output hashes and the combined authoritative fingerprint were independently recomputed locally.",
+      "evidence": ["Training/evaluation/summarize_thesis_v2_matrix.py", "tests/test_thesis_v2_matrix_summary.py", "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/final_summary/summary_artifact_manifest.json"]
     },
     {
       "id": "P5.slurm_workflow",
@@ -182,8 +223,20 @@
     },
     {
       "id": "P5.slurm_runtime_execution",
-      "status": "PARTIAL",
-      "reason": "Cluster execution succeeded for causal rebuild/preflight, corrected CLIP, terminal audit, 48 validation runs, 48 final tests, 25 LOPO runs and all nine postprocessing tasks. Summary job 2239361 and qualitative job 2239362 failed for documented non-training blockers and require targeted reruns."
+      "status": "PASS",
+      "reason": "Cluster execution completed causal rebuild/preflight, corrected CLIP, terminal audit, 48 validation runs, 48 final tests, 25 LOPO runs, all nine postprocessing tasks, post-hoc reports, authoritative summary and qualitative rendering. Failed reporting attempts remain historical and were resolved without retraining."
+    },
+    {
+      "id": "P5.unit_scientific_and_dataset_qa",
+      "status": "PASS",
+      "reason": "Cluster Linux verification on 2026-08-26 completed 174 unit/invariant tests, all 22 scientific smoke scripts and a fresh 214/214 causal-master verification.",
+      "evidence": ["Training/run_scientific_tests.py", "Training/verify_causal_masters.py", "Training/run_registry_smoke_test.py", "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/FINAL_VERIFICATION_20260826.md"]
+    },
+    {
+      "id": "P5.final_all_checkpoint_freeze_revalidation",
+      "status": "PASS",
+      "reason": "A read-only cluster revalidation recomputed and accepted all 48 active training artifact manifests, including their run-local inputs, outputs and checkpoint hashes.",
+      "evidence": ["Training/artifact_freeze.py", "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/FINAL_VERIFICATION_20260826.md"]
     },
     {
       "id": "P5.documentation_and_protocol",

@@ -23,7 +23,11 @@ Die Beschreibung basiert auf dem produktiven Code in:
 - [`Code/build_master_dataset.py`](../Code/build_master_dataset.py)
 - [`Training/data.py`](../Training/data.py)
 
-Stand dieser Dokumentation: **14. Juli 2026**.
+Aktiver Geltungsstand: **26. August 2026**. Verbindlicher Datensatz ist
+`dataset_v3_causal_20260815_n214_5d136a34`; insbesondere die kausale
+Backward-Synchronisation ersetzt den im früheren Entwurf beschriebenen
+beidseitigen Nearest-Neighbor-Merge. Historische v2-Ergebnisse sind keine
+Ergebnisse dieses v3-Datenstands.
 
 ## 1. Wichtige Begriffsabgrenzung: Was bedeutet hier Rohdaten?
 
@@ -212,6 +216,12 @@ T_device_camera_rgb
 ### 5.2 Central Pupil Frame (CPF)
 
 Der CPF-Ursprung liegt nominell zwischen den Augen. Der Blick wird zunächst relativ zu diesem Frame beschrieben. In der Project-Aria-Konvention zeigt die CPF-z-Achse nach vorne, x seitlich und y vertikal. Die konkrete Extrinsik `T_device_cpf` aus der Brillenkalibrierung ist für die Umrechnung maßgeblich.
+
+Der in Device-Koordinaten exportierte Gaze-Ursprung ist keine pro Frame neu
+geschätzte Augenposition. Er ist die konstante Translation der im VRS
+gespeicherten Gerätekalibrierung `T_device_cpf`. Blickrichtung und Blickpunkt
+variieren mit dem Eye-Gaze-Sample; World- und Robot-Koordinaten entstehen erst
+durch die zeitabhängige Device-Pose.
 
 ### 5.3 Exportierte Gaze-Spalten
 
@@ -703,13 +713,17 @@ threshold = max(
 ```
 
 6. Die statische Translation ist der komponentenweise Median der Inlier.
-7. Die statische Orientierung ist der Rotationsmittelwert der Inlier über SciPy.
+7. Die statische Orientierung wird durch chordale Rotationsmittelung mit
+   SciPys `Rotation.mean()` aus den Inlier-Rotationen bestimmt; es werden nicht
+   elementweise Rotationsmatrizen gemittelt.
 
 `robot_static_anchor_samples` speichert die Zahl der verwendeten Inlier.
 
-### 9.3 Verwendung bei verdecktem Marker
+### 9.3 Verwendung des statischen Ankers und direkter Fallback
 
-Wenn der statische Weltanker einmal aus der Sequenz geschätzt werden konnte und für eine spätere Zeile SLAM verfügbar ist, wird die robot-relative Device-Pose auch ohne aktuelle Tag-Sichtbarkeit berechnet:
+Wenn der statische Weltanker aus der Sequenz geschätzt werden konnte und für
+eine Zeile eine Closed-Loop-SLAM-Pose verfügbar ist, verwendet die Pipeline
+primär diese statische Kalibrierung:
 
 ```text
 T_robot_device
@@ -717,12 +731,19 @@ T_robot_device
     * T_world_device
 ```
 
-Dadurch können Hand-, Gaze- und Objektpositionen im Robot-Frame weitergeführt werden, obwohl Tag 0 in einzelnen Frames verdeckt ist.
+Das gilt unabhängig davon, ob Tag 0 in derselben Zeile zusätzlich sichtbar
+ist. Dadurch können Hand-, Gaze- und Objektpositionen im Robot-Frame
+weitergeführt werden, obwohl Tag 0 in einzelnen Frames verdeckt ist.
+
+Fehlt entweder ein sequenzweiter statischer Anker oder die aktuelle SLAM-Pose,
+kann eine aktuelle AprilTag-0-Beobachtung als direkter Device-to-Robot-Fallback
+dienen. Fehlen sowohl der Pfad aus statischem Anker plus SLAM als auch die
+aktuelle Tag-0-Pose, ist `robot_frame_valid=0`.
 
 Die Spalte `robot_anchor_interpolated` ist dabei historisch benannt. `1` bedeutet im aktuellen Code:
 
-- für diese Zeile war keine instantane AprilTag-0-Pose verfügbar,
-- der statische Weltanker wurde zusammen mit SLAM verwendet.
+- der statische Weltanker wurde zusammen mit SLAM verwendet und
+- für diese Zeile lag zugleich keine aktuelle AprilTag-0-Pose vor.
 
 Es handelt sich **nicht** um eine lineare oder splinebasierte Interpolation zwischen Markerposen.
 
@@ -732,20 +753,26 @@ Es handelt sich **nicht** um eine lineare oder splinebasierte Interpolation zwis
 |---|---|
 | `apriltag_0_valid` | Tag 0 besitzt für diesen Master-Zeitpunkt einen Marker-Match innerhalb 20 ms |
 | `robot_frame_valid` | `T_robot_device` konnte für diesen Zeitpunkt bestimmt werden |
-| `robot_anchor_interpolated` | statischer Anker wurde verwendet, weil die instantane Tag-0-Pose fehlte |
+| `robot_anchor_interpolated` | statischer Anker plus SLAM wurden verwendet und eine aktuelle Tag-0-Pose fehlte |
 | `robot_static_anchor_samples` | Anzahl robuster Tag-0/SLAM-Inlier der Sequenz |
 
 `robot_frame_valid` kann daher 1 sein, obwohl `apriltag_0_valid=0` ist.
 
 Für `robot_anchor_interpolated` gilt genauer:
 
-- `0`: eine instantane Tag-0-Pose war in der Zeile vorhanden oder wurde als direkter Fallback verwendet,
-- `1`: der statische Weltanker wurde mit SLAM verwendet, während die instantane Tag-0-Pose fehlte,
+- `0`: eine aktuelle Tag-0-Pose war vorhanden; der statische Pfad kann dennoch die tatsächlich verwendete Transformation liefern, oder die aktuelle Pose dient als direkter Fallback,
+- `1`: der statische Weltanker wurde mit SLAM verwendet, während die aktuelle Tag-0-Pose fehlte,
 - `NaN`: es konnte für die Zeile weder die entsprechende Ankerverwendung noch ein gültiger Robot-Frame bestimmt werden.
 
 ### 9.5 Wissenschaftliche Einschränkung
 
 Der Robot-Frame ist derzeit der Koordinatenrahmen des gedruckten AprilTag 0. Die starre Transformation vom Marker zur tatsächlichen kinematischen Roboterbasis beziehungsweise zum Endeffektor ist noch nicht eingerechnet.
+
+Außerdem wird `T_world_robot_static` offline aus gültigen Kandidaten der
+vollständigen Sequenz geschätzt. Die zeitvariablen Sensorbeobachtungen sind
+kausal ausgerichtet, diese statische Kalibrierung ist jedoch nicht strikt
+online-kausal. Die korrekte Claim-Formulierung lautet daher: *causal temporal
+observation alignment with offline static robot-frame calibration*.
 
 Somit gilt:
 
@@ -886,9 +913,14 @@ Die native Gaze-Zeitachse ist die Referenz des Master-Datasets. Es wird **kein s
 
 Die effektive Rate hängt daher vom Eye-Gaze-Stream der jeweiligen Aufnahme ab. Historische Sequenzen liegen ungefähr bei 30 Zeilen/s, dies ist aber keine im Master-Builder erzwungene Resamplingrate.
 
-### 11.2 Nearest-Neighbor-Merge
+### 11.2 Kausaler Backward-Merge
 
-Alle anderen Modalitäten werden mit `pandas.merge_asof(..., direction="nearest")` auf die Gaze-Zeitachse gemergt.
+Alle zeitvariablen Quellmodalitäten werden mit
+`pandas.merge_asof(..., direction="backward")` auf die Gaze-Zeitachse
+abgebildet. Für einen Masterzeitpunkt `t` ist damit nur das jüngste Sample mit
+`source_timestamp_ns <= t` zulässig. Die aktive Alignment-Version lautet
+`causal_backward_device_time_v1`; der Preflight lehnt historische
+Nearest-/Forward-/Backfill-Master ab.
 
 | Modalität | Quellzeitstempel | Standardtoleranz |
 |---|---|---:|
@@ -896,7 +928,9 @@ Alle anderen Modalitäten werden mit `pandas.merge_asof(..., direction="nearest"
 | Closed-Loop-SLAM | `tracking_timestamp_us * 1000` | 5 ms |
 | jeder Marker separat | RGB `capture_timestamp_ns` | 20 ms |
 
-Der zeitlich nächste Wert kann vor oder nach dem Gaze-Zeitpunkt liegen. Liegt kein Sample innerhalb der Toleranz, bleiben die Modalitätswerte leer.
+Liegt kein vergangenes Sample innerhalb der Toleranz, bleiben die
+Modalitätswerte leer. Ein nach dem Masterzeitpunkt erfasstes Sample darf nicht
+verwendet werden.
 
 ### 11.3 Zeitoffset-Metriken
 
@@ -917,13 +951,18 @@ time_offset_ms
 
 Interpretation:
 
-- positiver Offset: das gewählte Quellsample liegt nach dem Gaze-Zeitpunkt,
-- negativer Offset: es liegt davor,
+- Offset `0`: Quell- und Masterzeitpunkt stimmen überein,
+- negativer Offset: das kausal gewählte Quellsample liegt davor,
+- positiver Offset: im aktiven v3-Master unzulässig und ein Preflight-Fehler,
 - `NaN`: kein Match innerhalb der Toleranz.
 
 ### 11.4 Keine allgemeine Interpolation
 
-Die Pipeline interpoliert Hand-, SLAM-, Gaze- oder Objektmessungen beim Merge nicht numerisch. Sie nutzt den nächsten Nachbarn. Die einzige zeitüberbrückende Logik ist der statische Weltanker von AprilTag 0, der zusammen mit SLAM robot-relative Koordinaten auch bei temporär unsichtbarem Tag ermöglicht.
+Die Pipeline interpoliert Hand-, SLAM-, Gaze- oder Objektmessungen beim Merge
+nicht numerisch. Sie übernimmt ausschließlich das jüngste zulässige vergangene
+Sample. Die gesonderte zeitüberbrückende Logik ist der statische Weltanker von
+AprilTag 0, der zusammen mit SLAM robot-relative Koordinaten auch bei temporär
+unsichtbarem Tag ermöglicht.
 
 ## 12. Aufbau des Master-Datasets
 
@@ -1201,7 +1240,12 @@ Die aktuellen Baseline-Konfigurationen verwenden:
 | `max_timestamp_gap_seconds` | 0,2 s |
 | `minimum_observed_fraction` | 0,05 |
 
-Bei ungefähr 30 Gaze-Zeilen/s entsprechen 60 Zeilen ungefähr 2 s Beobachtung. Da nicht auf eine feste Rate resampelt wird, ist die exakte Zeitspanne datenabhängig.
+Der v3-Audit über alle 214 Mastersequenzen ergibt einen Median von
+`0,033333 s` pro Sampleintervall beziehungsweise ungefähr `30,0003 Hz`.
+Ein 60-Sample-Fenster umfasst 59 Intervalle und spannt über alle gültigen
+Fenster im Median `1,966667 s` auf (IQR `0,000001 s`). Es wird dennoch nicht
+auf eine feste Rate resampelt; die gemessene Zeitspanne bleibt die relevante
+Größe.
 
 Ein Fenster wird verworfen, wenn:
 
@@ -1353,7 +1397,7 @@ Aria Gen2 Aufnahme
                                                    v
                                   build_master_dataset.py
                                                    |
-                         nearest timestamp merge + intent labels
+                  causal backward timestamp merge + intent labels
                                                    |
                        SE(3)-Transformationen + statischer Tag-0-Anker
                                                    |
@@ -1457,9 +1501,12 @@ Bei gültiger Richtung, aber ungültiger Tiefe wird für den exportierten 3D-Ric
 
 SLAM-Weltpositionen verschiedener Aufnahmen sind ohne Registrierung nicht direkt vergleichbar. Die Robotermarker-Transformation soll dieses Problem für modellrelevante Positionen reduzieren.
 
-### 20.9 Nearest Neighbor statt Interpolation
+### 20.9 Kausales Sample-and-hold statt Interpolation
 
-Die Modalitäten werden nicht aufwendig kontinuierlich resampelt. Die gespeicherten Offsetspalten müssen bei Synchronisationsanalysen berücksichtigt werden.
+Die Modalitäten werden nicht kontinuierlich resampelt. Pro Masterzeitpunkt wird
+das jüngste vergangene Sample innerhalb der modalitätsspezifischen Toleranz
+übernommen. Die gespeicherten Offsetspalten müssen bei
+Synchronisationsanalysen berücksichtigt werden.
 
 ### 20.10 Future-Target am Aufnahmeende
 
@@ -1473,6 +1520,22 @@ Jede positive Trackingkonfidenz gilt derzeit als gültig. Eine Sensitivitätsana
 
 Ein zeitlich passendes Sample mit niedrigem `quality_score` kann weiterhin für Koordinatentransformationen verwendet werden. Der Score wird zwar dem Modell gegeben, schützt die abgeleiteten Targets aber nicht automatisch vor schlechter SLAM-Geometrie.
 
+### 20.13 Offline- und Live-Sensoralter unterscheiden sich
+
+Der Offline-Build verwendet maximal 12 ms alte Hand-, 5 ms alte
+Closed-Loop-SLAM- und 20 ms alte Markersamples. Die Live-Featureassembly
+akzeptiert standardmäßig bis zu 50 ms für Hand, 10 ms für VIO und 500 ms für
+Marker-Carry-Forward; der Quality Gate begrenzt sichtbare Objektmarker
+zusätzlich auf 250 ms und den letzten echten Anker auf 500 ms. Das kann eine
+Deployment-Verteilungsverschiebung erzeugen. Offline-Fenstermetriken sind
+daher keine `raw`-, `stable`- oder `actionable`-Replaymetriken.
+
+### 20.14 Offline geschätzte statische Robot-Kalibrierung
+
+`world -> robot` nutzt Beobachtungen aus der vollständigen Sequenz. Deshalb
+belegt der aktive v3-Stand kausale zeitliche Sensorzuordnung, aber keine
+vollständig online-kausale Gesamtpipeline.
+
 ## 21. Empfohlene Erweiterungen für spätere Versionen
 
 Diese Punkte beschreiben mögliche wissenschaftliche Erweiterungen und sind **nicht** Teil der aktuellen Baseline:
@@ -1485,7 +1548,7 @@ Diese Punkte beschreiben mögliche wissenschaftliche Erweiterungen und sind **ni
 6. RGB-Features mit CLIP, DINO oder einem Videoencoder ergänzen.
 7. Marker-zu-Roboterbasis-Extrinsik physisch vermessen.
 8. Objektmarker-zu-Objektzentrum beziehungsweise Marker-zu-Grasp-Pose kalibrieren.
-9. Nearest-Neighbor-Merge gegen kontrollierte Interpolation oder Continuous-Time-Modelle vergleichen.
+9. Kausales Sample-and-hold gegen kontrollierte kausale Interpolation oder Continuous-Time-Modelle vergleichen.
 10. Unsicherheiten der Sensoren explizit modellieren statt nur Masken und Scores zu übergeben.
 
 ## 22. Kompakte Referenz: Welche Modalität liefert was?

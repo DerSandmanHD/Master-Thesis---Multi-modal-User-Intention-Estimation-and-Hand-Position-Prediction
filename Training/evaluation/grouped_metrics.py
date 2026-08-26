@@ -27,6 +27,7 @@ PRIMARY_POSE_METHODS = (
     "persistence",
     "constant_velocity",
 )
+SYSTEM_SUCCESS_THRESHOLDS_CM = (5.0, 10.0, 15.0, 20.0)
 
 SEQUENCE_AGGREGATION_DEFINITION = (
     "Compute metrics over all windows within each sequence, then summarize the "
@@ -494,6 +495,123 @@ def pose_metrics(
     }
 
 
+def system_success_metrics(
+    frame: pd.DataFrame,
+    pose_methods: list[PoseMethod],
+    *,
+    thresholds_cm: tuple[float, ...] = SYSTEM_SUCCESS_THRESHOLDS_CM,
+) -> dict:
+    """Evaluate the full intention -> receiving-hand -> t+1 pose cascade."""
+
+    thresholds = tuple(sorted({float(value) for value in thresholds_cm}))
+    if not thresholds or any(not np.isfinite(value) or value <= 0 for value in thresholds):
+        raise ValueError("System-success thresholds must be finite positive values")
+    learned = next(
+        (method for method in pose_methods if method.name == "learned_end_to_end"),
+        None,
+    )
+    if learned is None:
+        return {
+            "status": "not_available",
+            "reason": "learned_end_to_end pose errors are unavailable",
+            "thresholds_cm": list(thresholds),
+        }
+
+    target_handover = frame["_target_intention_id"].eq(2)
+    evaluable = target_handover & frame["_pose_target_valid"]
+    denominator = int(evaluable.sum())
+    target_hands = frame.loc[evaluable, "_target_hand"]
+    invalid_target_hands = ~target_hands.isin(HAND_NAMES)
+    if invalid_target_hands.any():
+        raise ValueError(
+            "System-success cohort contains a valid t+1 pose target without a "
+            "left/right receiving-hand label"
+        )
+
+    predicted_handover = frame["_predicted_intention_id"].eq(2)
+    hand_correct = (
+        frame["_predicted_hand"].isin(HAND_NAMES)
+        & frame["_predicted_hand"].eq(frame["_target_hand"])
+    )
+    position_error = pd.to_numeric(
+        frame[learned.position_error_column], errors="coerce"
+    )
+    pose_available = np.isfinite(position_error)
+    if "learned_end_to_end_available" in frame:
+        declared_available = _truth_values(frame["learned_end_to_end_available"])
+        disagreement = evaluable & declared_available.ne(pose_available)
+        if disagreement.any():
+            raise ValueError(
+                "learned_end_to_end_available disagrees with the exported pose error"
+            )
+
+    handover_stage = evaluable & predicted_handover
+    hand_stage = handover_stage & hand_correct
+    available_stage = hand_stage & pose_available
+
+    def stage(successes: int, *, previous: int | None = None) -> dict:
+        return {
+            "successes": int(successes),
+            "denominator": denominator,
+            "rate": float(successes / denominator) if denominator else None,
+            "conditional_rate_given_previous_stage": (
+                float(successes / previous) if previous else None
+            ),
+        }
+
+    handover_count = int(handover_stage.sum())
+    hand_count = int(hand_stage.sum())
+    available_count = int(available_stage.sum())
+    stages = {
+        "handover_correct": stage(handover_count),
+        "handover_and_receiving_hand_correct": stage(
+            hand_count, previous=handover_count
+        ),
+        "handover_hand_and_pose_available": stage(
+            available_count, previous=hand_count
+        ),
+    }
+    for threshold in thresholds:
+        threshold_count = int(
+            (available_stage & position_error.lt(threshold)).sum()
+        )
+        label = f"success_at_{threshold:g}_cm"
+        stages[label] = stage(threshold_count, previous=hand_count)
+
+    sample_keys = (
+        frame.loc[evaluable, "sample_key"].astype(str).tolist()
+        if "sample_key" in frame
+        else frame.index[evaluable].astype(str).tolist()
+    )
+
+    return {
+        "status": "available",
+        "definition": (
+            "Ground-truth handover with a valid t+1 receiving-wrist target; "
+            "success requires predicted handover, the correct receiving hand, "
+            "an available learned predicted-hand pose, and Euclidean position "
+            "error strictly below the threshold."
+        ),
+        "pose_method": learned.name,
+        "position_error_column": learned.position_error_column,
+        "thresholds_cm": list(thresholds),
+        "ground_truth_handover_windows": int(target_handover.sum()),
+        "valid_t1_pose_target_windows": denominator,
+        "evaluable_sample_key_fingerprint": hashlib.sha256(
+            "\n".join(sample_keys).encode("utf-8")
+        ).hexdigest(),
+        "excluded_handover_windows_without_valid_t1_pose_target": int(
+            (target_handover & ~frame["_pose_target_valid"]).sum()
+        ),
+        "valid_t1_pose_target_coverage_within_handover": (
+            float(denominator / target_handover.sum())
+            if target_handover.any()
+            else None
+        ),
+        "stages": stages,
+    }
+
+
 def paired_pose_comparisons(
     frame: pd.DataFrame,
     pose_methods: list[PoseMethod],
@@ -737,6 +855,7 @@ def summarize_windows(
         "pose_target_denominator": pose_denominator,
         "pose": pose,
         "pose_fair_common": fair_common,
+        "system_success": system_success_metrics(frame, pose_methods),
         "paired_pose_comparisons": paired_pose_comparisons(frame, pose_methods),
     }
 
@@ -1536,6 +1655,26 @@ def report_table_rows(report: Mapping[str, object]) -> list[dict]:
                     "learned_win_fraction": metrics.get("learned_win_fraction"),
                 }
             )
+        system_success = summary.get("system_success")
+        if isinstance(system_success, Mapping) and system_success.get(
+            "status"
+        ) == "available":
+            stages = system_success.get("stages", {})
+            if isinstance(stages, Mapping):
+                for stage_name, raw_metrics in stages.items():
+                    if not isinstance(raw_metrics, Mapping):
+                        continue
+                    rows.append(
+                        {
+                            "level": level,
+                            "group": group,
+                            "domain": "system_success",
+                            "method": stage_name,
+                            "samples": raw_metrics.get("successes"),
+                            "denominator": raw_metrics.get("denominator"),
+                            "accuracy": raw_metrics.get("rate"),
+                        }
+                    )
 
     window = report["window_level"]
     assert isinstance(window, Mapping)

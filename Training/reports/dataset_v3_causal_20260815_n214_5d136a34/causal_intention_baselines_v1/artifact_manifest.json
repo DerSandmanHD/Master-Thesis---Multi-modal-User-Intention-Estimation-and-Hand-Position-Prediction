@@ -1,0 +1,39 @@
+{
+  "schema_version": "causal_intention_baseline_artifacts_v1",
+  "manifest_fingerprint": "84398a4711b2903e72a1629b0dabf409815e0ed158fcb5194125257346579be0",
+  "report_fingerprint": "450c474f99797b69371bb1e06fa551cda35c52b759289d6ce3c936c21a8779e3",
+  "inputs": {
+    "config": {
+      "path": "Training/configs/models/residual_transformer_v2.json",
+      "sha256": "4198532117166171fce044b4860fc2319c627a86f69c2744f00647f38470f3aa",
+      "size_bytes": 1704
+    },
+    "dataset_descriptor": {
+      "path": "Training/datasets/dataset_v3_causal_20260815_n214_5d136a34.json",
+      "sha256": "e51f1e17e4585b10beb1a37e58a10dee4e860929879dcb10fd1a26ff15549084",
+      "size_bytes": 1918
+    },
+    "frozen_prediction_report": {
+      "path": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/postprocess/residual_current_gate_seed42/test_predictions.json",
+      "sha256": "68664ffadee7481625e9c3a41a19d3fd0fabd815355c1af43aaee52f8dfe7c1a",
+      "size_bytes": 17958
+    }
+  },
+  "outputs": {
+    "test_predictions.csv": {
+      "path": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/causal_intention_baselines_v1/test_predictions.csv",
+      "sha256": "5aefda8ddb338c12198433dba312316b3398bd1e99a4627d999e9fa89ed93967",
+      "size_bytes": 247378
+    },
+    "intention_baselines.json": {
+      "path": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/causal_intention_baselines_v1/intention_baselines.json",
+      "sha256": "9a5fdae63184d941255667e7926086ec485f1d9f94b82931cca8adf088a4df43",
+      "size_bytes": 21344
+    },
+    "INTENTION_BASELINES.md": {
+      "path": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/causal_intention_baselines_v1/INTENTION_BASELINES.md",
+      "sha256": "ae74f288447cc354b33de77d6d2544fb293bf8df4aed9548587dbcf34231de20",
+      "size_bytes": 524
+    }
+  }
+}

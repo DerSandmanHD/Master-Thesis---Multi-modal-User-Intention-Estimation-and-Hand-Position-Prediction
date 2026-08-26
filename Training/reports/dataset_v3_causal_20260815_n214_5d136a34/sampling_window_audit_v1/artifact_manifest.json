@@ -1,0 +1,34 @@
+{
+  "schema_version": "empirical_sampling_window_artifacts_v1",
+  "manifest_fingerprint": "b57148814014872793c7687a1b06d0881456285397c1d5a8e5a3d6fc5d053cfa",
+  "report_fingerprint": "30fa97f55911f1db3a452bc1c8fb8c720da3888f2c6515b5df8c3bcbdd55bfb7",
+  "inputs": {
+    "config": {
+      "path": "Training/configs/models/residual_transformer_v2.json",
+      "sha256": "4198532117166171fce044b4860fc2319c627a86f69c2744f00647f38470f3aa",
+      "size_bytes": 1704
+    },
+    "dataset_descriptor": {
+      "path": "Training/datasets/dataset_v3_causal_20260815_n214_5d136a34.json",
+      "sha256": "e51f1e17e4585b10beb1a37e58a10dee4e860929879dcb10fd1a26ff15549084",
+      "size_bytes": 1918
+    }
+  },
+  "outputs": {
+    "sampling_window_audit.json": {
+      "path": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/sampling_window_audit_v1/sampling_window_audit.json",
+      "sha256": "574fd71b6a727a7ff92dabd82880ed106387bd1d99dbc02a299a1c5b56cf747d",
+      "size_bytes": 4880
+    },
+    "sampling_by_sequence.csv": {
+      "path": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/sampling_window_audit_v1/sampling_by_sequence.csv",
+      "sha256": "93497bc38b00d9444339e0db585e2c9c3fea1521f668971ab2e32ebfeca16f96",
+      "size_bytes": 10969
+    },
+    "SAMPLING_WINDOW_AUDIT.md": {
+      "path": "Training/reports/dataset_v3_causal_20260815_n214_5d136a34/sampling_window_audit_v1/SAMPLING_WINDOW_AUDIT.md",
+      "sha256": "7cd8e4c5f1a87154fb38413e7d9c70c8e8b18e95f5499c3348d60572006586b7",
+      "size_bytes": 595
+    }
+  }
+}

@@ -37,7 +37,7 @@ from artifact_freeze import (  # noqa: E402
 
 PLAN_PROTOCOL = "nested_participant_group_cv_executable_v1"
 FINAL_REPORT_PROTOCOL = "validation_frozen_checkpoint_single_test_v2"
-SUMMARY_PROTOCOL = "complete_participant_balanced_nested_group_cv_v1"
+SUMMARY_PROTOCOL = "complete_participant_balanced_nested_group_cv_v2"
 INTENTION_NAMES = ("continue", "fetch", "handover")
 HAND_NAMES = ("left", "right")
 
@@ -412,6 +412,20 @@ def _participant_csv_rows(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, A
         output["receiving_hand_macro_f1"] = (
             hand["macro_f1"] if hand and hand["samples"] > 0 else None
         )
+        output["receiving_hand_macro_f1_supported"] = (
+            hand["macro_f1_supported"] if hand and hand["samples"] > 0 else None
+        )
+        hand_support = hand["support"] if hand else [0, 0]
+        supported_class_count = sum(count > 0 for count in hand_support)
+        output["receiving_hand_supported_class_count"] = supported_class_count
+        output["receiving_hand_left_support"] = hand_support[0]
+        output["receiving_hand_right_support"] = hand_support[1]
+        output["receiving_hand_is_mixed"] = supported_class_count == len(HAND_NAMES)
+        output["receiving_hand_mixed_hand_macro_f1"] = (
+            hand["macro_f1"]
+            if hand and hand["samples"] > 0 and output["receiving_hand_is_mixed"]
+            else None
+        )
         result.append(output)
     return result
 
@@ -444,6 +458,8 @@ def build_summary(plan_path: Path, *, freeze_validator: Callable[[Path], Mapping
         "intention_macro_f1",
         *(f"{name}_{metric}" for name in INTENTION_NAMES for metric in ("precision", "recall", "f1")),
         "receiving_hand_macro_f1",
+        "receiving_hand_macro_f1_supported",
+        "receiving_hand_mixed_hand_macro_f1",
     ]
     for seed in sorted(by_seed):
         values = by_seed[seed]
@@ -454,6 +470,13 @@ def build_summary(plan_path: Path, *, freeze_validator: Callable[[Path], Mapping
             "aggregation": "equal_weight_per_outer_participant",
             "receiving_hand_contributing_participants": sum(
                 row.get("receiving_hand_macro_f1") is not None for row in values
+            ),
+            "receiving_hand_supported_contributing_participants": sum(
+                row.get("receiving_hand_macro_f1_supported") is not None
+                for row in values
+            ),
+            "receiving_hand_mixed_hand_participants": sum(
+                bool(row.get("receiving_hand_is_mixed")) for row in values
             ),
         }
         for key in numeric_keys:
@@ -470,7 +493,7 @@ def build_summary(plan_path: Path, *, freeze_validator: Callable[[Path], Mapping
             "seed_count": len(values),
         }
     summary = {
-        "schema_version": 1,
+        "schema_version": 2,
         "protocol": SUMMARY_PROTOCOL,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "report_fingerprint": None,
@@ -506,6 +529,39 @@ def build_summary(plan_path: Path, *, freeze_validator: Callable[[Path], Mapping
             "seed_sd_is_population_uncertainty": False,
             "window_counts_are_not_used_as_participant_weights": True,
             "metrics_recomputed_from_confusion_matrices": True,
+        },
+        "receiving_hand_reporting": {
+            "fixed_two_class_all_participants": {
+                "metric": "receiving_hand_macro_f1",
+                "participants": sorted(expected_participants),
+                "interpretation": (
+                    "Conservative fixed left/right label view; absent held-out "
+                    "classes contribute F1=0."
+                ),
+            },
+            "supported_class_all_participants": {
+                "metric": "receiving_hand_macro_f1_supported",
+                "participants": sorted(expected_participants),
+                "interpretation": (
+                    "Performance on receiving-hand classes with positive ground-truth "
+                    "support; it does not demonstrate within-participant left/right "
+                    "discrimination for single-hand participants."
+                ),
+            },
+            "fixed_two_class_mixed_hand_participants": {
+                "metric": "receiving_hand_mixed_hand_macro_f1",
+                "participants": sorted(
+                    {
+                        row["participant"]
+                        for row in participant_rows
+                        if row["receiving_hand_is_mixed"]
+                    }
+                ),
+                "interpretation": (
+                    "Primary within-participant left/right discrimination view, "
+                    "restricted to held-out participants with both classes."
+                ),
+            },
         },
         "seed_metric_summary": seed_metric_summary,
         "validated_reports": [

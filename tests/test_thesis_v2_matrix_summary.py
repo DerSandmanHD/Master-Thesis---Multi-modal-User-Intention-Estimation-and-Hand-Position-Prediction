@@ -27,6 +27,7 @@ from summarize_thesis_v2_matrix import (  # noqa: E402
     FINAL_TEST_PROTOCOL,
     MatrixSummaryError,
     _classification_fields,
+    attach_supplementary_reports,
     build_matrix_summary,
     validate_historical_artifact_freeze,
     write_outputs,
@@ -40,6 +41,12 @@ from pose_baselines import sample_key_fingerprint  # noqa: E402
 
 
 def write_final_report(path: Path, report: dict) -> None:
+    report["report_fingerprint"] = None
+    report["report_fingerprint"] = canonical_json_hash(report)
+    path.write_text(json.dumps(report), encoding="utf-8")
+
+
+def write_fingerprinted_report(path: Path, report: dict) -> None:
     report["report_fingerprint"] = None
     report["report_fingerprint"] = canonical_json_hash(report)
     path.write_text(json.dumps(report), encoding="utf-8")
@@ -343,15 +350,16 @@ def add_grouped_report(fixture: dict, experiment_id: str, seed: int) -> Path:
     predictions.write_text(
         "participant,sequence_id,endpoint_timestamp_ns,sample_key,target_intention_id,"
         "predicted_intention_id,target_receiving_hand,predicted_receiving_hand,"
-        "pose_valid,fair_common,oracle_position_error_cm,"
+        "pose_valid,fair_common,learned_end_to_end_available,"
+        "predicted_position_error_cm,oracle_position_error_cm,"
         "oracle_orientation_error_deg,persistence_position_error_cm,"
         "persistence_orientation_error_deg,constant_velocity_position_error_cm,"
         "constant_velocity_orientation_error_deg\n"
-        "P1,S1,1,a,2,2,left,left,true,true,5,15,7,17,6,16\n"
-        "P1,S1,2,b,2,2,left,left,true,true,6,16,8,18,7,17\n"
-        "P1,S1,3,c,2,2,left,left,true,true,7,17,9,19,8,18\n"
-        "P1,S1,4,d,2,2,left,left,true,true,6,16,8,18,7,17\n"
-        "P1,S1,5,e,2,2,left,left,true,false,10,20,10,20,,\n",
+        "P1,S1,1,a,2,2,left,left,true,true,true,4,5,15,7,17,6,16\n"
+        "P1,S1,2,b,2,2,left,left,true,true,true,6,6,16,8,18,7,17\n"
+        "P1,S1,3,c,2,2,left,left,true,true,true,11,7,17,9,19,8,18\n"
+        "P1,S1,4,d,2,2,left,left,true,true,true,16,6,16,8,18,7,17\n"
+        "P1,S1,5,e,2,2,left,left,true,false,true,21,10,20,10,20,,\n",
         encoding="utf-8",
     )
     predictions_hash = sha256_file(predictions)
@@ -478,6 +486,12 @@ def test_authoritative_summary_keeps_seed_rows_and_aggregates_separate(
     assert primary_42["t1_fair_learned_model_position_mean_cm"] == 6.0
     assert primary_42["t1_fair_persistence_position_mean_cm"] == 8.0
     assert primary_42["t1_fair_constant_velocity_position_mean_cm"] == 7.0
+    assert primary_42["system_success_status"] == "available_checkpoint_bound"
+    assert primary_42["system_evaluable_t1_windows"] == 5
+    assert primary_42["system_success_at_5_cm_count"] == 1
+    assert primary_42["system_success_at_10_cm_count"] == 2
+    assert primary_42["system_success_at_15_cm_count"] == 3
+    assert primary_42["system_success_at_20_cm_count"] == 4
     primary_43 = next(
         row
         for row in summary["seed_rows"]
@@ -538,6 +552,50 @@ def test_authoritative_summary_keeps_seed_rows_and_aggregates_separate(
     with pytest.raises(FileExistsError, match="Refusing to overwrite"):
         write_outputs(summary, output)
     write_outputs(summary, output, overwrite=True)
+
+
+def test_single_pose_head_validates_native_coverage_before_fixed_cohort(
+    tmp_path: Path,
+) -> None:
+    fixture = build_fixture(tmp_path)
+    path = fixture["reports"][("primary_model", 42)]
+    report = json.loads(path.read_text(encoding="utf-8"))
+    metrics = report["test_metrics"]
+    metrics["pose"] = pose(7.0, 10)
+    metrics.pop("pose_end_to_end")
+    metrics.pop("pose_oracle")
+    metrics["pose_fixed_both_references"] = {
+        **pose(7.5, 7),
+        "cohort_definition": "pose_target_valid_and_both_hand_references_valid",
+        "cohort_model_dependent": False,
+        "coverage_denominator_pose_targets": 10,
+        "sample_key_fingerprint": "f" * 64,
+    }
+    metrics["pose_coverage"] = {
+        "pose_targets": 10,
+        "predicted_pose_valid": 10,
+        "coverage": 1.0,
+        "receiving_hand_context": "legacy parallel single-pose baseline head",
+    }
+    write_final_report(path, report)
+
+    summary = summarize(fixture)
+    row = next(
+        value
+        for value in summary["seed_rows"]
+        if value["experiment_id"] == "primary_model" and value["seed"] == 42
+    )
+    assert row["test_pose_samples"] == 7
+    assert row["diagnostic_native_end_to_end_pose_samples"] == 10
+
+    report = json.loads(path.read_text(encoding="utf-8"))
+    report["test_metrics"]["pose_coverage"]["predicted_pose_valid"] = 9
+    write_final_report(path, report)
+    with pytest.raises(
+        MatrixSummaryError,
+        match="Standard pose samples differ from predicted_pose_valid",
+    ):
+        summarize(fixture)
 
 
 def test_required_t1_postprocessing_is_complete_or_summary_fails(
@@ -890,3 +948,308 @@ def test_grouped_primary_rejects_filtered_test_export(tmp_path: Path) -> None:
 
     with pytest.raises(MatrixSummaryError, match="filtered test subset"):
         summarize(fixture, postprocess)
+
+
+def test_authoritative_v3_supplements_are_dataset_and_fingerprint_bound(
+    tmp_path: Path,
+) -> None:
+    tag = "dataset_v3_causal_20260815_n214_5d136a34"
+    dataset_fingerprint = "d" * 64
+    source_fingerprint = "s" * 64
+    endpoint_fingerprint = "e" * 64
+    sequence_ids = [f"P{i:03d}_1" for i in range(214)]
+    sequence_fingerprint = hashlib.sha256(
+        "\n".join(sequence_ids).encode("utf-8")
+    ).hexdigest()
+    descriptor_path = tmp_path / "descriptor.json"
+    descriptor_path.write_text(
+        json.dumps(
+            {
+                "dataset_tag": tag,
+                "selected_sequences": 214,
+                "sequence_fingerprint": sequence_fingerprint,
+                "dataset_content_fingerprint": dataset_fingerprint,
+                "source_content_fingerprint": source_fingerprint,
+                "required_observation_alignment_version": (
+                    "causal_backward_device_time_v1"
+                ),
+            }
+        ),
+        encoding="utf-8",
+    )
+    mixed = [f"Mixed{i}" for i in range(7)]
+    split_path = tmp_path / "split.json"
+    split_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "participant_split_audit_v1",
+                "source": {"eligibility": {"sequence_ids": sequence_ids}},
+                "sequence_count": 214,
+                "participant_count": 25,
+                "historical_split": {
+                    "table": [
+                        {
+                            "split": "train",
+                            "sequence_count": 170,
+                            "participant_count": 19,
+                            "participants": [f"Train{i}" for i in range(19)],
+                        },
+                        {
+                            "split": "validation",
+                            "sequence_count": 21,
+                            "participant_count": 3,
+                            "participants": ["Val0", "Val1", "Val2"],
+                        },
+                        {
+                            "split": "test",
+                            "sequence_count": 23,
+                            "participant_count": 3,
+                            "participants": ["Test0", "Test1", "Test2"],
+                        },
+                    ]
+                },
+                "global_participant_hand_diagnostics": {
+                    "cramers_v_participant_by_hand": 0.76,
+                    "participant_majority_hand_accuracy": 0.85,
+                    "global_majority_hand_accuracy": 0.65,
+                    "pure_hand_participant_fraction": 0.72,
+                    "mixed_hand_participants": mixed,
+                },
+                "identity_provenance_flags": [
+                    {
+                        "participant": "Test",
+                        "sequence_count": 6,
+                        "action": "Confirm Test manually.",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    group_path = tmp_path / "group_cv.json"
+    metric = {
+        "mean_across_seed_participant_balanced_estimates": 0.8,
+        "sample_sd_across_seeds": None,
+        "seed_count": 1,
+    }
+    group_report = {
+        "schema_version": 2,
+        "protocol": "complete_participant_balanced_nested_group_cv_v2",
+        "report_fingerprint": None,
+        "plan": {
+            "dataset_tag": tag,
+            "common_source_content_fingerprint": source_fingerprint,
+        },
+        "completeness": {
+            "status": "complete",
+            "validated_outer_evaluations": 25,
+        },
+        "selection_discipline": {
+            "checkpoint_selection_split": "inner_validation",
+            "outer_evaluation_used_for_selection": False,
+        },
+        "seed_metric_summary": {
+            "intention_accuracy": metric,
+            "intention_macro_f1": metric,
+            "receiving_hand_macro_f1": metric,
+            "receiving_hand_macro_f1_supported": metric,
+            "receiving_hand_mixed_hand_macro_f1": metric,
+        },
+        "receiving_hand_reporting": {
+            "fixed_two_class_mixed_hand_participants": {
+                "participants": mixed,
+            }
+        },
+    }
+    write_fingerprinted_report(group_path, group_report)
+    baseline_path = tmp_path / "baselines.json"
+    baseline_metric = classification(
+        [[2, 0, 0], [0, 2, 0], [0, 0, 3]],
+        ["continue", "fetch", "handover"],
+    )
+    baseline_report = {
+        "schema_version": "causal_intention_baselines_v1",
+        "report_fingerprint": None,
+        "dataset": {
+            "identifier": tag,
+            "dataset_content_fingerprint": dataset_fingerprint,
+            "source_content_fingerprint": source_fingerprint,
+        },
+        "split": {
+            "window_counts": {"test": 7},
+            "endpoint_fingerprints": {"test": endpoint_fingerprint},
+        },
+        "scientific_policy": {
+            "fit_split": "train",
+            "future_information_used": False,
+        },
+        "methods": {
+            name: {
+                "definition": name,
+                "metrics": {"test": baseline_metric},
+            }
+            for name in (
+                "majority_class",
+                "elapsed_time_since_start_logistic",
+                "last_sensor_frame_logistic",
+            )
+        },
+    }
+    write_fingerprinted_report(baseline_path, baseline_report)
+    sampling_path = tmp_path / "sampling.json"
+    sampling_report = {
+        "schema_version": "empirical_sampling_window_audit_v1",
+        "report_fingerprint": None,
+        "dataset": {
+            "identifier": tag,
+            "dataset_content_fingerprint": dataset_fingerprint,
+            "source_content_fingerprint": source_fingerprint,
+        },
+        "sampling_intervals_seconds": {
+            "within_configured_window_gap_limit": {
+                "median": 1 / 30,
+                "iqr": 0.0,
+            },
+            "empirical_median_sampling_hz": 30.0,
+        },
+        "observation_window": {
+            "samples": 60,
+            "intervals_per_window": 59,
+            "window_counts": {"test": 7},
+            "actual_duration_seconds_all_valid_windows": {
+                "median": 59 / 30,
+                "iqr": 0.0,
+            },
+        },
+    }
+    write_fingerprinted_report(sampling_path, sampling_report)
+    pose_path = tmp_path / "pose_diagnosis.json"
+    pose_report = {
+        "schema_version": "primary_t1_pose_learning_curve_diagnosis_v1",
+        "report_fingerprint": None,
+        "scope": {
+            "dataset": tag,
+            "target": "receiving-wrist pose at t+1 s",
+            "endpose_included": False,
+            "new_training_started": False,
+        },
+        "decision": {
+            "conclusion": "No loss-scale trigger.",
+            "normalized_smooth_l1_sensitivity_run_recommended": False,
+        },
+        "runs": [{"seed": seed} for seed in (42, 43, 44)],
+    }
+    write_fingerprinted_report(pose_path, pose_report)
+    overlay_path = tmp_path / "overlay_report.json"
+    overlay_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "qualitative_overlay_device_time_v2",
+                "checkpoint_provenance": {
+                    "dataset_content_fingerprint": dataset_fingerprint,
+                    "source_content_fingerprint": source_fingerprint,
+                },
+                "synchronization_valid": True,
+                "selected_sequences": ["good", "typical", "failure"],
+                "selection_reasons": {
+                    "good": "good",
+                    "typical": "typical",
+                    "failure": "failure",
+                },
+                "time_basis": "device_time",
+                "legacy_overlay_artifacts_valid": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    qualitative_path = tmp_path / "qualitative_artifact_manifest.json"
+    qualitative_report = {
+        "schema_version": "qualitative_artifact_manifest_v1",
+        "manifest_fingerprint": None,
+        "outputs": {
+            "overlay_report.json": {
+                "sha256": sha256_file(overlay_path),
+            }
+        },
+    }
+    qualitative_report["manifest_fingerprint"] = canonical_json_hash(
+        qualitative_report
+    )
+    qualitative_path.write_text(json.dumps(qualitative_report), encoding="utf-8")
+    summary = {
+        "matrix": {"dataset_tag": tag},
+        "common_source_content_fingerprint": source_fingerprint,
+        "common_test_window_endpoint_count": 7,
+        "common_test_window_endpoint_fingerprint": endpoint_fingerprint,
+        "seed_rows": [
+            {
+                "thesis_task_role": "primary_t_plus_1_future_wrist",
+                "dataset_tag": tag,
+                "dataset_content_fingerprint": dataset_fingerprint,
+            }
+            for _ in range(3)
+        ],
+        "seed_aggregation": {"rows": [{"seeds": [42, 43, 44]}]},
+    }
+    authoritative = attach_supplementary_reports(
+        summary,
+        dataset_descriptor_path=descriptor_path,
+        split_audit_path=split_path,
+        group_cv_summary_path=group_path,
+        intention_baselines_path=baseline_path,
+        sampling_audit_path=sampling_path,
+        pose_learning_diagnosis_path=pose_path,
+        qualitative_manifest_path=qualitative_path,
+    )
+    assert authoritative["schema_version"] == 2
+    assert authoritative["active_dataset"]["generation"] == "v3_causal"
+    assert authoritative["active_dataset"][
+        "matrix_dataset_content_fingerprints"
+    ] == [dataset_fingerprint]
+    assert authoritative["supplementary_reports"]["split_and_confounding"][
+        "identity_provenance_flags"
+    ][0]["participant"] == "Test"
+    assert authoritative["reporting_domains"]["replay_or_deployment_performance"][
+        "status"
+    ] == "not_included_no_checkpoint_bound_replay_report"
+    assert authoritative["supplementary_reports"]["group_cv"][
+        "receiving_hand"
+    ]["receiving_hand_mixed_hand_macro_f1"] == metric
+    assert authoritative["authoritative_report_fingerprint"] == canonical_json_hash(
+        {**authoritative, "authoritative_report_fingerprint": None}
+    )
+
+    summary["seed_rows"].append(
+        {
+            "thesis_task_role": "primary_t_plus_1_future_wrist",
+            "dataset_tag": tag,
+            "dataset_content_fingerprint": "a" * 64,
+        }
+    )
+    authoritative_with_ablation = attach_supplementary_reports(
+        summary,
+        dataset_descriptor_path=descriptor_path,
+        split_audit_path=split_path,
+        group_cv_summary_path=group_path,
+        intention_baselines_path=baseline_path,
+        sampling_audit_path=sampling_path,
+        pose_learning_diagnosis_path=pose_path,
+        qualitative_manifest_path=qualitative_path,
+    )
+    assert authoritative_with_ablation["active_dataset"][
+        "matrix_dataset_content_fingerprints"
+    ] == ["a" * 64, dataset_fingerprint]
+
+    baseline_report["dataset"]["identifier"] = "dataset_v2_historical"
+    write_fingerprinted_report(baseline_path, baseline_report)
+    with pytest.raises(MatrixSummaryError, match="active-v3 policy"):
+        attach_supplementary_reports(
+            summary,
+            dataset_descriptor_path=descriptor_path,
+            split_audit_path=split_path,
+            group_cv_summary_path=group_path,
+            intention_baselines_path=baseline_path,
+            sampling_audit_path=sampling_path,
+            pose_learning_diagnosis_path=pose_path,
+            qualitative_manifest_path=qualitative_path,
+        )

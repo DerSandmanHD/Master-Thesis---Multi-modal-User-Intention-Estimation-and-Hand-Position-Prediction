@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "reporting_protocol": "active_dataset_v3_authoritative_thesis_report_v1",
+  "matrix": {
+    "path": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/configs/experiment_matrix_v2.json",
+    "sha256": "20ebefa13be76635b2f78139a6a8506dcf1eae6fedd8fdc1c7bdcf4d53e7e6d2",
+    "matrix_id": "thesis_final_v2_corrected_alignment",
+    "dataset_tag": "dataset_v3_causal_20260815_n214_5d136a34"
+  },
+  "validation_selection": {
+    "path": "/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/validation_selection.json",
+    "sha256": "a87834b20f7275293e3cba47e96565ef55f27895dff49dc82499d5a20efe4d21",
+    "selection_split": "validation",
+    "test_metrics_read": false
+  },
+  "authoritative_report_fingerprint": "ec078d5ed0d1eda3c2b009b92b3575da57f45cd2a3bbaa2ceca1154544184b9c",
+  "outputs": {
+    "seed_json": {
+      "path": "final_seed_results.json",
+      "sha256": "7b975744db612cf1f2cf87f12f56baa94e1a0263125b8ad43401f2c5a3d0d027"
+    },
+    "seed_csv": {
+      "path": "final_seed_results.csv",
+      "sha256": "54ae205a06a43249617ae4ad5654d720f328094c582ad2a2eb15a9b6b4a53d23"
+    },
+    "aggregate_json": {
+      "path": "final_seed_aggregates.json",
+      "sha256": "bcdcbf2e2da1c54a02d818cc20c95f1813b52492f231880a127350dc20890735"
+    },
+    "aggregate_csv": {
+      "path": "final_seed_aggregates.csv",
+      "sha256": "132d548bd9d239ebe29c3763e315010433a74f491f941066cd9675e39fd2d94c"
+    },
+    "markdown": {
+      "path": "FINAL_MATRIX_SUMMARY.md",
+      "sha256": "74e4adeb62d893e2f524f1f7d4958697292e00581dd9266894c69d19b3ce89d0"
+    }
+  }
+}

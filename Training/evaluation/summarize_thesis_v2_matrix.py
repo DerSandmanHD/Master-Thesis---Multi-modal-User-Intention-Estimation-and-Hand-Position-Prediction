@@ -107,6 +107,13 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Explicitly replace an existing derived summary (default: refuse).",
     )
+    parser.add_argument("--dataset-descriptor", type=Path, default=None)
+    parser.add_argument("--split-audit", type=Path, default=None)
+    parser.add_argument("--group-cv-summary", type=Path, default=None)
+    parser.add_argument("--intention-baselines", type=Path, default=None)
+    parser.add_argument("--sampling-audit", type=Path, default=None)
+    parser.add_argument("--pose-learning-diagnosis", type=Path, default=None)
+    parser.add_argument("--qualitative-manifest", type=Path, default=None)
     return parser.parse_args()
 
 
@@ -123,6 +130,437 @@ def read_object(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise MatrixSummaryError(f"Expected a JSON object in {path}")
     return value
+
+
+def _report_identity(path: Path) -> dict[str, Any]:
+    return {
+        "path": str(path.resolve()),
+        "sha256": sha256_file(path),
+        "size_bytes": path.stat().st_size,
+    }
+
+
+def _validated_fingerprinted_report(
+    path: Path, *, schema_version: Any
+) -> dict[str, Any]:
+    report = read_object(path)
+    if report.get("schema_version") != schema_version:
+        raise MatrixSummaryError(
+            f"Unexpected schema in supplementary report {path}: "
+            f"{report.get('schema_version')!r}"
+        )
+    if report.get("report_fingerprint") != canonical_json_hash(
+        {**report, "report_fingerprint": None}
+    ):
+        raise MatrixSummaryError(
+            f"Supplementary report fingerprint mismatch: {path}"
+        )
+    return report
+
+
+def _sequence_fingerprint(sequence_ids: Sequence[str]) -> str:
+    return hashlib.sha256(
+        "\n".join(sorted(str(value) for value in sequence_ids)).encode("utf-8")
+    ).hexdigest()
+
+
+def _metric_snapshot(values: Mapping[str, Any]) -> dict[str, Any]:
+    fields = (
+        "accuracy",
+        "macro_f1",
+        "macro_f1_supported",
+        "per_class_precision",
+        "per_class_recall",
+        "per_class_f1",
+        "support",
+        "confusion_matrix",
+        "samples",
+        "class_names",
+    )
+    return {field: values.get(field) for field in fields}
+
+
+def attach_supplementary_reports(
+    summary: Mapping[str, Any],
+    *,
+    dataset_descriptor_path: Path,
+    split_audit_path: Path,
+    group_cv_summary_path: Path,
+    intention_baselines_path: Path,
+    sampling_audit_path: Path,
+    pose_learning_diagnosis_path: Path,
+    qualitative_manifest_path: Path,
+) -> dict[str, Any]:
+    """Bind every non-matrix thesis result into one active-v3 report."""
+
+    result = dict(summary)
+    dataset_tag = str(summary["matrix"]["dataset_tag"])
+    descriptor = read_object(dataset_descriptor_path)
+    if descriptor.get("dataset_tag") != dataset_tag:
+        raise MatrixSummaryError("Dataset descriptor differs from the matrix")
+    if int(descriptor.get("selected_sequences", -1)) != 214:
+        raise MatrixSummaryError("Active v3 descriptor must contain 214 sequences")
+    dataset_fingerprint = str(descriptor.get("dataset_content_fingerprint", ""))
+    source_fingerprint = str(descriptor.get("source_content_fingerprint", ""))
+    if not dataset_fingerprint or not source_fingerprint:
+        raise MatrixSummaryError("Dataset descriptor lacks content fingerprints")
+    primary_rows = [
+        row
+        for row in summary["seed_rows"]
+        if row.get("thesis_task_role") == "primary_t_plus_1_future_wrist"
+    ]
+    primary_dataset_fingerprints = {
+        str(row.get("dataset_content_fingerprint")) for row in primary_rows
+    }
+    if (
+        not primary_rows
+        or any(row.get("dataset_tag") != dataset_tag for row in primary_rows)
+        or not all(
+            isinstance(row.get("dataset_content_fingerprint"), str)
+            and len(row["dataset_content_fingerprint"]) == 64
+            for row in primary_rows
+        )
+        or dataset_fingerprint not in primary_dataset_fingerprints
+    ):
+        raise MatrixSummaryError(
+            "Primary matrix rows are not bound to the active v3 dataset"
+        )
+    if summary.get("common_source_content_fingerprint") != source_fingerprint:
+        raise MatrixSummaryError(
+            "Matrix source fingerprint differs from the active v3 descriptor"
+        )
+
+    split_audit = read_object(split_audit_path)
+    if split_audit.get("schema_version") != "participant_split_audit_v1":
+        raise MatrixSummaryError("Unsupported participant split-audit schema")
+    eligible = split_audit.get("source", {}).get("eligibility", {})
+    sequence_ids = eligible.get("sequence_ids")
+    if (
+        not isinstance(sequence_ids, list)
+        or len(sequence_ids) != 214
+        or _sequence_fingerprint(sequence_ids)
+        != descriptor.get("sequence_fingerprint")
+    ):
+        raise MatrixSummaryError(
+            "Split audit sequence set differs from the active v3 descriptor"
+        )
+    if int(split_audit.get("sequence_count", -1)) != 214 or int(
+        split_audit.get("participant_count", -1)
+    ) != 25:
+        raise MatrixSummaryError("Split audit is not the 214-sequence/25-person audit")
+    split_table = split_audit.get("historical_split", {}).get("table")
+    if not isinstance(split_table, list):
+        raise MatrixSummaryError("Split audit has no historical split table")
+    split_rows = {str(row["split"]): row for row in split_table}
+    expected_sequence_counts = {"train": 170, "validation": 21, "test": 23}
+    expected_participant_counts = {"train": 19, "validation": 3, "test": 3}
+    if {
+        name: int(row.get("sequence_count", -1))
+        for name, row in split_rows.items()
+    } != expected_sequence_counts or {
+        name: int(row.get("participant_count", -1))
+        for name, row in split_rows.items()
+    } != expected_participant_counts:
+        raise MatrixSummaryError("Split audit does not contain the frozen 170/21/23 split")
+    hand_diagnostics = split_audit.get("global_participant_hand_diagnostics")
+    if not isinstance(hand_diagnostics, Mapping):
+        raise MatrixSummaryError("Split audit lacks participant-hand diagnostics")
+    mixed_participants = [
+        str(value) for value in hand_diagnostics.get("mixed_hand_participants", [])
+    ]
+    if len(mixed_participants) != 7:
+        raise MatrixSummaryError("Split audit does not identify seven mixed-hand people")
+    identity_provenance_flags = split_audit.get("identity_provenance_flags")
+    if not isinstance(identity_provenance_flags, list):
+        raise MatrixSummaryError("Split audit lacks identity-provenance flags")
+
+    group_cv = _validated_fingerprinted_report(
+        group_cv_summary_path, schema_version=2
+    )
+    if group_cv.get("protocol") != "complete_participant_balanced_nested_group_cv_v2":
+        raise MatrixSummaryError("Unsupported Group-CV summary protocol")
+    completeness = group_cv.get("completeness")
+    plan = group_cv.get("plan")
+    if not isinstance(completeness, Mapping) or not isinstance(plan, Mapping):
+        raise MatrixSummaryError("Group-CV summary lacks completeness provenance")
+    if (
+        completeness.get("status") != "complete"
+        or int(completeness.get("validated_outer_evaluations", -1)) != 25
+        or plan.get("dataset_tag") != dataset_tag
+        or plan.get("common_source_content_fingerprint") != source_fingerprint
+    ):
+        raise MatrixSummaryError("Group-CV summary is not the complete active-v3 LOPO result")
+    hand_reporting = group_cv.get("receiving_hand_reporting")
+    group_metrics = group_cv.get("seed_metric_summary")
+    if not isinstance(hand_reporting, Mapping) or not isinstance(group_metrics, Mapping):
+        raise MatrixSummaryError("Group-CV summary lacks receiving-hand views")
+    required_hand_metrics = (
+        "receiving_hand_macro_f1",
+        "receiving_hand_macro_f1_supported",
+        "receiving_hand_mixed_hand_macro_f1",
+    )
+    if any(not isinstance(group_metrics.get(name), Mapping) for name in required_hand_metrics):
+        raise MatrixSummaryError("Group-CV summary is missing a required hand metric")
+    reported_mixed = hand_reporting.get(
+        "fixed_two_class_mixed_hand_participants", {}
+    ).get("participants")
+    if sorted(str(value) for value in reported_mixed or []) != sorted(
+        mixed_participants
+    ):
+        raise MatrixSummaryError("Group-CV mixed-hand cohort differs from split audit")
+
+    baselines = _validated_fingerprinted_report(
+        intention_baselines_path, schema_version="causal_intention_baselines_v1"
+    )
+    baseline_dataset = baselines.get("dataset")
+    baseline_split = baselines.get("split")
+    policy = baselines.get("scientific_policy")
+    methods = baselines.get("methods")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (baseline_dataset, baseline_split, policy, methods)
+    ):
+        raise MatrixSummaryError("Causal intention baseline report is incomplete")
+    if (
+        baseline_dataset.get("identifier") != dataset_tag
+        or baseline_dataset.get("dataset_content_fingerprint") != dataset_fingerprint
+        or baseline_dataset.get("source_content_fingerprint") != source_fingerprint
+        or policy.get("fit_split") != "train"
+        or policy.get("future_information_used") is not False
+    ):
+        raise MatrixSummaryError("Causal intention baselines violate the active-v3 policy")
+    expected_methods = {
+        "majority_class",
+        "elapsed_time_since_start_logistic",
+        "last_sensor_frame_logistic",
+    }
+    if set(methods) != expected_methods:
+        raise MatrixSummaryError("Causal intention baseline method set differs")
+    for name, method in methods.items():
+        metric = method.get("metrics", {}).get("test")
+        if not isinstance(metric, Mapping):
+            raise MatrixSummaryError(f"Baseline {name} lacks frozen test metrics")
+    test_window_count = int(baseline_split.get("window_counts", {}).get("test", -1))
+    test_endpoint = baseline_split.get("endpoint_fingerprints", {}).get("test")
+    if (
+        test_window_count != int(summary["common_test_window_endpoint_count"])
+        or test_endpoint != summary["common_test_window_endpoint_fingerprint"]
+    ):
+        raise MatrixSummaryError("Baseline test windows differ from the matrix")
+
+    sampling = _validated_fingerprinted_report(
+        sampling_audit_path, schema_version="empirical_sampling_window_audit_v1"
+    )
+    sampling_dataset = sampling.get("dataset")
+    observation = sampling.get("observation_window")
+    if not isinstance(sampling_dataset, Mapping) or not isinstance(
+        observation, Mapping
+    ):
+        raise MatrixSummaryError("Sampling audit is incomplete")
+    if (
+        sampling_dataset.get("identifier") != dataset_tag
+        or sampling_dataset.get("dataset_content_fingerprint") != dataset_fingerprint
+        or sampling_dataset.get("source_content_fingerprint") != source_fingerprint
+        or int(observation.get("samples", -1)) != 60
+        or int(observation.get("intervals_per_window", -1)) != 59
+        or int(observation.get("window_counts", {}).get("test", -1))
+        != test_window_count
+    ):
+        raise MatrixSummaryError("Sampling audit differs from active-v3 windows")
+
+    pose_diagnosis = _validated_fingerprinted_report(
+        pose_learning_diagnosis_path,
+        schema_version="primary_t1_pose_learning_curve_diagnosis_v1",
+    )
+    pose_scope = pose_diagnosis.get("scope")
+    pose_decision = pose_diagnosis.get("decision")
+    if not isinstance(pose_scope, Mapping) or not isinstance(
+        pose_decision, Mapping
+    ):
+        raise MatrixSummaryError("Pose-learning diagnosis is incomplete")
+    if (
+        pose_scope.get("dataset") != dataset_tag
+        or pose_scope.get("target") != "receiving-wrist pose at t+1 s"
+        or pose_scope.get("endpose_included") is not False
+        or pose_scope.get("new_training_started") is not False
+        or {int(row["seed"]) for row in pose_diagnosis.get("runs", [])}
+        != {int(value) for value in summary["seed_aggregation"]["rows"][0]["seeds"]}
+    ):
+        raise MatrixSummaryError("Pose-learning diagnosis is not the primary v3 t+1 audit")
+
+    qualitative_manifest = read_object(qualitative_manifest_path)
+    if qualitative_manifest.get("schema_version") != "qualitative_artifact_manifest_v1":
+        raise MatrixSummaryError("Unsupported qualitative artifact manifest")
+    if qualitative_manifest.get("manifest_fingerprint") != canonical_json_hash(
+        {**qualitative_manifest, "manifest_fingerprint": None}
+    ):
+        raise MatrixSummaryError("Qualitative artifact-manifest fingerprint mismatch")
+    output_identities = qualitative_manifest.get("outputs")
+    overlay_identity = (
+        output_identities.get("overlay_report.json")
+        if isinstance(output_identities, Mapping)
+        else None
+    )
+    if not isinstance(overlay_identity, Mapping):
+        raise MatrixSummaryError("Qualitative manifest lacks overlay_report.json")
+    overlay_path = qualitative_manifest_path.parent / "overlay_report.json"
+    if not overlay_path.is_file() or overlay_identity.get("sha256") != sha256_file(
+        overlay_path
+    ):
+        raise MatrixSummaryError("Qualitative overlay report hash differs")
+    overlay = read_object(overlay_path)
+    checkpoint_provenance = overlay.get("checkpoint_provenance")
+    if not isinstance(checkpoint_provenance, Mapping):
+        raise MatrixSummaryError("Qualitative overlay lacks checkpoint provenance")
+    if (
+        overlay.get("schema_version") != "qualitative_overlay_device_time_v2"
+        or overlay.get("synchronization_valid") is not True
+        or len(overlay.get("selected_sequences", [])) != 3
+        or checkpoint_provenance.get("dataset_content_fingerprint")
+        != dataset_fingerprint
+        or checkpoint_provenance.get("source_content_fingerprint")
+        != source_fingerprint
+    ):
+        raise MatrixSummaryError("Qualitative evidence is not synchronized active-v3 output")
+    for name, identity in output_identities.items():
+        path = qualitative_manifest_path.parent / str(name)
+        if not path.is_file() or identity.get("sha256") != sha256_file(path):
+            raise MatrixSummaryError(f"Qualitative output hash differs: {name}")
+
+    result.update(
+        {
+            "schema_version": 2,
+            "reporting_protocol": "active_dataset_v3_authoritative_thesis_report_v1",
+            "active_dataset": {
+                "identifier": dataset_tag,
+                "generation": "v3_causal",
+                "selected_sequences": 214,
+                "participants": 25,
+                "sequence_fingerprint": descriptor["sequence_fingerprint"],
+                "dataset_content_fingerprint": dataset_fingerprint,
+                "matrix_dataset_content_fingerprints": sorted(
+                    primary_dataset_fingerprints
+                ),
+                "dataset_content_fingerprint_semantics": (
+                    "The descriptor fingerprint binds the full sensor profile; "
+                    "feature ablations, visual features, and target variants have "
+                    "distinct derived dataset-content fingerprints while retaining "
+                    "the same source-content and sequence contracts."
+                ),
+                "source_content_fingerprint": source_fingerprint,
+                "required_observation_alignment_version": descriptor[
+                    "required_observation_alignment_version"
+                ],
+                "descriptor": _report_identity(dataset_descriptor_path),
+            },
+            "reporting_domains": {
+                "offline_model_performance": {
+                    "status": "available",
+                    "contents": [
+                        "fixed participant-disjoint matrix",
+                        "participant-balanced LOPO",
+                        "causal trivial intention baselines",
+                        "paired t+1 pose baselines",
+                        "intention-to-hand-to-pose Success@threshold",
+                    ],
+                },
+                "replay_or_deployment_performance": {
+                    "status": "not_included_no_checkpoint_bound_replay_report",
+                    "forbidden_interpretation": (
+                        "Offline head/window metrics must not be labelled raw, "
+                        "stable, or actionable deployment performance."
+                    ),
+                },
+            },
+            "supplementary_reports": {
+                "split_and_confounding": {
+                    "source": _report_identity(split_audit_path),
+                    "sequence_count": 214,
+                    "participant_count": 25,
+                    "splits": {
+                        name: {
+                            "sequences": expected_sequence_counts[name],
+                            "participants": expected_participant_counts[name],
+                            "participant_ids": split_rows[name]["participants"],
+                        }
+                        for name in ("train", "validation", "test")
+                    },
+                    "participant_hand": {
+                        "cramers_v": hand_diagnostics[
+                            "cramers_v_participant_by_hand"
+                        ],
+                        "participant_majority_hand_accuracy": hand_diagnostics[
+                            "participant_majority_hand_accuracy"
+                        ],
+                        "global_majority_hand_accuracy": hand_diagnostics[
+                            "global_majority_hand_accuracy"
+                        ],
+                        "pure_hand_participant_fraction": hand_diagnostics[
+                            "pure_hand_participant_fraction"
+                        ],
+                        "mixed_hand_participants": mixed_participants,
+                    },
+                    "identity_provenance_flags": identity_provenance_flags,
+                },
+                "group_cv": {
+                    "source": _report_identity(group_cv_summary_path),
+                    "protocol": group_cv["protocol"],
+                    "completeness": completeness,
+                    "selection_discipline": group_cv["selection_discipline"],
+                    "intention": {
+                        key: group_metrics[key]
+                        for key in ("intention_accuracy", "intention_macro_f1")
+                    },
+                    "receiving_hand": {
+                        key: group_metrics[key] for key in required_hand_metrics
+                    },
+                    "receiving_hand_reporting": hand_reporting,
+                },
+                "causal_intention_baselines": {
+                    "source": _report_identity(intention_baselines_path),
+                    "scientific_policy": policy,
+                    "test_metrics": {
+                        name: _metric_snapshot(method["metrics"]["test"])
+                        for name, method in methods.items()
+                    },
+                    "method_definitions": {
+                        name: method.get("definition")
+                        for name, method in methods.items()
+                    },
+                },
+                "sampling_and_window_duration": {
+                    "source": _report_identity(sampling_audit_path),
+                    "sampling_intervals_seconds": sampling[
+                        "sampling_intervals_seconds"
+                    ],
+                    "observation_window": observation,
+                },
+                "pose_learning_diagnosis": {
+                    "source": _report_identity(pose_learning_diagnosis_path),
+                    "decision": pose_decision,
+                    "runs": pose_diagnosis["runs"],
+                },
+                "qualitative_evidence": {
+                    "source": _report_identity(qualitative_manifest_path),
+                    "manifest_fingerprint": qualitative_manifest[
+                        "manifest_fingerprint"
+                    ],
+                    "overlay_report": _report_identity(overlay_path),
+                    "selected_sequences": overlay["selected_sequences"],
+                    "selection_reasons": overlay["selection_reasons"],
+                    "synchronization_valid": True,
+                    "time_basis": overlay["time_basis"],
+                    "legacy_overlay_artifacts_valid": overlay[
+                        "legacy_overlay_artifacts_valid"
+                    ],
+                },
+            },
+        }
+    )
+    result["authoritative_report_fingerprint"] = canonical_json_hash(
+        {**result, "authoritative_report_fingerprint": None}
+    )
+    return result
 
 
 def _normalized_run_path(value: str | Path, *, project_root: Path) -> Path:
@@ -636,16 +1074,88 @@ def _grouped_candidates(
     return [path for path in candidates if path.is_file()]
 
 
-def _recompute_grouped_fair_common(predictions_path: Path) -> Mapping[str, Any]:
+def _recompute_grouped_window(predictions_path: Path) -> Mapping[str, Any]:
     try:
         raw = pd.read_csv(predictions_path)
         normalized, _ = prepare_prediction_frame(raw)
         methods = discover_pose_methods(normalized)
-        fair = summarize_windows(normalized, methods).get("pose_fair_common")
+        window = summarize_windows(normalized, methods)
     except (KeyError, TypeError, ValueError) as exc:
         raise MatrixSummaryError(
             f"Could not recompute grouped metrics from {predictions_path}: {exc}"
         ) from exc
+    return window
+
+
+def _require_system_success(window: Mapping[str, Any]) -> Mapping[str, Any]:
+    system = window.get("system_success")
+    if not isinstance(system, Mapping) or system.get("status") != "available":
+        raise MatrixSummaryError(
+            "Prediction CSV cannot produce the required full system cascade"
+        )
+    stages = system.get("stages")
+    required_stages = (
+        "handover_correct",
+        "handover_and_receiving_hand_correct",
+        "handover_hand_and_pose_available",
+        "success_at_5_cm",
+        "success_at_10_cm",
+        "success_at_15_cm",
+        "success_at_20_cm",
+    )
+    if not isinstance(stages, Mapping) or any(
+        not isinstance(stages.get(name), Mapping) for name in required_stages
+    ):
+        raise MatrixSummaryError("Full system cascade is incomplete")
+    return system
+
+
+def _system_success_fields(system: Mapping[str, Any]) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "system_success_status": "available_checkpoint_bound",
+        "system_success_definition": system.get("definition"),
+        "system_success_pose_method": system.get("pose_method"),
+        "system_success_position_error_column": system.get(
+            "position_error_column"
+        ),
+        "system_success_cohort_fingerprint": system.get(
+            "evaluable_sample_key_fingerprint"
+        ),
+        "system_ground_truth_handover_windows": system.get(
+            "ground_truth_handover_windows"
+        ),
+        "system_evaluable_t1_windows": system.get(
+            "valid_t1_pose_target_windows"
+        ),
+        "system_excluded_handover_windows_without_valid_t1_pose": system.get(
+            "excluded_handover_windows_without_valid_t1_pose_target"
+        ),
+        "system_valid_t1_pose_target_coverage_within_handover": system.get(
+            "valid_t1_pose_target_coverage_within_handover"
+        ),
+    }
+    stages = system["stages"]
+    aliases = {
+        "handover_correct": "handover_correct",
+        "handover_and_receiving_hand_correct": "handover_and_hand_correct",
+        "handover_hand_and_pose_available": "handover_hand_pose_available",
+        "success_at_5_cm": "success_at_5_cm",
+        "success_at_10_cm": "success_at_10_cm",
+        "success_at_15_cm": "success_at_15_cm",
+        "success_at_20_cm": "success_at_20_cm",
+    }
+    for source, target in aliases.items():
+        metric = stages[source]
+        result[f"system_{target}_count"] = metric.get("successes")
+        result[f"system_{target}_rate"] = metric.get("rate")
+        result[f"system_{target}_conditional_rate"] = metric.get(
+            "conditional_rate_given_previous_stage"
+        )
+    return result
+
+
+def _fair_common_from_window(window: Mapping[str, Any]) -> Mapping[str, Any]:
+    fair = window.get("pose_fair_common")
     if not isinstance(fair, Mapping):
         raise MatrixSummaryError(
             "Prediction CSV cannot produce the required three-method fair-common set"
@@ -729,7 +1239,32 @@ def _grouped_t1_fields(
         "t1_fair_sample_key_fingerprint": None,
         "t1_baseline_policy": None,
         "t1_baseline_policy_fingerprint": None,
+        "system_success_status": "not_available",
+        "system_success_definition": None,
+        "system_success_pose_method": None,
+        "system_success_position_error_column": None,
+        "system_success_cohort_fingerprint": None,
+        "system_ground_truth_handover_windows": None,
+        "system_evaluable_t1_windows": None,
+        "system_excluded_handover_windows_without_valid_t1_pose": None,
+        "system_valid_t1_pose_target_coverage_within_handover": None,
     }
+    for stage in (
+        "handover_correct",
+        "handover_and_hand_correct",
+        "handover_hand_pose_available",
+        "success_at_5_cm",
+        "success_at_10_cm",
+        "success_at_15_cm",
+        "success_at_20_cm",
+    ):
+        empty.update(
+            {
+                f"system_{stage}_count": None,
+                f"system_{stage}_rate": None,
+                f"system_{stage}_conditional_rate": None,
+            }
+        )
     for method in ("learned_model", "persistence", "constant_velocity"):
         empty.update(
             {
@@ -926,7 +1461,9 @@ def _grouped_t1_fields(
     stored_fair = window.get("pose_fair_common") if isinstance(window, Mapping) else None
     if not isinstance(stored_fair, Mapping):
         raise MatrixSummaryError("Grouped report lacks the exact fair-common t+1 set")
-    fair = _recompute_grouped_fair_common(predictions_path)
+    recomputed_window = _recompute_grouped_window(predictions_path)
+    fair = _fair_common_from_window(recomputed_window)
+    system = _require_system_success(recomputed_window)
     _assert_grouped_fair_matches_csv(stored_fair, fair)
     methods = fair.get("methods")
     required = ("learned_oracle_hand", "persistence", "constant_velocity")
@@ -965,6 +1502,7 @@ def _grouped_t1_fields(
             "t1_baseline_policy_fingerprint": baseline_policy_fingerprint,
         }
     )
+    result.update(_system_success_fields(system))
     aliases = {
         "learned_oracle_hand": "learned_model",
         "persistence": "persistence",
@@ -1333,7 +1871,16 @@ def _seed_row(
             predicted_pose_valid,
             field="pose_coverage.predicted_pose_valid",
         )
-        if predicted_pose_valid != pose_samples_for_validation:
+        # Legacy MLP/GRU/Transformer baselines have one pose head and report
+        # ``predicted_pose_valid`` for its native output. Their main matrix
+        # value may nevertheless use the smaller, model-independent
+        # ``pose_fixed_both_references`` cohort for comparability with the
+        # two-hand residual models. Validate the coverage counter against the
+        # native head, not against that reporting-only subset.
+        predicted_pose_samples = native_pose_fields[
+            "diagnostic_native_end_to_end_pose_samples"
+        ]
+        if predicted_pose_valid != predicted_pose_samples:
             raise MatrixSummaryError(
                 "Standard pose samples differ from predicted_pose_valid"
             )
@@ -1640,6 +2187,22 @@ def build_matrix_summary(
             raise MatrixSummaryError(
                 "Grouped t+1 reports use different baseline policies"
             )
+        system_cohort_fingerprints = {
+            str(row["system_success_cohort_fingerprint"])
+            for row in grouped_rows
+        }
+        system_denominators = {
+            int(row["system_evaluable_t1_windows"])
+            for row in grouped_rows
+        }
+        if (
+            "None" in system_cohort_fingerprints
+            or len(system_cohort_fingerprints) != 1
+            or len(system_denominators) != 1
+        ):
+            raise MatrixSummaryError(
+                "Grouped reports do not share one system-success target cohort"
+            )
     for task_role in {
         str(row["thesis_task_role"])
         for row in rows
@@ -1710,7 +2273,7 @@ def build_matrix_summary(
 
 
 def _numeric_metric_items(row: Mapping[str, Any]) -> Iterable[tuple[str, float]]:
-    prefixes = ("test_", "terminal_fair_", "t1_fair_")
+    prefixes = ("test_", "terminal_fair_", "t1_fair_", "system_")
     excluded_suffixes = ("_confusion_matrix",)
     for key, value in row.items():
         if not key.startswith(prefixes) or key.endswith(excluded_suffixes):
@@ -1826,8 +2389,15 @@ def _mean_std(row: Mapping[str, Any], metric: str) -> str:
 def markdown_report(
     summary: Mapping[str, Any], *, seed_results_sha256: str | None = None
 ) -> str:
+    active_v3 = summary.get("reporting_protocol") == (
+        "active_dataset_v3_authoritative_thesis_report_v1"
+    )
     lines = [
-        "# Thesis-v2 final matrix",
+        (
+            "# Active-v3 authoritative thesis report"
+            if active_v3
+            else "# Thesis-v2 final matrix"
+        ),
         "",
         (
             "Every seed row is bound to exactly one executable validation-selected "
@@ -1975,6 +2545,182 @@ def markdown_report(
                 ),
             )
         )
+    lines.extend(
+        [
+            "",
+            "## Full intention -> hand -> t+1 pose cascade",
+            "",
+            (
+                "Every rate uses the same ground-truth handover windows with a "
+                "valid t+1 receiving-wrist target. Pose thresholds are strict "
+                "Euclidean errors (`error < threshold`) from the learned "
+                "predicted-hand output."
+            ),
+            "",
+            "| Experiment | Bound seeds | Handover correct | + correct hand | Success@20 cm | Success@15 cm | Success@10 cm | Success@5 cm | Evaluable windows |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for row in summary["seed_aggregation"]["rows"]:
+        if not row["grouped_t1_reports_available"]:
+            continue
+        lines.append(
+            "| {experiment} | {available}/{total} | {handover} | {hand} | {s20} | {s15} | {s10} | {s5} | {windows} |".format(
+                experiment=row["experiment_id"],
+                available=row["grouped_t1_reports_available"],
+                total=row["seed_count"],
+                handover=_mean_std(row, "system_handover_correct_rate"),
+                hand=_mean_std(row, "system_handover_and_hand_correct_rate"),
+                s20=_mean_std(row, "system_success_at_20_cm_rate"),
+                s15=_mean_std(row, "system_success_at_15_cm_rate"),
+                s10=_mean_std(row, "system_success_at_10_cm_rate"),
+                s5=_mean_std(row, "system_success_at_5_cm_rate"),
+                windows=_mean_std(row, "system_evaluable_t1_windows"),
+            )
+        )
+    supplements = summary.get("supplementary_reports")
+    if isinstance(supplements, Mapping):
+        baseline = supplements["causal_intention_baselines"]
+        lines.extend(
+            [
+                "",
+                "## Retrospective causal intention baselines",
+                "",
+                (
+                    "These descriptive baselines fit train windows only. No test "
+                    "metric selected features, hyperparameters, or a model."
+                ),
+                "",
+                "| Method | Test accuracy | Test macro-F1 | Continue F1 | Fetch F1 | Handover F1 |",
+                "|---|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for name, metric in baseline["test_metrics"].items():
+            per_class = metric["per_class_f1"]
+            lines.append(
+                f"| {name} | {metric['accuracy']:.4f} | "
+                f"{metric['macro_f1']:.4f} | {per_class[0]:.4f} | "
+                f"{per_class[1]:.4f} | {per_class[2]:.4f} |"
+            )
+
+        group_cv = supplements["group_cv"]
+        hand = group_cv["receiving_hand"]
+        lines.extend(
+            [
+                "",
+                "## Participant-balanced LOPO generalisation",
+                "",
+                (
+                    "Fixed-test and LOPO estimates are separate evidence. Hand "
+                    "metrics retain all three predeclared interpretations."
+                ),
+                "",
+                "| LOPO metric | Participant-balanced estimate |",
+                "|---|---:|",
+                (
+                    "| Intention accuracy | "
+                    f"{group_cv['intention']['intention_accuracy']['mean_across_seed_participant_balanced_estimates']:.4f} |"
+                ),
+                (
+                    "| Intention macro-F1 | "
+                    f"{group_cv['intention']['intention_macro_f1']['mean_across_seed_participant_balanced_estimates']:.4f} |"
+                ),
+                (
+                    "| Receiving hand, fixed two-class/all participants | "
+                    f"{hand['receiving_hand_macro_f1']['mean_across_seed_participant_balanced_estimates']:.4f} |"
+                ),
+                (
+                    "| Receiving hand, supported classes/all participants | "
+                    f"{hand['receiving_hand_macro_f1_supported']['mean_across_seed_participant_balanced_estimates']:.4f} |"
+                ),
+                (
+                    "| Receiving hand, fixed two-class/mixed-hand participants | "
+                    f"{hand['receiving_hand_mixed_hand_macro_f1']['mean_across_seed_participant_balanced_estimates']:.4f} |"
+                ),
+            ]
+        )
+        confounding = supplements["split_and_confounding"]
+        participant_hand = confounding["participant_hand"]
+        identity_flags = confounding["identity_provenance_flags"]
+        lines.extend(
+            [
+                "",
+                "## Dataset split and participant–hand confounding",
+                "",
+                (
+                    "Frozen participant-disjoint split: 170 train / 21 validation "
+                    "/ 23 test sequences (19 / 3 / 3 participants; 25 total)."
+                ),
+                (
+                    "Participant × receiving-hand Cramér's V: "
+                    f"{participant_hand['cramers_v']:.4f}; participant-majority-hand "
+                    f"accuracy: {participant_hand['participant_majority_hand_accuracy']:.4f}; "
+                    f"mixed-hand participants: {len(participant_hand['mixed_hand_participants'])}."
+                ),
+            ]
+        )
+        if identity_flags:
+            lines.extend(
+                [
+                    "",
+                    (
+                        "Identity-provenance warning: "
+                        + " ".join(
+                            str(flag.get("action", "manual confirmation required"))
+                            for flag in identity_flags
+                        )
+                    ),
+                ]
+            )
+        sampling = supplements["sampling_and_window_duration"]
+        delta = sampling["sampling_intervals_seconds"][
+            "within_configured_window_gap_limit"
+        ]
+        window = sampling["observation_window"][
+            "actual_duration_seconds_all_valid_windows"
+        ]
+        lines.extend(
+            [
+                "",
+                "## Empirical sampling and observation duration",
+                "",
+                (
+                    f"Median Δt is {delta['median']:.6f} s "
+                    f"({sampling['sampling_intervals_seconds']['empirical_median_sampling_hz']:.4f} Hz). "
+                    f"A 60-sample window spans 59 intervals and has a measured "
+                    f"median duration of {window['median']:.6f} s "
+                    f"(IQR {window['iqr']:.6f} s)."
+                ),
+            ]
+        )
+        pose_diagnosis = supplements["pose_learning_diagnosis"]["decision"]
+        qualitative = supplements["qualitative_evidence"]
+        lines.extend(
+            [
+                "",
+                "## Pose-loss decision and qualitative evidence",
+                "",
+                str(pose_diagnosis["conclusion"]),
+                (
+                    "Normalized Smooth-L1 sensitivity run recommended: "
+                    f"{str(pose_diagnosis['normalized_smooth_l1_sensitivity_run_recommended']).lower()}."
+                ),
+                (
+                    "Three device-time-v2 overlays are hash-bound and synchronized: "
+                    + ", ".join(qualitative["selected_sequences"])
+                    + "."
+                ),
+                "",
+                "## Offline versus deployment reporting",
+                "",
+                (
+                    "All values above are offline model/window or retrospective "
+                    "grouped metrics. No checkpoint-bound replay report is included; "
+                    "these values must not be presented as raw, stable, or actionable "
+                    "deployment performance."
+                ),
+            ]
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -2020,6 +2766,18 @@ def write_outputs(
         "validation_selection": summary["validation_selection"],
         "one_row_one_checkpoint": summary["one_row_one_checkpoint"],
         "source_seed_results_sha256": sha256_file(seed_json),
+        **(
+            {
+                "active_dataset": summary["active_dataset"],
+                "reporting_domains": summary["reporting_domains"],
+                "supplementary_reports": summary["supplementary_reports"],
+                "authoritative_report_fingerprint": summary[
+                    "authoritative_report_fingerprint"
+                ],
+            }
+            if "supplementary_reports" in summary
+            else {}
+        ),
         **summary["seed_aggregation"],
     }
     aggregate_json.write_text(
@@ -2051,6 +2809,9 @@ def write_outputs(
                 "reporting_protocol": summary["reporting_protocol"],
                 "matrix": summary["matrix"],
                 "validation_selection": summary["validation_selection"],
+                "authoritative_report_fingerprint": summary.get(
+                    "authoritative_report_fingerprint"
+                ),
                 "outputs": {
                     name: {"path": path.name, "sha256": sha256_file(path)}
                     for name, path in outputs.items()
@@ -2106,6 +2867,33 @@ def main() -> int:
             final_test_dir=final_test_dir,
             postprocess_root=postprocess_root,
         )
+        supplementary_args = {
+            "dataset_descriptor_path": args.dataset_descriptor,
+            "split_audit_path": args.split_audit,
+            "group_cv_summary_path": args.group_cv_summary,
+            "intention_baselines_path": args.intention_baselines,
+            "sampling_audit_path": args.sampling_audit,
+            "pose_learning_diagnosis_path": args.pose_learning_diagnosis,
+            "qualitative_manifest_path": args.qualitative_manifest,
+        }
+        provided = {
+            name: value for name, value in supplementary_args.items() if value is not None
+        }
+        if provided and len(provided) != len(supplementary_args):
+            missing = sorted(set(supplementary_args) - set(provided))
+            raise MatrixSummaryError(
+                "Authoritative v3 supplements are all-or-none; missing: "
+                + ", ".join(missing)
+            )
+        if provided:
+            summary = attach_supplementary_reports(
+                summary,
+                **{
+                    name: resolve(value)
+                    for name, value in supplementary_args.items()
+                    if value is not None
+                },
+            )
         paths = write_outputs(summary, output_dir, overwrite=args.overwrite)
     except (
         FileNotFoundError,

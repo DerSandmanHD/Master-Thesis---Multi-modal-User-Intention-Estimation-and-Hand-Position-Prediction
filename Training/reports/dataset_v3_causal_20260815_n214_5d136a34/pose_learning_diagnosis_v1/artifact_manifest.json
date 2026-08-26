@@ -1,0 +1,60 @@
+{
+  "schema_version": "primary_t1_pose_learning_artifacts_v1",
+  "manifest_fingerprint": "3c1a75ffb9791eaa96e90bb471264d28964e7b84bbc8101006f49445bb0935bb",
+  "report_fingerprint": "e4ea1ac972bf7bf48f810439744f445e52924cc8d707ee1a7baf9ddb487dddae",
+  "inputs": [
+    {
+      "metrics": {
+        "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed42/metrics.json",
+        "sha256": "7399cf6a3e4d7ae8e75483f439b572df1242e69c79184bf0f2ff13ca60047120",
+        "size_bytes": 1208676
+      },
+      "config": {
+        "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed42/config.json",
+        "sha256": "eaa5a5f7e17428fe2ccc572fef2cf3d84c6c032fb11a12e20710d3121161c6db",
+        "size_bytes": 2830
+      }
+    },
+    {
+      "metrics": {
+        "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed43/metrics.json",
+        "sha256": "c1534f613621d6ab2a8f549c87ff1611337ef2799bb0efc88689cf984746f13f",
+        "size_bytes": 887952
+      },
+      "config": {
+        "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed43/config.json",
+        "sha256": "7c2bc6644eb2151c7dde4b4501e4fc68da72866bdbde405ed27436ed69d22f84",
+        "size_bytes": 2830
+      }
+    },
+    {
+      "metrics": {
+        "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed44/metrics.json",
+        "sha256": "0bd88fe635d994647e8118a3f3bb5473760a3a58cdd4d77a9d593d3a3f870b86",
+        "size_bytes": 1449097
+      },
+      "config": {
+        "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/runs/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_validation/residual_current_gate/residual_current_gate_seed44/config.json",
+        "sha256": "34d0b0a83b7f0b510f865fc204ad74f56ac08340b82a6a56a7810bfb2083307f",
+        "size_bytes": 2830
+      }
+    }
+  ],
+  "outputs": {
+    "pose_learning_diagnosis.json": {
+      "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/pose_learning_diagnosis_v1/pose_learning_diagnosis.json",
+      "sha256": "7fb639117159b4d83530881a97afdfa7806a42be005adf6902f3cc4667226c0c",
+      "size_bytes": 17521
+    },
+    "pose_learning_curves.csv": {
+      "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/pose_learning_diagnosis_v1/pose_learning_curves.csv",
+      "sha256": "a4f8afda9e0780adaccb42511e7e8ffa319759e5c9138c25f0cca49306f20f5b",
+      "size_bytes": 6925
+    },
+    "POSE_LEARNING_DIAGNOSIS.md": {
+      "path": "home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Training/reports/dataset_v3_causal_20260815_n214_5d136a34/pose_learning_diagnosis_v1/POSE_LEARNING_DIAGNOSIS.md",
+      "sha256": "22638c643c390e789e0e65e13c6702224a734f298aadfc61474baae8ef007531",
+      "size_bytes": 1204
+    }
+  }
+}

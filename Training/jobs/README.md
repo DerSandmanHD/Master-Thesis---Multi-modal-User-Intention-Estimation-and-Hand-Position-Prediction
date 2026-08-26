@@ -41,7 +41,8 @@ verschachtelte Run-Struktur automatisch. SLURM-Ausgaben landen gesammelt unter
 | `thesis_v2_prepare_group_cv.sbatch` | materialisiert den vorab festgelegten 25-fold-LOPO-Plan ausschließlich für Seed 42 |
 | `thesis_v2_group_cv.sbatch` | ausführbare verschachtelte Leave-One-Participant-Out-CV; Array-Grenzen werden aus dem hashgebundenen Plan gelesen und beim `sbatch`-Aufruf übergeben |
 | `thesis_v2_summarize_group_cv.sbatch` | prüft die Vollständigkeit und Plan-/Checkpoint-Bindings aller äußeren Group-CV-Auswertungen und aggregiert sie |
-| `thesis_v2_summarize_matrix.sbatch` | prüft alle 48 autorisierten Testartefakte sowie die drei verpflichtenden t+1-Postprocess-Artefakte und erzeugt checkpoint-kohärente Seed- und Aggregate-Tabellen |
+| `thesis_v2_summarize_matrix.sbatch` | prüft alle 48 autorisierten Testartefakte sowie die verpflichtenden t+1-Postprocess-Artefakte, bindet die sieben v3-Supplemente und erzeugt checkpoint-kohärente Seed- und Aggregate-Tabellen |
+| `thesis_v3_posthoc_reporting.sbatch` | reporting-only: train-fitted kausale Intention-Baselines und empirischer Sampling-/Window-Audit; startet kein neuronales Training |
 | `submit_thesis_v2_pipeline.sh` | reicht den vollständigen Dependency-Graph inklusive Gate-Reports und 25 LOPO-Runs ein |
 
 ## Aktive v2-Reihenfolge
@@ -73,10 +74,11 @@ sbatch --dependency=afterok:${CLIP_JOB}:${ENDPOSE_AUDIT_JOB} \
   Training/jobs/thesis_v2_validation_matrix.sbatch
 ```
 
-Der Tag ist der aktive **geplante** kausale Stand. Er wird erst ausführbar,
-nachdem der Master-Rebuild und dessen Preflight erfolgreich abgeschlossen sind;
-der Name allein belegt weder vorhandene Derived Artifacts noch Ergebnisse. Ein
-bereits vorhandenes Run-Verzeichnis wird von den Trainern nicht überschrieben.
+Der Tag ist der aktive kausale Stand. Master-Rebuild, Preflight und finale
+Matrixauswertung sind abgeschlossen; für neue Ausführungen bleiben die
+fail-closed Voraussetzungen unverändert. Der Name allein belegt weder
+vorhandene Derived Artifacts noch Ergebnisse. Ein bereits vorhandenes
+Run-Verzeichnis wird von den Trainern nicht überschrieben.
 
 ## Testsplit-Schutz bei der Modellauswahl
 

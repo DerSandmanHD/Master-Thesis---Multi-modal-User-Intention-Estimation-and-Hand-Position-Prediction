@@ -2,21 +2,44 @@
 
 ## Aktiver versus historischer Ergebnisstand
 
-Die nachfolgend beschriebenen n214-Ausgaben sind historische, bereits
-beobachtete Auswertungen. Neue Thesis-Hauptergebnisse werden nach
-`../THESIS_FINAL_PROTOCOL_V2.md` aus einem einzelnen validation-ausgewählten
-Checkpoint erzeugt. Historische CLIP-, qualitative und Terminal-Endpose-
-Artefakte sind nicht mit dem korrigierten Zeit-/Target-Protokoll gleichzusetzen;
-ihre Einstufung steht in
-`../reports/dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json`.
-
-Der autoritative v2-Gesamtbericht wird mit
-`summarize_thesis_v2_matrix.py` erzeugt. Das Skript verlangt alle 48
+Der aktive v3-Gesamtbericht wurde mit `summarize_thesis_v2_matrix.py` erzeugt;
+der historische Dateiname des Skripts ändert seine Datasetbindung nicht. Das
+Skript verlangt alle 48
 vorab deklarierten, durch `validation_selection.json` autorisierten
 Final-Test-Dateien. Jede Seed-Zeile bleibt an genau einen ausführbaren
 `best_intention`-Checkpoint gebunden; Mittelwert und Seed-SD stehen in einer
-separaten Aggregattabelle. Optionale t+1-Baselines werden nur aus einem
-hashgebundenen Prediction-Export übernommen und fehlende Werte nicht ergänzt.
+separaten Aggregattabelle. t+1-Baselines werden nur aus hashgebundenen
+Prediction-Exports übernommen und fehlende Werte nicht ergänzt. Die aktive
+Ausgabe ist:
+
+```text
+Training/reports/dataset_v3_causal_20260815_n214_5d136a34/
+  thesis_final_v2_corrected_alignment/final_summary/
+```
+
+Sie bindet außerdem Datasetdescriptor, Split-/Confounding-Audit, LOPO,
+kausale Intention-Baselines, Sampling-Audit, Pose-Lernkurven-Diagnose und das
+qualitative Manifest. Der Report-Fingerprint lautet
+`ec078d5ed0d1eda3c2b009b92b3575da57f45cd2a3bbaa2ceca1154544184b9c`.
+
+Ergänzende reporting-only Entry-Points ohne neuronales Retraining:
+
+- `evaluate_causal_intention_baselines.py`: Majority, kausale Elapsed-Time-
+  Logistik und Last-Sensorframe-Logistik, ausschließlich train-fitted;
+- `audit_sampling_window_duration.py`: empirische Δt- und 60-Sample-
+  Fensterdauer über alle aktiven v3-Sequenzen;
+- `diagnose_pose_learning_curves.py`: Pose-/Intentions-Lernkurven und die
+  dokumentierte Entscheidung gegen einen neuen Normalized-Loss-Lauf;
+- `summarize_group_cv.py`: feste, supported-class- und Mixed-Hand-LOPO-Sicht;
+- `grouped_metrics.py`: fair-common Pose-Baselines und die vollständige
+  Intention→Hand→Pose-`Success@τ`-Kaskade.
+
+Die nachfolgenden allgemeinen Diagrammwerkzeuge und ausdrücklich mit v2
+bezeichneten Ausgaben bleiben historische, bereits beobachtete Auswertungen.
+Historische CLIP-, qualitative und Terminal-Endpose-Artefakte sind nicht mit
+dem korrigierten Zeit-/Target-Protokoll gleichzusetzen; ihre Einstufung steht
+in
+`../reports/dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json`.
 
 Dieser Ordner erzeugt reproduzierbare Lernkurven aus einem vollständigen
 Benchmark mit:
@@ -138,7 +161,7 @@ Thesis-PNGs. Da eine validierte zeitvariable 3D-zu-RGB-Projektion nicht für all
 Aufnahmen garantiert ist, werden Ground Truth und Prediction ausdrücklich in
 einem separaten Robot-Frame-Inset gezeigt.
 
-## Zentrale Abschlussauswertung
+## Historische v2-Abschlussauswertung
 
 Nach Abschluss aller Experimente erzeugt folgender Befehl die gemeinsame
 Thesis-Tabelle und prüft gleichzeitig Vollständigkeit, testfreie Auswahl,

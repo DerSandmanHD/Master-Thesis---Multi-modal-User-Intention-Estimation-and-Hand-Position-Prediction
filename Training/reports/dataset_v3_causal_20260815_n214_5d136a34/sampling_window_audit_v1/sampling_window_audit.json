@@ -1,0 +1,163 @@
+{
+  "schema_version": "empirical_sampling_window_audit_v1",
+  "created_at": "2026-08-25T18:03:29.445048+00:00",
+  "report_fingerprint": "30fa97f55911f1db3a452bc1c8fb8c720da3888f2c6515b5df8c3bcbdd55bfb7",
+  "dataset": {
+    "identifier": "dataset_v3_causal_20260815_n214_5d136a34",
+    "selected_sequences": 214,
+    "sequence_fingerprint": "5d136a34b915f4e6a81fda70d34c959be48b4be79f0f7922decfdaae65ad12cd",
+    "dataset_content_fingerprint": "339c313d56c7be8564a3035cd8334bad103e15659315c33135e96b95e820245a",
+    "source_content_fingerprint": "b2cfd10991c5638277795aadcabfd322d3e9eb41dffb70696b63dc657f5f22cb"
+  },
+  "sampling_intervals_seconds": {
+    "definition": "Within-sequence timestamp_ns[i+1] - timestamp_ns[i], pooled across all selected causal master CSVs; no cross-sequence delta.",
+    "raw_positive": {
+      "count": 220622,
+      "minimum": 0.033333,
+      "percentile_05": 0.033333,
+      "quartile_25": 0.033333,
+      "median": 0.033333,
+      "quartile_75": 0.033334,
+      "percentile_95": 0.033334,
+      "maximum": 0.033334,
+      "iqr": 1.000000000001e-06,
+      "mean": 0.033333332038509314,
+      "population_std": 4.709447288633009e-07
+    },
+    "nonpositive_count": 0,
+    "configured_window_gap_limit_seconds": 0.2,
+    "within_configured_window_gap_limit": {
+      "count": 220622,
+      "minimum": 0.033333,
+      "percentile_05": 0.033333,
+      "quartile_25": 0.033333,
+      "median": 0.033333,
+      "quartile_75": 0.033334,
+      "percentile_95": 0.033334,
+      "maximum": 0.033334,
+      "iqr": 1.000000000001e-06,
+      "mean": 0.033333332038509314,
+      "population_std": 4.709447288633009e-07
+    },
+    "above_configured_window_gap_limit_count": 0,
+    "empirical_median_sampling_hz": 30.000300003000028
+  },
+  "observation_window": {
+    "samples": 60,
+    "intervals_per_window": 59,
+    "configured_stride_rows": 10,
+    "actual_duration_seconds_all_valid_windows": {
+      "count": 19366,
+      "minimum": 1.966666,
+      "percentile_05": 1.966666,
+      "quartile_25": 1.966666,
+      "median": 1.966667,
+      "quartile_75": 1.966667,
+      "percentile_95": 1.966667,
+      "maximum": 1.966668,
+      "iqr": 9.999999999177334e-07,
+      "mean": 1.9666665983166376,
+      "population_std": 4.905544415313035e-07
+    },
+    "actual_duration_seconds_by_split": {
+      "train": {
+        "count": 15189,
+        "minimum": 1.966666,
+        "percentile_05": 1.966666,
+        "quartile_25": 1.966666,
+        "median": 1.966667,
+        "quartile_75": 1.966667,
+        "percentile_95": 1.966667,
+        "maximum": 1.966668,
+        "iqr": 9.999999999177334e-07,
+        "mean": 1.9666666174205019,
+        "population_std": 4.862877483779859e-07
+      },
+      "validation": {
+        "count": 1978,
+        "minimum": 1.966666,
+        "percentile_05": 1.966666,
+        "quartile_25": 1.966666,
+        "median": 1.966667,
+        "quartile_75": 1.966667,
+        "percentile_95": 1.966667,
+        "maximum": 1.966668,
+        "iqr": 9.999999999177334e-07,
+        "mean": 1.9666665151668354,
+        "population_std": 5.007804802658386e-07
+      },
+      "test": {
+        "count": 2199,
+        "minimum": 1.966666,
+        "percentile_05": 1.966666,
+        "quartile_25": 1.966666,
+        "median": 1.966667,
+        "quartile_75": 1.966667,
+        "percentile_95": 1.966667,
+        "maximum": 1.966667,
+        "iqr": 9.999999999177334e-07,
+        "mean": 1.9666665411550706,
+        "population_std": 4.98303381618457e-07
+      }
+    },
+    "window_counts": {
+      "train": 15189,
+      "validation": 1978,
+      "test": 2199
+    },
+    "median_delta_duration_estimate_seconds": 1.966647,
+    "duration_definition": "endpoint timestamp minus first timestamp of each accepted 60-sample window; 60 samples span 59 intervals."
+  },
+  "split": {
+    "participants": {
+      "train": [
+        "Angelina",
+        "Berat",
+        "David",
+        "Felix",
+        "Florian",
+        "Isa",
+        "Jan",
+        "Jola",
+        "Julienco",
+        "Leys",
+        "Maria",
+        "Melih",
+        "Miro",
+        "Paul",
+        "Suthan",
+        "Tarik",
+        "Test",
+        "Urim",
+        "Yuzhi"
+      ],
+      "validation": [
+        "Atilla",
+        "Ermal",
+        "Vanessa"
+      ],
+      "test": [
+        "Edu",
+        "Jona",
+        "Mona"
+      ]
+    },
+    "sequence_counts": {
+      "train": 170,
+      "validation": 21,
+      "test": 23
+    }
+  },
+  "inputs": {
+    "config": {
+      "path": "Training/configs/models/residual_transformer_v2.json",
+      "sha256": "4198532117166171fce044b4860fc2319c627a86f69c2744f00647f38470f3aa",
+      "size_bytes": 1704
+    },
+    "dataset_descriptor": {
+      "path": "Training/datasets/dataset_v3_causal_20260815_n214_5d136a34.json",
+      "sha256": "e51f1e17e4585b10beb1a37e58a10dee4e860929879dcb10fd1a26ff15549084",
+      "size_bytes": 1918
+    }
+  }
+}

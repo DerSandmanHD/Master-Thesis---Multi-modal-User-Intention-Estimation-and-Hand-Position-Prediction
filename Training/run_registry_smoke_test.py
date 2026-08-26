@@ -27,9 +27,12 @@ def main() -> int:
     assert active["planned_dataset_tag"] == (
         "dataset_v3_causal_20260815_n214_5d136a34"
     )
-    assert active["planned_dataset_materialized"] is False
-    assert active["dataset_descriptor"] is None
-    assert active["new_results_available"] is False
+    assert active["planned_dataset_materialized"] is True
+    active_descriptor_path = PROJECT_ROOT / active["dataset_descriptor"]
+    active_descriptor = read_json(active_descriptor_path)
+    assert active_descriptor["dataset_tag"] == active["planned_dataset_tag"]
+    assert active_descriptor["selected_sequences"] == 214
+    assert active["new_results_available"] is True
     assert active["required_observation_alignment_version"] == (
         "causal_backward_device_time_v1"
     )

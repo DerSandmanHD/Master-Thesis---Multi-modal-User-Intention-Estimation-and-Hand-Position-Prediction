@@ -204,6 +204,32 @@ def test_matrix_summary_job_consumes_only_frozen_reports() -> None:
     assert "--final-test-dir" in value
     assert "--postprocess-root" in value
     assert "Required t+1 postprocess directory missing" in value
+    for argument in (
+        "--dataset-descriptor",
+        "--split-audit",
+        "--group-cv-summary",
+        "--intention-baselines",
+        "--sampling-audit",
+        "--pose-learning-diagnosis",
+        "--qualitative-manifest",
+    ):
+        assert argument in value
+    assert "Required authoritative supplement missing" in value
     assert 'if [[ -d "$POSTPROCESS_ROOT" ]]' not in value
     assert "train_residual.py" not in value
     assert "Training/train.py" not in value
+
+
+def test_v3_posthoc_reporting_job_is_fail_closed_and_never_trains() -> None:
+    value = text("thesis_v3_posthoc_reporting.sbatch")
+    assert "set -euo pipefail" in value
+    assert "dataset_v3_causal_20260815_n214_5d136a34" in value
+    assert "evaluate_causal_intention_baselines.py" in value
+    assert "audit_sampling_window_duration.py" in value
+    assert "test_predictions.json" in value
+    assert 'BASELINE_MAX_ITERATIONS="${BASELINE_MAX_ITERATIONS:-2500}"' in value
+    assert '--max-iterations "$BASELINE_MAX_ITERATIONS"' in value
+    assert 'prediction["full_split_export"] is True' in value
+    assert "Training/train_residual.py" not in value
+    assert "Training/train.py" not in value
+    assert "--gres=gpu" not in value

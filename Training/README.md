@@ -16,20 +16,28 @@ Artifact Freeze. Die maschinenlesbare minimale Matrix steht in
 Eine kurze Einordnung der aktiven Python-Entry-Points, Hilfsmodule und
 historischen Werkzeuge steht in `SCRIPT_GUIDE.md`.
 
-Ausführungsstand vom 2026-08-17: Der kausale v3-Datasetstand ist auf dem
+Ausführungsstand vom 2026-08-26: Der kausale v3-Datasetstand ist auf dem
 Cluster für 214 Sequenzen materialisiert. Korrigierter CLIP-Cache (214/214),
 48 Validation-Läufe, Validation-only-Checkpointauswahl, 48 autorisierte
 Final-Tests und 25 LOPO-Läufe samt Zusammenfassung sind abgeschlossen.
-Alle neun Postprocessing-Tasks sind ebenfalls abgeschlossen. Autoritativer
-Gesamtbericht und qualitative Ausgabe sind noch durch zwei dokumentierte
-Validierungsprobleme blockiert. Der genaue Job- und Artefaktstand steht in
-`IMPLEMENTATION_STATUS_P0_P5.json` und `run_registry.json`.
+Alle neun Postprocessing-Tasks, die drei Device-Time-Overlays sowie der
+autoritative, um Split-, LOPO-, Baseline-, Sampling- und Pose-Diagnosebelege
+ergänzte Gesamtbericht sind ebenfalls abgeschlossen. Sein Fingerprint lautet
+`ec078d5ed0d1eda3c2b009b92b3575da57f45cd2a3bbaa2ceca1154544184b9c`.
+Der genaue Job- und Artefaktstand steht in `IMPLEMENTATION_STATUS_P0_P5.json`
+und `run_registry.json`. Die vollständige Repository-Prüfung bestand 174
+Unit-/Invarianten-Tests, 22 Scientific Smokes, 214/214 Master-QA und 48/48
+Training-Artifact-Freezes. `Test` wurde am 2026-08-26 als echtes
+Teilnehmerpseudonym bestätigt; die Studie umfasst unverändert 214 Sequenzen
+von 25 Teilnehmenden.
 
-Alle nachfolgend dokumentierten n214-Ergebniszahlen sind historische,
-bereits beobachtete Resultate. Sie sind keine Resultate des korrigierten
-Protokolls. Insbesondere historische CLIP-, qualitative und Terminal-Endpose-
-Artefakte dürfen nicht als korrigierte Thesis-Hauptergebnisse verwendet werden;
-die genaue Einstufung steht in
+Aktive Thesis-Zahlen dürfen nur aus
+`reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/final_summary/`
+oder dem daraus abgeleiteten `../Thesis/experiment_results_n214.md` übernommen
+werden. Nachfolgende ausdrücklich als historisch markierte n214-Zahlen gehören
+zu v2 und sind keine Resultate des korrigierten Protokolls. Die genaue
+Einstufung historischer CLIP-, qualitativer und Terminal-Endpose-Artefakte
+steht in
 `reports/dataset_v2_20260802_n214_5d136a34/ARTIFACT_VALIDITY_V2.json`.
 
 Die voreingestellten Replay-/Live-Pfade auf
@@ -40,7 +48,23 @@ korrigierte CLIP-Synchronisation noch als finales Thesis-Ergebnis zitiert
 werden. Der Echtzeit-CLIP-Frontend-Pfad ist nicht Teil dieses Arbeitspakets;
 CLIP-v2 wird hier offline und checkpoint-gebunden evaluiert.
 
-## Historischer n214-Experimentstand
+## Aktive v3-Ergebnisquellen
+
+- `reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/final_summary/FINAL_MATRIX_SUMMARY.md`:
+  autoritative, checkpoint-kohärente Hauptzusammenfassung;
+- `../Thesis/experiment_results_n214.md`: übertragbarer Methoden- und
+  Ergebnistext mit Haupttabellen, Claims und Limitationen;
+- `reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_v2_group_cv_seed42/summary_v2/group_cv_summary.json`:
+  vollständige participant-balancierte LOPO-Auswertung mit drei Hand-Sichten;
+- `reports/dataset_v3_causal_20260815_n214_5d136a34/thesis_final_v2_corrected_alignment/qualitative/`:
+  drei hashgebundene, timestamp-synchronisierte Beispiele.
+
+`Test` wird technisch als gewöhnliche Splitgruppe behandelt und wurde am
+2026-08-26 direkt als echtes Teilnehmerpseudonym bestätigt. Die datierte
+Auflösung liegt unter
+`reports/dataset_v3_causal_20260815_n214_5d136a34/IDENTITY_PROVENANCE_RESOLUTION_20260826.md`.
+
+## Historischer v2-n214-Experimentstand
 
 Die vollständige Experimentreihe für
 `dataset_v2_20260802_n214_5d136a34` ist abgeschlossen. Einstiegspunkte sind:
@@ -48,7 +72,6 @@ Die vollständige Experimentreihe für
 - `Training/EXPERIMENT_ROADMAP.md`: abgearbeitete Aufgaben und Grenzen;
 - `Training/reports/dataset_v2_20260802_n214_5d136a34/FINAL_EXPERIMENT_SUMMARY.md`:
   zentrale, automatisch geprüfte Ergebnisübersicht;
-- `Thesis/experiment_results_n214.md`: Methoden- und Ergebnisentwurf;
 - `Training/run_registry.json`: Jobs, Seeds, Reports und finaler
   Checkpoint-Hash.
 
@@ -140,8 +163,11 @@ Alle aktiven finalen Konfigurationen filtern die Master-CSVs strikt ueber
 die nicht im Manifest stehen, lassen den Lauf im strikten Modus abbrechen.
 Der Teilnehmername wird fuer den Split case-insensitiv kanonisiert; dadurch
 werden beispielsweise `David` und `david` garantiert derselben Person und
-demselben Split zugeordnet. `Test` ist ein regulaerer Teilnehmername und keine
-automatische Ausschlussregel.
+demselben Split zugeordnet. Der Code behandelt `Test` wie jeden anderen Namen
+und besitzt dafuer keine automatische Ausschlussregel. Die menschliche
+Datenprovenienz wurde am 2026-08-26 separat bestätigt; dadurch bleiben die
+sechs ausgewählten Sequenzen unter diesem Pseudonym regulärer Bestandteil des
+Trainingssplits.
 
 ### Residual v2
 

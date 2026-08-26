@@ -48,7 +48,10 @@ def classification(matrix: list[list[int]], names: list[str]) -> dict:
         "samples": samples,
         "accuracy": sum(matrix[index][index] for index in range(size)) / samples,
         "macro_f1": sum(f1) / size,
-        "macro_f1_supported": sum(f1) / size,
+        "macro_f1_supported": (
+            sum(value for value, count in zip(f1, support) if count > 0)
+            / sum(count > 0 for count in support)
+        ),
         "per_class_precision": precision,
         "per_class_recall": recall,
         "per_class_f1": f1,
@@ -144,7 +147,16 @@ def fixture(tmp_path: Path) -> tuple[Path, dict]:
                     ["continue", "fetch", "handover"],
                 ),
                 "receiving_hand": classification(
-                    [[diagonal, 1], [1, diagonal]], ["left", "right"]
+                    (
+                        [[diagonal, 1], [0, 0]]
+                        if int(row["fold"]) == 0
+                        else (
+                            [[0, 0], [1, diagonal]]
+                            if int(row["fold"]) == 1
+                            else [[diagonal, 1], [1, diagonal]]
+                        )
+                    ),
+                    ["left", "right"],
                 ),
             },
             "test_used_for_model_or_checkpoint_selection": False,
@@ -192,6 +204,29 @@ def test_complete_group_cv_is_participant_balanced_and_seed_sd_is_separate(
     assert metric["seed_count"] == 2
     assert metric["sample_sd_across_seeds"] is not None
     assert summary["aggregation"]["seed_sd_is_population_uncertainty"] is False
+    assert summary["schema_version"] == 2
+    assert summary["protocol"] == "complete_participant_balanced_nested_group_cv_v2"
+    assert summary["receiving_hand_reporting"][
+        "fixed_two_class_mixed_hand_participants"
+    ]["participants"] == ["P3"]
+    assert all(
+        row["receiving_hand_mixed_hand_participants"] == 1 for row in seed_rows
+    )
+    assert all(
+        row["receiving_hand_macro_f1_supported"]
+        > row["receiving_hand_macro_f1"]
+        for row in seed_rows
+    )
+    assert all(
+        row["receiving_hand_mixed_hand_macro_f1"]
+        == next(
+            participant["receiving_hand_macro_f1"]
+            for participant in participant_rows
+            if participant["seed"] == row["seed"]
+            and participant["participant"] == "P3"
+        )
+        for row in seed_rows
+    )
     assert summary["report_fingerprint"] == canonical_json_hash(
         {**summary, "report_fingerprint": None}
     )

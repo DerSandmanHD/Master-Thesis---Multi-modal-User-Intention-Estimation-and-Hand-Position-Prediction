@@ -20,8 +20,10 @@ if str(EVALUATION) not in sys.path:
 from grouped_metrics import (  # noqa: E402
     SEQUENCE_AGGREGATION_DEFINITION,
     build_grouped_evaluation,
+    discover_pose_methods,
     prepare_prediction_frame,
     report_table_rows,
+    system_success_metrics,
 )
 from evaluate_grouped_predictions import checkpoint_binding  # noqa: E402
 
@@ -176,6 +178,34 @@ class GroupedEvaluationTests(unittest.TestCase):
         self.assertEqual(hand_metrics["samples"], 4)
         self.assertEqual(hand_metrics["denominator"], 4)
         self.assertAlmostEqual(hand_metrics["accuracy"], 0.75)
+        system = window["system_success"]
+        self.assertEqual(system["valid_t1_pose_target_windows"], 4)
+        self.assertEqual(system["stages"]["handover_correct"]["successes"], 3)
+        self.assertEqual(
+            system["stages"]["handover_and_receiving_hand_correct"]["successes"],
+            3,
+        )
+        self.assertEqual(system["stages"]["success_at_5_cm"]["successes"], 3)
+
+    def test_system_success_is_a_strict_full_cascade(self) -> None:
+        frame = prediction_frame()
+        handover_indices = frame.index[frame["target_intention_id"].eq(2)].tolist()
+        frame.loc[handover_indices[1], "predicted_receiving_hand"] = "left"
+        frame.loc[handover_indices[2], "predicted_position_error_cm"] = 12.0
+        normalized, _ = prepare_prediction_frame(frame)
+        result = system_success_metrics(
+            normalized, discover_pose_methods(normalized)
+        )
+        stages = result["stages"]
+        self.assertEqual(result["valid_t1_pose_target_windows"], 4)
+        self.assertEqual(stages["handover_correct"]["successes"], 3)
+        self.assertEqual(
+            stages["handover_and_receiving_hand_correct"]["successes"], 2
+        )
+        self.assertEqual(stages["success_at_5_cm"]["successes"], 1)
+        self.assertEqual(stages["success_at_10_cm"]["successes"], 1)
+        self.assertEqual(stages["success_at_15_cm"]["successes"], 2)
+        self.assertEqual(stages["success_at_20_cm"]["successes"], 2)
 
     def test_participant_and_sequence_bootstraps_are_deterministic(self) -> None:
         first = build_grouped_evaluation(

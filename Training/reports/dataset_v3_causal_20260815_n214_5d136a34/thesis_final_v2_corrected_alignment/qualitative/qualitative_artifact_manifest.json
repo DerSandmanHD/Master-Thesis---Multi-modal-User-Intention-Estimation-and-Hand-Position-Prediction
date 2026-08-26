@@ -1,0 +1,54 @@
+{
+  "schema_version": "qualitative_artifact_manifest_v1",
+  "manifest_fingerprint": "3d1673d12bc5d189de72905d0746164aa18a46292b9798fca0cb63e3b8cac650",
+  "prediction_report_fingerprint": "d2c12fffa8d49f0043b7fbfc657583a84dd0c232935c112eb1d1fd17405dd1a0",
+  "artifact_manifest_fingerprint": "a04a01fe515477e48949e3227eea6d8b53146e08bac4b7a4adfb90a3f6db250f",
+  "visual_cache_manifest_sha256": "4c9d550642796ba1d4dc0835cde76341688db6eb4042dbd590d4bb8ccc9f9b2e",
+  "outputs": {
+    "qualitative_cases_device_time_v2.json": {
+      "file": "qualitative_cases_device_time_v2.json",
+      "size_bytes": 16158,
+      "sha256": "8eb34cd7260a79161bd7b0f5c7fef6c96449bd79be2051aba6d7868cd3c2b55a"
+    },
+    "qualitative_cases_device_time_v2.csv": {
+      "file": "qualitative_cases_device_time_v2.csv",
+      "size_bytes": 2597,
+      "sha256": "2b64857211b6c3c84224179942e155e52eda9f92eb772cf519597d7e522d1248"
+    },
+    "overlay_report.json": {
+      "file": "overlay_report.json",
+      "size_bytes": 31171,
+      "sha256": "a0c85daaa57082574bfd6bfd1c9abdcdac7d58afce7b66ab6617897cf73fd87e"
+    },
+    "Jona_7_20260616_182214_device_time_v2_prediction_overlay.mp4": {
+      "file": "Jona_7_20260616_182214_device_time_v2_prediction_overlay.mp4",
+      "size_bytes": 39445076,
+      "sha256": "6528b26706e9e3c9ae3f06b357755421c63b7ece0504bed68b497cf9d1564aa0"
+    },
+    "Jona_7_20260616_182214_good_device_time_v2.png": {
+      "file": "Jona_7_20260616_182214_good_device_time_v2.png",
+      "size_bytes": 2217196,
+      "sha256": "b1dc1cdf8c4322a593639926d5c952a08e7b1632210e0fc7ccd94d005c53ba74"
+    },
+    "Edu_3_20260604_170622_device_time_v2_prediction_overlay.mp4": {
+      "file": "Edu_3_20260604_170622_device_time_v2_prediction_overlay.mp4",
+      "size_bytes": 33105650,
+      "sha256": "5b9fa71fd4a7982d1cd95a08cb1c86a89a41bc09443f284c175b2e6619255edb"
+    },
+    "Edu_3_20260604_170622_typical_device_time_v2.png": {
+      "file": "Edu_3_20260604_170622_typical_device_time_v2.png",
+      "size_bytes": 2506149,
+      "sha256": "815249e30c7d5ca34b5b5cf175d5cfa31306fb744a436fdc2b5e62662c2df1b7"
+    },
+    "Mona_6_20260624_123930_device_time_v2_prediction_overlay.mp4": {
+      "file": "Mona_6_20260624_123930_device_time_v2_prediction_overlay.mp4",
+      "size_bytes": 60968866,
+      "sha256": "5794287dcc2778ff50f693a209c4000e96bc2d1509afde398360b890b319dd57"
+    },
+    "Mona_6_20260624_123930_failure_device_time_v2.png": {
+      "file": "Mona_6_20260624_123930_failure_device_time_v2.png",
+      "size_bytes": 2829754,
+      "sha256": "e417e54c2acda2e76e4bf81ec7a1ea9e28cc8a45504c272b582f7cb30affce75"
+    }
+  }
+}

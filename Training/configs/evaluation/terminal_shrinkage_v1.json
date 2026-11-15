@@ -1,0 +1,29 @@
+{
+  "name": "terminal_residual_shrinkage_v1",
+  "created": "2026-11-11",
+  "seeds": [42, 43, 44],
+  "checkpoint_families": ["best_intention", "best_pose"],
+  "primary_family": "best_intention",
+  "target_version": "terminal_endpose_unique_hand_capture_v2",
+  "alpha_grid": [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0],
+  "prediction": "last_reference_position + alpha * (frozen_model_position-last_reference_position)",
+  "selection": "one common alpha for seeds 42/43/44 per predeclared checkpoint family; minimize mean seed validation mean Euclidean error with predicted receiving hand on pure-future both-reference cohort",
+  "tie_rule": "within 1e-9 cm choose smallest alpha",
+  "cohort": "same frozen 60-sample stride-10 windows; only endpoints before first physical target aggregation capture and both reference wrists valid",
+  "validation_policy": "export validation predictions only; verify original stored validation metrics; persist selection with validation/export/checkpoint checksums before opening any test prediction files",
+  "test_policy": "reuse already frozen diagnostic exports; evaluate only alpha=0, alpha=1 and fixed validation-selected alpha; never rank or reselect alpha/checkpoint family on test",
+  "test_source": "terminal_residual_diagnosis_v1",
+  "diagnostics": "GT receiving-hand results and equal-recording means in addition to primary predicted-hand errors",
+  "position_only": true,
+  "orientation_changed": false,
+  "classification_changed": false,
+  "retraining": false,
+  "primary_thesis_artifacts_changed": false,
+  "limitations": [
+    "Exploratory post-hoc experiment motivated by previously observed tests; test is not untouched",
+    "No true remaining time or distance to terminal target enters the attenuated prediction",
+    "A global scalar cannot correct an erroneous movement direction or infer when a hand is already at its unknown target",
+    "Overlapping windows are dependent; seed SD is not participant uncertainty",
+    "Selecting alpha on validation can overfit validation; test outcomes are reported without subsequent retuning"
+  ]
+}

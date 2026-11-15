@@ -828,7 +828,21 @@ def split_records(
     validation_participants: list[str],
     test_participants: list[str],
     train_participants: list[str] | None = None,
+    sequence_split: dict | None = None,
 ) -> tuple[dict[str, list[SequenceRecord]], dict]:
+    if sequence_split is not None:
+        if set(sequence_split) != {'train', 'validation', 'test'}:
+            raise ValueError('Explicit sequence split requires train, validation, test')
+        flattened = [s for ids in sequence_split.values() for s in ids]
+        available = [r.sequence_id for r in records]
+        if len(flattened) != len(set(flattened)) or len(available) != len(set(available)) or set(flattened) != set(available):
+            raise ValueError('Explicit sequence split must partition every recording exactly once')
+        if any(not ids for ids in sequence_split.values()):
+            raise ValueError('Empty sequence split')
+        split = {name: [r for r in records if r.sequence_id in ids] for name, ids in sequence_split.items()}
+        return split, {'strategy': 'explicit_recordings_same_participant', 'seed': seed,
+                       'participants': {name: sorted({r.participant for r in group}) for name, group in split.items()},
+                       'sequences': {name: sorted(ids) for name, ids in sequence_split.items()}}
     records = [
         replace(record, participant=canonical_participant(record.participant))
         for record in records
@@ -1485,6 +1499,7 @@ def prepare_data(
         validation_participants=list(data_config.get("validation_participants", [])),
         test_participants=list(data_config.get("test_participants", [])),
         train_participants=list(data_config.get("train_participants", [])),
+        sequence_split=data_config.get('sequence_split'),
     )
     if visual_loader is not None:
         visual_loader.validate_split_binding(
@@ -1555,6 +1570,16 @@ def prepare_data(
         ),
     }
     normalizer = fit_normalizer(split["train"], feature_columns)
+    if data_config.get('frozen_normalizer') is not None:
+        frozen = data_config['frozen_normalizer']
+        if frozen['feature_names'] != feature_columns:
+            raise ValueError('Frozen normalizer feature schema mismatch')
+        mean = np.asarray(frozen['mean'], dtype=np.float64)
+        std = np.asarray(frozen['std'], dtype=np.float64)
+        if mean.shape != (len(feature_columns),) or std.shape != mean.shape or not np.all(np.isfinite(mean)) or not np.all(np.isfinite(std)) or np.any(std <= 0):
+            raise ValueError('Invalid frozen normalizer')
+        normalizer = Normalizer(mean=mean, std=std, feature_names=feature_columns)
+        split_metadata['normalization_source'] = 'frozen_source_training_statistics'
     normalized_split = {
         name: [
             replace(record, features=normalizer.transform(record.features))

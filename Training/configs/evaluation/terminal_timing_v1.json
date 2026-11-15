@@ -1,0 +1,27 @@
+{
+  "name": "terminal_input_timing_v1",
+  "date": "2026-11-07",
+  "purpose": "Evaluate the same terminal receiving-hand position from input windows at different times",
+  "seeds": [42, 43, 44],
+  "source": "corrected v3 terminal_endpose_learned, validation-selected best_intention checkpoints",
+  "terminal_target_version": "terminal_endpose_unique_hand_capture_v2",
+  "input_samples": 60,
+  "primary_windows": "non-overlapping blocks 0-59,60-119,... relative to the first annotated handover master row; incomplete final blocks omitted",
+  "secondary_windows": "all original frozen 60-sample windows with stride 10 and a ground-truth handover endpoint, including pre-handover context",
+  "time_origin": "annotated handover onset, not measured physical arm-motion onset; rows are aligned sensor samples, not necessarily raw video frames",
+  "primary_regime": "endpoint strictly before the first physical hand capture used in terminal target aggregation",
+  "diagnostic_regime": "endpoint inside target aggregation interval, reported separately as partially observed state estimation",
+  "excluded": "endpoints at/after the final target capture; rejected terminal targets; missing either hand reference",
+  "remaining_time_bins_seconds": [0, 0.5, 1, 2, 3],
+  "elapsed_time_bins_seconds": [0, 1, 2, 3, 4, 6],
+  "comparison": "learned predicted-hand and persistence predicted-hand on identical windows; GT-hand learned/persistence diagnostics also reported",
+  "aggregation": "per-seed window mean plus per-seed equal-recording mean; mean and sample SD across seeds; counts of windows and recordings; changing cohort sizes explicitly shown",
+  "selection": "no retraining, no new checkpoint or hyperparameter selection",
+  "limitations": [
+    "Post-hoc analysis of previously observed held-out participants Edu, Jona, Mona",
+    "Only old original videos and the terminal model; recent t+1 fine-tuning results are a separate task",
+    "Time-dependent aggregate curves can change because different recordings contribute to different bins",
+    "Annotated handover onset is a proxy for the start of arm movement",
+    "Whole-recording robot calibration remains offline; seed SD is not participant uncertainty"
+  ]
+}

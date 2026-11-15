@@ -1,0 +1,23 @@
+{
+  "name": "terminal_residual_diagnosis_v1",
+  "created": "2026-11-11",
+  "seeds": [42, 43, 44],
+  "checkpoints": ["best_intention", "best_pose"],
+  "source": "corrected v3 terminal_endpose_learned runs; previously validation-selected checkpoints",
+  "target_version": "terminal_endpose_unique_hand_capture_v2",
+  "test_protocol": "same frozen 60-sample stride-10 test windows; no new model or checkpoint selection",
+  "primary_cohort": "201 pure-future windows with both hand references, before any terminal target aggregation capture",
+  "primary_hand": "ground-truth receiving hand for learned residual and persistence",
+  "diagnostic_hand": "predicted hand, with matching predicted-hand persistence; classification differences reported separately",
+  "angle_min_cm": 2.0,
+  "angle_policy": "report angles only when both actual and predicted displacements are at least 2 cm; descriptive threshold, not a validated sensor-noise bound",
+  "displacement_edges_cm": [0, 2, 5, 10, 20, 40],
+  "remaining_edges_s": [0, 0.5, 1, 2, 3],
+  "decomposition": "squared position error = squared magnitude difference + 2*(actual_length*predicted_length-dot(actual,predicted)); geometric identity, not a causal attribution",
+  "aggregation": "per-seed window means and equal-recording means; mean and sample SD across three seeds; paired keys identical across checkpoints",
+  "partial_overlap": "preserved separately, excluded from primary residual analysis",
+  "statistics": "descriptive post-hoc diagnosis; overlapping windows are not independent trials; seed SD is not participant uncertainty",
+  "training": false,
+  "test_driven_selection": false,
+  "primary_thesis_checkpoint_unchanged": true
+}

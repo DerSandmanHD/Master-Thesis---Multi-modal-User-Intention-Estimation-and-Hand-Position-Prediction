@@ -10,6 +10,15 @@ voraus, ob Unterstützung benötigt wird, unterscheidet anschließend zwischen
 `fetch` und `handover` und schätzt für Handover die zukünftige Pose der
 Empfangshand.
 
+## Reproduktion ab verarbeiteten Daten
+
+Der Einstieg für einen frischen Clone ist [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
+Der prüfsummengebundene Ressourcenindex umfasst die aktiven Master-/Tracking-Daten,
+CLIP-Embeddings, PCA, Haupt- und LOPO-Checkpoints sowie die Adaptionsstudie.
+Originale RGB-/Audioaufnahmen werden für Kennzahlen, Checkpoint-Evaluation und
+Training aus diesen verarbeiteten Daten nicht benötigt. Die externen Artefakte
+werden separat über den dokumentierten Clusterzugang bereitgestellt.
+
 ## Aktives Thesis-Protokoll
 
 Neue Experimente folgen ausschließlich
@@ -194,9 +203,9 @@ python3 Training/compare_final_runs.py \
 
 ## Reproduzierbarkeit
 
-Aktiver Quellcode bleibt jeweils einmal unter `Code/` beziehungsweise
-`Training/`. Experimente enthalten keine kopierten Source-Trees, sondern
-Konfiguration, Metriken, Split-Metadaten und den verwendeten Git-Commit.
-Checkpoints und vollständige Run-Verzeichnisse bleiben außerhalb der normalen
-Git-Historie. `Training/run_registry.json` ordnet eingefrorene Datasetstände,
-Experimente, Reports und ausgewählte Deployment-Artefakte einander zu.
+Die überprüften Reproduktionswege, externen Ressourcen, Softwarestände und
+verbleibenden Einschränkungen stehen in [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
+`reproducibility/artifacts.py` prüft den bereitgestellten Bestand anhand von
+SHA-256 und Dateigrößen. Große Daten und Modellgewichte verbleiben außerhalb
+der Git-Historie. Historische Manifeste und Reports werden unverändert behalten;
+Zusatzstudien besitzen teilweise eigene archivierte Source-Snapshots.

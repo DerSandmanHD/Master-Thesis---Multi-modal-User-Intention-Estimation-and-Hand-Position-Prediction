@@ -51,15 +51,18 @@ ssh uni-pc
 
 TCML Cluster
 
+Use an SSH alias configured privately with your authorized host, account and port.
+Replace example paths before running; access details are supplied separately.
+
 Basic commands:
-scp -P 443 -r * eker@134.2.17.202:~/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/
+scp -r * your-authorized-ssh-alias:~/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/
 -> copy from current directory to the destination folder 
 
   Für deine lokalen neuen VRS-Dateien:
 
   rsync -avh --ignore-existing --progress \
     Data_collection/Data_vrs/Tarik_downloads/ \
-    eker@134.2.17.202:/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/
+    your-authorized-ssh-alias:/absolute/path/to/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_vrs/
 
   Bedeutung:
 
@@ -71,7 +74,7 @@ scp -P 443 -r * eker@134.2.17.202:~/Master-Thesis---Multi-modal-User-Intention-E
 
   rsync -avhn --ignore-existing --progress \
     Data_collection/Data_vrs/Tarik_downloads/ \
-    eker@134.2.17.202:/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_mp4/
+    your-authorized-ssh-alias:/absolute/path/to/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction/Data_collection/Data_mp4/
 
   Das -n bedeutet: nur anzeigen, nichts wirklich kopieren.
 

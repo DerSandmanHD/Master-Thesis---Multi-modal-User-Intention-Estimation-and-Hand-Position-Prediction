@@ -27,7 +27,8 @@ data release.** Access requires permission from the repository maintainer and
 the existing HPC account/VPN, or an equivalent separately supplied package.
 No public download URL is currently provided. The index contains recording
 identifiers used by the existing experiment artifacts; keep the data package
-under the same access controls as the research dataset.
+under the same access controls as the research dataset. This checkout and its
+Git history are not an anonymized public release; see [DATA_ACCESS.md](DATA_ACCESS.md).
 
 | Group | Contents | Needed for |
 |---|---|---|
@@ -55,13 +56,15 @@ python3 reproducibility/artifacts.py summary
 python3 reproducibility/artifacts.py files --groups results > /tmp/thesis-results.files
 ```
 
-For the existing authorized cluster connection, set the remote repository path
-and transfer **only the selected index entries**. A trailing slash is required:
+Obtain access instructions separately from the maintainer. Configure your own
+SSH alias with the authorized host, account and port; none is a public download
+endpoint. Set the remote repository path and transfer **only the selected index
+entries**. Replace the placeholders below; a trailing slash is required:
 
 ```bash
-THESIS_REMOTE='eker@134.2.17.202'
-THESIS_REMOTE_REPO='/home/eker/Master-Thesis---Multi-modal-User-Intention-Estimation-and-Hand-Position-Prediction'
-rsync -an --ignore-existing -e 'ssh -p 443' --files-from=/tmp/thesis-results.files \
+THESIS_REMOTE='your-authorized-ssh-alias'
+THESIS_REMOTE_REPO='/absolute/path/to/the/research-repository'
+rsync -an --ignore-existing -e ssh --files-from=/tmp/thesis-results.files \
   "$THESIS_REMOTE:$THESIS_REMOTE_REPO/" ./
 # Review the dry run, then use -a instead of -an to perform this transfer.
 python3 reproducibility/artifacts.py verify --groups results
@@ -227,6 +230,34 @@ partitions; marker removal also changes tracking provenance. Timing cohorts have
 16/3/1/1 recordings for successive blocks; the closest remaining-time bin has
 five windows. Do not interpret these as controlled population-wide improvements.
 
+
+### Generate the supplementary thesis tables
+
+`Training/build_supplementary_thesis.py` regenerates six LaTeX tables and the
+terminal residual-length figure from seven saved result files, without training
+or checkpoint inference. Obtain the `results` and `adaptation` resources first.
+It verifies each input's size and SHA-256 against the release lock and writes a
+manifest of input/output hashes. Python plus matplotlib is required.
+
+```bash
+python Training/build_supplementary_thesis.py \
+  --root . --output-dir /tmp/thesis-supplementary-regenerated
+```
+
+The output directory must not already exist. Original thesis files and frozen
+results are never overwritten. Compare the generated numeric table bodies with
+the submission; captions and layout may have been edited independently. The
+plot's PDF bytes may vary with renderer metadata and library versions.
+
+### Historical terminology and latency
+
+[Training/EXPERIMENT_PROVENANCE_NOTES.md](Training/EXPERIMENT_PROVENANCE_NOTES.md)
+explains the separate `trial_000` adaptation sources, the terminal learning-rate
+origin, the development pilot and `robot_anchor_interpolated` semantics. The
+saved latency reports concern a historical v2 model, separate CLIP benchmarks
+and exploratory live sessions. They do not measure the active v3 system from
+sensor capture through physical robot execution.
+
 ## 8. Validation and limits
 
 The cluster audit found matching hashes for 214 original and 50 new masters,
@@ -239,3 +270,11 @@ release. No new training or evaluation jobs were launched while preparing it.
 Original raw recordings and external MPS reprocessing are deliberately outside
 this processed-data reproduction contract. This does not claim bitwise identical
 GPU retraining or independent raw-to-MPS regeneration.
+
+
+Validation of the supplementary-table entry point on 2026-11-15 regenerated all
+six tables and the residual plot from seven SHA-256-verified saved inputs.
+Numeric tokens in all six table bodies matched the supplied thesis version 13.
+Existing-output protection and same-size input-corruption rejection were checked;
+seven reproduction-tool tests passed. This was report/figure regeneration,
+not a new model evaluation, training run or fresh-machine reproduction.

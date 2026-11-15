@@ -17,7 +17,15 @@ Der prüfsummengebundene Ressourcenindex umfasst die aktiven Master-/Tracking-Da
 CLIP-Embeddings, PCA, Haupt- und LOPO-Checkpoints sowie die Adaptionsstudie.
 Originale RGB-/Audioaufnahmen werden für Kennzahlen, Checkpoint-Evaluation und
 Training aus diesen verarbeiteten Daten nicht benötigt. Die externen Artefakte
-werden separat über den dokumentierten Clusterzugang bereitgestellt.
+werden separat auf Anfrage und nach Zugriffsfreigabe bereitgestellt.
+Ein vollständiger Durchlauf aller Experimente auf einer frischen Maschine ist
+noch nicht nachgewiesen.
+
+Dieser Checkout einschließlich Historie ist keine anonymisierte öffentliche
+Datenfreigabe: siehe [DATA_ACCESS.md](DATA_ACCESS.md). Die dokumentierte
+KI-Unterstützung ist in [TOOLING_DISCLOSURE.md](TOOLING_DISCLOSURE.md) beschrieben.
+Der ergänzte [Tabellengenerator](Training/build_supplementary_thesis.py) erzeugt
+die Zusatzstudien-Tabellen aus prüfsummengeprüften Ergebnisdateien.
 
 ## Aktives Thesis-Protokoll
 

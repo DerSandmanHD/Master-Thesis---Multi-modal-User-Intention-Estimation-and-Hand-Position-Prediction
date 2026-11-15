@@ -22,8 +22,7 @@ Ein vollständiger Durchlauf aller Experimente auf einer frischen Maschine ist
 noch nicht nachgewiesen.
 
 Dieser Checkout einschließlich Historie ist keine anonymisierte öffentliche
-Datenfreigabe: siehe [DATA_ACCESS.md](DATA_ACCESS.md). Die dokumentierte
-KI-Unterstützung ist in [TOOLING_DISCLOSURE.md](TOOLING_DISCLOSURE.md) beschrieben.
+Datenfreigabe: siehe [DATA_ACCESS.md](DATA_ACCESS.md).
 Der ergänzte [Tabellengenerator](Training/build_supplementary_thesis.py) erzeugt
 die Zusatzstudien-Tabellen aus prüfsummengeprüften Ergebnisdateien.
 
